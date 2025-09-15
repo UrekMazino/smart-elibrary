@@ -1,0 +1,67 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+// use Illuminate\Contracts\Auth\Access\Authorizable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Permission\Traits\HasRoles;
+
+class User extends Authenticatable
+{
+    use HasApiTokens, HasFactory, HasRoles, Notifiable,SoftDeletes;
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
+    protected $fillable = [
+        'name',
+        'email',
+        'contactnum',
+        'affiliation',
+        'sex',
+        'birthdate',
+        'usertype',
+        'password',
+        'patrontypes_id',
+        'library_code',
+        'region_id',
+        'position1',
+        'position2',
+        'position3',
+        'position4',
+        'username',
+        'location'
+    ];
+
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var array<int, string>
+     */
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+    ];
+
+    // public function patrontypes()
+    // {
+    //     return $this->hasMany(Patrontype::class);
+    // }
+}

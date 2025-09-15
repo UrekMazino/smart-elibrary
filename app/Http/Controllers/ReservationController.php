@@ -1,0 +1,320 @@
+<?php
+
+namespace App\Http\Controllers;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
+use App\Models\Circulation;
+use App\Models\CirculationReservation;
+use Carbon\Carbon;
+
+class ReservationController extends Controller
+{
+    public function __construct()
+    {
+        $this->middleware(['auth','admin']);
+    }
+
+    
+    public function index()
+    {
+
+    }
+
+    public function reservations()
+    {
+        return view('admin.reservation');
+    }
+
+    public function reservation_action(Request $request) 
+    {
+        $adminUser = auth()->user();
+        switch($request->reservation_action)
+        {
+            case 1:
+                $material = DB::table('copies')->where('circulation_number', $request->circulation_number)->first();
+
+                if($material->status == 1) {
+                    // approved =2
+                    DB::table('circulations')->where('reservation_code', $request->reservation_code)->update([
+                        'circulation_number' => $material->circulation_number,
+                        'approved_at' => now(),
+                        'approved_by' => $adminUser->name,
+                        'status' => 2,
+                    ]);
+
+                    // reserved = 2
+                    DB::table('copies')->where('circulation_number', $request->circulation_number)->update([
+                        'status' => 2,
+                    ]);
+
+                    $message = "Request approved!";
+                    $header = 'Success';
+                } else {
+                    $message = "Material not available!";
+                    $header = 'Failed';
+                }
+
+                break;
+            case 2:
+                // declined =4 
+                DB::table('circulations')->where('reservation_code', $request->reservation_code)->update([
+                    'declined_at' => now(),
+                    'declined_by' => $adminUser->name,
+                    'status' => 4,
+                ]);
+                $message = "Request declined!";
+                $header = 'Done';
+                break;
+            case 3:
+                // PROCEED TO CHECKOUT
+                $searchValue = $request->reservation_code;
+
+                $transaction = DB::table('circulations')
+                        ->join('circulation_status', 'circulation_status.order_no', '=', 'circulations.status')
+                        ->join('circulation_fine_history', 'circulation_fine_history.transaction_code', '=', 'circulations.transaction_code')
+                        ->where(function ($query) use ($searchValue) {
+                            $query->where('circulations.transaction_code', $searchValue)
+                                ->orWhere(function ($query) use ($searchValue) {
+                                    $query->orWhere('circulation_number', $searchValue)
+                                        ->whereNull('received_at');
+                                    $query->orWhere('reservation_code', $searchValue)
+                                        ->whereNull('received_at');
+                                    
+                                });
+                        })
+                        ->first();
+
+                $material = searchMaterial($transaction);
+
+                $patron = searchPatron($transaction);
+                
+                $patron_circulation = searchPatronCirculation($transaction);
+
+                $result = computeHoursOverdue($transaction);
+
+                $hoursOverdue = $result[1] == "hours_overdue" ? $hoursOverdue = $result[0] : 0;
+                
+                $overDueFine = $hoursOverdue > 0 ? checkIfFoundInt($transaction, 'overdue_fine_rate') * $hoursOverdue : 0;
+
+                $reservation = [
+                    // Material
+                    'title' => checkIfFound($material, 'title'),
+                    'circulation_number' => checkIfFound($material, 'circulation_number'),
+                    'catalog_id' => checkIfFound($material, 'catalog_id'),
+                    'copy_id' => checkIfFound($material, 'id'),
+                    'status' => checkIfFound($material, 'status'),
+                    'status_name' => checkIfFound($material, 'status_name'),
+                    'status_description' => checkIfFound($material, 'status_desc'),
+                    'cost' =>  checkIfFound($material, 'cost', 0),
+                    // Patron
+                    'name' => checkIfFound($patron, 'name'),
+                    'email' => checkIfFound($patron, 'email'),
+                    'contactnum' => checkIfFound($patron, 'contactnum'), 
+                    'library_code' => checkIfFound($patron, 'library_code'),
+                    'user_id' => checkIfFound($patron, 'id'),
+                    'total_transaction' => checkIfFound($patron_circulation, 'total_transaction', 0),
+                    'total_checkout' => checkIfFound($patron_circulation, 'total_checkout', 0),
+                    'total_overdue' => checkIfFound($patron_circulation, 'total_overdue', 0),
+                    // Terms
+                    'reservation_code' => checkIfFound($transaction, 'reservation_code') == "N/A" ? "Walk-in" : checkIfFound($transaction, 'reservation_code'),
+                    'due_date' => checkIfFound($transaction, 'due_date'),
+                    'approved_at' => checkIfFound($transaction, 'approved_at'),
+                    'approved_by' => checkIfFound($transaction, 'approved_by'),
+                    'transaction_code' => checkIfFound($transaction, 'transaction_code'),
+                    'transaction_status' => checkIfFound($transaction, 'name'),
+                    'transaction_status_order_no' => checkIfFound($transaction, 'order_no', 6),
+                ];
+
+                $fineDescriptions = DB::table('circulation_fines')->select('id', 'name')->get();
+
+                return view('admin.check-out-in', ['fineDescriptions' => $fineDescriptions, 'reservation' => $reservation]);
+                
+                break;
+            case 4: 
+                // for approval = 1
+                DB::table('circulations')->where('reservation_code', $request->reservation_code)->update([
+                    'circulation_number' => NULL,
+                    'approved_at' => NULL,
+                    'approved_by' => NULL,
+                    'status' => 1,
+                ]);
+
+                // available = 1
+                DB::table('copies')->where('circulation_number', $request->circulation_number)->update([
+                    'status' => 1,
+                ]);
+
+                $message = "Approval cancelled!";
+                $header = 'Done';
+                break;
+        }
+
+        return redirect()->route('reservations')->with(['message' => $message, 'header' => $header]);
+    }
+    
+
+    public function reservation_json(Request $request)
+    {
+
+        $draw = $request->get('draw');
+        $start = $request->get("start");
+        $rowPerPage = $request->get("length"); // Rows display per page
+
+        $columnIndex_arr = $request->get('order');
+        $columnName_arr = $request->get('columns');
+        $order_arr = $request->get('order');
+        $search_arr = $request->get('search');
+
+        $columnIndex = $columnIndex_arr[0]['column']; // Column index
+        $columnName = $columnName_arr[$columnIndex]['data']; // Column name
+        $columnSortOrder = $order_arr[0]['dir']; // asc or desc
+        $searchValue = $search_arr['value']; // Search value
+
+        // Total records
+        $totalRecords = Circulation::whereIn('status', [1, 2])->count();
+
+        $totalRecordswithFilter = CirculationReservation::select(DB::raw('count(*) as allcount'))->where('title_statement', 'like', '%' . $searchValue . '%')->count();
+
+        // Fetch records
+        $reservations = Circulation::orderBy($columnName, $columnSortOrder)
+            ->join('circulation_reservations', 'circulation_reservations.reservation_code', '=', 'circulations.reservation_code')
+            ->whereIn('status', [1, 2])
+            ->where(function ($query) use ($searchValue) {
+                $query->where('title_statement', 'like', '%' . $searchValue . '%')
+                    ->orWhere('circulation_reservations.requested_by', 'like', '%' . $searchValue . '%')
+                    ->orWhere('circulation_reservations.visit_date', 'like', '%' . $searchValue . '%')
+                    ->orWhere('circulation_reservations.reservation_code', 'like', '%' . $searchValue . '%')
+                    ->orWhere('circulations.circulation_number', 'like', '%' . $searchValue . '%');
+            })
+            ->skip($start)
+            ->take($rowPerPage)
+            ->get();
+    
+        $data_arr = array();
+
+        foreach($reservations as $reservation){
+            $title_statement = formatTitle1($reservation->title_statement);
+            $status = getCirculationStatusName($reservation->status);
+            
+ 
+            $data_arr[] = array(
+                "id" => $reservation->id,
+                "user_id" => $reservation->user_id,
+                'requested_by'=> $reservation->requested_by,
+                "title_statement" => $title_statement,
+                "status" => $status,
+                'reservation_code' => $reservation->reservation_code, 
+                "catalog_id" => $reservation->catalog_id,
+                "circulation_number" => $reservation->circulation_number,
+                "copy_id" => $reservation->copy_id,
+                'date_of_visit' => $reservation->visit_date . ", " . $reservation->visit_time,
+            );
+         }
+
+         $response = array(
+            "draw" => intval($draw),
+            "iTotalRecords" => $totalRecords,
+            "iTotalDisplayRecords" => $totalRecordswithFilter,
+            "aaData" => $data_arr
+         );
+ 
+         return response()->json($response); 
+
+    }
+
+    public function viewMaterial(Request $request)
+    {
+        
+        $material = DB::table('copies')
+            ->join('copies_status', 'copies_status.order_no', '=', 'copies.status')
+            ->where('copies.catalog_id', $request->catalog_id)
+            ->first();
+        
+        $circulation_numbers = DB::table('copies')
+            ->select('circulation_number')
+            ->where('catalog_id', $request->catalog_id)
+            ->where('status', 1)
+            ->get(); 
+
+        $response = array(
+            'catalog_id' => checkIfFound($material, 'catalog_id'),
+            'circulation_numbers' => $circulation_numbers,
+            'circulation_number' => $request->circulation_number,
+            'title' => checkIfFound($material, 'title'),
+            'cost' => checkIfFound($material, 'cost'), 
+            'status' => checkIfFound($material, 'name'),
+            'acquisition_mode' => checkIfFound($material, 'acquisition_mode'),
+            'source' => checkIfFound($material, 'source'),
+        );
+
+        return response()->json($response); 
+    }
+
+    public function viewPatron(Request $request) 
+    {
+        $patron = DB::table('users')
+            ->where('id', $request->user_id)
+            ->first();
+
+
+        $response = array(
+            'name' => checkIfFound($patron, 'name'),
+            'email' => checkIfFound($patron, 'email'),
+            'contact_no' => checkIfFound($patron, 'contactnum'),
+            'birthdate' => checkIfFound($patron, 'birthdate'),
+            'location' => checkIfFound($patron, 'location'),
+            'position' => checkIfFound($patron, 'position1'),
+            'sex' => checkIfFound($patron, 'sex'),
+            'library_code' => checkIfFound($patron, 'library_code'),
+        );
+
+        return response()->json($response); 
+    }
+
+    public function viewTransaction(Request $request)
+    {
+        $transaction = DB::table('circulations')
+        ->join('circulation_status', 'circulation_status.order_no', '=', 'circulations.status')
+        ->where('transaction_code', $request->transaction_code)
+        ->first();
+
+
+        $response = array(
+            'transaction_code' => checkIfFound($transaction, 'transaction_code'),
+            'reservation_code' => checkIfFound($transaction, 'reservation_code'),
+            'status' => checkIfFound($transaction, 'name'),
+            'due_date' => checkIfFound($transaction, 'due_date'),
+            'overdue_fine_rate' => checkIfFound($transaction, 'overdue_fine_rate'),
+            'waived_amount' => checkIfFound($transaction, 'waived_amount'),
+            'total_fine' => checkIfFound($transaction, 'total_fine'),
+            'total_fine_paid' => checkIfFound($transaction, 'total_fine_paid'),
+            'approved_at' => checkIfFound($transaction, 'approved_at'),
+            'approved_by' => checkIfFound($transaction, 'approved_by'),
+            'declined_at' => checkIfFound($transaction, 'declined_at'),
+            'declined_by' => checkIfFound($transaction, 'declined_by'),
+            'released_at' => checkIfFound($transaction, 'released_at'),
+            'released_by' => checkIfFound($transaction, 'released_by'),
+            'received_at' => checkIfFound($transaction, 'received_at'),
+            'received_by' => checkIfFound($transaction, 'received_by'),
+        );
+
+        return response()->json($response); 
+    }
+
+    public function viewReservation(Request $request)
+    {
+        $reservation = DB::table('circulation_reservations')
+            ->where('reservation_code', $request->reservation_code)
+            ->first();
+
+        $response = array(
+            'visit_date' => checkIfFound($reservation, 'visit_date'),
+            'visit_time' => checkIfFound($reservation, 'visit_time'),
+            'reservation_code' => checkIfFound($reservation, 'reservation_code'),
+        );
+
+        return response()->json($response); 
+    }
+    
+
+}
