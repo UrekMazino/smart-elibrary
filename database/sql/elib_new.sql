@@ -27,7 +27,6 @@ SET time_zone = "+00:00";
 -- Table structure for table `authors`
 --
 
-
 CREATE TABLE `authors` (
   `id` int(11) NOT NULL,
   `catalog_id` varchar(24) NOT NULL,
@@ -4019,6 +4018,32 @@ CREATE TABLE `migrations` (
 -- Dumping data for table `migrations`
 --
 
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
+(1, '2019_12_14_000001_create_personal_access_tokens_table', 1),
+(2, '2022_06_02_150509_create_thumbnails_table', 1),
+(3, '2022_06_02_154127_create_fullpages_table', 2),
+(4, '2022_06_04_094427_create_series_table', 3),
+(5, '2022_06_05_011744_create_barrowed_books_table', 4),
+(6, '2022_06_05_011758_create_for_reviews_table', 4),
+(7, '2022_06_05_011809_create_ratings_table', 4),
+(8, '2022_06_06_065549_create_p_d_f_s_table', 5),
+(9, '2022_06_06_080902_create_views_table', 6),
+(10, '2022_06_06_083355_create_downloads_table', 7),
+(11, '2022_07_06_151234_create_visits_table', 8),
+(12, '2022_07_19_072409_create_inquiries_table', 9),
+(13, '2022_07_19_072539_create_reply_inquiries_table', 10),
+(14, '2022_07_26_015327_create_consortias_table', 11),
+(15, '2022_07_28_053334_create_imprints_table', 12),
+(16, '2022_07_28_053347_create_type_of_imprints_table', 12),
+(17, '2022_08_01_012534_create_view_borrowed_books_table', 13),
+(18, '2022_08_10_085717_create_jobs_table', 14),
+(19, '2022_08_15_051209_create_news_table', 15),
+(20, '2022_08_16_051121_create_corporate_authors_table', 16),
+(21, '2023_03_17_113327_create_patrontypes_table', 17),
+(22, '2023_03_17_124238_add_patrontypes_id_to_users', 17),
+(23, '2023_03_22_110145_create_csfs_table', 18),
+(0, '2023_11_23_094601_create_permission_tables', 19);
+
 -- --------------------------------------------------------
 
 --
@@ -4193,6 +4218,27 @@ INSERT INTO `permissions` (`id`, `name`, `guard_name`, `display_name`, `descript
 
 -- --------------------------------------------------------
 
+--
+-- Table structure for table `personal_access_tokens`
+--
+
+CREATE TABLE `personal_access_tokens` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `tokenable_type` varchar(255) NOT NULL,
+  `tokenable_id` bigint(20) UNSIGNED NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `token` varchar(64) NOT NULL,
+  `abilities` text DEFAULT NULL,
+  `last_used_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `p_d_f_s`
+--
 
 CREATE TABLE `p_d_f_s` (
   `id` bigint(20) UNSIGNED NOT NULL,
@@ -5212,6 +5258,11 @@ ALTER TABLE `permissions`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `permissions_name_guard_name_unique` (`name`,`guard_name`);
 
+--
+-- Indexes for table `personal_access_tokens`
+--
+ALTER TABLE `personal_access_tokens`
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `p_d_f_s`
@@ -5507,6 +5558,11 @@ ALTER TABLE `patrontypes`
 ALTER TABLE `permissions`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
 
+--
+-- AUTO_INCREMENT for table `personal_access_tokens`
+--
+ALTER TABLE `personal_access_tokens`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `p_d_f_s`
@@ -5601,3 +5657,5 @@ COMMIT;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+
+
