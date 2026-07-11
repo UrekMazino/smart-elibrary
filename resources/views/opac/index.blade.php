@@ -1,5 +1,35 @@
 @extends('opac.layout.master')
 
+@section('css')
+<style>
+.instant-wrap { position: relative; }
+.instant-results {
+	position: absolute; top: 100%; left: 0; right: 0; z-index: 1050;
+	margin-top: 6px; background: #fff; border: 1px solid #e3e6ea;
+	border-radius: 8px; box-shadow: 0 12px 32px rgba(0,0,0,.18);
+	overflow: hidden; text-align: left;
+}
+.instant-list { max-height: 380px; overflow-y: auto; }
+.instant-row {
+	display: block; padding: 10px 16px; border-bottom: 1px solid #f0f2f4; color: #222; text-decoration: none;
+}
+.instant-row:last-child { border-bottom: 0; }
+.instant-row:hover, .instant-row.active { background: #f5f8ff; }
+.instant-title { font-size: 15px; font-weight: 600; line-height: 1.3; color: #1a2b4a; }
+.instant-meta { font-size: 12.5px; color: #6b7280; margin-top: 2px; }
+.instant-meta .instant-type {
+	display: inline-block; background: #eef2f7; color: #45607e; border-radius: 4px; padding: 0 6px; margin-left: 6px; font-size: 11px;
+}
+.instant-meta .instant-year { margin-left: 6px; }
+.instant-empty, .instant-loading { padding: 16px; color: #6b7280; font-size: 14px; text-align: center; }
+.instant-seeall {
+	display: block; padding: 11px 16px; text-align: center; background: #f8fafc;
+	border-top: 1px solid #e3e6ea; color: #2563eb; font-weight: 600; font-size: 14px; text-decoration: none;
+}
+.instant-seeall:hover { background: #eef4ff; color: #1d4ed8; }
+</style>
+@endsection
+
 @section('content')
 {{-- @if(Auth::user() && !checkCSF()) {{ session(['message' => 'Hello! Can we have a minute of your time to answer our CSF form. Thank you!']); }} @endif --}}
 		@if (session('message'))
@@ -21,9 +51,15 @@
 					<input type="hidden" name="series_statement_id" value="0">
 					<input type="hidden" name="layout" value="grid">
 					<div id="custom-search-input">
+						<div class="instant-wrap">
 						<div class="input-group">
-							<input type="text" class="search-query" name="query" placeholder="Search a Material...">
+							<input type="text" class="search-query" name="query" placeholder="Search a Material..." autocomplete="off">
 							<input type="submit" class="btn_search" value="Search">
+						</div>
+						<div id="instant-results" class="instant-results" style="display:none;">
+							<div class="instant-list"></div>
+							<a href="#" class="instant-seeall"></a>
+						</div>
 						</div>
 						<br/>
 						<div class="form-check form-check-inline">
@@ -242,5 +278,99 @@
     });
 </script>
 @endif
+
+<script type="text/javascript">
+// OPAC instant search (search-as-you-type) -> /search/suggest -> Meilisearch
+(function () {
+	var $form   = $('#frm');
+	var $input  = $form.find('.search-query');
+	var $box    = $('#instant-results');
+	var $list   = $box.find('.instant-list');
+	var $seeall = $box.find('.instant-seeall');
+	var endpoint = "{{ url('/search/suggest') }}";
+	var timer = null, lastQ = null, activeIdx = -1;
+
+	function esc(s) { return $('<div>').text(s == null ? '' : String(s)).html(); }
+
+	function selectedType() {
+		var vals = $form.find('input[name="seachtype[]"]:checked').map(function () { return $(this).val(); }).get();
+		var specific = vals.filter(function (v) { return v !== '0'; });
+		// "All" checked, none, or multiple specific -> search across all types
+		return (vals.indexOf('0') !== -1 || specific.length !== 1) ? 0 : specific[0];
+	}
+
+	function open()  { $box.show(); }
+	function close() { $box.hide(); activeIdx = -1; }
+
+	function render(data) {
+		activeIdx = -1;
+		if (!data.hits || !data.hits.length) {
+			$list.html('<div class="instant-empty">No matches for &ldquo;' + esc(data.query) + '&rdquo;</div>');
+			$seeall.hide(); open(); return;
+		}
+		var html = '';
+		data.hits.forEach(function (h) {
+			html += '<a class="instant-row" href="' + esc(h.url) + '">'
+			     +    '<div class="instant-title">' + esc(h.title) + '</div>'
+			     +    '<div class="instant-meta">'
+			     +      (h.author ? esc(h.author) : '')
+			     +      (h.type ? '<span class="instant-type">' + esc(h.type) + '</span>' : '')
+			     +      (h.year ? '<span class="instant-year">' + esc(h.year) + '</span>' : '')
+			     +    '</div>'
+			     +  '</a>';
+		});
+		$list.html(html);
+		$seeall.text('See all ' + data.total + ' result' + (data.total == 1 ? '' : 's')).show();
+		open();
+	}
+
+	function run(q) {
+		$.getJSON(endpoint, { q: q, type: selectedType() })
+			.done(render)
+			.fail(function () { close(); });
+	}
+
+	$input.on('input', function () {
+		var q = $.trim($(this).val());
+		if (q === lastQ) return;
+		lastQ = q;
+		clearTimeout(timer);
+		if (q.length < 2) { close(); return; }
+		$list.html('<div class="instant-loading">Searching&hellip;</div>');
+		$seeall.hide(); open();
+		timer = setTimeout(function () { run(q); }, 160);
+	});
+
+	// Re-run when the material-type filter changes mid-search
+	$form.on('change', 'input[name="seachtype[]"]', function () {
+		var q = $.trim($input.val());
+		if (q.length >= 2) run(q);
+	});
+
+	// "See all N results" -> run the real search on /results
+	$seeall.on('click', function (e) { e.preventDefault(); $form.trigger('submit'); });
+
+	// Keyboard navigation
+	$input.on('keydown', function (e) {
+		if (e.key === 'Escape') { close(); return; }
+		var $rows = $list.find('.instant-row');
+		if (!$rows.length) return;
+		if (e.key === 'ArrowDown')      { e.preventDefault(); activeIdx = Math.min(activeIdx + 1, $rows.length - 1); }
+		else if (e.key === 'ArrowUp')   { e.preventDefault(); activeIdx = Math.max(activeIdx - 1, 0); }
+		else if (e.key === 'Enter' && activeIdx >= 0) { e.preventDefault(); window.location = $rows.eq(activeIdx).attr('href'); return; }
+		else return;
+		$rows.removeClass('active').eq(activeIdx).addClass('active');
+	});
+
+	$input.on('focus', function () {
+		if (lastQ && lastQ.length >= 2 && $list.children().length) open();
+	});
+
+	// Close on outside click
+	$(document).on('mousedown', function (e) {
+		if (!$(e.target).closest('.instant-wrap').length) close();
+	});
+})();
+</script>
 
 @endsection
