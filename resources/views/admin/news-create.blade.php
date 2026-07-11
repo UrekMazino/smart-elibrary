@@ -39,7 +39,7 @@
                       </div>
                       <div class="mb-3">
                           <label for="news_cover" class="form-label">Cover photo (500 x 500)</label>
-                          <input class="form-control" type="file" id="news_cover" name="news_cover">
+                          <input class="form-control" type="file" id="news_cover" name="news_cover" accept="image/jpeg,image/png,image/webp">
                       </div>
                       <label for="news_body" class="form-label">Body</label>
                       <textarea class="form-control" name="news_body" id="tinymceExample" rows="10"></textarea>

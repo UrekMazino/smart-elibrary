@@ -35,7 +35,7 @@ class NewsController extends Controller
         $request->validate([
             'news_title' => 'required|string|max:255',
             'news_body' => 'required|string',
-            'news_cover' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'news_cover' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:2048',
         ]);               
         $news = new News;
 
@@ -63,7 +63,7 @@ class NewsController extends Controller
         $request->validate([
             'news_title' => 'required|string|max:255',
             'news_body' => 'required|string',
-            'news_cover' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'news_cover' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:2048',
         ]);
         $article = News::findOrFail($id);
         $article->news_title = request()->news_title;

@@ -47,7 +47,7 @@
                     <div class="mb-3 row">
                       <div class="col-md-6 col-sm-12">
                           <label for="news_cover" class="form-label">Cover photo (500 x 500)</label>
-                          <input class="form-control" value="{{ $article->news_cover }}" type="file" id="news_cover" name="news_cover" onchange="previewImage(event)">
+                          <input class="form-control" value="{{ $article->news_cover }}" type="file" id="news_cover" name="news_cover" onchange="previewImage(event)" accept="image/jpeg,image/png,image/webp">
                           @error('news_cover')
                             <div class="invalid-feedback">{{ $message }}</div>
                           @enderror
