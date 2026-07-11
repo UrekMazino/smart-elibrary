@@ -4,8 +4,9 @@
 <style>
 .instant-wrap { position: relative; }
 .instant-results {
-	position: absolute; top: 100%; left: 0; right: 0; z-index: 1050;
-	margin-top: 6px; background: #fff; border: 1px solid #e3e6ea;
+	/* fixed so the hero's overflow:hidden can't clip it; JS sets top/left/width from the search bar */
+	position: fixed; z-index: 1050;
+	background: #fff; border: 1px solid #e3e6ea;
 	border-radius: 8px; box-shadow: 0 12px 32px rgba(0,0,0,.18);
 	overflow: hidden; text-align: left;
 }
@@ -299,7 +300,12 @@
 		return (vals.indexOf('0') !== -1 || specific.length !== 1) ? 0 : specific[0];
 	}
 
-	function open()  { $box.show(); }
+	function position() {
+		var el = $box.closest('.instant-wrap').find('.input-group')[0] || $input[0];
+		var r = el.getBoundingClientRect();
+		$box.css({ top: (r.bottom + 6) + 'px', left: r.left + 'px', width: r.width + 'px' });
+	}
+	function open()  { position(); $box.show(); }
 	function close() { $box.hide(); activeIdx = -1; }
 
 	function render(data) {
@@ -370,6 +376,9 @@
 	$(document).on('mousedown', function (e) {
 		if (!$(e.target).closest('.instant-wrap').length) close();
 	});
+
+	// Keep the (fixed) dropdown aligned to the search bar
+	$(window).on('scroll resize', function () { if ($box.is(':visible')) position(); });
 })();
 </script>
 
