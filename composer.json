@@ -13,7 +13,7 @@
         "laravel/sanctum": "^4.0",
         "laravel/scout": "^11.0",
         "laravel/tinker": "^3.0",
-        "meilisearch/meilisearch-php": "^0.23.2",
+        "meilisearch/meilisearch-php": "^1.16",
         "milon/barcode": "^13.0",
         "nyholm/psr7": "^1.5",
         "php-http/curl-client": "^2.2",

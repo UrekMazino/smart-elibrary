@@ -1,0 +1,20 @@
+# Meilisearch search engine for elibrary (Scout meilisearch driver).
+# Start:   docker compose up -d
+# Stop:    docker compose down       (data persists in the named volume)
+# The master key is read from this project's .env (MEILI_MASTER_KEY) so it is
+# never committed. Bound to 127.0.0.1 only — not exposed to the LAN.
+services:
+  meilisearch:
+    image: getmeili/meilisearch:v1.12
+    container_name: elibrary-meilisearch
+    environment:
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
+      MEILI_ENV: development
+    ports:
+      - "127.0.0.1:7700:7700"
+    volumes:
+      - meili_data:/meili_data
+    restart: unless-stopped
+
+volumes:
+  meili_data:

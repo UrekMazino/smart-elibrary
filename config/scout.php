@@ -137,6 +137,24 @@ return [
     'meilisearch' => [
         'host' => env('MEILISEARCH_HOST', 'http://localhost:7700'),
         'key' => env('MEILISEARCH_KEY', null),
+        'index-settings' => [
+            // Index name = table name (view_catalogs). These attributes back the
+            // ResultController search filters (->whereIn('material_type_id'),
+            // ->where('is_published'), ->where('deleted_at', null), pub_year range)
+            // and the ->orderBy('pub_year') sort.
+            'view_catalogs' => [
+                'filterableAttributes' => [
+                    'material_type_id',
+                    'is_published',
+                    'series_statement_id',
+                    'pub_year',
+                    'deleted_at',
+                ],
+                'sortableAttributes' => [
+                    'pub_year',
+                ],
+            ],
+        ],
     ],
 
 ];
