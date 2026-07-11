@@ -312,7 +312,7 @@ function copyCitation(id) {
 <script type="text/javascript" src="{{ asset('assets/js/cropper.min.js') }}"></script>
 <script> let pdfDefaultThumb = "{{ asset('assets/images/pdf-placeholder.jfif') }}";</script>
 <script> let copyTblUrl = "{{ url('/admin/copy-list-json') }}";</script>
-<script src="{{ asset('js/admin/catalog-view-record.js') }}"></script>
+<script src="{{ asset('js/admin/catalog-view-record.js') }}?v={{ filemtime(public_path('js/admin/catalog-view-record.js')) }}"></script>
 <script>
     $(document).ready(function(){
         let searchValue = "";
