@@ -3,6 +3,19 @@
 @section('css')
     <!-- SPECIFIC CSS -->
     <link href="{{ asset('opac/css/date_picker.css') }}" rel="stylesheet">
+    <style>
+    .ol-list-row { display: flex; gap: 18px; padding: 16px 4px; border-bottom: 1px solid #e7e7e7; align-items: flex-start; }
+    .ol-list-cover { flex-shrink: 0; width: 75px; text-align: center; }
+    .ol-list-cover img { max-width: 75px; max-height: 105px; width: auto; box-shadow: 0 1px 5px rgba(0,0,0,.2); border-radius: 2px; }
+    .ol-list-body { flex: 1; min-width: 0; }
+    .ol-list-title { display: inline-block; font-size: 18px; font-weight: 600; line-height: 1.25; color: #0176d3; text-decoration: none; }
+    .ol-list-title:hover { text-decoration: underline; }
+    .ol-list-author { color: #555; font-size: 14px; margin-top: 2px; }
+    .ol-list-meta { color: #8a8a8a; font-size: 13px; margin-top: 4px; }
+    .ol-list-actions { flex-shrink: 0; align-self: center; }
+    .ol-list-actions .btn_1 { font-size: 12px; padding: 5px 14px; white-space: nowrap; }
+    @media (max-width: 575px) { .ol-list-actions { display: none; } }
+    </style>
  @endsection
 
 @section('content')
@@ -68,34 +81,28 @@
 						<h3 class="alert alert-info">Results for series : "{{ getSeriesDesc($_GET['series_statement_id']) }}"</h3>
 					@endif
 				@endif
-				<div class="row">
+				<div class="ol-list">
 					@foreach($result AS $results)
-					<div class="col-md-12">
-						<div class="strip_list wow fadeIn">
-							<figure>
-								{!! getThumbnailResult($results->catalog_id) !!}
-							</figure>
-							<small>{{ $results->material }}</small>
-							<h5>{{ maxTitle($results->title_statement,200)  }}</h5>
-							<span class="text-muted">{{ $results->joint_authors }}</span><br>
-
-							{!! pubYear($results->pub_year) !!}
-							
-							@if($results->edition != '' && $results->edition != null)
-									<b>Edition : </b> {{ formatText($results->edition) }}<br/>
-								@endif
-							<div class="rating">
-									<i data-star="{{ $ave = starRatingAve($results->catalog_id) }}"></i>
+					<div class="ol-list-row">
+						<a href="#0" class="ol-list-cover" onclick="submitFrm('{{ $results->catalog_id }}')">
+							{!! getThumbnailResult($results->catalog_id) !!}
+						</a>
+						<div class="ol-list-body">
+							<a href="#0" class="ol-list-title" onclick="submitFrm('{{ $results->catalog_id }}')">{{ maxTitle($results->title_statement,200) }}</a>
+							@if($results->joint_authors)
+								<div class="ol-list-author">by {{ trim(explode('/', $results->joint_authors)[0]) }}</div>
+							@endif
+							<div class="ol-list-meta">
+								@if($results->material){{ $results->material }}@endif
+								@if($results->pub_year) &middot; {{ $results->pub_year }}@endif
+								@if($results->edition != '' && $results->edition != null) &middot; {{ formatText($results->edition) }} ed.@endif
 							</div>
-							<br/>
-							<p align="right"><a href="#0" type="button" class="btn_1" onclick="submitFrm('{{ $results->catalog_id }}')">Full description</a></p>
+						</div>
+						<div class="ol-list-actions">
+							<a href="#0" class="btn_1" onclick="submitFrm('{{ $results->catalog_id }}')">Full description</a>
 						</div>
 					</div>
-
 					@endforeach
-					<!-- /box_list -->
-
-					
 				</div>
 				<!-- /row -->
 
