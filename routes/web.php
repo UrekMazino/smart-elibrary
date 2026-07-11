@@ -30,7 +30,7 @@ use App\Http\Controllers\HomeController;
 // Route::get('/dashboard', function () {
 //     return view('admin.index');
 // })->middleware(['auth'])->name('dashboard');
-Route::get('/admin/login', [HomeController::class, 'adminLogin']);
+Route::redirect('/admin/login', '/login');
 Route::get('/home', [HomeController::class, 'index']);
 Route::get('/', [HomeController::class, 'index2']);
 
