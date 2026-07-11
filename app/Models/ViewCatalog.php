@@ -52,6 +52,9 @@ class ViewCatalog extends Model
             'issn' => $this->issn,
             'accession_number' => $this->accession_number,
             'title_statement' => $this->title_statement,
+            'joint_authors' => $this->joint_authors,
+            'summary' => $this->summary,
+            'call_number' => $this->call_number,
             'material_type' => $this->material_type,
             'pub_year' => $this->pub_year,
             // filter/sort fields used by ResultController's Scout filters:

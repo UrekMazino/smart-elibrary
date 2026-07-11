@@ -53,6 +53,7 @@ require __DIR__.'/annarose.php';
 use App\Http\Controllers\ResultController;
 //Route::post('/results', [ResultController::class, 'index']);
 Route::get('/results', [ResultController::class, 'index']);
+Route::get('/search/suggest', [ResultController::class, 'suggest']);   // instant-search JSON (OPAC overlay)
 
 
 

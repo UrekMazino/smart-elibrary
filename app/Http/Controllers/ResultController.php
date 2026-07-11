@@ -80,6 +80,50 @@ class ResultController extends Controller
             return view('opac.search-result-grid', ['result' => $result, 'layout' => 'grid', 'search_type' => $searhType]);
     }
 
+    /**
+     * Instant-search JSON endpoint for the OPAC search-as-you-type overlay.
+     * Meilisearch stays private; the browser only ever talks to this route.
+     */
+    public function suggest(Request $request)
+    {
+        $q = trim((string) $request->input('q', ''));
+
+        if($q === '')
+        {
+            return response()->json(['query' => '', 'total' => 0, 'hits' => []]);
+        }
+
+        $type = $request->input('type');   // material_type_id, or null / 0 = all types
+
+        $builder = App\Models\ViewCatalog::search($q)
+            ->where('is_published', 1)
+            ->where('deleted_at', null);
+
+        if($type !== null && $type != 0)
+        {
+            $builder->where('material_type_id', (int) $type);
+        }
+
+        $page = $builder->paginate(8);   // one query -> top hits + total
+
+        $hits = collect($page->items())->map(function ($m) {
+            return [
+                'catalog_id' => $m->catalog_id,
+                'title'      => $m->title_statement,
+                'author'     => $m->joint_authors,
+                'year'       => $m->pub_year,
+                'type'       => $m->material_type,
+                'url'        => url('/full-description/' . $m->catalog_id),
+            ];
+        })->values();
+
+        return response()->json([
+            'query' => $q,
+            'total' => $page->total(),
+            'hits'  => $hits,
+        ]);
+    }
+
     public function search()
     {
         $result = App\Models\ViewCatalog::search('Banana')->paginate(10);

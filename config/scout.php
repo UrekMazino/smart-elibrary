@@ -143,6 +143,17 @@ return [
             // ->where('is_published'), ->where('deleted_at', null), pub_year range)
             // and the ->orderBy('pub_year') sort.
             'view_catalogs' => [
+                // Search priority order (earlier = higher relevance weight).
+                'searchableAttributes' => [
+                    'title_statement',
+                    'joint_authors',
+                    'summary',
+                    'call_number',
+                    'isbn',
+                    'issn',
+                    'accession_number',
+                    'material_type',
+                ],
                 'filterableAttributes' => [
                     'material_type_id',
                     'is_published',
