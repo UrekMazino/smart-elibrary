@@ -99,7 +99,7 @@
 						<div class="box_list wow fadeIn">
 							<figure>
 								
-								{!! getFrontpageResult($results->catalog_id) !!}
+								{!! getThumbnailResult($results->catalog_id) !!}
 								</a>
 							</figure>
 							<div class="wrapper">

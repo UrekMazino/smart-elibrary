@@ -12,8 +12,10 @@
 }
 .instant-list { max-height: 380px; overflow-y: auto; }
 .instant-row {
-	display: block; padding: 10px 16px; border-bottom: 1px solid #f0f2f4; color: #222; text-decoration: none;
+	display: flex; align-items: flex-start; gap: 10px; padding: 10px 16px; border-bottom: 1px solid #f0f2f4; color: #222; text-decoration: none;
 }
+.instant-thumb { width: 40px; height: 54px; object-fit: cover; border-radius: 3px; flex-shrink: 0; background: #eef2f7; border: 1px solid #eceef1; }
+.instant-text { flex: 1; min-width: 0; }
 .instant-row:last-child { border-bottom: 0; }
 .instant-row:hover, .instant-row.active { background: #f5f8ff; }
 .instant-title { font-size: 15px; font-weight: 600; line-height: 1.3; color: #1a2b4a; }
@@ -319,11 +321,14 @@
 		var html = '';
 		data.hits.forEach(function (h) {
 			html += '<a class="instant-row" href="' + esc(h.url) + '">'
-			     +    '<div class="instant-title">' + esc(h.title) + '</div>'
-			     +    '<div class="instant-meta">'
-			     +      (h.author ? esc(h.author) : '')
-			     +      (h.type ? '<span class="instant-type">' + esc(h.type) + '</span>' : '')
-			     +      (h.year ? '<span class="instant-year">' + esc(h.year) + '</span>' : '')
+			     +    (h.thumb ? '<img class="instant-thumb" src="' + esc(h.thumb) + '" alt="">' : '')
+			     +    '<div class="instant-text">'
+			     +      '<div class="instant-title">' + esc(h.title) + '</div>'
+			     +      '<div class="instant-meta">'
+			     +        (h.author ? esc(h.author) : '')
+			     +        (h.type ? '<span class="instant-type">' + esc(h.type) + '</span>' : '')
+			     +        (h.year ? '<span class="instant-year">' + esc(h.year) + '</span>' : '')
+			     +      '</div>'
 			     +    '</div>'
 			     +  '</a>';
 		});

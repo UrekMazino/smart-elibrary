@@ -113,6 +113,7 @@ class ResultController extends Controller
                 'author'     => $m->joint_authors,
                 'year'       => $m->pub_year,
                 'type'       => $m->material_type,
+                'thumb'      => getThumbnailLink($m->catalog_id),
                 'url'        => url('/full-description/' . $m->catalog_id),
             ];
         })->values();

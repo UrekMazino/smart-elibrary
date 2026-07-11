@@ -73,7 +73,7 @@
 					<div class="col-md-12">
 						<div class="strip_list wow fadeIn">
 							<figure>
-								{!! getFrontpageResult($results->catalog_id) !!}
+								{!! getThumbnailResult($results->catalog_id) !!}
 							</figure>
 							<small>{{ $results->material }}</small>
 							<h5>{{ maxTitle($results->title_statement,200)  }}</h5>

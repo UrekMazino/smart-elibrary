@@ -350,6 +350,24 @@ function getThumbnailResult($catalog_id)
 	return '<img src="'.url('/')."/".$url.'" class="img-fluid" alt="">';
 }
 
+/**
+ * URL (string) of a catalog's cover thumbnail, falling back to the full cover,
+ * then no-preview. Used by the instant-search JSON endpoint.
+ */
+function getThumbnailLink($catalog_id)
+{
+	$img = App\Models\Frontpage::where('catalog_id',$catalog_id)->first();
+
+	if ($img && $img['FrontPageLocation']) {
+		$thumb = 'thumb/'.basename($img['FrontPageLocation']);
+		$url = file_exists(public_path($thumb)) ? $thumb : $img['FrontPageLocation'];
+	} else {
+		$url = 'frontpages/no-preview.jpg';
+	}
+
+	return url('/')."/".$url;
+}
+
 function getFrontpageLink($catalog_id)
 {
 	$img = App\Models\Frontpage::where('catalog_id',$catalog_id)->first();
