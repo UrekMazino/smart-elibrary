@@ -18,7 +18,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-baseline mb-4 mb-md-3">
                         <h6 class="card-title mb-0">NEWS ARTICLE</h6>
-                    
+
                         <button type="submit" class="btn p-2 btn-primary" onclick="saveArticle()">
                           <i class="icon-lg pb-3px text-white" data-feather="save"> </i> SAVE &nbsp&nbsp
                         </button>
@@ -38,7 +38,7 @@
                         <input type="text" class="form-control" id="news_url" name="news_url" placeholder="e.g https://fprdi.dost.gov.ph/">
                       </div>
                       <div class="mb-3">
-                          <label for="news_cover" class="form-label">Cover photo (500 x 500)</label>
+                          <label for="news_cover" class="form-label">Cover photo</label>
                           <input class="form-control" type="file" id="news_cover" name="news_cover" accept="image/jpeg,image/png,image/webp">
                       </div>
                       <label for="news_body" class="form-label">Body</label>
@@ -88,7 +88,7 @@ $(function() {
       content_css: []
     });
   }
-  
+
 });
 
 
@@ -105,7 +105,7 @@ function saveArticle()
       reverseButtons: true
     }).then((result) => {
       if (result.value) {
-        $("#modalSaving").modal("toggle"); 
+        $("#modalSaving").modal("toggle");
         $('#frm_news').submit();
       } else if (
         // Read more about handling dismissals
