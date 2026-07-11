@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 use Illuminate\Http\Request;
-use MeiliSearch\Client;
 use App;
 use Auth;
 
@@ -11,127 +10,74 @@ class ResultController extends Controller
 
     public function index(Request $request)
     {
-        // $client = new Client('http://127.0.0.1:7700', 'pwd123');
-        // $client->index('view_holdings')->updateFilterableAttributes(['consortia','title_statement','summary','material_type_id']);
         if(Auth::check() && Auth::user()->usertype == 'Administrator')
-        {  
+        {
             return redirect('/admin/dashboard');
         }
 
-        if($request['series_statement_id'] != 0)
+        // The OPAC search form may omit any of these keys — guard them all so a
+        // partial/empty submission returns results instead of a 500.
+        $query     = $request->input('query');                       // null when absent
+        $layout    = $request->input('layout', 'grid');
+        $seriesId  = $request->input('series_statement_id', 0);
+        $seachtype = (array) $request->input('seachtype', ['0']);    // always an array
+        $searhType = $seachtype;                                     // passed to the view
+        $allTypes  = count($seachtype) == 1 && $seachtype[0] == 0;   // "0" = all material types
+
+        if($seriesId != 0)
         {
-            $result = App\Models\ViewCatalog::where('series_statement_id',$request['series_statement_id'])->orderBy('pub_year','DESC')->where('deleted_at',null)->where('is_published', 1)->paginate(12);
-            // $result->index('view_holdings')->where('series_statement_id',$request['series_statement_id'])->paginate(12);
+            // Browse by series
+            $result = App\Models\ViewCatalog::where('series_statement_id', $seriesId)
+                ->where('deleted_at', null)->where('is_published', 1)
+                ->orderBy('pub_year', 'DESC')->paginate(12);
+        }
+        elseif($request->has('seachtype') && $request->has('year1'))
+        {
+            // Type/year filtered search (year filtering itself was never wired up upstream)
+            $builder = App\Models\ViewCatalog::search($query ?? '');
+            if(! $allTypes)
+            {
+                count($seachtype) == 1
+                    ? $builder->where('material_type_id', $seachtype[0])
+                    : $builder->whereIn('material_type_id', $seachtype);
+            }
+            $result = $builder->where('deleted_at', null)->where('is_published', 1)
+                ->orderBy('pub_year', 'DESC')->paginate(12);
+        }
+        elseif(isset($query) && $query !== '')
+        {
+            // Keyword search (optionally narrowed by material type)
+            $builder = App\Models\ViewCatalog::search($query);
+            if(! $allTypes)
+            {
+                $builder->whereIn('material_type_id', $seachtype);
+            }
+            $result = $builder->where('deleted_at', null)->where('is_published', 1)
+                ->orderBy('pub_year', 'DESC')->paginate(12);
         }
         else
         {
-            if(false)
-            {
-                $searhType = $request['seachtype'];
-                if(count($request['seachtype']) == '1')
-                {
-                    if($request['seachtype'][0] == 0)
-                        if($request['year1'] == $request['year2'])
-                            if(isset($request['query']) || $request['query'] == '')
-                                $result = App\Models\ViewCatalog::search($request['query'])->where('deleted_at',null)->where('pub_year',$request['year1'] )->where('is_published', 1)->orderBy('pub_year','DESC')->paginate(12);
-                            else
-                                $result = App\Models\ViewCatalog::where('deleted_at',null)->where('pub_year',$request['year1'] )->where('is_published', 1)->orderBy('pub_year','DESC')->paginate(12);
-                        else
-                            if(isset($request['query']) || $request['query'] == '')
-                                $result = App\Models\ViewCatalog::search($request['query'])->where('deleted_at',null)->where('pub_year','>=',$request['year1'])->where('pub_year','<=',$request['year2'])->where('is_published', 1)->orderBy('pub_year','DESC')->paginate(12);
-                            else
-                                $result = App\Models\ViewCatalog::where('deleted_at',null)->where('pub_year','>=',$request['year1'])->where('pub_year','<=',$request['year2'])->where('is_published', 1)->orderBy('pub_year','DESC')->paginate(12);
-                    else
-                        if($request['year1'] == $request['year2'])
-                            if(isset($request['query']) || $request['query'] == '')
-                                $result = App\Models\ViewCatalog::search($request['query'])->where('material_type_id',$request['seachtype'][0])->where('deleted_at',null)->where('pub_year',$request['year1'] )->where('is_published', 1)->orderBy('pub_year','DESC')->paginate(12);
-                            else
-                                $result = App\Models\ViewCatalog::where('material_type_id',$request['seachtype'][0])->where('deleted_at',null)->where('pub_year',$request['year1'] )->where('is_published', 1)->orderBy('pub_year','DESC')->paginate(12);
-                        else
-                            if(isset($request['query']) || $request['query'] == '')
-                                $result = App\Models\ViewCatalog::search($request['query'])->where('material_type_id',$request['seachtype'][0])->where('deleted_at',null)->where('pub_year','>=',$request['year1'])->where('pub_year','<=',$request['year2'])->where('is_published', 1)->orderBy('pub_year','DESC')->paginate(12);
-                            else
-                                $result = App\Models\ViewCatalog::where('material_type_id',$request['seachtype'][0])->where('deleted_at',null)->where('pub_year','>=',$request['year1'])->where('pub_year','<=',$request['year2'])->where('is_published', 1)->orderBy('pub_year','DESC')->paginate(12);
-                }
-                else
-                {
-                    if(isset($request['query']) || $request['query'] == '')
-                        $result = App\Models\ViewCatalog::search($request['query'])->whereIn('material_type_id',$request['seachtype'])->where('deleted_at',null)->where('is_published', 1)->orderBy('pub_year','DESC')->paginate(12);
-                    else
-                        $result = App\Models\ViewCatalog::whereIn('material_type_id',$request['seachtype'])->where('deleted_at',null)->where('is_published', 1)->orderBy('pub_year','DESC')->paginate(12);
-                    // $result->index('view_holdings')->search($request['query'])->whereIn('material_type_id',$request['seachtype'])->paginate(12);
-                }
-            }
-            elseif(isset($request['seachtype']) && isset($request['year1']))
-            {
-                $searhType = $request['seachtype'];
-                if(count($request['seachtype']) == '1')
-                {
-                    if($request['seachtype'][0] == 0)
-                        if(isset($request['query']) || $request['query'] == '')
-                            $result = App\Models\ViewCatalog::search($request['query'])->where('deleted_at',null)->where('is_published', 1)->orderBy('pub_year','DESC')->paginate(12);
-                        else
-                            $result = App\Models\ViewCatalog::where('deleted_at',null)->where('is_published', 1)->orderBy('pub_year','DESC')->paginate(12);
-                        // $result->index('view_holdings')->search($request['query'])->paginate(12);
-                    else
-                        if(isset($request['query']) || $request['query'] == '')
-                            $result = App\Models\ViewCatalog::search($request['query'])->where('material_type_id',$request['seachtype'][0])->where('deleted_at',null)->where('is_published', 1)->orderBy('pub_year','DESC')->paginate(12);
-                        else
-                            $result = App\Models\ViewCatalog::where('material_type_id',$request['seachtype'][0])->where('deleted_at',null)->where('is_published', 1)->orderBy('pub_year','DESC')->paginate(12);
-                        // $result->index('view_holdings')->search($request['query'])->where('material_type_id',$request['seachtype'][0])->paginate(12);
-                }
-                else
-                {
-                    if(isset($request['query']) || $request['query'] == '')
-                        $result = App\Models\ViewCatalog::search($request['query'])->whereIn('material_type_id',$request['seachtype'])->where('deleted_at',null)->where('is_published', 1)->orderBy('pub_year','DESC')->paginate(12);
-                    else
-                        $result = App\Models\ViewCatalog::whereIn('material_type_id',$request['seachtype'])->where('deleted_at',null)->where('is_published', 1)->orderBy('pub_year','DESC')->paginate(12);
-                    // $result->index('view_holdings')->search($request['query'])->whereIn('material_type_id',$request['seachtype'])->paginate(12);
-                }
-            }
-            else
-            {
-
-                // dd($request['seachtype']);
-                $searhType = isset($request['seachtype']) ? $request['seachtype'] : ["0"];
-                if(isset($request['query']))
-                {
-                    $ctr = count($request['seachtype']);
-                    if($ctr == 1)
-                    {
-                        if($request['seachtype'][0] == '0')
-                        {
-                            $result = App\Models\ViewCatalog::search($request['query'])->where('deleted_at',null)->where('is_published', 1)->orderBy('pub_year','DESC')->paginate(12);
-                        }
-                        else 
-                        {
-                            $result = App\Models\ViewCatalog::search($request['query'])->whereIn('material_type_id',$request['seachtype'])->where('deleted_at',null)->where('is_published', 1)->orderBy('pub_year','DESC')->paginate(12);
-                        }
-
-                    }
-                    else
-                    {
-                        $result = App\Models\ViewCatalog::search($request['query'])->whereIn('material_type_id',$request['seachtype'])->where('deleted_at',null)->where('is_published', 1)->orderBy('pub_year','DESC')->paginate(12);
-                    }
-             
-                }                    
-                elseif($request['query'] == '')
-                {
-                    $result = App\Models\ViewCatalog::whereIn('material_type_id',$request['seachtype'])->where('deleted_at',null)->where('is_published', 1)->orderBy('pub_year','DESC')->paginate(12);
-                }
-                else
-                {
-                    $result = App\Models\ViewCatalog::search($request['query'])->whereIn('material_type_id',$request['seachtype'])->where('deleted_at',null)->where('is_published', 1)->orderBy('pub_year','DESC')->paginate(12);
-                }
-                    
-            }
+            // No keyword: list by material type
+            $result = App\Models\ViewCatalog::whereIn('material_type_id', $seachtype)
+                ->where('deleted_at', null)->where('is_published', 1)
+                ->orderBy('pub_year', 'DESC')->paginate(12);
         }
 
-        if($request['layout'] == 'list')
-            return view('opac.search-result-list',['result' => $result,'layout' => 'list', 'search_type' => $searhType ]);
-        else
-            return view('opac.search-result-grid',['result' => $result,'layout' => 'grid', 'search_type' => $searhType ]);
+        // The result Blade views read these keys straight from $_GET; guarantee
+        // they exist (the union operator preserves any values actually submitted)
+        // so a partial submission never throws "Undefined array key" while rendering.
+        $_GET += [
+            'query'               => $query ?? '',
+            'seachtype'           => $seachtype,
+            'series_statement_id' => $seriesId,
+            'layout'              => $layout,
+            'page'                => $request->input('page', 1),
+        ];
 
+        if($layout == 'list')
+            return view('opac.search-result-list', ['result' => $result, 'layout' => 'list', 'search_type' => $searhType]);
+        else
+            return view('opac.search-result-grid', ['result' => $result, 'layout' => 'grid', 'search_type' => $searhType]);
     }
 
     public function search()
