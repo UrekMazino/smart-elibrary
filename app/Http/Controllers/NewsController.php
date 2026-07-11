@@ -40,12 +40,12 @@ class NewsController extends Controller
         $news = new News;
 
         if ($request->hasFile('news_cover')) {
-            //COVER PHOTO
-            $news_cover = request()->file('news_cover')->store(
-                'news_cover', 'public'
-            );
-
-            $news->news_cover = $news_cover;
+            //COVER PHOTO -> store under public/news_cover (where it is served from) + thumbnail
+            $file = $request->file('news_cover');
+            $coverName = 'news-'.uniqid().'.'.$file->getClientOriginalExtension();
+            $file->move(public_path('news_cover'), $coverName);
+            $news->news_cover = 'news_cover/'.$coverName;
+            makeThumbnail(public_path('news_cover/'.$coverName), public_path('thumb/'.$coverName));
         }
 
         $news->news_title = request()->news_title;
@@ -74,10 +74,12 @@ class NewsController extends Controller
         
         // Check if a new cover image has been uploaded
         if ($request->hasFile('news_cover')) {
-            // Handle the file upload and save the new cover image path
+            // Store under public/news_cover (where it is served from) + thumbnail
             $file = $request->file('news_cover');
-            $path = $file->store('news_cover', 'public'); // Store in the 'public/news_cover' directory
-            $article->news_cover = $path;
+            $coverName = 'news-'.uniqid().'.'.$file->getClientOriginalExtension();
+            $file->move(public_path('news_cover'), $coverName);
+            $article->news_cover = 'news_cover/'.$coverName;
+            makeThumbnail(public_path('news_cover/'.$coverName), public_path('thumb/'.$coverName));
         }
 
         $article->save();
