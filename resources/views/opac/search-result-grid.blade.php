@@ -14,7 +14,7 @@
     <!-- SPECIFIC CSS -->
     <link href="{{ asset('opac/css/date_picker.css') }}" rel="stylesheet">
     <style>
-    .ol-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 24px 14px; }
+    .ol-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(125px, 1fr)); gap: 38px 30px; }
     .ol-card { text-align: center; min-width: 0; }
     .ol-card .ol-cover { display: flex; align-items: flex-end; justify-content: center; height: 165px; }
     .ol-card .ol-cover img { max-height: 165px; max-width: 100%; width: auto; box-shadow: 0 1px 6px rgba(0,0,0,.22); border-radius: 2px; }

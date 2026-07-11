@@ -11,6 +11,7 @@
     .ol-list-title { display: inline-block; font-size: 18px; font-weight: 600; line-height: 1.25; color: #0176d3; text-decoration: none; }
     .ol-list-title:hover { text-decoration: underline; }
     .ol-list-author { color: #555; font-size: 14px; margin-top: 2px; }
+    .ol-list-rating { margin-top: 5px; }
     .ol-list-meta { color: #8a8a8a; font-size: 13px; margin-top: 4px; }
     .ol-list-actions { flex-shrink: 0; align-self: center; }
     .ol-list-actions .btn_1 { font-size: 12px; padding: 5px 14px; white-space: nowrap; }
@@ -92,6 +93,9 @@
 							@if($results->joint_authors)
 								<div class="ol-list-author">by {{ trim(explode('/', $results->joint_authors)[0]) }}</div>
 							@endif
+							<div class="ol-list-rating rating">
+								<i data-star="{{ $ave = starRatingAve($results->catalog_id) }}"></i>
+							</div>
 							<div class="ol-list-meta">
 								@if($results->material){{ $results->material }}@endif
 								@if($results->pub_year) &middot; {{ $results->pub_year }}@endif
