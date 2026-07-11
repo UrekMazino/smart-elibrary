@@ -25,7 +25,7 @@
 								@if($news->news_cover)
 									<a href="#0"><img src="{{ url('/'.$news->news_cover) }}" alt=""></a>
 								@else
-									<a href="#0"><img src="http://via.placeholder.com/160x160.jpg" alt=""></a>
+									<a href="#0"><img src="{{ url('/frontpages/no-preview.jpg') }}" alt=""></a>
 								@endif
 							</div>
 							<small>{{ date('Y-m-d',strtotime($news->created_at)) }}</small>

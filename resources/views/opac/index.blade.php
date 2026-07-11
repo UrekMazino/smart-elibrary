@@ -206,7 +206,7 @@
 												@if($news->news_cover)
 													<a href="{{ $news->redirect_url ?? '#' }}"><img src="{{ url('/'.$news->news_cover) }}" alt=""></a>
 												@else
-													<a href="#"><img src="http://via.placeholder.com/160x160.jpg" alt=""></a>
+													<a href="#"><img src="{{ url('/frontpages/no-preview.jpg') }}" alt=""></a>
 												@endif
 											</div>
 											<small>{{ \Carbon\Carbon::parse($news->created_at)->diffForHumans() }}</small>

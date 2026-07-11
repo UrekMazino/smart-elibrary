@@ -1,6 +1,7 @@
 /node_modules
 /public/hot
-/public/frontpages
+/public/frontpages/*
+!/public/frontpages/no-preview.jpg
 /public/fullpage
 /public/news_cover
 /public/pdf
