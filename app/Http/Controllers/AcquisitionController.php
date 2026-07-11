@@ -328,6 +328,7 @@ class AcquisitionController extends Controller
             $coverName = 'cp-'.uniqid().'.'.request()->file('formCover')->getClientOriginalExtension();
             request()->file('formCover')->move(public_path('frontpages'), $coverName);
             $frontpage_path = 'frontpages/'.$coverName;
+            makeThumbnail(public_path('frontpages/'.$coverName), public_path('thumb/'.$coverName));
 
             $frontpage = new App\Models\Frontpage;
             $frontpage->catalog_id  = $holding->id;
@@ -679,6 +680,7 @@ class AcquisitionController extends Controller
              $coverName = 'cp-'.uniqid().'.'.request()->file('formCover')->getClientOriginalExtension();
              request()->file('formCover')->move(public_path('frontpages'), $coverName);
              $frontpage_path = 'frontpages/'.$coverName;
+             makeThumbnail(public_path('frontpages/'.$coverName), public_path('thumb/'.$coverName));
 
      
              $frontpage = new App\Models\Frontpage;

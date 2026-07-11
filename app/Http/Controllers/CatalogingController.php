@@ -2208,6 +2208,9 @@ class CatalogingController extends Controller
             // Store directly under public/frontpages (where getFrontpageResult serves from).
             $uploadedFile->move(public_path('frontpages'), $newFileName);
 
+            // Also generate a thumbnail copy under public/thumb (same filename).
+            makeThumbnail(public_path('frontpages/'.$newFileName), public_path('thumb/'.$newFileName));
+
             $coverPage = Frontpage::where('catalog_id', $request->catalog_id)->where('deleted_at', null)->first();
 
             if(is_null($coverPage)) {

@@ -288,6 +288,68 @@ function getFrontpageResult($catalog_id)
 	return '<img src="'.url('/')."/".$url.'" class="img-fluid" alt="">';
 }
 
+/**
+ * Create a downscaled thumbnail copy of an image (JPG/PNG/WEBP).
+ * Scales down to $maxWidth (never upscales), preserving aspect ratio + transparency.
+ */
+function makeThumbnail($sourcePath, $destPath, $maxWidth = 250)
+{
+	if (!extension_loaded('gd') || !file_exists($sourcePath)) return false;
+	$info = @getimagesize($sourcePath);
+	if (!$info) return false;
+	[$w, $h] = $info;
+
+	switch ($info['mime']) {
+		case 'image/jpeg': $src = @imagecreatefromjpeg($sourcePath); break;
+		case 'image/png':  $src = @imagecreatefrompng($sourcePath); break;
+		case 'image/webp': $src = @imagecreatefromwebp($sourcePath); break;
+		default: return false;
+	}
+	if (!$src) return false;
+
+	if ($w > $maxWidth) {
+		$nw = $maxWidth;
+		$nh = (int) round($h * ($maxWidth / $w));
+	} else {
+		$nw = $w; $nh = $h;   // don't upscale
+	}
+
+	$thumb = imagecreatetruecolor($nw, $nh);
+	if ($info['mime'] === 'image/png' || $info['mime'] === 'image/webp') {
+		imagealphablending($thumb, false);
+		imagesavealpha($thumb, true);
+	}
+	imagecopyresampled($thumb, $src, 0, 0, 0, 0, $nw, $nh, $w, $h);
+
+	if (!is_dir(dirname($destPath))) @mkdir(dirname($destPath), 0775, true);
+	switch ($info['mime']) {
+		case 'image/jpeg': imagejpeg($thumb, $destPath, 85); break;
+		case 'image/png':  imagepng($thumb, $destPath, 6); break;
+		case 'image/webp': imagewebp($thumb, $destPath, 85); break;
+	}
+	imagedestroy($src);
+	imagedestroy($thumb);
+	return true;
+}
+
+/**
+ * <img> for a catalog's cover thumbnail (public/thumb), falling back to the
+ * full cover, then the no-preview placeholder.
+ */
+function getThumbnailResult($catalog_id)
+{
+	$img = App\Models\Frontpage::where('catalog_id',$catalog_id)->first();
+
+	if ($img && $img['FrontPageLocation']) {
+		$thumb = 'thumb/'.basename($img['FrontPageLocation']);
+		$url = file_exists(public_path($thumb)) ? $thumb : $img['FrontPageLocation'];
+	} else {
+		$url = 'frontpages/no-preview.jpg';
+	}
+
+	return '<img src="'.url('/')."/".$url.'" class="img-fluid" alt="">';
+}
+
 function getFrontpageLink($catalog_id)
 {
 	$img = App\Models\Frontpage::where('catalog_id',$catalog_id)->first();
