@@ -54,8 +54,11 @@ class ViewCatalog extends Model
             'title_statement' => $this->title_statement,
             'material_type' => $this->material_type,
             'pub_year' => $this->pub_year,
-            // 'publisher' => $this->publisher,
-            // 'joint_authors' => $this->joint_authors,
+            // filter/sort fields used by ResultController's Scout filters:
+            'material_type_id'    => $this->material_type_id,
+            'is_published'        => (int) $this->is_published,
+            'series_statement_id' => $this->series_statement_id,
+            'deleted_at'          => $this->deleted_at,   // -> "deleted_at IS NULL" filter
         ];
     }
 }
