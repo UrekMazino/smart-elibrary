@@ -53,7 +53,9 @@ class CatalogingController extends Controller
      
         $fullText = Multimedia::where('catalog_id',$request->catalog_id)->whereNull('deleted_at')->first();
 
-       return view('admin.catalog-view-record', ['record' => $record, 'fullText' => $fullText, 'coverPage' => $coverPage, 'title' => $request->title, 'totalCopies' => $totalCopies]);
+        $citations = buildCitations(\App\Models\ViewCatalog::where('catalog_id',$request->catalog_id)->first());
+
+       return view('admin.catalog-view-record', ['record' => $record, 'fullText' => $fullText, 'coverPage' => $coverPage, 'title' => $request->title, 'totalCopies' => $totalCopies, 'citations' => $citations]);
     }
 
     public function viewBatch(Request $request)

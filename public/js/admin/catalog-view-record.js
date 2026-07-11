@@ -88,67 +88,6 @@ $(document).ready(function(){
 
 
 
-    // CITATION TAB
-    let citationDiv = $('#citation');
-    
-    // const citationData = {
-    //     wiki:'WikiXXX',
-    //     author: "Wikidata",
-    //     title: title,
-    //     issued: "2023",
-    //     url: "https://www.wikidata.org/w/index.php?title=Q21972834&oldid=1903305773",
-    //     note: "[Online; accessed 29-August-2023]"
-    // };
-
-    const citationData = [
-        {
-            id: 'a', 
-            title: title, 
-            issued: {'date-parts': [[2016]]},
-            DOI: '11.43421/doi.1005176',
-        }
-    ]
-    const Cite = require('citation-js')
-    const citation = new Cite(citationData);
-    
-    const apaCitation = citation.format('bibliography', { format: 'rtf', template: 'apa', lang: 'en-US' });
-
-    const mlaCitation = citation.format('citation', { format: 'html', template: 'modern-language-association', lang: 'en-US' });
-
-    let citationDivData = [
-        { 
-            'field' : 'APA',
-            'value' : apaCitation
-        },
-        { 
-            'field' : 'MLA',
-            'value' : mlaCitation
-        },
-
-    ];
-
-    citationDivData.forEach(function(entry) {
-
-        let rowDiv = $('<div class="row mb-1"></div>');
-
-        let rowClass = isEven ? 'even-row' : 'odd-row';
-        rowDiv.addClass(rowClass);
-
-        let col1Div = $('<div class="p-2 col-lg-4 col-md-4 col-sm-12 text-left"></div>');
-        col1Div.html('<strong>' + entry.field  + '</strong>');
-        rowDiv.append(col1Div);
-
-        let col2Div = $('<div class="p-2 col-lg-8 col-md-8 col-sm-12 text-left"></div>');
-
-        let subfieldValues = entry.value;
-
-        col2Div.html(subfieldValues);
-        rowDiv.append(col2Div);
-
-        citationDiv.append(rowDiv);
-
-        isEven = !isEven;
-    });
 
 
     // RECORD HISTORY TAB

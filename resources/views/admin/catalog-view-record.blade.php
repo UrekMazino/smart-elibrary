@@ -78,7 +78,19 @@
                     <div class="tab-pane fade" id="marc-record" role="tabpanel" aria-labelledby="marc-record-tab"></div>
 
                     <!-- Citation Tab -->
-                    <div class="tab-pane fade" id="citation" role="tabpanel" aria-labelledby="citation-tab"></div>
+                    <div class="tab-pane fade" id="citation" role="tabpanel" aria-labelledby="citation-tab">
+                        @forelse(($citations ?? []) as $style => $text)
+                            <div class="row mb-1 {{ $loop->even ? 'even-row' : 'odd-row' }}">
+                                <div class="p-2 col-lg-2 col-md-2 col-sm-12 text-left"><strong>{{ $style }}</strong></div>
+                                <div class="p-2 col-lg-9 col-md-9 col-sm-10 text-left" id="cite-{{ $style }}">{!! $text !!}</div>
+                                <div class="p-2 col-lg-1 col-md-1 col-sm-2 text-end">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" title="Copy" onclick="copyCitation('cite-{{ $style }}')"><i data-feather="copy" class="icon-sm"></i></button>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="p-2 text-muted">No citation data available for this record.</div>
+                        @endforelse
+                    </div>
 
                     <!-- Record History Tab -->
                     <div class="tab-pane fade" id="record-hist" role="tabpanel" aria-labelledby="record-hist-tab"></div>
@@ -287,7 +299,15 @@
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/DataTables/buttons/js/dataTables.buttons.min.js') }}"></script>
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/DataTables/buttons/js/buttons.bootstrap5.min.js') }}"></script>
 
-<script src="https://cdn.jsdelivr.net/npm/citation-js"></script>
+<script>
+function copyCitation(id) {
+    var el = document.getElementById(id);
+    if (!el || !navigator.clipboard) return;
+    navigator.clipboard.writeText(el.innerText.trim()).then(function () {
+        if (window.Swal) Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Citation copied', showConfirmButton: false, timer: 1200 });
+    });
+}
+</script>
 <script type="text/javascript" src="{{ asset('assets/js/cropper.js') }}"></script>
 <script type="text/javascript" src="{{ asset('assets/js/cropper.min.js') }}"></script>
 <script> let pdfDefaultThumb = "{{ asset('assets/images/pdf-placeholder.jfif') }}";</script>

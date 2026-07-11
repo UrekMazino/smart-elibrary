@@ -392,6 +392,55 @@ function getPDFLink($catalog_id)
 	return url('/')."/".$url;
 }
 
+/**
+ * Build formatted citations (APA / MLA / Chicago) from a catalog record.
+ * Dependency-free and reusable — intended to also back a future citation API so the
+ * Project Y RAG can cite eLibrary materials in the same formats. $record needs:
+ * title_statement, joint_authors, publisher, pub_year, edition.
+ */
+function buildCitations($record)
+{
+	if (!$record) return [];
+
+	$title = rtrim(trim((string)($record->title_statement ?? '')), " .");
+	if ($title === '') return [];
+
+	$year      = trim((string)($record->pub_year ?? '')) ?: 'n.d.';
+	$publisher = trim((string)($record->publisher ?? ''));
+	$edition   = trim((string)($record->edition ?? ''));
+	$authors   = array_values(array_filter(array_map('trim', preg_split('#\s*/\s*#', (string)($record->joint_authors ?? '')))));
+
+	$ed     = $edition ? ' ('.e($edition).')' : '';
+	$titleI = '<em>'.e($title).'</em>';
+	$pub    = $publisher !== '' ? e($publisher) : '';
+
+	// APA:     Authors (Year). Title (Edition). Publisher.
+	$apa = (citeAuthors($authors, 'apa') ? citeAuthors($authors, 'apa').' ' : '')."($year). ".$titleI.$ed.'.'.($pub ? ' '.$pub.'.' : '');
+	// MLA:     Authors. Title. Publisher, Year.
+	$mla = (citeAuthors($authors, 'mla') ? citeAuthors($authors, 'mla').'. ' : '').$titleI.'.'.($pub ? ' '.$pub.',' : '')." $year.";
+	// Chicago: Authors. Title. Publisher, Year.
+	$chi = (citeAuthors($authors, 'chicago') ? citeAuthors($authors, 'chicago').'. ' : '').$titleI.'.'.($pub ? ' '.$pub.',' : '')." $year.";
+
+	$fix = function ($s) { return rtrim(trim($s), '.').'.'; };   // exactly one trailing period
+	return ['APA' => $fix($apa), 'MLA' => $fix($mla), 'Chicago' => $fix($chi)];
+}
+
+/**
+ * Join an author list ("Surname, First") per citation style (values are HTML-escaped).
+ */
+function citeAuthors(array $authors, $style)
+{
+	$authors = array_values(array_filter(array_map(function ($a) { return e(rtrim(trim($a), ' .')); }, $authors)));
+	$n = count($authors);
+	if ($n === 0) return '';
+	if ($n === 1) return $authors[0];
+	if ($style === 'mla' && $n > 2) return $authors[0].', et al';
+	$conj = $style === 'apa' ? '&amp;' : 'and';
+	if ($n === 2) return $authors[0].' '.$conj.' '.$authors[1];
+	$last = array_pop($authors);
+	return implode(', ', $authors).', '.$conj.' '.$last;
+}
+
 function getFrontpage($catalog_id)
 {
 	$img = App\Models\Frontpage::where('catalog_id',$catalog_id)->first();
