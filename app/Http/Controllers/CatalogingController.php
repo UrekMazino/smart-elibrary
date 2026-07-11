@@ -2280,9 +2280,10 @@ class CatalogingController extends Controller
 
             $fileType = $uploadedFile->getClientOriginalExtension();
             $newFileName = 'ft-'. uniqid() . '.' . $fileType;
-            $filePath = 'pdf/' . $newFileName; 
+            $filePath = 'pdf/' . $newFileName;
 
-            $uploadedFile->storeAs('public', $filePath);
+            // Store directly under public/pdf (where DownloadController's public_path() serves from).
+            $uploadedFile->move(public_path('pdf'), $newFileName);
 
             $coverPage = Multimedia::where('catalog_id', $request->catalog_id)->where('deleted_at', null)->first();
 
