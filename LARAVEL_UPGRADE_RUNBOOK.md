@@ -45,35 +45,46 @@
 | `milon/barcode` | `^10.0` | `^13.0` | 12→13 |
 | `symfony/http-client` | `^5.4` | `^7.0` | 10→11 |
 | `scriptotek/marc` | `^2.2` | `^3.0` | anytime (agnostic) |
-| `meilisearch/meilisearch-php` | `^0.23` | `^1.16` | **see §2 — code refactor required** |
+| `meilisearch/meilisearch-php` | `^0.23` | `^1.16` (pulled by Scout 11) | **see §2 — NO code refactor; enabled post-upgrade** |
 | guzzle, nyholm/psr7, php-http/*, faker, mockery | — | current | auto-resolve, no action |
 
 ---
 
-## 2. 🔴 Meilisearch refactor — the biggest task (do this FIRST, before the hops)
+## 2. Meilisearch — a POST-upgrade config task (NOT a code refactor)
 
-The Meilisearch PHP client jumps **0.23 → 1.16** — a major API change. Your app uses `MeiliSearch\Client` **directly** (not just via Scout) in **4 controllers**:
+**Investigated 2026-07-11 — the earlier "client refactor" premise was wrong.** The four
+`use MeiliSearch\Client;` lines are the **only** references to the client; there is **no**
+`new Client(...)` and **no** `->search()`/`->index()` call anywhere — all raw-client code is
+commented out. Search is done the idiomatic Scout way: `App\Models\ViewCatalog::search($q)->...`,
+which is **engine-agnostic**. The app currently runs `SCOUT_DRIVER=database`.
 
-- `app/Http/Controllers/AcquisitionController.php:6`
-- `app/Http/Controllers/AdminController.php:14`
-- `app/Http/Controllers/OPACController.php:10`
-- `app/Http/Controllers/ResultController.php:5`
+**Consequence:** switching to Meilisearch requires **no controller changes**. It's a config +
+index-settings + import task, and it should be done **AFTER** the Laravel upgrade, on the modern
+stack (Meilisearch server **v1.x** + Scout **11** + client **1.16**). Doing it on Laravel 8 would
+pin you to the legacy Meilisearch server **v0.27.0** (early 2022) that the upgrade then replaces.
 
-**Why first:** this is independent of the framework version and is the highest-risk code change. Getting it done and tested on Laravel 8 isolates it from framework breakage.
+**Decision (with the user, 2026-07-11): defer Meilisearch until after the upgrade.**
 
-**What changes in the client 0.x → 1.x (verify against the [client changelog](https://github.com/meilisearch/meilisearch-php/releases)):**
-- Namespace is `Meilisearch\Client` (note casing) — was `MeiliSearch\Client`.
-- Search response is a structured result object, not a bare array — `->getHits()` vs array access.
-- Index methods (`index()`, `search()`, `updateDocuments()`, settings calls) changed signatures/returns.
-- Error/exception classes renamed.
-
-**Steps:**
-- [ ] Read all four controllers' Meilisearch calls; list every method used.
-- [ ] Upgrade the client in isolation: `composer require meilisearch/meilisearch-php:^1.16` (still on Laravel 8 — it's framework-agnostic).
-- [ ] Rewrite the four controllers to the 1.x API.
-- [ ] Re-point Scout if needed: `composer require laravel/scout:^10` (whatever the current-L8-compatible Scout is) or leave until the Scout hop.
-- [ ] **Test search end-to-end**: OPAC search, admin catalog search, acquisition lookup, results page. Confirm the Meilisearch index still returns hits.
-- [ ] Commit: `"refactor: meilisearch-php 0.23 -> 1.x API"`.
+### Post-upgrade enablement steps (do these once on Laravel 13 + Scout 11)
+1. **Run the server:** download Meilisearch **v1.x** for Windows, start with a master key, e.g.
+   `meilisearch.exe --master-key <KEY>` (listens on `127.0.0.1:7700`).
+2. **Model prep** — `app/Models/ViewCatalog.php` `toSearchableArray()` currently indexes only
+   `id, isbn, issn, accession_number, title_statement, material_type, pub_year`. The controllers
+   filter/sort on fields that must ALSO be indexed and declared filterable/sortable:
+   add **`material_type_id`**, **`is_published`**, **`series_statement_id`** (and keep `pub_year`).
+   > ⚠️ Do this only when flipping to Meilisearch — adding numeric fields to `toSearchableArray()`
+   > also changes what the **database** driver LIKE-matches, so don't apply it while on the DB driver.
+   > For the `->where('deleted_at', null)` filter, prefer **not indexing** soft-deleted/unpublished
+   > rows via `shouldBeSearchable()` rather than a Meili `null` filter (Meili null-filtering is awkward).
+3. **Index settings** — add to `config/scout.php` under `meilisearch` an `index-settings` block for
+   the `view_catalogs` index: `filterableAttributes => ['material_type_id','is_published','series_statement_id','pub_year']`,
+   `sortableAttributes => ['pub_year']`. Apply with `php artisan scout:sync-index-settings`.
+4. **.env** — set `SCOUT_DRIVER=meilisearch`, `MEILISEARCH_HOST=http://127.0.0.1:7700`,
+   `MEILISEARCH_KEY=<KEY>` (these keys are already present but commented out).
+5. **Import** — `php artisan scout:import "App\Models\ViewCatalog"` (only ~158 rows; instant).
+6. **Test** — OPAC search (grid + list layouts), material-type facet filters, year range, sort by
+   `pub_year`. Confirm results match the DB-driver behaviour, plus Meili's typo-tolerance.
+   No controller edits needed — `ViewCatalog::search()` now routes to Meilisearch automatically.
 
 ---
 
