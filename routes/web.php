@@ -15,43 +15,15 @@ use App\Http\Controllers\HomeController;
 |
 */
 
-// Route::get('/', function () {
-//     return "hello";
-// });
-
-// Route::get('/search-result', function () {
-//     return view('opac.search-result');
-// });
-
-// Route::get('/full-description', function () {
-//     return view('opac.full-description');
-// });
-
-// Route::get('/dashboard', function () {
-//     return view('admin.index');
-// })->middleware(['auth'])->name('dashboard');
-Route::redirect('/admin/login', '/login');
 Route::get('/home', [HomeController::class, 'index']);
 Route::get('/', [HomeController::class, 'index2']);
-
-//MIGRATE DATA
-use App\Http\Controllers\MigrateController;
-Route::controller(MigrateController::class)->group(function () {
-    Route::get('/migrate/holdings', 'holdings');
-});
 
 require __DIR__.'/auth.php';
 require __DIR__.'/joe.php';
 require __DIR__.'/annarose.php';
 
-// Route::get('/', function () {
-//     return redirect('/home');
-// });
-
-
 //RESULTS
 use App\Http\Controllers\ResultController;
-//Route::post('/results', [ResultController::class, 'index']);
 Route::get('/results', [ResultController::class, 'index']);
 Route::get('/search/suggest', [ResultController::class, 'suggest']);   // instant-search JSON (OPAC overlay)
 
@@ -88,7 +60,6 @@ use App\Http\Controllers\InquiryController;
 Route::controller(InquiryController::class)->group(function () {
     Route::post('/inquiry/submit', 'create');
     Route::post('/inquiry/reply', 'reply');
-    Route::get('/inquiry/get/{id}', 'json1');
     Route::get('/inquiry/json/{id}', 'json2');
     Route::get('/inquiry/seen/{id}', 'seen');
 });
@@ -102,16 +73,6 @@ Route::controller(ReviewController::class)->group(function () {
 });
 
 
-//VISIT
-use App\Http\Controllers\VisitGuestController;
-Route::controller(VisitGuestController::class)->group(function () {
-    Route::post('/visit/guest', 'create');
-});
-
-use App\Http\Controllers\VisitController;
-Route::controller(VisitController::class)->group(function () {
-    Route::post('/visit/patron', 'create');
-});
 
 //ADMIN
 use App\Http\Controllers\AdminController;
@@ -143,7 +104,6 @@ Route::controller(AdminController::class)->group(function () {
 use App\Http\Controllers\AcquisitionController;
 Route::controller(AcquisitionController::class)->group(function () {
         
-    // Route::get('/admin/acquisition', 'index');
     Route::get('/admin/new-acquisition', 'index2');
     Route::post('/admin/acquisition/create', 'create');
     Route::post('/admin/edit-acquisition-view', 'editview');
@@ -193,65 +153,7 @@ Route::controller(NewsController::class)->group(function () {
 });
 
 
-// Route::get('update-copy', function () {
-//         $list = App\Models\Holdingcopy::where('acquisition_mode',5)->get();
-//         foreach ($list as $key => $value) {
-//             $modes = null;
-
-//             switch ($value->AcquisitionMode) {
-//                 case 1:
-//                         $modes = "Purchase";
-//                     break;
-//                 case 2:
-//                         $modes = "Subscription";
-//                     break;
-//                 case 3:
-//                         $modes = "Donation";
-//                     break;
-//                 case 4:
-//                         $modes = "Complimentary";
-//                     break;
-//                 case 5:
-//                         $modes = "Exchange";
-//                     break;
-//                 case 6:
-//                         $modes = "Download";
-//                     break;
-            
-//             }
-
-//             App\Models\Holdingcopy::where('id',$value->id)->update(['acquisition_mode' => $modes]);
-
-//         }
-//     });
 
 
-// Route::get('/status', function () {
-    // $status = ["status" => true];
 
-    // return $status;
-
-    // $directory = "public/frontpages";
-    // $files = Storage::allFiles($directory);
-  
-    // foreach ($files as $key => $value) {
-    //     $path = "frontpages/".substr($value,-16);
-    //     $filename = explode('.',substr($value,-16));
-    //     echo $filename[0]."<br/>";
-
-    //     $action = new App\Models\Frontpage;
-    //     $action->catalog_id = $filename[0];
-    //     $action->FrontPageLocation = $path;
-    //     $action->save();
-    // }
-// });
-
-// Route::get('/insert-download', function () {
-//     for ($i=0; $i < 500; $i++) { 
-//         $download = new App\Models\Download;
-//         $download->catalog_id = "PCRD-H004491";
-//         $download->user_id = 14019;
-//         $download->save();
-//     }
-// });
 
