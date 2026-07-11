@@ -49,12 +49,6 @@ class InquiryController extends Controller
         return redirect('/inquiries');
     }
 
-    public function json1($id)
-    {
-        $inq = App\Models\View_inquiry::where('id',$id)->first();
-        return $inq;
-    }
-
     public function json2($id)
     {
         $inq = App\Models\View_inquiry_thread::where('id',$id)->orderBy('thread_date')->get();
