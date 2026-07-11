@@ -325,10 +325,10 @@ class AcquisitionController extends Controller
         //COVER PHOTO
         if(isset(request()->formCover))
         {
-            $frontpage_path = request()->file('formCover')->store(
-                'frontpages', 'public'
-            );
-    
+            $coverName = 'cp-'.uniqid().'.'.request()->file('formCover')->getClientOriginalExtension();
+            request()->file('formCover')->move(public_path('frontpages'), $coverName);
+            $frontpage_path = 'frontpages/'.$coverName;
+
             $frontpage = new App\Models\Frontpage;
             $frontpage->catalog_id  = $holding->id;
             $frontpage->FrontPageLocation = $frontpage_path;
@@ -676,10 +676,10 @@ class AcquisitionController extends Controller
             //DELETE PREVIOUS RECORD
             App\Models\Frontpage::where('catalog_id',$holdings['catalog_id'])->delete();
 
-             $frontpage_path = request()->file('formCover')->store(
-                 'frontpages', 'public'
-             );
-             
+             $coverName = 'cp-'.uniqid().'.'.request()->file('formCover')->getClientOriginalExtension();
+             request()->file('formCover')->move(public_path('frontpages'), $coverName);
+             $frontpage_path = 'frontpages/'.$coverName;
+
      
              $frontpage = new App\Models\Frontpage;
              $frontpage->catalog_id  = $holdings['catalog_id'];

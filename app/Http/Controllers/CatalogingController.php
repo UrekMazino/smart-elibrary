@@ -2203,9 +2203,10 @@ class CatalogingController extends Controller
 
             $fileType = $uploadedFile->getClientOriginalExtension();
             $newFileName = 'cp-'. uniqid() . '.' . $fileType;
-            $filePath = 'frontpages/' . $newFileName; 
+            $filePath = 'frontpages/' . $newFileName;
 
-            $uploadedFile->storeAs('public', $filePath, 'local');
+            // Store directly under public/frontpages (where getFrontpageResult serves from).
+            $uploadedFile->move(public_path('frontpages'), $newFileName);
 
             $coverPage = Frontpage::where('catalog_id', $request->catalog_id)->where('deleted_at', null)->first();
 
