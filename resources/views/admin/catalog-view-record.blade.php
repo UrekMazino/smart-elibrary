@@ -85,19 +85,22 @@
 
                     <!-- Record Resources Tab -->
                     <div class="tab-pane fade {{ isset($uploadStatus) ? 'show active' : '' }}" id="resources" role="tabpanel" aria-labelledby="resources-tab">
+                        @isset($uploadError)
+                            <div class="alert alert-danger">{{ $uploadError }}</div>
+                        @endisset
                         <div class="row">
                             <div class="col-md-12 grid-margin stretch-card">
                                 <div class="card">
                                     <div class="card-body">
                                         <div class="row">
                                             <div class="col-md-6">
-                                                <h6 class="text-muted mb-3">Full text (PDF): </h6>
+                                                <h6 class="text-muted mb-3">Full text (PDF, max 100 MB): </h6>
                                                 <div class="mb-3">
                                                         <form action="{{ route('upload-fulltext') }}" method="POST" enctype="multipart/form-data">
                                                             @csrf
                                                             <input type="hidden" value="{{$record->id}}" name="catalog_id">
                                                             <input type="hidden" value="{{ $title }}" name="title">
-                                                            <input class="form-control w-100" type="file" id="fulltextUpload" name="fullText">                                                           
+                                                            <input class="form-control w-100" type="file" id="fulltextUpload" name="fullText" accept="application/pdf,.pdf">                                                           
                                                             
                                                             <div class="mb-4 mb-md-0 mt-3">
                                                                 <button class="btn btn-outline-info d-none" id="fulltext-btn">Upload Fulltext</button>
@@ -137,13 +140,13 @@
                                     <div class="card-body">
                                         <div class="row">
                                             <div class="col-md-6">
-                                                <h6 class="text-muted mb-3">Cover Photo: </h6>
+                                                <h6 class="text-muted mb-3">Cover Photo (JPG/PNG/WEBP, max 10 MB): </h6>
                                                 <div class="mb-3">
                                                         <form action="{{ route('upload-coverphoto') }}" method="POST" enctype="multipart/form-data">
                                                             @csrf
                                                             <input type="hidden" value="{{$record->id}}" name="catalog_id">
                                                             <input type="hidden" value="{{ $title }}" name="title">
-                                                            <input class="form-control w-100" type="file" id="coverUpload" name="coverImage">                                                           
+                                                            <input class="form-control w-100" type="file" id="coverUpload" name="coverImage" accept="image/jpeg,image/png,image/webp">                                                           
                                                             
                                                             <div class="mb-4 mb-md-0 mt-3">
                                                                 <button class="btn btn-outline-info d-none" id="cover-photo-btn">Save Cover Photo</button>

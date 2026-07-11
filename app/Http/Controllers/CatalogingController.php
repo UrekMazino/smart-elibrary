@@ -2192,6 +2192,15 @@ class CatalogingController extends Controller
         if($request->hasFile('coverImage')) {
 
             $uploadedFile = $request->file('coverImage');
+
+            // Cover photo limit: JPG/PNG/WEBP image, max 10 MB.
+            if(!in_array(strtolower($uploadedFile->getClientOriginalExtension()), ['jpg','jpeg','png','webp']) || $uploadedFile->getSize() > 10 * 1024 * 1024) {
+                $record = Catalog::select('catalogs.*')->where('catalogs.id',$request->catalog_id)->first();
+                $coverPage = Frontpage::where('catalog_id',$request->catalog_id)->whereNull('deleted_at')->first();
+                $fullText = Multimedia::where('catalog_id',$request->catalog_id)->whereNull('deleted_at')->first();
+                return view('admin.catalog-view-record', ['record' => $record, 'fullText' => $fullText, 'coverPage' => $coverPage, 'title' => $request->title, 'uploadStatus' => true, 'uploadError' => 'The cover photo must be a JPG, PNG, or WEBP image no larger than 10 MB.']);
+            }
+
             $fileType = $uploadedFile->getClientOriginalExtension();
             $newFileName = 'cp-'. uniqid() . '.' . $fileType;
             $filePath = 'frontpages/' . $newFileName; 
@@ -2259,6 +2268,15 @@ class CatalogingController extends Controller
         if($request->hasFile('fullText')) {
 
             $uploadedFile = $request->file('fullText');
+
+            // Full-text upload limit: PDF only, max 100 MB.
+            if(strtolower($uploadedFile->getClientOriginalExtension()) !== 'pdf' || $uploadedFile->getSize() > 100 * 1024 * 1024) {
+                $record = Catalog::select('catalogs.*')->where('catalogs.id',$request->catalog_id)->first();
+                $fullText = Multimedia::where('catalog_id',$request->catalog_id)->whereNull('deleted_at')->first();
+                $coverPage = Frontpage::where('catalog_id',$request->catalog_id)->whereNull('deleted_at')->first();
+                return view('admin.catalog-view-record', ['record' => $record, 'fullText' => $fullText, 'coverPage' => $coverPage, 'title' => $request->title, 'uploadStatus' => true, 'uploadError' => 'The full-text file must be a PDF no larger than 100 MB.']);
+            }
+
             $fileType = $uploadedFile->getClientOriginalExtension();
             $newFileName = 'ft-'. uniqid() . '.' . $fileType;
             $filePath = 'pdf/' . $newFileName; 
