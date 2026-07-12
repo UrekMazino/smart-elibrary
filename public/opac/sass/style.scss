@@ -4,7 +4,7 @@ Theme URI: http://www.ansonika.com/findoctor/
 Author: Ansonika
 Author URI: http://themeforest.net/user/Ansonika/
 
-[Table of contents] 
+[Table of contents]
 
 1. SITE STRUCTURE and TYPOGRAPHY
 - 1.1 Typography
@@ -21,7 +21,7 @@ Author URI: http://themeforest.net/user/Ansonika/
 - 2.7 Contact page
 - 2.8 Booking page/confirm
 - 2.9 Pricing page
-- 2.10 Submit review 
+- 2.10 Submit review
 - 2.11 Home with map
 - 2.12 About
 
@@ -628,7 +628,7 @@ ul#additional_links {
 		height: 450px;
 	}
 	&.version_1 {
-		background: $primary-color url(../img/hero_home_bg_fprdi.jpg) no-repeat center bottom;
+		background: $primary-color url(../img/hero_home_bg_1_back2.svg) no-repeat center bottom;
 		@include background-size(cover);
 		@include mobile {
 			height: 450px;
@@ -675,7 +675,7 @@ ul#additional_links {
 		}
 	}
 	&.version_3 {
-		background: $primary-color url(../img/hero_home_bg_fprdi.jpg) no-repeat center bottom;
+		background: $primary-color url(../img/hero_home_bg_1_back2.svg) no-repeat center bottom;
 		@include background-size(cover);
 		@include mobile {
 			height: 450px;
@@ -2664,7 +2664,7 @@ label.css-label {
 
 #section_1,#section_2,#section_3 {
 	padding-bottom: 30px;
-	
+
 }
 /*-------- 2.5 Login/register --------*/
 #login {

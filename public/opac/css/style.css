@@ -4,7 +4,7 @@ Theme URI: http://www.ansonika.com/findoctor/
 Author: Ansonika
 Author URI: http://themeforest.net/user/Ansonika/
 
-[Table of contents] 
+[Table of contents]
 
 1. SITE STRUCTURE and TYPOGRAPHY
 - 1.1 Typography
@@ -21,7 +21,7 @@ Author URI: http://themeforest.net/user/Ansonika/
 - 2.7 Contact page
 - 2.8 Booking page/confirm
 - 2.9 Pricing page
-- 2.10 Submit review 
+- 2.10 Submit review
 - 2.11 Home with map
 - 2.12 About
 
@@ -768,7 +768,7 @@ ul#additional_links li:after {
   left: 0;
   height: 100%;
   width: 100%;
-  background: #3f4079 url(../img/hero_home_bg_fprdi.jpg) no-repeat center bottom;
+  background: #3f4079 url(../img/hero_home_bg_1_back2.svg) no-repeat center bottom;
   background-size: cover;
   filter: blur(0px); /* <-- Adjust this value for more/less blur */
   z-index: 0;
@@ -839,7 +839,7 @@ ul#additional_links li:after {
   }
 }
 .hero_home.version_3 {
-  background: #3f4079 url(../img/hero_home_bg_fprdi.jpg) no-repeat center bottom;
+  background: #3f4079 url(../img/hero_home_bg_1_back2.svg) no-repeat center bottom;
   -webkit-background-size: cover;
   -moz-background-size: cover;
   -o-background-size: cover;
@@ -4491,7 +4491,7 @@ a.box_feat_about h3 {
   left: 0;
   height: 100%;
   width: 100%;
-  background: #3f4079 url(../img/hero_home_bg_fprdi2.jpg) no-repeat center bottom;
+  background: #3f4079 url(../img/hero_home_bg_1.jpg) no-repeat center bottom;
   background-size: cover;
   filter: blur(0px); /* <-- Adjust this value for more/less blur */
   z-index: 0;
