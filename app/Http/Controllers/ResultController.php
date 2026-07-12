@@ -19,6 +19,7 @@ class ResultController extends Controller
         // partial/empty submission returns results instead of a 500.
         $query     = $request->input('query');                       // null when absent
         $layout    = $request->input('layout', 'grid');
+        $perPage   = ($layout == 'grid') ? 15 : 12;                  // grid = 3x5 rows per page
         $seriesId  = $request->input('series_statement_id', 0);
         $seachtype = (array) $request->input('seachtype', ['0']);    // always an array
         $searhType = $seachtype;                                     // passed to the view
@@ -29,7 +30,7 @@ class ResultController extends Controller
             // Browse by series
             $result = App\Models\ViewCatalog::where('series_statement_id', $seriesId)
                 ->where('deleted_at', null)->where('is_published', 1)
-                ->orderBy('pub_year', 'DESC')->paginate(12);
+                ->orderBy('pub_year', 'DESC')->paginate($perPage);
         }
         elseif($request->has('seachtype') && $request->has('year1'))
         {
@@ -42,7 +43,7 @@ class ResultController extends Controller
                     : $builder->whereIn('material_type_id', $seachtype);
             }
             $result = $builder->where('deleted_at', null)->where('is_published', 1)
-                ->orderBy('pub_year', 'DESC')->paginate(12);
+                ->orderBy('pub_year', 'DESC')->paginate($perPage);
         }
         elseif(isset($query) && $query !== '')
         {
@@ -53,14 +54,14 @@ class ResultController extends Controller
                 $builder->whereIn('material_type_id', $seachtype);
             }
             $result = $builder->where('deleted_at', null)->where('is_published', 1)
-                ->orderBy('pub_year', 'DESC')->paginate(12);
+                ->orderBy('pub_year', 'DESC')->paginate($perPage);
         }
         else
         {
             // No keyword: list by material type
             $result = App\Models\ViewCatalog::whereIn('material_type_id', $seachtype)
                 ->where('deleted_at', null)->where('is_published', 1)
-                ->orderBy('pub_year', 'DESC')->paginate(12);
+                ->orderBy('pub_year', 'DESC')->paginate($perPage);
         }
 
         // The result Blade views read these keys straight from $_GET; guarantee
