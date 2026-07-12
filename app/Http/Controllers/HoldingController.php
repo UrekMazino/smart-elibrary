@@ -15,10 +15,17 @@ class HoldingController extends Controller
             return redirect('/admin/dashboard');
         }
 
-        //SAVE VIEW
-        saveView(request()->catalog_id);
+        // Only serve records that are actually public (published + not deleted); a bad or
+        // unpublished id must not leak. 404 instead of rendering with a null $result.
+        $result = App\Models\ViewCatalog::where('catalog_id',request()->catalog_id)
+            ->where('is_published',1)
+            ->whereNull('deleted_at')
+            ->first();
 
-        $result = App\Models\ViewCatalog::where('catalog_id',request()->catalog_id)->first();
+        abort_if(!$result, 404);
+
+        //SAVE VIEW
+        saveView($result->catalog_id);
 
         return view('opac.full-description')->with('result',$result);
     }
@@ -33,13 +40,20 @@ class HoldingController extends Controller
 
         if($catalog_id){
 
-            $result = App\Models\ViewCatalog::where('catalog_id',$catalog_id)->first();
+            // Only serve public records (published + not deleted); unpublished/deleted/
+            // unknown ids must 404 rather than leak or crash on a null $result.
+            $result = App\Models\ViewCatalog::where('catalog_id',$catalog_id)
+                ->where('is_published',1)
+                ->whereNull('deleted_at')
+                ->first();
+
+            abort_if(!$result, 404);
 
             //SAVE VIEW
-            saveView($result['catalog_id']);
+            saveView($result->catalog_id);
 
             return view('opac.full-description')->with('result',$result);
-        }   
+        }
         else{
             return redirect('/home');
         }
