@@ -61,7 +61,7 @@
                	<form method="get" action="{{ url('/results') }}" id="frm">
 					@csrf
                     <div class="search_bar_list">
-                    	<input type="text" class="form-control" name="querysearch" id="querysearch" value="{{ $_GET['query'] }}" placeholder="Search a Material...">
+                    	<input type="text" class="form-control js-instant" name="querysearch" id="querysearch" value="{{ $_GET['query'] }}" placeholder="Search a Material...">
 						@if(isset($_GET['query']))
 	                    <input type="hidden" name="query" id="query" value="{{ $_GET['query'] }}">
 						@else
@@ -340,4 +340,6 @@
 
 	
 </script>
+
+@include('opac.partials.instant-search')
 @endsection

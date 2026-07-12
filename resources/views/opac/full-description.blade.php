@@ -45,7 +45,7 @@
 					<div class="col-md-6">
 						<form method="get" action="{{ url('/results') }}">
 							<div class="search_bar_list">
-								<input type="text" class="form-control" name="query" placeholder="Search a Material...">
+								<input type="text" class="form-control js-instant" name="query" placeholder="Search a Material...">
 								<input type="hidden" name="series_statement_id" value="0">
 								<input type="hidden" name="page" value="1">
 								<input type="hidden" name="layout" value="grid">
@@ -547,4 +547,6 @@ function copyFdCitation(btn)
 	}
 }
 </script>
+
+@include('opac.partials.instant-search')
 @endsection
