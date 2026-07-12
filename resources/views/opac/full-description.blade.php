@@ -62,9 +62,7 @@
 		<style>
 			.fd-cover { margin: 0; }
 			.fd-cover img { box-shadow: 0 2px 10px rgba(0,0,0,.25); border-radius: 3px; max-width: 320px; width: 100%; }
-			/* Always-visible search bar (sticky over the header). main has z-index:1 which
-			   traps children below the header (z-index 999); drop it so #results can sit on top. */
-			main { z-index: auto; }
+			/* Always-visible search bar; JS docks it just below the sticky header. */
 			#results { position: -webkit-sticky; position: sticky; top: 0; z-index: 1001; box-shadow: 0 3px 10px rgba(0,0,0,.15); }
 			#breadcrumb.breadcrumb_inline { background: transparent; padding: 0; }
 			/* General info reorganized layout */

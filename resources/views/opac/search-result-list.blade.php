@@ -40,9 +40,7 @@
     .layout_view_inline a + a { margin-left: 9px; }
     .layout_view_inline a.active { color: #00a496; }
     .layout_view_inline a:hover { color: #e74e84; }
-    /* Keep the search bar always visible (sticky over the header). main has z-index:1 which
-       traps children below the header (z-index 999); drop it so #results can sit on top. */
-    main { z-index: auto; }
+    /* Always-visible search bar; JS docks it just below the sticky header. */
     #results { position: -webkit-sticky; position: sticky; top: 0; z-index: 1001; box-shadow: 0 3px 10px rgba(0,0,0,.15); }
     </style>
  @endsection
