@@ -235,6 +235,13 @@ License: For each use you must have a valid license purchased only from above li
           @endcan
           @can('access.configuration')
             <li class="nav-item nav-category">Setup</li>
+
+            <li class="nav-item">
+              <a href="{{ url('/admin/settings') }}" class="nav-link">
+                <i class="link-icon" data-feather="sliders"></i>
+                <span class="link-title">Settings</span>
+              </a>
+            </li>
             
             @can('view.config.template')
               <li class="nav-item">

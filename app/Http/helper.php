@@ -276,15 +276,46 @@ function getMaterials()
 	return $list;
 }
 
+/**
+ * Read an app setting (settings table), cached per request. Falls back to $default
+ * if the table/key is missing (e.g. before the settings table exists).
+ */
+function setting($key, $default = null)
+{
+	static $cache = null;
+	if ($cache === null) {
+		try { $cache = App\Models\Setting::pluck('value', 'key')->all(); }
+		catch (\Throwable $e) { $cache = []; }
+	}
+	return array_key_exists($key, $cache) ? $cache[$key] : $default;
+}
+
+/** A boolean app setting: true unless explicitly '0'. */
+function settingEnabled($key, $default = true)
+{
+	$v = setting($key, $default ? '1' : '0');
+	return $v === '1' || $v === 1 || $v === true;
+}
+
+/**
+ * Effective cover FrontPageLocation for a catalog (or null = no cover), honoring the
+ * "enable placeholder coverpage" toggle: generated placeholders (gen-*) are hidden when off.
+ */
+function coverBase($catalog_id)
+{
+	$img = App\Models\Frontpage::where('catalog_id', $catalog_id)->first();
+	if ($img && $img['FrontPageLocation']) {
+		if (strpos((string) $img['FrontPageName'], 'gen-') === 0 && !settingEnabled('enable_placeholder_covers')) {
+			return null;
+		}
+		return $img['FrontPageLocation'];
+	}
+	return null;
+}
+
 function getFrontpageResult($catalog_id)
 {
-	$img = App\Models\Frontpage::where('catalog_id',$catalog_id)->first();
-
-	if($img)
-		$url = $img['FrontPageLocation'];
-	else
-		$url =  "frontpages/no-preview.jpg";
-
+	$url = coverBase($catalog_id) ?: 'frontpages/no-preview.jpg';
 	return '<img src="'.url('/')."/".$url.'" class="img-fluid" alt="">';
 }
 
@@ -338,11 +369,10 @@ function makeThumbnail($sourcePath, $destPath, $maxWidth = 250)
  */
 function getThumbnailResult($catalog_id)
 {
-	$img = App\Models\Frontpage::where('catalog_id',$catalog_id)->first();
-
-	if ($img && $img['FrontPageLocation']) {
-		$thumb = 'thumb/'.basename($img['FrontPageLocation']);
-		$url = file_exists(public_path($thumb)) ? $thumb : $img['FrontPageLocation'];
+	$loc = coverBase($catalog_id);
+	if ($loc) {
+		$thumb = 'thumb/'.basename($loc);
+		$url = file_exists(public_path($thumb)) ? $thumb : $loc;
 	} else {
 		$url = 'frontpages/no-preview.jpg';
 	}
@@ -356,11 +386,10 @@ function getThumbnailResult($catalog_id)
  */
 function getThumbnailLink($catalog_id)
 {
-	$img = App\Models\Frontpage::where('catalog_id',$catalog_id)->first();
-
-	if ($img && $img['FrontPageLocation']) {
-		$thumb = 'thumb/'.basename($img['FrontPageLocation']);
-		$url = file_exists(public_path($thumb)) ? $thumb : $img['FrontPageLocation'];
+	$loc = coverBase($catalog_id);
+	if ($loc) {
+		$thumb = 'thumb/'.basename($loc);
+		$url = file_exists(public_path($thumb)) ? $thumb : $loc;
 	} else {
 		$url = 'frontpages/no-preview.jpg';
 	}
@@ -370,13 +399,7 @@ function getThumbnailLink($catalog_id)
 
 function getFrontpageLink($catalog_id)
 {
-	$img = App\Models\Frontpage::where('catalog_id',$catalog_id)->first();
-
-	if($img)
-		$url = $img['FrontPageLocation'];
-	else
-		$url =  "frontpages/no-preview.jpg";
-
+	$url = coverBase($catalog_id) ?: 'frontpages/no-preview.jpg';
 	return url('/')."/".$url;
 }
 

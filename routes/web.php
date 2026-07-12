@@ -55,6 +55,13 @@ Route::controller(DownloadController::class)->group(function () {
     Route::post('/download', 'index');
 });
 
+//SETTINGS
+use App\Http\Controllers\SettingController;
+Route::controller(SettingController::class)->group(function () {
+    Route::get('/admin/settings', 'index');
+    Route::post('/admin/settings', 'update');
+});
+
 //INQUIRY
 use App\Http\Controllers\InquiryController;
 Route::controller(InquiryController::class)->group(function () {
