@@ -43,6 +43,20 @@ class HoldingController extends Controller
         else{
             return redirect('/home');
         }
-            
+
+    }
+
+    /**
+     * Record a view when a material is opened in the in-browser reader (Read button).
+     * Uses the same saveView() as the full-description page, so reads count toward Views.
+     */
+    public function recordView(Request $request)
+    {
+        if($request->filled('catalog_id'))
+        {
+            saveView($request->catalog_id);
+        }
+
+        return response()->json(['ok' => true]);
     }
 }

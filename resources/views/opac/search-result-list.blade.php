@@ -111,7 +111,7 @@
 							<a href="#0" class="btn_1 ol-full-desc" onclick="submitFrm('{{ $results->catalog_id }}'); return false;">Full description</a>
 							<div class="ol-btn-row">
 								@if($pdfUrl)
-									<a href="#0" class="ol-icon-btn" title="Read online" onclick="openReader('{{ $pdfUrl }}', @js($results->title_statement)); return false;"><i class="icon-book"></i></a>
+									<a href="#0" class="ol-icon-btn" title="Read online" onclick="readMaterial('{{ $results->catalog_id }}', '{{ $pdfUrl }}', @js($results->title_statement)); return false;"><i class="icon-book"></i></a>
 									<a href="#0" class="ol-icon-btn" title="Download PDF (login required)" onclick="downloadPdf('{{ $results->catalog_id }}'); return false;"><i class="icon-download"></i></a>
 								@endif
 								@if($canBorrow)
@@ -283,6 +283,20 @@
 		var header = document.querySelector('header.header_sticky') || document.querySelector('header');
 		var top = header ? Math.max(0, header.getBoundingClientRect().bottom) : 0;
 		reader.style.top = top + 'px';
+	}
+
+	function readMaterial(id, pdfPath, title)
+	{
+		openReader(pdfPath, title);
+		// Count this read as a view (guest-aware; same as opening full-description)
+		try {
+			var tokenEl = document.querySelector('input[name=_token]');
+			fetch('/read/view', {
+				method: 'POST',
+				headers: { 'X-CSRF-TOKEN': tokenEl ? tokenEl.value : '', 'Content-Type': 'application/x-www-form-urlencoded' },
+				body: 'catalog_id=' + encodeURIComponent(id)
+			});
+		} catch (e) {}
 	}
 
 	function openReader(pdfPath, title)

@@ -35,6 +35,7 @@ Route::controller(HoldingController::class)->group(function () {
     Route::post('/full-description', 'index');
     Route::get('/full-description', 'index2');
     Route::get('/full-description/{holdingsid}', 'index2');
+    Route::post('/read/view', 'recordView');
 });
 
 //OPAC
