@@ -44,6 +44,31 @@
 		<style>
 			.fd-cover { margin: 0; }
 			.fd-cover img { box-shadow: 0 2px 10px rgba(0,0,0,.25); border-radius: 3px; max-width: 320px; width: 100%; }
+			/* General info reorganized layout */
+			#section_1 .box_general_3 { padding-top: 22px; }
+			.fd-info { padding-top: 0 !important; }
+			.fd-title { margin: 0 0 6px; font-size: 20px; line-height: 1.3; font-weight: 700; color: #222; }
+			.fd-authors { color: #555; font-size: 14px; margin-bottom: 10px; }
+			.fd-rating { margin-bottom: 12px; }
+			.fd-stats { margin-bottom: 14px !important; }
+			.fd-actions { display: flex; gap: 10px; align-items: center; margin-bottom: 4px; }
+			.fd-actions form { margin: 0; }
+			.fd-actions .btn_1 { margin: 0; }
+			.fd-section { margin-top: 24px; }
+			.fd-section-title { font-size: 14px; font-weight: 700; color: #00a496; text-transform: uppercase; letter-spacing: .3px; margin-bottom: 12px; border-bottom: 2px solid #e6e9ec; padding-bottom: 6px; }
+			.fd-section-title i { margin-right: 6px; vertical-align: middle; }
+			.fd-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+			.fd-table th, .fd-table td { text-align: left; vertical-align: top; padding: 8px 12px; border-bottom: 1px solid #eef0f2; }
+			.fd-table th { width: 180px; color: #333; font-weight: 600; background: #f7f9fa; white-space: nowrap; }
+			.fd-table td { color: #444; }
+			.fd-citation { background: #f7f9fa; border: 1px solid #e6e9ec; border-radius: 4px; padding: 14px 16px; }
+			.fd-citation-style { display: inline-block; font-size: 11px; font-weight: 700; color: #fff; background: #00a496; border-radius: 3px; padding: 2px 8px; margin-bottom: 8px; }
+			.fd-citation p { margin: 0; font-size: 14px; line-height: 1.55; color: #333; }
+			.fd-copy-btn { margin-top: 12px !important; font-size: 12px; padding: 5px 14px; background-color: #029978; }
+			.fd-copies { display: flex; gap: 12px; flex-wrap: wrap; }
+			.fd-copy-badge { font-size: 14px; font-weight: 600; padding: 9px 18px; border-radius: 4px; background: #eef0f2; color: #444; }
+			.fd-copy-badge.ok { background: #e3f5ef; color: #087f5b; }
+			.fd-copy-badge.none { background: #fdecea; color: #c0392b; }
 		</style>
 		<div class="container margin_60">
 			<div class="row">
@@ -58,149 +83,69 @@
 					</nav>
 					<div id="section_1">
 						<div class="box_general_3">
-							<div class="profile">
-								<div class="row">
-									<div class="col-12">
-										<small>{{ $result->material }}</small>
-										<br><i data-star="{{ $ave }}" style="font-size:20px"></i>
-										<h5>{!! $result->title_statement !!}</h5>
-
-										<small>{!! pubYear($result->pub_year) !!}</small>
-
-										@if(isset($result->series_description))
-											<br><small>Series : <a href="#" onclick="getElementById('frm').submit()">{{ $result->series_description }}</a></small>
-										@endif
-
-										<br><br>
-										<ul class="statistic">
-											<li>{{ countNum('view',$result->catalog_id) }} Views</li>
-											<li>{{ countNum('review',$result->catalog_id) }} Reviews</li>
-											<li>{{ countNum('download',$result->catalog_id) }} Downloads</li>
-										</ul>
-										<ul class="statistic">
-											@if(checkIfHasPDF($result->catalog_id))
-											<li style="background-color: #FFF;padding: 3px;">
-												<form method="post" action="{{ url('/download') }}" id="frm_download" target="_blank">
-													@csrf
-													<input type="hidden" name="holdings_download_id" value="{{ $result->catalog_id }}">
-													<button class="btn_1" style="background-color:#029978"><i class="icon-download"></i> Download</button>
-												</form>
-											</li>
-											@endif
-											<li style="background-color: #FFF;padding: 3px;">
-													<button class="btn_1" style="background-color:#029978" onclick="inquire('{{ $result->catalog_id }}')"><i class="icon-info-3"></i> Inquire</button>
-											</li>
-
-										</ul>
-									</div>
-								</div>
+							<div class="profile fd-info">
+							<h5 class="fd-title">{!! $result->title_statement !!}</h5>
+							@if($result->joint_authors)
+								<div class="fd-authors">{{ str_replace('/', '; ', trim($result->joint_authors, ' /')) }}</div>
+							@endif
+							<div class="fd-rating"><i data-star="{{ $ave }}" style="font-size:20px"></i></div>
+							<ul class="statistic fd-stats">
+								<li>{{ countNum('view',$result->catalog_id) }} Views</li>
+								<li>{{ countNum('review',$result->catalog_id) }} Reviews</li>
+								<li>{{ countNum('download',$result->catalog_id) }} Downloads</li>
+							</ul>
+							<div class="fd-actions">
+								@if(checkIfHasPDF($result->catalog_id))
+								<form method="post" action="{{ url('/download') }}" id="frm_download" @auth target="_blank" @endauth>
+									@csrf
+									<input type="hidden" name="holdings_download_id" value="{{ $result->catalog_id }}">
+									<button class="btn_1" style="background-color:#029978"><i class="icon-download"></i> Download</button>
+								</form>
+								@endif
+								<button class="btn_1" style="background-color:#029978" onclick="inquire('{{ $result->catalog_id }}')"><i class="icon-info-3"></i> Inquire</button>
 							</div>
+						</div>
 
+						@php $fullRecord = getFullRecordFields($result->catalog_id); @endphp
+						<div class="fd-section">
+							<h6 class="fd-section-title"><i class="pe-7s-news-paper"></i> Full Record</h6>
+							@if(count($fullRecord) || $result->material_type)
+							<table class="fd-table">
+								@if($result->material_type)
+									<tr><th>Material Type</th><td>{{ $result->material_type }}</td></tr>
+								@endif
+								@foreach($fullRecord as $row)
+									<tr><th>{{ $row['label'] }}</th><td>{!! nl2br(e($row['value'])) !!}</td></tr>
+								@endforeach
+							</table>
+							@else
+								<p class="text-muted mb-0">No additional details available.</p>
+							@endif
+						</div>
 
-							<div class="accordion" id="materialDetails">
-								<div class="accordion-item">
-									<h2 class="accordion-header" id="headingOne">
-									<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-										SUMMARY
-									</button>
-									</h2>
-									<div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#materialDetails">
-									<div class="accordion-body">
-										<!-- /profile -->
-										<div class="indent_title_in">
-											<i class="pe-7s-notebook"></i>
-										</div>
-										<div class="wrapper_indent">
-											@if($result->summary != null) {!! $result->summary !!} @else  No summary available @endif
-										</div>
-									</div>
-									</div>
-								</div>
-
-								<div class="accordion-item">
-									<h2 class="accordion-header" id="headingTwo">
-									<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="true" aria-controls="collapseTwo">
-										GENERAL NOTE
-									</button>
-									</h2>
-									<div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#materialDetails">
-										<div class="accordion-body">
-											<!-- /profile -->
-											<div class="indent_title_in">
-												<i class="pe-7s-notebook"></i>
-											</div>
-											<div class="wrapper_indent">
-												@if($result->general_note != null) {!! $result->general_note !!} @else  No information available @endif
-											</div>
-										</div>
-									</div>
-								</div>
-								<div class="accordion-item">
-									<h2 class="accordion-header" id="headingThree">
-									<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
-										OTHER DETAILS
-									</button>
-									</h2>
-									<div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#materialDetails">
-										<div class="accordion-body">
-
-
-											@if($result->pub_url !='' || $result->pub_url != null)
-												<div class="indent_title_in">
-													<i class="pe-7s-notebook"></i>
-													<h3>URL</h3>
-												</div>
-												<div>
-													<?php echo $result->pub_url; ?>
-												</div>
-												<hr>
-											@endif
-
-											<div class="indent_title_in">
-												<i class="pe-7s-news-paper"></i>
-												<h3>Other Details</h3>
-											</div>
-											<div class="container">
-												<div class="row">
-													<div class="col  mb-2">
-													<strong>Material Type </strong>
-													</div>
-													<div class="col text-center">
-													@if($result->material_type != null) {{ $result->material_type }} @else  Information not provided @endif
-													</div>
-												</div>
-												<div class="row">
-													<div class="col mb-2">
-													<strong>Call Number </strong>
-													</div>
-													<div class="col text-center">
-													@if($result->call_number != null) {{ $result->call_number }} @else  Information not provided @endif
-													</div>
-												</div>
-												<div class="row">
-													<div class="col mb-2">
-													<strong>Authors </strong>
-													</div>
-													<div class="col text-center">
-													@if($result->joint_authors != null) {{ $result->joint_authors }} @else  Information not provided @endif
-													</div>
-												</div>
-												<div class="row">
-													<div class="col mb-2">
-													<strong>Publisher </strong>
-													</div>
-													<div class="col text-center">
-													@if($result->publisher != null) {{ $result->publisher }} @else  Information not provided @endif
-													</div>
-												</div>
-											</div>
-
-										</div>
-									</div>
-								</div>
+						@php $citations = buildCitations($result); @endphp
+						@if(!empty($citations))
+						<div class="fd-section">
+							<h6 class="fd-section-title"><i class="pe-7s-note2"></i> Citation</h6>
+							<div class="fd-citation">
+								<span class="fd-citation-style">APA</span>
+								<p id="fd-cite-apa">{!! $citations['APA'] ?? reset($citations) !!}</p>
+								<button type="button" class="btn_1 fd-copy-btn" onclick="copyFdCitation(this)">Copy citation</button>
 							</div>
+						</div>
+						@endif
 
-
+						@php
+							$copiesTotal = countCopies($result->catalog_id);
+							$copiesAvail = countAvailableCopies($result->catalog_id);
+						@endphp
+						<div class="fd-section">
+							<h6 class="fd-section-title"><i class="pe-7s-albums"></i> Physical Copies</h6>
+							<div class="fd-copies">
+								<span class="fd-copy-badge">Total copies: {{ $copiesTotal }}</span>
+								<span class="fd-copy-badge {{ $copiesAvail > 0 ? 'ok' : 'none' }}">Available: {{ $copiesAvail }}</span>
+							</div>
+						</div>
 						</div>
 						<!-- /section_1 -->
 					</div>
@@ -434,6 +379,18 @@ function inquire(holdingsid)
 {
 	$("#catalog_id_inquiry").val(holdingsid);
 	$("#inquireModal").modal('toggle')
+}
+
+function copyFdCitation(btn)
+{
+	var el = document.getElementById('fd-cite-apa');
+	if(!el) return;
+	var text = (el.innerText || el.textContent || '').trim();
+	navigator.clipboard.writeText(text).then(function(){
+		var original = btn.innerHTML;
+		btn.innerHTML = 'Copied!';
+		setTimeout(function(){ btn.innerHTML = original; }, 1200);
+	});
 }
 </script>
 @endsection

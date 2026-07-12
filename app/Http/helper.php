@@ -416,6 +416,53 @@ function getPDFLink($catalog_id)
 }
 
 /**
+ * Parse a catalog's stored MARC field_data into readable "Full Record" rows for the OPAC.
+ * Skips the Leader + 00X control fields (pure MARC plumbing) and the title/main-author
+ * tags (already shown at the top of the page), so it lists the *other* available details.
+ * Returns an array of ['label' => ..., 'value' => ...], only for fields that have a value.
+ */
+function getFullRecordFields($catalog_id)
+{
+	$cat = \App\Models\Catalog::find($catalog_id);
+	if(!$cat || !$cat->field_data) return [];
+
+	$data = json_decode($cat->field_data, true);
+	if(!is_array($data)) return [];
+
+	$skip = ['LDR','001','003','005','006','007','008','245','100','700'];
+	$labels = [
+		'020' => 'ISBN', '022' => 'ISSN', '041' => 'Language',
+		'110' => 'Corporate Author', '111' => 'Meeting Name',
+		'250' => 'Edition', '260' => 'Publication', '264' => 'Publication',
+		'300' => 'Physical Description', '336' => 'Content Type',
+		'490' => 'Series', '500' => 'Note', '504' => 'Bibliography Note',
+		'505' => 'Contents', '520' => 'Summary', '546' => 'Language Note',
+		'650' => 'Subject', '651' => 'Subject', '653' => 'Subject',
+		'710' => 'Corporate Author', '830' => 'Series', '852' => 'Location',
+		'856' => 'URL',
+	];
+
+	$out = [];
+	foreach($data as $f)
+	{
+		$code = $f['marctag']['code'] ?? '';
+		if($code === '' || in_array($code, $skip, true)) continue;
+
+		$vals = [];
+		foreach(($f['subfield'] ?? []) as $s)
+		{
+			$v = trim((string)($s['value'] ?? ''));
+			if($v !== '') $vals[] = $v;
+		}
+		if(!$vals) continue;
+
+		$label = $labels[$code] ?? ($f['marctag']['description'] ?? $code);
+		$out[] = ['label' => $label, 'value' => implode(' ', $vals)];
+	}
+	return $out;
+}
+
+/**
  * Root-relative web path to a catalog's PDF (e.g. "/pdf/ft-xxx.pdf"), but only when the
  * DB row exists AND the file is actually present on disk. Returns '' otherwise, so callers
  * (grid Read/Download buttons, PDF.js reader) never render an action that would 404.

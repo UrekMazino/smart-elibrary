@@ -33,6 +33,18 @@ function checkStocks($catalog_id)
     return $ctr > 0 ? true : false;
 }
 
+// Total physical copies on record for a material.
+function countCopies($catalog_id)
+{
+    return App\Models\Holdingcopy::where('catalog_id', $catalog_id)->count();
+}
+
+// Physical copies currently available to borrow (status 1 = Available in copies_status).
+function countAvailableCopies($catalog_id)
+{
+    return App\Models\Holdingcopy::where('catalog_id', $catalog_id)->where('status', 1)->count();
+}
+
 function mostDownloaded()
 {
     return App\Models\View_most_downloaded::get();
