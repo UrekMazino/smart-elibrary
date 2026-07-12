@@ -51,6 +51,16 @@
  @endsection
 
 @section('content')
+   <div id="breadcrumb" style="background-color: #00a496;">
+       <div class="container">
+           <ul>
+               <li><a href="{{ url('/home') }}">Home</a></li>
+               <li>Search Results</li>
+           </ul>
+       </div>
+   </div>
+   <!-- /breadcrumb -->
+
    <div id="results" style="background-color: #00a496;">
        <div class="container">
            <div class="row">
