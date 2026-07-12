@@ -83,14 +83,14 @@
 			/* Left column: match every section to the coverphoto width + tighten spacing */
 			#sidebar .fd-cover { text-align: left; }
 			#sidebar .fd-cover img, #sidebar .box_general_3 { max-width: 320px; }
-			#sidebar .box_general_3 { padding: 18px; margin-bottom: 16px; }
+			#sidebar .box_general_3 { padding: 18px; margin-bottom: 10px; }
 			#sidebar .booking .title { margin: -18px -18px 16px -18px; padding: 13px 16px; }
 			#sidebar .booking .title h3 { font-size: 18px; line-height: 1.25; }
 			#sidebar .booking .title small { font-size: 12px; }
 			#sidebar .box_general_3 hr { margin: 16px -18px; }
-			.fd-review-box #review_summary { display: flex; align-items: center; justify-content: center; gap: 16px; margin: -18px -18px 18px -18px; padding: 22px 20px; color: #fff; border-radius: 5px 5px 0 0; }
-			.fd-review-box .fd-avg-num { font-size: 3rem; line-height: 1; font-weight: 700; flex: 0 0 auto; }
-			.fd-review-box .fd-avg-meta { flex: 1 1 auto; text-align: left; }
+			.fd-review-box #review_summary { display: flex; align-items: center; justify-content: center; gap: 14px; margin: -18px -18px 14px -18px; padding: 15px 18px; color: #fff; border-radius: 5px 5px 0 0; }
+			.fd-review-box .fd-avg-num { font-size: 2.3rem; line-height: 1; font-weight: 700; flex: 0 0 auto; }
+			.fd-review-box .fd-avg-meta { flex: 0 0 auto; text-align: left; }
 			.fd-review-box .fd-avg-meta .rating { line-height: 1; }
 			.fd-review-box .fd-avg-meta small { display: block; margin-top: 5px; font-size: 12px; opacity: .92; }
 			.fd-rating-bars { margin-top: 12px; }
@@ -211,7 +211,7 @@
 				</div>
 				<!-- /col -->
 				<aside class="col-xl-3 col-lg-4 order-1" id="sidebar">
-					<figure class="fd-cover" style="margin-bottom: 16px; text-align: left;">
+					<figure class="fd-cover" style="margin-bottom: 10px; text-align: left;">
 						{!! getFrontpageResult($result->catalog_id) !!}
 					</figure>
 					@if(checkStocks($result->catalog_id))
@@ -254,7 +254,7 @@
                                         </div> --}}
                                         <!-- /row -->
 
-                                            <button type="submit" class="btn_1">Send Request</button>
+                                            <button type="submit" class="btn_1 full-width">Send Request</button>
                                     </div>
 								</form>
 							@else
@@ -286,7 +286,7 @@
 						<div id="review_summary" style="background-color: #00a496;">
 							<div class="fd-avg-num">{{ $ave }}</div>
 							<div class="fd-avg-meta">
-								<div class="rating"><i data-star="{{ $ave }}" style="font-size: 22px;"></i></div>
+								<div class="rating"><i data-star="{{ $ave }}" style="font-size: 18px;"></i></div>
 								@if($review_ctr > 0)
 									<small>Based on {{ $review_ctr }} {{ $review_ctr == 1 ? 'review' : 'reviews' }}</small>
 								@endif
@@ -304,9 +304,7 @@
 							</div>
 							@endforeach
 						</div>
-						<div class="text-center">
-                            <a href="#" class="btn_1" onclick="getElementById('frm_review').submit()">Submit review</a>
-                        </div>
+						<a href="#" class="btn_1 full-width text-center" onclick="getElementById('frm_review').submit()">Submit review</a>
 					</div>
 				</aside>
 				<!-- /asdide -->
