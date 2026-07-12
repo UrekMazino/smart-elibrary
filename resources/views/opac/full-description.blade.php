@@ -301,7 +301,7 @@
 						</div>
 						<div class="row">
 							<div class="col-12 text-center">
-								<h6 >No physical copy/ies available.</h6>
+								<h6 >No copies available.</h6>
 							</div>
 						</div>
 					</div>
