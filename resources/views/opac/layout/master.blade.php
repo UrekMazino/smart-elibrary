@@ -20,11 +20,11 @@
 	<!-- DataTables-->
 	<!-- <link href="{{ asset('opac/DataTables/Bulma-0.9.2/css/bulma.min.css') }}" rel="stylesheet"> -->
 	<link href="{{ asset('opac/DataTables/DataTables-1.12.1/css/dataTables.bootstrap5.min.css') }}" rel="stylesheet">
-	
-    
+
+
     <!-- GOOGLE WEB FONT -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
+
 	<!-- BASE CSS -->
 	<link href="{{ asset('opac/css/bootstrap.min.css') }}" rel="stylesheet">
 	<link href="{{ asset('opac/css/style.css') }}" rel="stylesheet">
@@ -33,7 +33,7 @@
 	<link href="{{ asset('opac/css/icon_fonts/css/all_icons_min.css') }}" rel="stylesheet">
 
 	<link href="{{ asset('opac/css/blog.css') }}" rel="stylesheet">
-    
+
 	<!-- YOUR CUSTOM CSS -->
 	<link href="{{ asset('opac/css/custom.css') }}" rel="stylesheet">
 	<link href="{{ asset('opac/css/stars.css') }}" rel="stylesheet">
@@ -53,7 +53,7 @@
 		<div data-loader="circle-side"></div>
 	</div>
 	<!-- End Preload -->
-    
+
 	<header class="header_sticky">
 		<div class="container">
 			<div class="row">
@@ -71,8 +71,8 @@
 								<a href="#0" class="show-submenu">Welcome, {{Auth::user()->name}} <i class="icon-down-open-mini"></i></a>
 								<ul>
 									<li><a href="{{ url('/home') }}">Home</a></li>
-									<li><a href="{{ url('/patron/profile') }}">My Profile</a></li>
-									<li><a href="{{ url('/patron/transactions') }}">My Transactions</a></li>
+									<li><a href="{{ url('/patron/profile') }}">Profile</a></li>
+									<li><a href="{{ url('/patron/transactions') }}">Reservations</a></li>
 									<li><a href="{{ url('/patron/inquiries') }}">Inquiries {!! getNotif('inquiry') !!}</a></li>
 									<li><a href="{{ url('/patron/to-review') }}">To Review {!! getNotif('review') !!}</a></li>
 									<form method="POST" id="frmLogout" action="{{ route('logout') }}">
@@ -99,7 +99,7 @@
 		<!-- /container -->
 	</header>
 	<!-- /header -->
-	
+
 	<main>
 	@yield('content')
 
@@ -212,7 +212,7 @@
 				<div class="modal-body">
 
 					<div id='inquiry_message'>
-						
+
 					</div>
 					<span>Message : </span>
 					<textarea class='form-control' name="inquiry_message_reply"></textarea>
@@ -226,7 +226,7 @@
 		</div>
 	</div>
 
-	
+
 
 	<!-- COMMON SCRIPTS -->
 	<script src="{{ asset('opac/js/jquery-3.6.0.min.js') }}"></script>
@@ -237,13 +237,13 @@
 	<!-- <script src="{{ asset('opac/DataTables/datatables.min.js') }}"></script> -->
 	<script src="{{ asset('opac/DataTables/DataTables-1.12.1/js/jquery.dataTables.min.js') }}"></script>
 	<script src="{{ asset('opac/DataTables/DataTables-1.12.1/js/dataTables.bootstrap5.min.js') }}"></script>
-	
+
 	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 	<!-- CHATBOT -->
 	{{-- <script src="https://account.snatchbot.me/script.js"></script><script>window.sntchChat.Init(257292)</script>  --}}
 
 	@yield('js')
 
-	 
+
 </body>
 </html>
