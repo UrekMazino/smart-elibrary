@@ -41,9 +41,13 @@
 		</div>
 		<!-- /breadcrumb -->
 
+		<style>
+			.fd-cover { margin: 0; }
+			.fd-cover img { box-shadow: 0 2px 10px rgba(0,0,0,.25); border-radius: 3px; max-width: 320px; width: 100%; }
+		</style>
 		<div class="container margin_60">
 			<div class="row">
-				<div class="col-xl-8 col-lg-8">
+				<div class="col-xl-8 col-lg-8 order-2">
 					<nav id="secondary_nav" style="background-color: #00a496;">
 						<div class="container">
 							<ul class="clearfix">
@@ -56,12 +60,7 @@
 						<div class="box_general_3">
 							<div class="profile">
 								<div class="row">
-									<div class="col-lg-5 col-md-4">
-										<figure>
-											{!! getFrontpageResult($result->catalog_id) !!}
-										</figure>
-									</div>
-									<div class="col-lg-7 col-md-8">
+									<div class="col-12">
 										<small>{{ $result->material }}</small>
 										<br><i data-star="{{ $ave }}" style="font-size:20px"></i>
 										<h5>{!! $result->title_statement !!}</h5>
@@ -304,7 +303,10 @@
 					<!-- /section_2 -->
 				</div>
 				<!-- /col -->
-				<aside class="col-xl-4 col-lg-4" id="sidebar">
+				<aside class="col-xl-4 col-lg-4 order-1" id="sidebar">
+					<figure class="fd-cover" style="margin-bottom: 20px; text-align: center;">
+						{!! getFrontpageResult($result->catalog_id) !!}
+					</figure>
 					@if(checkStocks($result->catalog_id))
 					<div class="box_general_3 booking">
 							<div class="title text-center" style="background-color: #00a496;">
