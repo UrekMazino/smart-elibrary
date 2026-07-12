@@ -28,6 +28,8 @@
     .ol-reader-close { background: transparent; border: 0; color: #fff; font-size: 26px; line-height: 1; cursor: pointer; padding: 0 6px; }
     .ol-reader-close:hover { color: #ff6b6b; }
     .ol-reader-frame { flex: 1 1 auto; width: 100%; border: 0; background: #3a3a3a; }
+    #breadcrumb.breadcrumb_inline { background: transparent; padding: 0; }
+    @media (max-width: 767px) { #breadcrumb.breadcrumb_inline { padding: 0 0 12px; } }
     .margin_30_35 { margin-top: 30px; margin-bottom: 35px; }
     .margin_30_35 h3.alert-info { font-size: 16px; line-height: 1.4; margin-bottom: 20px; }
     #sidebar .box_general_3 .title h3 { font-size: 17px; }
@@ -42,21 +44,16 @@
  @endsection
 
 @section('content')
-   <div id="breadcrumb" style="background-color: #00a496;">
-       <div class="container">
-           <ul>
-               <li><a href="{{ url('/home') }}">Home</a></li>
-               <li>Search Results</li>
-           </ul>
-       </div>
-   </div>
-   <!-- /breadcrumb -->
-
    <div id="results" style="background-color: #00a496;">
        <div class="container">
-           <div class="row">
+           <div class="row align-items-center">
                <div class="col-md-6">
-                   <!-- <h4><strong>Showing 10</strong> of {{ $result->total() }} results</h4> -->
+                   <div id="breadcrumb" class="breadcrumb_inline">
+                       <ul>
+                           <li><a href="{{ url('/home') }}">Home</a></li>
+                           <li>Search Results</li>
+                       </ul>
+                   </div>
                </div>
                <div class="col-md-6">
                	<form method="get" action="{{ url('/results') }}" id="frm">

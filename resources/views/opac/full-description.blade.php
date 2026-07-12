@@ -33,8 +33,8 @@
 		<div id="breadcrumb" style="background-color: #00a496;">
 			<div class="container">
 				<ul>
-					<li><a href="#">Home</a></li>
-					<li><a href="#">Material</a></li>
+					<li><a href="{{ url('/home') }}">Home</a></li>
+					<li><a href="{{ url('/home') }}#search" onclick="if(document.referrer){history.back();return false;}">Search Results</a></li>
 					<li>Description</li>
 				</ul>
 			</div>

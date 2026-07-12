@@ -37,6 +37,8 @@
     @media (max-width: 1199px) { .ol-grid { grid-template-columns: repeat(4, 1fr); } }
     @media (max-width: 767px)  { .ol-grid { grid-template-columns: repeat(3, 1fr); } }
     @media (max-width: 479px)  { .ol-grid { grid-template-columns: repeat(2, 1fr); } }
+    #breadcrumb.breadcrumb_inline { background: transparent; padding: 0; }
+    @media (max-width: 767px) { #breadcrumb.breadcrumb_inline { padding: 0 0 12px; } }
     .margin_30_35 { margin-top: 30px; margin-bottom: 35px; }
     .margin_30_35 h3.alert-info { font-size: 16px; line-height: 1.4; margin-bottom: 20px; }
     #sidebar .box_general_3 .title h3 { font-size: 17px; }
@@ -51,21 +53,16 @@
  @endsection
 
 @section('content')
-   <div id="breadcrumb" style="background-color: #00a496;">
-       <div class="container">
-           <ul>
-               <li><a href="{{ url('/home') }}">Home</a></li>
-               <li>Search Results</li>
-           </ul>
-       </div>
-   </div>
-   <!-- /breadcrumb -->
-
    <div id="results" style="background-color: #00a496;">
        <div class="container">
-           <div class="row">
+           <div class="row align-items-center">
                <div class="col-md-6">
-                   {{-- <h4><strong>Showing 10</strong> of {{ $result->total() }} results</h4> --}}
+                   <div id="breadcrumb" class="breadcrumb_inline">
+                       <ul>
+                           <li><a href="{{ url('/home') }}">Home</a></li>
+                           <li>Search Results</li>
+                       </ul>
+                   </div>
                </div>
                <div class="col-md-6">
 					<form method="get" action="{{ url('/results') }}" id="frm">
