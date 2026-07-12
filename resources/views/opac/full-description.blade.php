@@ -88,7 +88,7 @@
 			#sidebar .booking .title h3 { font-size: 18px; line-height: 1.25; }
 			#sidebar .booking .title small { font-size: 12px; }
 			#sidebar .box_general_3 hr { margin: 16px -18px; }
-			.fd-review-box #review_summary { display: flex; align-items: center; gap: 18px; padding: 16px 20px; margin-bottom: 4px; color: #fff; }
+			.fd-review-box #review_summary { display: flex; align-items: center; justify-content: center; gap: 16px; margin: -18px -18px 18px -18px; padding: 22px 20px; color: #fff; border-radius: 5px 5px 0 0; }
 			.fd-review-box .fd-avg-num { font-size: 3rem; line-height: 1; font-weight: 700; flex: 0 0 auto; }
 			.fd-review-box .fd-avg-meta { flex: 1 1 auto; text-align: left; }
 			.fd-review-box .fd-avg-meta .rating { line-height: 1; }
@@ -283,7 +283,6 @@
 					<!-- /box_general -->
 					{{-- Ratings summary + submit review (moved from the reviews section) --}}
 					<div class="box_general_3 booking fd-review-box">
-
 						<div id="review_summary" style="background-color: #00a496;">
 							<div class="fd-avg-num">{{ $ave }}</div>
 							<div class="fd-avg-meta">
@@ -305,8 +304,9 @@
 							</div>
 							@endforeach
 						</div>
-						<hr>
-						<div class="text-center"><a href="#" class="btn_1" onclick="getElementById('frm_review').submit()">Submit review</a></div>
+						<div class="text-center">
+                            <a href="#" class="btn_1" onclick="getElementById('frm_review').submit()">Submit review</a>
+                        </div>
 					</div>
 				</aside>
 				<!-- /asdide -->
