@@ -18,8 +18,11 @@
     .ol-card { text-align: center; min-width: 0; }
     .ol-card .ol-cover { position: relative; display: flex; align-items: flex-end; justify-content: center; height: 230px; overflow: hidden; border-radius: 3px; }
     .ol-card .ol-cover img { max-height: 230px; max-width: 100%; width: auto; box-shadow: 0 1px 6px rgba(0,0,0,.22); border-radius: 2px; }
-    .ol-card .ol-hover-title { position: absolute; left: 0; right: 0; bottom: 0; box-sizing: border-box; padding: 10px 9px; background: linear-gradient(to top, rgba(0,0,0,.88) 55%, rgba(0,0,0,0)); color: #fff; font-size: 12.5px; line-height: 1.32; font-weight: 600; text-align: left; opacity: 0; transform: translateY(6px); transition: opacity .16s ease, transform .16s ease; pointer-events: none; display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
-    .ol-card .ol-cover:hover .ol-hover-title { opacity: 1; transform: translateY(0); }
+    .ol-card .ol-hover-info { position: absolute; left: 0; right: 0; bottom: 0; box-sizing: border-box; padding: 10px 9px; background: linear-gradient(to top, rgba(0,0,0,.88) 60%, rgba(0,0,0,0)); text-align: left; opacity: 0; transform: translateY(6px); transition: opacity .16s ease, transform .16s ease; pointer-events: none; }
+    .ol-card .ol-cover:hover .ol-hover-info { opacity: 1; transform: translateY(0); }
+    .ol-card .ol-hover-title { color: #fff; font-size: 12.5px; line-height: 1.32; font-weight: 600; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
+    .ol-card .ol-hover-rating { display: block; margin-top: 5px; line-height: 1; }
+    .ol-card .ol-hover-rating [data-star] { font-size: 13px; }
     .ol-card .ol-actions { margin-top: 9px; display: flex; flex-direction: column; gap: 6px; }
     .ol-card .ol-btn-row { display: flex; gap: 6px; }
     .ol-icon-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; height: 30px; border: 1px solid #d0d7de; border-radius: 4px; background: #fff; color: #3f4079; font-size: 14px; cursor: pointer; text-decoration: none; transition: background .12s, color .12s, border-color .12s; }
@@ -107,7 +110,10 @@
 					<div class="ol-card">
 						<a href="#0" class="ol-cover" onclick="submitFrm('{{ $results->catalog_id }}')" title="{{ $results->title_statement }}">
 							{!! getThumbnailResult($results->catalog_id) !!}
-							<span class="ol-hover-title">{{ $results->title_statement }}</span>
+							<span class="ol-hover-info">
+								<span class="ol-hover-title">{{ $results->title_statement }}</span>
+								<span class="ol-hover-rating rating"><i data-star="{{ starRatingAve($results->catalog_id) }}"></i></span>
+							</span>
 						</a>
 						@php $pdfUrl = getReadPdfUrl($results->catalog_id); $canBorrow = checkStocks($results->catalog_id); @endphp
 						<div class="ol-actions">
