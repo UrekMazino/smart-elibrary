@@ -157,6 +157,7 @@
 									<button type="button" class="btn_1 fd-btn" disabled title="No file available to download"><i class="icon-download"></i> Download</button>
 								@endif
 								<button type="button" class="btn_1 fd-btn" onclick="inquire('{{ $result->catalog_id }}')"><i class="icon-info-3"></i> Inquire</button>
+								<button type="button" class="btn_1 fd-btn" data-share-url="{{ url('/full-description/'.$result->catalog_id) }}" data-share-title="{{ $result->title_statement }}" onclick="shareRecord(this)" title="Copy link to this record"><i class="pe-7s-link"></i> Share</button>
 							</div>
 						</div>
 
@@ -425,6 +426,42 @@ function closeReader()
 
 document.addEventListener('keydown', function(e){ if(e.key === 'Escape'){ closeReader(); } });
 window.addEventListener('resize', positionReader);
+
+function shareRecord(btn)
+{
+	var url = btn.getAttribute('data-share-url');
+	var title = btn.getAttribute('data-share-title') || document.title;
+
+	// Native share sheet when the browser supports it (secure context only).
+	if (navigator.share && window.isSecureContext) {
+		navigator.share({ title: title, url: url }).catch(function(){});
+		return;
+	}
+
+	// Otherwise copy the link. navigator.clipboard needs https, so fall back to execCommand.
+	function flash(){
+		var original = btn.getAttribute('data-label') || btn.innerHTML;
+		btn.setAttribute('data-label', original);
+		btn.innerHTML = 'Link copied!';
+		setTimeout(function(){ btn.innerHTML = btn.getAttribute('data-label'); }, 1400);
+	}
+	function legacyCopy(){
+		var ta = document.createElement('textarea');
+		ta.value = url;
+		ta.style.position = 'fixed';
+		ta.style.left = '-9999px';
+		document.body.appendChild(ta);
+		ta.focus();
+		ta.select();
+		try { document.execCommand('copy'); flash(); } catch(e) {}
+		document.body.removeChild(ta);
+	}
+	if (navigator.clipboard && window.isSecureContext) {
+		navigator.clipboard.writeText(url).then(flash).catch(legacyCopy);
+	} else {
+		legacyCopy();
+	}
+}
 
 function copyFdCitation(btn)
 {
