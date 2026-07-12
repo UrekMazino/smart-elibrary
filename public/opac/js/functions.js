@@ -111,13 +111,18 @@
 		}
 		return headerH;
 	}
-	var _opacHeaderH = opacDockResults();
-	var _opacResultsH = $('#results').length ? $('#results').outerHeight() : 0;
+	opacDockResults();
 	$(window).on('resize', opacDockResults);
 
-	// Sticky sidebar starts below the header (+ the docked search bar when present)
-	$('#sidebar').theiaStickySidebar({
-		additionalMarginTop: _opacHeaderH + _opacResultsH + 10
+	// Initialise the sticky sidebar AFTER full load so header/search-bar heights are final;
+	// initialising at DOM-ready (before fonts/images settle) intermittently mis-positioned
+	// the sidebar. Single init on load = accurate measurements, no fighting instances.
+	$(window).on('load', function () {
+		var headerH = opacDockResults();
+		var resultsH = $('#results').length ? $('#results').outerHeight() : 0;
+		$('#sidebar').theiaStickySidebar({
+			additionalMarginTop: headerH + resultsH + 10
+		});
 	});
 
 	// Tooltips
