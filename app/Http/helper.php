@@ -441,6 +441,82 @@ function citeAuthors(array $authors, $style)
 	return implode(', ', $authors).', '.$conj.' '.$last;
 }
 
+/**
+ * Generate a title-based placeholder book cover (colored background + wrapped title +
+ * first author + material type) for a material that has no real cover. Deterministic
+ * color per title. Returns true on success. Temporary/removable via the covers command.
+ */
+function generatePlaceholderCover($vc, $destPath, $w = 400, $h = 520)
+{
+	if (!extension_loaded('gd') || !$vc) return false;
+
+	$palette = [
+		[44,62,80],[39,60,117],[106,44,112],[125,60,52],[27,94,89],
+		[64,64,122],[130,88,159],[45,52,54],[87,101,116],[120,40,64],
+	];
+	$title  = trim((string)($vc->title_statement ?? 'Untitled')) ?: 'Untitled';
+	$c      = $palette[abs(crc32($title)) % count($palette)];
+
+	$im    = imagecreatetruecolor($w, $h);
+	imagefilledrectangle($im, 0, 0, $w, $h, imagecolorallocate($im, $c[0], $c[1], $c[2]));
+	imagefilledrectangle($im, 0, 0, $w, 6, imagecolorallocate($im, min($c[0]+60,255), min($c[1]+60,255), min($c[2]+60,255)));
+	$white = imagecolorallocate($im, 246,246,246);
+	$muted = imagecolorallocate($im, 205,205,205);
+
+	$fontB = coverFontPath(true);
+	$fontR = coverFontPath(false);
+
+	if ($fontB && $fontR) {
+		$lines = array_slice(coverWrapLines($fontB, 22, $title, $w - 60), 0, 8);
+		$y = 100;
+		foreach ($lines as $ln) {
+			$bb = imagettfbbox(22, 0, $fontB, $ln);
+			imagettftext($im, 22, 0, (int)(($w - ($bb[2]-$bb[0])) / 2), $y, $white, $fontB, $ln);
+			$y += 34;
+		}
+		$author = trim(explode('/', (string)($vc->joint_authors ?? ''))[0]);
+		if ($author !== '') {
+			$bb = imagettfbbox(15, 0, $fontR, $author);
+			imagettftext($im, 15, 0, (int)(($w - ($bb[2]-$bb[0])) / 2), $h - 74, $muted, $fontR, $author);
+		}
+		$mat = strtoupper(trim((string)($vc->material_type ?? '')));
+		if ($mat !== '') {
+			$bb = imagettfbbox(12, 0, $fontR, $mat);
+			imagettftext($im, 12, 0, (int)(($w - ($bb[2]-$bb[0])) / 2), $h - 42, $muted, $fontR, $mat);
+		}
+	} else {
+		imagestring($im, 5, 20, 40, wordwrap($title, 34, "\n", true), $white);
+	}
+
+	if (!is_dir(dirname($destPath))) @mkdir(dirname($destPath), 0775, true);
+	imagejpeg($im, $destPath, 88);
+	imagedestroy($im);
+	return true;
+}
+
+function coverFontPath($bold)
+{
+	$c = $bold
+		? ['C:/Windows/Fonts/arialbd.ttf', 'C:/Windows/Fonts/segoeuib.ttf']
+		: ['C:/Windows/Fonts/arial.ttf',   'C:/Windows/Fonts/segoeui.ttf'];
+	foreach ($c as $f) { if (is_file($f)) return $f; }
+	return null;
+}
+
+function coverWrapLines($font, $size, $text, $maxWidth)
+{
+	$words = preg_split('/\s+/', $text);
+	$lines = []; $line = '';
+	foreach ($words as $wd) {
+		$try = $line === '' ? $wd : $line.' '.$wd;
+		$bb  = imagettfbbox($size, 0, $font, $try);
+		if (($bb[2] - $bb[0]) > $maxWidth && $line !== '') { $lines[] = $line; $line = $wd; }
+		else { $line = $try; }
+	}
+	if ($line !== '') $lines[] = $line;
+	return $lines;
+}
+
 function getFrontpage($catalog_id)
 {
 	$img = App\Models\Frontpage::where('catalog_id',$catalog_id)->first();
