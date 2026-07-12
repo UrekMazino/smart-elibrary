@@ -79,18 +79,24 @@
 			.ol-reader-close { background: transparent; border: 0; color: #fff; font-size: 26px; line-height: 1; cursor: pointer; padding: 0 6px; }
 			.ol-reader-close:hover { color: #ff6b6b; }
 			.ol-reader-frame { flex: 1 1 auto; width: 100%; border: 0; background: #3a3a3a; }
-			/* Left column: match every section to the coverphoto width */
+			/* Left column: match every section to the coverphoto width + tighten spacing */
 			#sidebar .fd-cover { text-align: left; }
 			#sidebar .fd-cover img, #sidebar .box_general_3 { max-width: 320px; }
-			.fd-review-box #review_summary { text-align: center; padding: 16px 12px; margin-bottom: 4px; }
-			.fd-rating-bars { margin-top: 14px; }
+			#sidebar .box_general_3 { padding: 18px; margin-bottom: 16px; }
+			#sidebar .booking .title { margin: -18px -18px 16px -18px; padding: 13px 16px; }
+			#sidebar .booking .title h3 { font-size: 18px; line-height: 1.25; }
+			#sidebar .booking .title small { font-size: 12px; }
+			#sidebar .box_general_3 hr { margin: 16px -18px; }
+			.fd-review-box #review_summary { text-align: center; padding: 16px 10px; margin-bottom: 4px; }
+			.fd-review-box #review_summary strong { font-size: 2.4rem; }
+			.fd-rating-bars { margin-top: 12px; }
 			.fd-rating-bars .row { margin: 0 0 7px; align-items: center; }
 			.fd-rating-bars .progress { height: 9px; }
 			.fd-rating-bars small { font-size: 11px; white-space: nowrap; }
 		</style>
 		<div class="container margin_60">
 			<div class="row">
-				<div class="col-xl-8 col-lg-8 order-2">
+				<div class="col-xl-9 col-lg-8 order-2">
 					<nav id="secondary_nav" style="background-color: #00a496;">
 						<div class="container">
 							<ul class="clearfix">
@@ -200,8 +206,8 @@
 					<!-- /section_2 -->
 				</div>
 				<!-- /col -->
-				<aside class="col-xl-4 col-lg-4 order-1" id="sidebar">
-					<figure class="fd-cover" style="margin-bottom: 20px; text-align: center;">
+				<aside class="col-xl-3 col-lg-4 order-1" id="sidebar">
+					<figure class="fd-cover" style="margin-bottom: 16px; text-align: left;">
 						{!! getFrontpageResult($result->catalog_id) !!}
 					</figure>
 					@if(checkStocks($result->catalog_id))
