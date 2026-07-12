@@ -133,7 +133,8 @@ function getSeriesDesc($id)
 
 function getTitle($id)
 {
-	$pub = App\Models\Holding::where('catalog_id',$id)->first();
+	// Titles live in view_catalogs; the holdings table is empty, so query ViewCatalog.
+	$pub = App\Models\ViewCatalog::where('catalog_id',$id)->first();
 	if(isset($pub))
 	{
 		return formatTitle($pub['title_statement']);
@@ -142,7 +143,7 @@ function getTitle($id)
 	{
 		return null;
 	}
-	
+
 }
 
 function showReview($catalog_id)
