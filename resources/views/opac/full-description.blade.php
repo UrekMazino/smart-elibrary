@@ -247,7 +247,7 @@
 								<small>Monday to Friday 08:00am-05:00pm</small>
 							</div>
 							@auth
-								<form method="post" action="{{ url('/request-reservation') }}" id="frm_review">
+								<form method="post" action="{{ url('/request-reservation') }}" id="frm_reservation">
                                     @csrf
                                     <div class="row">
                                         <div class="col-6">
@@ -280,7 +280,7 @@
                                         </div> --}}
                                         <!-- /row -->
 
-                                            <button type="submit" class="btn_1 full-width">Send Request</button>
+                                            <button type="button" class="btn_1 full-width" onclick="confirmReservation()">Send Request</button>
                                     </div>
 								</form>
 							@else
@@ -384,6 +384,30 @@
 			</div>
 		</div>
 
+	{{-- Confirm reservation before sending the request --}}
+	<div class="modal fade" id="reserveConfirmModal" tabindex="-1" role="dialog">
+		<div class="modal-dialog" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h4 class="title">Confirm reservation</h4>
+				</div>
+				<div class="modal-body">
+					<p class="mb-2">Please confirm your visit reservation for:</p>
+					<p class="mb-3"><strong>{{ $result->title_statement }}</strong></p>
+					<ul class="list-unstyled mb-2">
+						<li><strong>Date:</strong> <span id="reserveConfirmDate">&mdash;</span></li>
+						<li><strong>Time:</strong> <span id="reserveConfirmTime">&mdash;</span></li>
+					</ul>
+					<p class="text-muted mb-0" style="font-size:13px;">Your request will be sent to the library for approval.</p>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-success" onclick="submitReservation(this)">Confirm &amp; send</button>
+					<button type="button" class="btn btn-danger" data-bs-dismiss="modal">Cancel</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
 	{{-- Read overlay: in-browser PDF.js reader --}}
 	<div id="ol-reader" class="ol-reader">
 		<div class="ol-reader-bar">
@@ -400,6 +424,28 @@ function inquire(holdingsid)
 {
 	$("#catalog_id_inquiry").val(holdingsid);
 	$("#inquireModal").modal('toggle')
+}
+
+function confirmReservation()
+{
+	var form = document.getElementById('frm_reservation');
+	if (!form) return;
+
+	// Run the form's native validation (the date is required) before confirming.
+	if (typeof form.reportValidity === 'function' && !form.reportValidity()) return;
+
+	var dateEl = form.querySelector('[name="visit_scheddate"]');
+	var timeEl = form.querySelector('[name="visit_schedtime"]');
+	document.getElementById('reserveConfirmDate').textContent = (dateEl && dateEl.value) ? dateEl.value : '—';
+	document.getElementById('reserveConfirmTime').textContent = (timeEl && timeEl.value) ? timeEl.value : '—';
+
+	$("#reserveConfirmModal").modal('show');
+}
+
+function submitReservation(btn)
+{
+	if (btn) { btn.disabled = true; }   // prevent double-submit
+	document.getElementById('frm_reservation').submit();
 }
 
 function positionReader()
