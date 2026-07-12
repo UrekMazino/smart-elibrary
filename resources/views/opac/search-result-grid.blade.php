@@ -14,15 +14,39 @@
     <!-- SPECIFIC CSS -->
     <link href="{{ asset('opac/css/date_picker.css') }}" rel="stylesheet">
     <style>
-    .ol-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(125px, 1fr)); gap: 38px 30px; }
+    .ol-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 34px 28px; }
     .ol-card { text-align: center; min-width: 0; }
-    .ol-card .ol-cover { display: flex; align-items: flex-end; justify-content: center; height: 165px; }
-    .ol-card .ol-cover img { max-height: 165px; max-width: 100%; width: auto; box-shadow: 0 1px 6px rgba(0,0,0,.22); border-radius: 2px; }
-    .ol-card .ol-title { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-top: 8px; font-size: 12.5px; line-height: 1.3; color: #0176d3; font-weight: 600; text-decoration: none; }
-    .ol-card .ol-title:hover { text-decoration: underline; }
-    .ol-card .ol-author { font-size: 11.5px; color: #666; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .ol-card .ol-action { margin-top: 7px; }
-    .ol-card .ol-action .btn_1 { font-size: 11px; padding: 4px 12px; display: inline-block; line-height: 1.4; }
+    .ol-card .ol-cover { position: relative; display: flex; align-items: flex-end; justify-content: center; height: 230px; overflow: hidden; border-radius: 3px; }
+    .ol-card .ol-cover img { max-height: 230px; max-width: 100%; width: auto; box-shadow: 0 1px 6px rgba(0,0,0,.22); border-radius: 2px; }
+    .ol-card .ol-hover-title { position: absolute; left: 0; right: 0; bottom: 0; box-sizing: border-box; padding: 10px 9px; background: linear-gradient(to top, rgba(0,0,0,.88) 55%, rgba(0,0,0,0)); color: #fff; font-size: 12.5px; line-height: 1.32; font-weight: 600; text-align: left; opacity: 0; transform: translateY(6px); transition: opacity .16s ease, transform .16s ease; pointer-events: none; display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
+    .ol-card .ol-cover:hover .ol-hover-title { opacity: 1; transform: translateY(0); }
+    .ol-card .ol-actions { margin-top: 9px; display: flex; flex-direction: column; gap: 6px; }
+    .ol-card .ol-btn-row { display: flex; gap: 6px; }
+    .ol-icon-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; height: 30px; border: 1px solid #d0d7de; border-radius: 4px; background: #fff; color: #3f4079; font-size: 14px; cursor: pointer; text-decoration: none; transition: background .12s, color .12s, border-color .12s; }
+    .ol-icon-btn:hover { background: #00a496; border-color: #00a496; color: #fff; }
+    .ol-icon-btn.disabled { opacity: .5; cursor: not-allowed; background: #f4f5f7; border-color: #e1e4e8; color: #9aa0a6; }
+    .ol-icon-btn.disabled:hover { background: #f4f5f7; border-color: #e1e4e8; color: #9aa0a6; }
+    .ol-card .ol-full-desc { display: block; width: 100%; text-align: center; border-radius: 4px; font-size: 11.5px; padding: 7px 8px; line-height: 1.3; }
+    /* Read overlay (PDF.js) */
+    .ol-reader { position: fixed; inset: 0; z-index: 20000; background: rgba(18,20,24,.94); display: none; flex-direction: column; }
+    .ol-reader-bar { flex: 0 0 46px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; background: #1b1d21; color: #fff; }
+    .ol-reader-title { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 12px; }
+    .ol-reader-close { background: transparent; border: 0; color: #fff; font-size: 26px; line-height: 1; cursor: pointer; padding: 0 6px; }
+    .ol-reader-close:hover { color: #ff6b6b; }
+    .ol-reader-frame { flex: 1 1 auto; width: 100%; border: 0; background: #3a3a3a; }
+    @media (max-width: 1199px) { .ol-grid { grid-template-columns: repeat(4, 1fr); } }
+    @media (max-width: 767px)  { .ol-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 479px)  { .ol-grid { grid-template-columns: repeat(2, 1fr); } }
+    .margin_30_35 { margin-top: 30px; margin-bottom: 35px; }
+    .margin_30_35 h3.alert-info { font-size: 16px; line-height: 1.4; margin-bottom: 20px; }
+    #sidebar .box_general_3 .title h3 { font-size: 17px; }
+    #sidebar .box_general_3 .title.title_with_layout { display: flex; align-items: center; justify-content: space-between; }
+    #sidebar .title_with_layout h3 { margin-bottom: 0; }
+    .layout_view_inline { margin-bottom: 0; padding: 4px 9px; line-height: 1; }
+    .layout_view_inline a { color: #3f4079; font-size: 17px; text-decoration: none; }
+    .layout_view_inline a + a { margin-left: 9px; }
+    .layout_view_inline a.active { color: #00a496; }
+    .layout_view_inline a:hover { color: #e74e84; }
     </style>
  @endsection
 
@@ -61,40 +85,7 @@
    </div>
    <!-- /results -->
 
-   <div class="filters_listing">
-		<div class="container">
-			<ul class="clearfix">
-				<li>
-					<!-- <h6>Type</h6>
-					<div class="form-check form-check-inline">
-							<input class="form-check-input" type="checkbox" value="0" id="checkAll" name="seachtype[]" checked>
-	  						<label class="form-check-label" for="checkAll" style="padding: 2px!important;background-color: transparent;">
-	    								All
-	  						</label>
-  						</div>
-  						@foreach(getMaterials() AS $materials)
-  						<div class="form-check form-check-inline">
-							<input class="form-check-input" type="checkbox" value="{{ $materials->id }}" name="seachtype[]" id="materials-{{ $materials->id }}">
-	  						<label class="form-check-label lbl-check" id="materials-{{ $materials->id }}" style="padding: 2px!important;background-color: transparent;" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ $materials->tooltip }}">
-	    								{{ $materials->name }}
-	  						</label>
-  						</div>
-  						@endforeach -->
-				</li>
-				<li>
-					<h6>Layout</h6>
-					<div class="layout_view">
-						<a href="#0" class="active"><i class="icon-th"></i></a>
-						<a href="#0" tooltip="List View"  data-bs-toggle="tooltip" data-bs-placement="top" title="List View"><i class="icon-th-list" onclick="changeLayout('list')"></i></a>
-					</div>
-				</li>
-			</ul>
-		</div>
-		<!-- /container -->
-	</div>
-	<!-- /filters -->
-	   
-	<div class="container margin_60_35">
+	<div class="container margin_30_35">
 		<div class="row">
 			<div class="col-lg-9">
 				@if(isset($_GET['query']) && $_GET['query'] != '')
@@ -107,15 +98,24 @@
 				<div class="ol-grid">
 					@foreach($result AS $results)
 					<div class="ol-card">
-						<a href="#0" class="ol-cover" onclick="submitFrm('{{ $results->catalog_id }}')">
+						<a href="#0" class="ol-cover" onclick="submitFrm('{{ $results->catalog_id }}')" title="{{ $results->title_statement }}">
 							{!! getThumbnailResult($results->catalog_id) !!}
+							<span class="ol-hover-title">{{ $results->title_statement }}</span>
 						</a>
-						<a href="#0" class="ol-title" onclick="submitFrm('{{ $results->catalog_id }}')">{{ maxTitle($results->title_statement, 70) }}</a>
-						@if($results->joint_authors)
-							<div class="ol-author">{{ trim(explode('/', $results->joint_authors)[0]) }}</div>
-						@endif
-						<div class="ol-action">
-							<a href="#0" class="btn_1" onclick="submitFrm('{{ $results->catalog_id }}')">Full description</a>
+						@php $pdfUrl = getReadPdfUrl($results->catalog_id); $canBorrow = checkStocks($results->catalog_id); @endphp
+						<div class="ol-actions">
+							<div class="ol-btn-row">
+								@if($pdfUrl)
+									<a href="#0" class="ol-icon-btn" title="Read online" onclick="openReader('{{ $pdfUrl }}', @js($results->title_statement)); return false;"><i class="icon-book"></i></a>
+									<a href="#0" class="ol-icon-btn" title="Download PDF (login required)" onclick="downloadPdf('{{ $results->catalog_id }}'); return false;"><i class="icon-download"></i></a>
+								@endif
+								@if($canBorrow)
+									<a href="#0" class="ol-icon-btn" title="Available to borrow — view details" onclick="submitFrm('{{ $results->catalog_id }}'); return false;"><i class="icon-library"></i></a>
+								@else
+									<span class="ol-icon-btn disabled" title="No physical copy available for borrowing"><i class="icon-library"></i></span>
+								@endif
+							</div>
+							<a href="#0" class="btn_1 ol-full-desc" onclick="submitFrm('{{ $results->catalog_id }}'); return false;">Full description</a>
 						</div>
 					</div>
 					@endforeach
@@ -130,8 +130,12 @@
 
 			<aside class="col-xl-3 col-lg-3" id="sidebar">
 				<div class="box_general_3 booking">
-						<div class="title" style="background-color: #00a496;">
+						<div class="title title_with_layout" style="background-color: #00a496;">
 						<h3>Filter Result</h3>
+						<div class="layout_view layout_view_inline">
+							<a href="#0" class="active"><i class="icon-th"></i></a>
+							<a href="#0" data-bs-toggle="tooltip" data-bs-placement="top" title="List View"><i class="icon-th-list" onclick="changeLayout('list')"></i></a>
+						</div>
 						</div>
 						<form method="get" action="{{ url('/results') }}" id="frm">
 						@csrf
@@ -196,6 +200,21 @@
 	@csrf
 	<input type="hidden" name="catalog_id" id="catalog_id">
 </form>
+
+{{-- Download (login enforced by DownloadController auth+patron middleware; increments Downloads) --}}
+<form method="post" action="{{ url('/download') }}" id="frm_download_grid" target="_blank">
+	@csrf
+	<input type="hidden" name="holdings_download_id" id="dl_catalog_id" value="">
+</form>
+
+{{-- Read overlay: in-browser PDF.js reader (open to everyone) --}}
+<div id="ol-reader" class="ol-reader">
+	<div class="ol-reader-bar">
+		<span class="ol-reader-title" id="ol-reader-title"></span>
+		<button type="button" class="ol-reader-close" onclick="closeReader()" aria-label="Close reader">&times;</button>
+	</div>
+	<iframe id="ol-reader-frame" class="ol-reader-frame" src="about:blank" title="Online reader"></iframe>
+</div>
 @endsection
 
 @section('js')
@@ -244,6 +263,41 @@
 		$("#catalog_id").val(id);
 		$("#frm2").submit();
 	}
+
+	function downloadPdf(id)
+	{
+		$("#dl_catalog_id").val(id);
+		$("#frm_download_grid").submit();
+	}
+
+	function positionReader()
+	{
+		var reader = document.getElementById('ol-reader');
+		if(!reader || reader.style.display === 'none') return;
+		var header = document.querySelector('header.header_sticky') || document.querySelector('header');
+		var top = header ? Math.max(0, header.getBoundingClientRect().bottom) : 0;
+		reader.style.top = top + 'px';
+	}
+
+	function openReader(pdfPath, title)
+	{
+		var viewer = '/pdfjs/web/viewer.html?file=' + encodeURIComponent(pdfPath);
+		document.getElementById('ol-reader-frame').src = viewer;
+		document.getElementById('ol-reader-title').textContent = title || 'Reading';
+		document.getElementById('ol-reader').style.display = 'flex';
+		document.body.style.overflow = 'hidden';
+		positionReader();
+	}
+
+	function closeReader()
+	{
+		document.getElementById('ol-reader').style.display = 'none';
+		document.getElementById('ol-reader-frame').src = 'about:blank';
+		document.body.style.overflow = '';
+	}
+
+	document.addEventListener('keydown', function(e){ if(e.key === 'Escape'){ closeReader(); } });
+	window.addEventListener('resize', positionReader);
 
 	$("#frm").submit(function(){
 		$("#query").val($("#querysearch").val());

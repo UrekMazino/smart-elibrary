@@ -416,6 +416,22 @@ function getPDFLink($catalog_id)
 }
 
 /**
+ * Root-relative web path to a catalog's PDF (e.g. "/pdf/ft-xxx.pdf"), but only when the
+ * DB row exists AND the file is actually present on disk. Returns '' otherwise, so callers
+ * (grid Read/Download buttons, PDF.js reader) never render an action that would 404.
+ */
+function getReadPdfUrl($catalog_id)
+{
+	$pdf = App\Models\Multimedia::where('catalog_id',$catalog_id)->first();
+	if(!$pdf) return '';
+
+	$loc = ltrim((string)$pdf['FileLocation'], '/');
+	if($loc === '' || !is_file(public_path($loc))) return '';
+
+	return '/'.$loc;
+}
+
+/**
  * Build formatted citations (APA / MLA / Chicago) from a catalog record.
  * Dependency-free and reusable — intended to also back a future citation API so the
  * Project Y RAG can cite eLibrary materials in the same formats. $record needs:

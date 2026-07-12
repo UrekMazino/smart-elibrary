@@ -16,6 +16,16 @@
     .ol-list-actions { flex-shrink: 0; align-self: center; }
     .ol-list-actions .btn_1 { font-size: 12px; padding: 5px 14px; white-space: nowrap; }
     @media (max-width: 575px) { .ol-list-actions { display: none; } }
+    .margin_30_35 { margin-top: 30px; margin-bottom: 35px; }
+    .margin_30_35 h3.alert-info { font-size: 16px; line-height: 1.4; margin-bottom: 20px; }
+    #sidebar .box_general_3 .title h3 { font-size: 17px; }
+    #sidebar .box_general_3 .title.title_with_layout { display: flex; align-items: center; justify-content: space-between; }
+    #sidebar .title_with_layout h3 { margin-bottom: 0; }
+    .layout_view_inline { margin-bottom: 0; padding: 4px 9px; line-height: 1; }
+    .layout_view_inline a { color: #3f4079; font-size: 17px; text-decoration: none; }
+    .layout_view_inline a + a { margin-left: 9px; }
+    .layout_view_inline a.active { color: #00a496; }
+    .layout_view_inline a:hover { color: #e74e84; }
     </style>
  @endsection
 
@@ -54,25 +64,7 @@
    </div>
    <!-- /results -->
    
-   <div class="filters_listing">
-		<div class="container">
-			<ul class="clearfix">
-				<li>  			
-				</li>
-				<li>
-					<h6>Layout</h6>
-					<div class="layout_view">
-						<a href="#0" tooltip="List View"  data-bs-toggle="tooltip" data-bs-placement="top" title="Grid View"><i class="icon-th" onclick="changeLayout('grid')"></i></a>
-						<a href="#0" class="active" ><i class="icon-th-list"></i></a>
-					</div>
-				</li>
-			</ul>
-		</div>
-		<!-- /container -->
-	</div>
-	<!-- /filters -->
-	   
-	<div class="container margin_60_35">
+	<div class="container margin_30_35">
 		<div class="row">
 			<div class="col-lg-9">
 				@if(isset($_GET['query']) && $_GET['query'] != '')
@@ -146,8 +138,12 @@
 
 
 				<div class="box_general_3 booking">
-						<div class="title" style="background-color: #00a496;">
+						<div class="title title_with_layout" style="background-color: #00a496;">
 						<h3>Filter Result</h3>
+						<div class="layout_view layout_view_inline">
+							<a href="#0" data-bs-toggle="tooltip" data-bs-placement="top" title="Grid View"><i class="icon-th" onclick="changeLayout('grid')"></i></a>
+							<a href="#0" class="active"><i class="icon-th-list"></i></a>
+						</div>
 						</div>
 						<form method="get" action="{{ url('/results') }}" id="frm">
 						@csrf
