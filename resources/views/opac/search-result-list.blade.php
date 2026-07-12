@@ -40,10 +40,6 @@
     .layout_view_inline a + a { margin-left: 9px; }
     .layout_view_inline a.active { color: #00a496; }
     .layout_view_inline a:hover { color: #e74e84; }
-    /* Smooth reveal when the search bar pins/unpins (sticky-kit toggles .is_stuck) */
-    #results { transition: box-shadow .25s ease; }
-    #results.is_stuck { z-index: 1000; box-shadow: 0 3px 10px rgba(0,0,0,.18); animation: resultsStick .3s ease both; }
-    @keyframes resultsStick { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     </style>
  @endsection
 
