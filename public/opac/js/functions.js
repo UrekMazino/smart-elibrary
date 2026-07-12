@@ -102,12 +102,22 @@
 	// Selectbox
 	$(".selectbox").selectbox();
 
-	// #results (search bar) is kept always-visible via CSS position:sticky (see the
-	// results/full-description views), so no sticky-kit pin/unpin here.
+	// Dock the always-visible #results search bar just BELOW the sticky header (measured,
+	// not hardcoded) so it never covers the header. Keep it responsive.
+	function opacDockResults() {
+		var headerH = $('header.header_sticky').outerHeight() || 90;
+		if ($('#results').length) {
+			$('#results').css('top', headerH + 'px');
+		}
+		return headerH;
+	}
+	var _opacHeaderH = opacDockResults();
+	var _opacResultsH = $('#results').length ? $('#results').outerHeight() : 0;
+	$(window).on('resize', opacDockResults);
 
-	// Sticky sidebar (extra top margin so it doesn't bump flush against the sticky header)
+	// Sticky sidebar starts below the header (+ the docked search bar when present)
 	$('#sidebar').theiaStickySidebar({
-		additionalMarginTop: 112
+		additionalMarginTop: _opacHeaderH + _opacResultsH + 10
 	});
 
 	// Tooltips
