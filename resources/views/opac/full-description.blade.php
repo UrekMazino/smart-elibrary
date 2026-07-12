@@ -90,13 +90,13 @@
 											<li style="background-color: #FFF;padding: 3px;">
 													<button class="btn_1" style="background-color:#029978" onclick="inquire('{{ $result->catalog_id }}')"><i class="icon-info-3"></i> Inquire</button>
 											</li>
-											
+
 										</ul>
 									</div>
 								</div>
 							</div>
-					
-							
+
+
 							<div class="accordion" id="materialDetails">
 								<div class="accordion-item">
 									<h2 class="accordion-header" id="headingOne">
@@ -143,7 +143,7 @@
 									</h2>
 									<div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#materialDetails">
 										<div class="accordion-body">
-														
+
 
 											@if($result->pub_url !='' || $result->pub_url != null)
 												<div class="indent_title_in">
@@ -194,7 +194,7 @@
 													</div>
 												</div>
 											</div>
-						
+
 										</div>
 									</div>
 								</div>
@@ -212,7 +212,7 @@
 								<div class="row">
 									<div class="col-lg-3">
 										<div id="review_summary" style="background-color: #00a496;">
-											
+
 
 											<strong>{{ $ave }}</strong>
 											<div class="rating">
@@ -310,7 +310,7 @@
 					@if(checkStocks($result->catalog_id))
 					<div class="box_general_3 booking">
 							<div class="title text-center" style="background-color: #00a496;">
-								<h3>Schedule a Visit</h3>
+								<h3>Schedule Reservation</h3>
 								<small>Monday to Friday 08:00am-05:00pm</small>
 							</div>
 							@auth
@@ -318,7 +318,7 @@
 								@csrf
 
 
-								
+
 								<div class="row">
 									<div class="col-6">
 										<div class="form-group">
@@ -338,7 +338,7 @@
 										<div class="form-group">
 											Physical copy of this material is available at
 											<br>
-											<br>	
+											<br>
 											<select class="form-control" name="visit_location" required>
 												<option value="0" disabled selected>---Select Location---</option>
 												<option value="PCAARRD - Los Banos">PCAARRD - Los Banos</option>
@@ -349,10 +349,10 @@
 								</div> --}}
 								<!-- /row -->
 									<hr>
-									<button type="submit" class="btn_1 full-width">Borrow a physical copy</button>
+									<button type="submit" class="btn_1 full-width">Send Request</button>
 								</form>
 							@else
-								
+
 								<div class="row">
 									<div class="col-12 text-center">
 										<h6 >Please <a href="{{ url('login') }}" target="_BLANK"> LOGIN</a> first.</h6>
