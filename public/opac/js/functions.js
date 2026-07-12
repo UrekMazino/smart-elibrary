@@ -108,9 +108,9 @@
 		offset_top: 0
 	});
 
-	// Sticky sidebar
+	// Sticky sidebar (extra top margin so it doesn't bump flush against the sticky header)
 	$('#sidebar').theiaStickySidebar({
-		additionalMarginTop: 95
+		additionalMarginTop: 112
 	});
 
 	// Tooltips
