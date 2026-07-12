@@ -841,8 +841,10 @@ class CatalogingController extends Controller
                         'created_by' => $user->id,
                         'updated_by' => $user->id,
                     ]);
+
+                    ensurePlaceholderCover($catalog->id);
                 }
-                     
+
                 $formattedRecords = [];
             } catch (Exception $e) {
                 dump("Error: $e->getMessage()");
@@ -1482,6 +1484,8 @@ class CatalogingController extends Controller
                 'created_by' => $user->id,
                 'updated_by' => $user->id,
             ]);
+
+            ensurePlaceholderCover($catalog->id);
         }
 
 

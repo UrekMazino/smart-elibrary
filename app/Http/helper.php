@@ -540,6 +540,33 @@ function coverWrapLines($font, $size, $text, $maxWidth)
 	return $lines;
 }
 
+/**
+ * Ensure a newly-created record has a cover: if it has none and the "enable placeholder
+ * coverpage" setting is on, generate a gen-* placeholder (image + thumbnail + Frontpage row).
+ * Safe/idempotent — call it right after creating a record (batch, single, or parse).
+ */
+function ensurePlaceholderCover($catalog_id)
+{
+	if (!$catalog_id || !settingEnabled('enable_placeholder_covers')) return false;
+	if (App\Models\Frontpage::where('catalog_id', $catalog_id)->whereNull('deleted_at')->exists()) return false;
+
+	$vc = App\Models\ViewCatalog::where('catalog_id', $catalog_id)->first();
+	if (!$vc) return false;
+
+	$file = 'gen-'.$catalog_id.'.jpg';
+	if (generatePlaceholderCover($vc, public_path('frontpages/'.$file))) {
+		makeThumbnail(public_path('frontpages/'.$file), public_path('thumb/'.$file));
+		App\Models\Frontpage::create([
+			'catalog_id'        => $catalog_id,
+			'FrontPageName'     => $file,
+			'FrontPageType'     => 'jpg',
+			'FrontPageLocation' => 'frontpages/'.$file,
+		]);
+		return true;
+	}
+	return false;
+}
+
 function getFrontpage($catalog_id)
 {
 	$img = App\Models\Frontpage::where('catalog_id',$catalog_id)->first();
