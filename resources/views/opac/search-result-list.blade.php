@@ -40,6 +40,8 @@
     .layout_view_inline a + a { margin-left: 9px; }
     .layout_view_inline a.active { color: #00a496; }
     .layout_view_inline a:hover { color: #e74e84; }
+    /* Keep the search bar always visible (sticky over the header) */
+    #results { position: -webkit-sticky; position: sticky; top: 0; z-index: 1001; box-shadow: 0 3px 10px rgba(0,0,0,.15); }
     </style>
  @endsection
 

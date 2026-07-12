@@ -30,20 +30,41 @@
 	@csrf
 	<input type="hidden" class="form-control" name="catalog_id" value="{{ $result->catalog_id }}">
 </form>
-		<div id="breadcrumb" style="background-color: #00a496;">
+		<div id="results" style="background-color: #00a496;">
 			<div class="container">
-				<ul>
-					<li><a href="{{ url('/home') }}">Home</a></li>
-					<li><a href="{{ url('/home') }}#search" onclick="if(document.referrer){history.back();return false;}">Search Results</a></li>
-					<li>Description</li>
-				</ul>
+				<div class="row align-items-center">
+					<div class="col-md-6">
+						<div id="breadcrumb" class="breadcrumb_inline">
+							<ul>
+								<li><a href="{{ url('/home') }}">Home</a></li>
+								<li><a href="{{ url('/home') }}#search" onclick="if(document.referrer){history.back();return false;}">Search Results</a></li>
+								<li>Description</li>
+							</ul>
+						</div>
+					</div>
+					<div class="col-md-6">
+						<form method="get" action="{{ url('/results') }}">
+							<div class="search_bar_list">
+								<input type="text" class="form-control" name="query" placeholder="Search a Material...">
+								<input type="hidden" name="series_statement_id" value="0">
+								<input type="hidden" name="page" value="1">
+								<input type="hidden" name="layout" value="grid">
+								<input type="hidden" name="seachtype[]" value="0">
+								<input type="submit" value="Search">
+							</div>
+						</form>
+					</div>
+				</div>
 			</div>
 		</div>
-		<!-- /breadcrumb -->
+		<!-- /results -->
 
 		<style>
 			.fd-cover { margin: 0; }
 			.fd-cover img { box-shadow: 0 2px 10px rgba(0,0,0,.25); border-radius: 3px; max-width: 320px; width: 100%; }
+			/* Always-visible search bar (sticky over the header) */
+			#results { position: -webkit-sticky; position: sticky; top: 0; z-index: 1001; box-shadow: 0 3px 10px rgba(0,0,0,.15); }
+			#breadcrumb.breadcrumb_inline { background: transparent; padding: 0; }
 			/* General info reorganized layout */
 			#section_1 .box_general_3 { padding-top: 22px; }
             #section_1 { padding-bottom: 0px; }

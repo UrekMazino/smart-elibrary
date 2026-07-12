@@ -102,23 +102,8 @@
 	// Selectbox
 	$(".selectbox").selectbox();
 
-	// Sticky horizontal results list page
-	$("#results").stick_in_parent({
-		spacer: false,
-		offset_top: 0
-	});
-
-	// Smooth fade + shadow when the results search bar pins / unpins.
-	// Lift it above the sticky header (z-index 999) so the transition is actually visible.
-	$("#results")
-		.on("sticky_kit:stick", function () {
-			$(this).css({ zIndex: 1001, boxShadow: "0 4px 12px rgba(0,0,0,.2)" })
-				.stop(true, true).css("opacity", 0).animate({ opacity: 1 }, 260);
-		})
-		.on("sticky_kit:unstick", function () {
-			$(this).css("boxShadow", "none")
-				.stop(true, true).css("opacity", 0).animate({ opacity: 1 }, 200);
-		});
+	// #results (search bar) is kept always-visible via CSS position:sticky (see the
+	// results/full-description views), so no sticky-kit pin/unpin here.
 
 	// Sticky sidebar (extra top margin so it doesn't bump flush against the sticky header)
 	$('#sidebar').theiaStickySidebar({
