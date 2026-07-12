@@ -2113,6 +2113,10 @@ class CatalogingController extends Controller
             'updated_at' => now(),
             'updated_by' => $user->id,
         ]);
+
+        // Bulk change -> re-index so Meilisearch reflects the new is_published values.
+        ViewCatalog::makeAllSearchable();
+
         return response()->json(['success' => true]);
     }
 
@@ -2132,6 +2136,10 @@ class CatalogingController extends Controller
             'updated_at' => now(),
             'updated_by' => $user->id,
         ]);
+
+        // Bulk change -> re-index so Meilisearch reflects the new is_published values.
+        ViewCatalog::makeAllSearchable();
+
         return response()->json(['success' => true]);
     }
 
@@ -2151,6 +2159,11 @@ class CatalogingController extends Controller
             'updated_at' => now(),
             'updated_by' => $user->id,
         ]);
+
+        // Query-builder updates bypass Scout's observers, so re-index the record — else
+        // Meilisearch keeps the stale is_published and the OPAC search filter hides it.
+        optional(ViewCatalog::where('catalog_id', $request->catalog_id)->first())->searchable();
+
         return response()->json(['success' => true]);
     }
 
@@ -2170,6 +2183,10 @@ class CatalogingController extends Controller
             'updated_at' => now(),
             'updated_by' => $user->id,
         ]);
+
+        // Re-index so Meilisearch reflects is_published=0 (record hidden from OPAC search).
+        optional(ViewCatalog::where('catalog_id', $request->catalog_id)->first())->searchable();
+
         return response()->json(['success' => true]);
     }
 
@@ -2189,6 +2206,9 @@ class CatalogingController extends Controller
             'updated_at' => now(),
             'updated_by' => $user->id,
         ]);
+
+        // Re-index the batch so Meilisearch reflects the new is_published values.
+        ViewCatalog::where('catalog_import_id', $request->catalog_import_id)->get()->each(fn($m) => $m->searchable());
 
         return view('admin.batch-list');
     }
