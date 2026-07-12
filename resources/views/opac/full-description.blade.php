@@ -46,6 +46,7 @@
 			.fd-cover img { box-shadow: 0 2px 10px rgba(0,0,0,.25); border-radius: 3px; max-width: 320px; width: 100%; }
 			/* General info reorganized layout */
 			#section_1 .box_general_3 { padding-top: 22px; }
+            #section_1 { padding-bottom: 0px; }
 			.fd-info { padding-top: 0 !important; }
 			.fd-title { margin: 0 0 6px; font-size: 20px; line-height: 1.3; font-weight: 700; color: #222; }
 			.fd-authors { color: #555; font-size: 14px; margin-bottom: 10px; }
@@ -87,8 +88,11 @@
 			#sidebar .booking .title h3 { font-size: 18px; line-height: 1.25; }
 			#sidebar .booking .title small { font-size: 12px; }
 			#sidebar .box_general_3 hr { margin: 16px -18px; }
-			.fd-review-box #review_summary { text-align: center; padding: 16px 10px; margin-bottom: 4px; }
-			.fd-review-box #review_summary strong { font-size: 2.4rem; }
+			.fd-review-box #review_summary { display: flex; align-items: center; gap: 18px; padding: 16px 20px; margin-bottom: 4px; color: #fff; }
+			.fd-review-box .fd-avg-num { font-size: 3rem; line-height: 1; font-weight: 700; flex: 0 0 auto; }
+			.fd-review-box .fd-avg-meta { flex: 1 1 auto; text-align: left; }
+			.fd-review-box .fd-avg-meta .rating { line-height: 1; }
+			.fd-review-box .fd-avg-meta small { display: block; margin-top: 5px; font-size: 12px; opacity: .92; }
 			.fd-rating-bars { margin-top: 12px; }
 			.fd-rating-bars .row { margin: 0 0 7px; align-items: center; }
 			.fd-rating-bars .progress { height: 9px; }
@@ -218,41 +222,40 @@
 							</div>
 							@auth
 								<form method="post" action="{{ url('/request-reservation') }}" id="frm_review">
-								@csrf
+                                    @csrf
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <div class="form-group">
+                                                <input class="form-control" name="visit_scheddate" type="text" id="booking_date" data-lang="en" data-min-year="2020" data-max-year="2024" data-disabled-days="10/17/2017,11/18/2017" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="form-group">
+                                                <input class="form-control" type="text" name="visit_schedtime" id="booking_time" value="9:00 am">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row text-center">
+                                        <input type="hidden" class="css-checkbox" id="visit2" name="catalog_id" value="{{ $result->catalog_id }}">
+                                        <input type="hidden" name="title_statement" value="{{ $result->title_statement }}">
+                                        {{-- <div class="row">
+                                            <div class="col-12">
+                                                <div class="form-group">
+                                                    Physical copy of this material is available at
+                                                    <br>
+                                                    <br>
+                                                    <select class="form-control" name="visit_location" required>
+                                                        <option value="0" disabled selected>---Select Location---</option>
+                                                        <option value="PCAARRD - Los Banos">PCAARRD - Los Banos</option>
+                                                        <option value="STII - Bicutan">STII - Bicutan</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div> --}}
+                                        <!-- /row -->
 
-
-
-								<div class="row">
-									<div class="col-6">
-										<div class="form-group">
-											<input class="form-control" name="visit_scheddate" type="text" id="booking_date" data-lang="en" data-min-year="2020" data-max-year="2024" data-disabled-days="10/17/2017,11/18/2017" required>
-										</div>
-									</div>
-									<div class="col-6">
-										<div class="form-group">
-											<input class="form-control" type="text" name="visit_schedtime" id="booking_time" value="9:00 am">
-										</div>
-									</div>
-								</div>
-								<input type="hidden" class="css-checkbox" id="visit2" name="catalog_id" value="{{ $result->catalog_id }}">
-								<input type="hidden" name="title_statement" value="{{ $result->title_statement }}">
-								{{-- <div class="row">
-									<div class="col-12">
-										<div class="form-group">
-											Physical copy of this material is available at
-											<br>
-											<br>
-											<select class="form-control" name="visit_location" required>
-												<option value="0" disabled selected>---Select Location---</option>
-												<option value="PCAARRD - Los Banos">PCAARRD - Los Banos</option>
-												<option value="STII - Bicutan">STII - Bicutan</option>
-											</select>
-										</div>
-									</div>
-								</div> --}}
-								<!-- /row -->
-									<hr>
-									<button type="submit" class="btn_1 full-width">Send Request</button>
+                                            <button type="submit" class="btn_1">Send Request</button>
+                                    </div>
 								</form>
 							@else
 
@@ -278,17 +281,17 @@
 					</div>
 					@endif
 					<!-- /box_general -->
-									{{-- Ratings summary + submit review (moved from the reviews section) --}}
+					{{-- Ratings summary + submit review (moved from the reviews section) --}}
 					<div class="box_general_3 booking fd-review-box">
-						<div class="title text-center" style="background-color: #00a496;">
-							<h3>Ratings &amp; Reviews</h3>
-						</div>
+
 						<div id="review_summary" style="background-color: #00a496;">
-							<strong>{{ $ave }}</strong>
-							<div class="rating"><i data-star="{{ $ave }}"></i></div>
-							@if($review_ctr > 0)
-							<small>Based on {{ $review_ctr }} reviews</small>
-							@endif
+							<div class="fd-avg-num">{{ $ave }}</div>
+							<div class="fd-avg-meta">
+								<div class="rating"><i data-star="{{ $ave }}" style="font-size: 22px;"></i></div>
+								@if($review_ctr > 0)
+									<small>Based on {{ $review_ctr }} {{ $review_ctr == 1 ? 'review' : 'reviews' }}</small>
+								@endif
+							</div>
 						</div>
 						<div class="fd-rating-bars">
 							@foreach([5,4,3,2,1] as $starRow)
@@ -325,25 +328,25 @@
 					<div class="modal-body">
 						@if(!Auth::check())
 						<div class="row">
-										<div class="col-12">
-											<div class="form-group">
-												<span>Fullname : </span>
-												<input class="form-control" name="inquiry_fullname" type="text" data-lang="en" placeholder="" required>
-											</div>
-										</div>
-										<div class="col-12">
-											<div class="form-group">
-												<span>Contact number : </span>
-												<input class="form-control" name="inquiry_contactnum" type="text" placeholder="">
-											</div>
-										</div>
-										<div class="col-12">
-											<div class="form-group">
-											<span>Email : </span>
-												<input class="form-control" name="inquiry_email" type="email" placeholder="">
-											</div>
-										</div>
-									</div>
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <span>Fullname : </span>
+                                    <input class="form-control" name="inquiry_fullname" type="text" data-lang="en" placeholder="" required>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <span>Contact number : </span>
+                                    <input class="form-control" name="inquiry_contactnum" type="text" placeholder="">
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-group">
+                                <span>Email : </span>
+                                    <input class="form-control" name="inquiry_email" type="email" placeholder="">
+                                </div>
+                            </div>
+                        </div>
 						@endauth
 						<span>Message : </span>
 						<textarea class='form-control' name="inquiry_message"></textarea>
