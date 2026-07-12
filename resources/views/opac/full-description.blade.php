@@ -386,11 +386,33 @@ function copyFdCitation(btn)
 	var el = document.getElementById('fd-cite-apa');
 	if(!el) return;
 	var text = (el.innerText || el.textContent || '').trim();
-	navigator.clipboard.writeText(text).then(function(){
-		var original = btn.innerHTML;
+
+	function flash(){
+		var original = btn.getAttribute('data-label') || btn.innerHTML;
+		btn.setAttribute('data-label', original);
 		btn.innerHTML = 'Copied!';
-		setTimeout(function(){ btn.innerHTML = original; }, 1200);
-	});
+		setTimeout(function(){ btn.innerHTML = btn.getAttribute('data-label'); }, 1200);
+	}
+
+	function legacyCopy(){
+		var ta = document.createElement('textarea');
+		ta.value = text;
+		ta.style.position = 'fixed';
+		ta.style.left = '-9999px';
+		document.body.appendChild(ta);
+		ta.focus();
+		ta.select();
+		try { document.execCommand('copy'); flash(); } catch(e) {}
+		document.body.removeChild(ta);
+	}
+
+	// navigator.clipboard only exists on secure origins (https/localhost); the OPAC runs
+	// over plain http, so fall back to the legacy execCommand copy there.
+	if (navigator.clipboard && window.isSecureContext) {
+		navigator.clipboard.writeText(text).then(flash).catch(legacyCopy);
+	} else {
+		legacyCopy();
+	}
 }
 </script>
 @endsection
