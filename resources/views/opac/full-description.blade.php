@@ -124,6 +124,12 @@
 			.fd-rating-bars small { font-size: 11px; white-space: nowrap; }
 		</style>
 		<div class="container margin_60">
+			@if(session('success'))
+				<div class="alert alert-success alert-dismissible fade show" role="alert">
+					{{ session('success') }}
+					<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+				</div>
+			@endif
 			<div class="row">
 				<div class="col-xl-9 col-lg-8 order-2">
 					<nav id="secondary_nav" style="background-color: #00a496;">

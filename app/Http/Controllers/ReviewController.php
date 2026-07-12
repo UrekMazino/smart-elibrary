@@ -34,7 +34,9 @@ class ReviewController extends Controller
          App\Models\Download::where('id',request()->download_id)->update(['to_review' => date('Y-m-d')]);
        }
 
-       return view('opac.thank-you',['message' => 'Thanks for your review!']);
+       //Back to the reviewed material
+       return redirect('/full-description/'.request()->catalog_id)
+              ->with('success', 'Thanks for your review!');
     }
 
     // public function thanks()
