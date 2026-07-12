@@ -13,9 +13,21 @@
     .ol-list-author { color: #555; font-size: 14px; margin-top: 2px; }
     .ol-list-rating { margin-top: 5px; }
     .ol-list-meta { color: #8a8a8a; font-size: 13px; margin-top: 4px; }
-    .ol-list-actions { flex-shrink: 0; align-self: center; }
-    .ol-list-actions .btn_1 { font-size: 12px; padding: 5px 14px; white-space: nowrap; }
+    .ol-list-actions { flex-shrink: 0; align-self: center; display: flex; flex-direction: column; gap: 7px; width: 150px; }
+    .ol-list-actions .btn_1.ol-full-desc { display: block; width: 100%; text-align: center; border-radius: 4px; font-size: 12px; padding: 6px 10px; white-space: nowrap; }
+    .ol-btn-row { display: flex; gap: 6px; }
+    .ol-icon-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; height: 30px; border: 1px solid #d0d7de; border-radius: 4px; background: #fff; color: #3f4079; font-size: 14px; cursor: pointer; text-decoration: none; transition: background .12s, color .12s, border-color .12s; }
+    .ol-icon-btn:hover { background: #00a496; border-color: #00a496; color: #fff; }
+    .ol-icon-btn.disabled { opacity: .5; cursor: not-allowed; background: #f4f5f7; border-color: #e1e4e8; color: #9aa0a6; }
+    .ol-icon-btn.disabled:hover { background: #f4f5f7; border-color: #e1e4e8; color: #9aa0a6; }
     @media (max-width: 575px) { .ol-list-actions { display: none; } }
+    /* Read overlay (PDF.js) */
+    .ol-reader { position: fixed; inset: 0; z-index: 20000; background: rgba(18,20,24,.94); display: none; flex-direction: column; }
+    .ol-reader-bar { flex: 0 0 46px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; background: #1b1d21; color: #fff; }
+    .ol-reader-title { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 12px; }
+    .ol-reader-close { background: transparent; border: 0; color: #fff; font-size: 26px; line-height: 1; cursor: pointer; padding: 0 6px; }
+    .ol-reader-close:hover { color: #ff6b6b; }
+    .ol-reader-frame { flex: 1 1 auto; width: 100%; border: 0; background: #3a3a3a; }
     .margin_30_35 { margin-top: 30px; margin-bottom: 35px; }
     .margin_30_35 h3.alert-info { font-size: 16px; line-height: 1.4; margin-bottom: 20px; }
     #sidebar .box_general_3 .title h3 { font-size: 17px; }
@@ -94,8 +106,20 @@
 								@if($results->edition != '' && $results->edition != null) &middot; {{ formatText($results->edition) }} ed.@endif
 							</div>
 						</div>
+						@php $pdfUrl = getReadPdfUrl($results->catalog_id); $canBorrow = checkStocks($results->catalog_id); @endphp
 						<div class="ol-list-actions">
-							<a href="#0" class="btn_1" onclick="submitFrm('{{ $results->catalog_id }}')">Full description</a>
+							<a href="#0" class="btn_1 ol-full-desc" onclick="submitFrm('{{ $results->catalog_id }}'); return false;">Full description</a>
+							<div class="ol-btn-row">
+								@if($pdfUrl)
+									<a href="#0" class="ol-icon-btn" title="Read online" onclick="openReader('{{ $pdfUrl }}', @js($results->title_statement)); return false;"><i class="icon-book"></i></a>
+									<a href="#0" class="ol-icon-btn" title="Download PDF (login required)" onclick="downloadPdf('{{ $results->catalog_id }}'); return false;"><i class="icon-download"></i></a>
+								@endif
+								@if($canBorrow)
+									<a href="#0" class="ol-icon-btn" title="Available to borrow — view details" onclick="submitFrm('{{ $results->catalog_id }}'); return false;"><i class="icon-library"></i></a>
+								@else
+									<span class="ol-icon-btn disabled" title="No physical copy available for borrowing"><i class="icon-library"></i></span>
+								@endif
+							</div>
 						</div>
 					</div>
 					@endforeach
@@ -208,6 +232,21 @@
 	@csrf
 	<input type="hidden" name="catalog_id" id="catalog_id">
 </form>
+
+{{-- Download (login enforced by DownloadController auth+patron middleware; increments Downloads) --}}
+<form method="post" action="{{ url('/download') }}" id="frm_download_grid" target="_blank">
+	@csrf
+	<input type="hidden" name="holdings_download_id" id="dl_catalog_id" value="">
+</form>
+
+{{-- Read overlay: in-browser PDF.js reader (open to everyone) --}}
+<div id="ol-reader" class="ol-reader">
+	<div class="ol-reader-bar">
+		<span class="ol-reader-title" id="ol-reader-title"></span>
+		<button type="button" class="ol-reader-close" onclick="closeReader()" aria-label="Close reader">&times;</button>
+	</div>
+	<iframe id="ol-reader-frame" class="ol-reader-frame" src="about:blank" title="Online reader"></iframe>
+</div>
 @endsection
 
 @section('js')
@@ -230,6 +269,41 @@
 		$("#catalog_id").val(id)
 		$("#frm2").submit();
 	}
+
+	function downloadPdf(id)
+	{
+		$("#dl_catalog_id").val(id);
+		$("#frm_download_grid").submit();
+	}
+
+	function positionReader()
+	{
+		var reader = document.getElementById('ol-reader');
+		if(!reader || reader.style.display === 'none') return;
+		var header = document.querySelector('header.header_sticky') || document.querySelector('header');
+		var top = header ? Math.max(0, header.getBoundingClientRect().bottom) : 0;
+		reader.style.top = top + 'px';
+	}
+
+	function openReader(pdfPath, title)
+	{
+		var viewer = '/pdfjs/web/viewer.html?file=' + encodeURIComponent(pdfPath);
+		document.getElementById('ol-reader-frame').src = viewer;
+		document.getElementById('ol-reader-title').textContent = title || 'Reading';
+		document.getElementById('ol-reader').style.display = 'flex';
+		document.body.style.overflow = 'hidden';
+		positionReader();
+	}
+
+	function closeReader()
+	{
+		document.getElementById('ol-reader').style.display = 'none';
+		document.getElementById('ol-reader-frame').src = 'about:blank';
+		document.body.style.overflow = '';
+	}
+
+	document.addEventListener('keydown', function(e){ if(e.key === 'Escape'){ closeReader(); } });
+	window.addEventListener('resize', positionReader);
 
 	$("#frm").submit(function(){
 		$("#query").val($("#querysearch").val());
