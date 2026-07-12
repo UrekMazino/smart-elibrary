@@ -70,6 +70,15 @@
 			.fd-copy-badge { font-size: 14px; font-weight: 600; padding: 9px 18px; border-radius: 4px; background: #eef0f2; color: #444; }
 			.fd-copy-badge.ok { background: #e3f5ef; color: #087f5b; }
 			.fd-copy-badge.none { background: #fdecea; color: #c0392b; }
+			.fd-btn { background-color: #029978; color: #fff; }
+			.fd-btn:disabled, .fd-btn[disabled] { background-color: #c2ccc9 !important; color: #fff !important; cursor: not-allowed; opacity: .85; box-shadow: none; }
+			/* Read overlay (PDF.js) */
+			.ol-reader { position: fixed; inset: 0; z-index: 20000; background: rgba(18,20,24,.94); display: none; flex-direction: column; }
+			.ol-reader-bar { flex: 0 0 46px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; background: #1b1d21; color: #fff; }
+			.ol-reader-title { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 12px; }
+			.ol-reader-close { background: transparent; border: 0; color: #fff; font-size: 26px; line-height: 1; cursor: pointer; padding: 0 6px; }
+			.ol-reader-close:hover { color: #ff6b6b; }
+			.ol-reader-frame { flex: 1 1 auto; width: 100%; border: 0; background: #3a3a3a; }
 		</style>
 		<div class="container margin_60">
 			<div class="row">
@@ -95,15 +104,20 @@
 								<li>{{ countNum('review',$result->catalog_id) }} Reviews</li>
 								<li>{{ countNum('download',$result->catalog_id) }} Downloads</li>
 							</ul>
+							@php $pdfUrl = getReadPdfUrl($result->catalog_id); @endphp
 							<div class="fd-actions">
-								@if(checkIfHasPDF($result->catalog_id))
-								<form method="post" action="{{ url('/download') }}" id="frm_download" @auth target="_blank" @endauth>
-									@csrf
-									<input type="hidden" name="holdings_download_id" value="{{ $result->catalog_id }}">
-									<button class="btn_1" style="background-color:#029978"><i class="icon-download"></i> Download</button>
-								</form>
+								@if($pdfUrl)
+									<button type="button" class="btn_1 fd-btn" onclick="openReader('{{ $pdfUrl }}', @js($result->title_statement))"><i class="icon-book"></i> Read</button>
+									<form method="post" action="{{ url('/download') }}" id="frm_download" @auth target="_blank" @endauth>
+										@csrf
+										<input type="hidden" name="holdings_download_id" value="{{ $result->catalog_id }}">
+										<button class="btn_1 fd-btn"><i class="icon-download"></i> Download</button>
+									</form>
+								@else
+									<button type="button" class="btn_1 fd-btn" disabled title="No file available to read"><i class="icon-book"></i> Read</button>
+									<button type="button" class="btn_1 fd-btn" disabled title="No file available to download"><i class="icon-download"></i> Download</button>
 								@endif
-								<button class="btn_1" style="background-color:#029978" onclick="inquire('{{ $result->catalog_id }}')"><i class="icon-info-3"></i> Inquire</button>
+								<button type="button" class="btn_1 fd-btn" onclick="inquire('{{ $result->catalog_id }}')"><i class="icon-info-3"></i> Inquire</button>
 							</div>
 						</div>
 
@@ -372,6 +386,15 @@
 				</div>
 			</div>
 		</div>
+
+	{{-- Read overlay: in-browser PDF.js reader --}}
+	<div id="ol-reader" class="ol-reader">
+		<div class="ol-reader-bar">
+			<span class="ol-reader-title" id="ol-reader-title"></span>
+			<button type="button" class="ol-reader-close" onclick="closeReader()" aria-label="Close reader">&times;</button>
+		</div>
+		<iframe id="ol-reader-frame" class="ol-reader-frame" src="about:blank" title="Online reader"></iframe>
+	</div>
 @endsection
 
 @section('js')
@@ -381,6 +404,35 @@ function inquire(holdingsid)
 	$("#catalog_id_inquiry").val(holdingsid);
 	$("#inquireModal").modal('toggle')
 }
+
+function positionReader()
+{
+	var reader = document.getElementById('ol-reader');
+	if(!reader || reader.style.display === 'none') return;
+	var header = document.querySelector('header.header_sticky') || document.querySelector('header');
+	var top = header ? Math.max(0, header.getBoundingClientRect().bottom) : 0;
+	reader.style.top = top + 'px';
+}
+
+function openReader(pdfPath, title)
+{
+	var viewer = '/pdfjs/web/viewer.html?file=' + encodeURIComponent(pdfPath);
+	document.getElementById('ol-reader-frame').src = viewer;
+	document.getElementById('ol-reader-title').textContent = title || 'Reading';
+	document.getElementById('ol-reader').style.display = 'flex';
+	document.body.style.overflow = 'hidden';
+	positionReader();
+}
+
+function closeReader()
+{
+	document.getElementById('ol-reader').style.display = 'none';
+	document.getElementById('ol-reader-frame').src = 'about:blank';
+	document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', function(e){ if(e.key === 'Escape'){ closeReader(); } });
+window.addEventListener('resize', positionReader);
 
 function copyFdCitation(btn)
 {
