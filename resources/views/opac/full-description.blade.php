@@ -79,6 +79,14 @@
 			.ol-reader-close { background: transparent; border: 0; color: #fff; font-size: 26px; line-height: 1; cursor: pointer; padding: 0 6px; }
 			.ol-reader-close:hover { color: #ff6b6b; }
 			.ol-reader-frame { flex: 1 1 auto; width: 100%; border: 0; background: #3a3a3a; }
+			/* Left column: match every section to the coverphoto width */
+			#sidebar .fd-cover { text-align: left; }
+			#sidebar .fd-cover img, #sidebar .box_general_3 { max-width: 320px; }
+			.fd-review-box #review_summary { text-align: center; padding: 16px 12px; margin-bottom: 4px; }
+			.fd-rating-bars { margin-top: 14px; }
+			.fd-rating-bars .row { margin: 0 0 7px; align-items: center; }
+			.fd-rating-bars .progress { height: 9px; }
+			.fd-rating-bars small { font-size: 11px; white-space: nowrap; }
 		</style>
 		<div class="container margin_60">
 			<div class="row">
@@ -168,76 +176,9 @@
 
 					<div id="section_2">
 						<div class="box_general_3">
+							<h6 class="fd-section-title" style="margin-top:0;"><i class="pe-7s-chat"></i> Reviews</h6>
 							<div class="reviews-container">
-								<div class="row">
-									<div class="col-lg-3">
-										<div id="review_summary" style="background-color: #00a496;">
-
-
-											<strong>{{ $ave }}</strong>
-											<div class="rating">
-												<i data-star="{{ $ave }}"></i>
-											</div>
-											@if($review_ctr > 0)
-											<small>
-												Based on {{ $review_ctr }} reviews
-											</small>
-											@endif
-										</div>
-									</div>
-									<div class="col-lg-9">
-										<div class="row">
-											<div class="col-lg-10 col-9">
-												<div class="progress">
-													<div class="progress-bar" role="progressbar" style="width: {{ starRatingBar($review_ctr,5,$result->catalog_id) }}%" aria-valuenow="90" aria-valuemin="0" aria-valuemax="100"></div>
-												</div>
-											</div>
-											<div class="col-lg-2 col-3"><small><strong>5 stars</strong></small></div>
-										</div>
-										<!-- /row -->
-										<div class="row">
-											<div class="col-lg-10 col-9">
-												<div class="progress">
-													<div class="progress-bar" role="progressbar" style="width: {{ starRatingBar($review_ctr,4,$result->catalog_id) }}%" aria-valuenow="95" aria-valuemin="0" aria-valuemax="100"></div>
-												</div>
-											</div>
-											<div class="col-lg-2 col-3"><small><strong>4 stars</strong></small></div>
-										</div>
-										<!-- /row -->
-										<div class="row">
-											<div class="col-lg-10 col-9">
-												<div class="progress">
-													<div class="progress-bar" role="progressbar" style="width: {{ starRatingBar($review_ctr,3,$result->catalog_id) }}%" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div>
-												</div>
-											</div>
-											<div class="col-lg-2 col-3"><small><strong>3 stars</strong></small></div>
-										</div>
-										<!-- /row -->
-										<div class="row">
-											<div class="col-lg-10 col-9">
-												<div class="progress">
-													<div class="progress-bar" role="progressbar" style="width: {{ starRatingBar($review_ctr,2,$result->catalog_id) }}%" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>
-												</div>
-											</div>
-											<div class="col-lg-2 col-3"><small><strong>2 stars</strong></small></div>
-										</div>
-										<!-- /row -->
-										<div class="row">
-											<div class="col-lg-10 col-9">
-												<div class="progress">
-													<div class="progress-bar" role="progressbar" style="width: {{ starRatingBar($review_ctr,1,$result->catalog_id) }}" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-												</div>
-											</div>
-											<div class="col-lg-2 col-3"><small><strong>1 stars</strong></small></div>
-										</div>
-										<!-- /row -->
-									</div>
-								</div>
-								<!-- /row -->
-
-								<hr>
-
-								@foreach($review AS $reviews)
+								@forelse($review AS $reviews)
 									<div class="row">
 										<div class="rev-content">
 											<i data-star="{{ $reviews->rating }}"></i>
@@ -245,19 +186,15 @@
 												{!! $reviews->name.'&nbsp&nbsp&nbsp'.date('M d, Y',strtotime($reviews->created_at)) !!}
 											</div>
 											<div class="rev-text">
-												<p>
-													{{ $reviews->remarks }}
-												</p>
+												<p>{{ $reviews->remarks }}</p>
 											</div>
 										</div>
 									</div>
 									<br/>
-								<!-- End review-box -->
-								@endforeach
+								@empty
+									<p class="text-muted mb-0">No reviews yet. Be the first to review this material.</p>
+								@endforelse
 							</div>
-							<!-- End review-container -->
-							<hr>
-							<div class="text-end"><a href="#" class="btn_1" onclick="getElementById('frm_review').submit()">Submit review</a></div>
 						</div>
 					</div>
 					<!-- /section_2 -->
@@ -335,6 +272,33 @@
 					</div>
 					@endif
 					<!-- /box_general -->
+									{{-- Ratings summary + submit review (moved from the reviews section) --}}
+					<div class="box_general_3 booking fd-review-box">
+						<div class="title text-center" style="background-color: #00a496;">
+							<h3>Ratings &amp; Reviews</h3>
+						</div>
+						<div id="review_summary" style="background-color: #00a496;">
+							<strong>{{ $ave }}</strong>
+							<div class="rating"><i data-star="{{ $ave }}"></i></div>
+							@if($review_ctr > 0)
+							<small>Based on {{ $review_ctr }} reviews</small>
+							@endif
+						</div>
+						<div class="fd-rating-bars">
+							@foreach([5,4,3,2,1] as $starRow)
+							<div class="row">
+								<div class="col-9">
+									<div class="progress">
+										<div class="progress-bar" role="progressbar" style="width: {{ starRatingBar($review_ctr,$starRow,$result->catalog_id) }}%"></div>
+									</div>
+								</div>
+								<div class="col-3"><small><strong>{{ $starRow }} stars</strong></small></div>
+							</div>
+							@endforeach
+						</div>
+						<hr>
+						<div class="text-center"><a href="#" class="btn_1" onclick="getElementById('frm_review').submit()">Submit review</a></div>
+					</div>
 				</aside>
 				<!-- /asdide -->
 			</div>
