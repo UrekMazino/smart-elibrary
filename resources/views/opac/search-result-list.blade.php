@@ -241,7 +241,7 @@
 </form>
 
 {{-- Download (login enforced by DownloadController auth+patron middleware; increments Downloads) --}}
-<form method="post" action="{{ url('/download') }}" id="frm_download_grid" target="_blank">
+<form method="post" action="{{ url('/download') }}" id="frm_download_grid" @auth target="_blank" @endauth>
 	@csrf
 	<input type="hidden" name="holdings_download_id" id="dl_catalog_id" value="">
 </form>
