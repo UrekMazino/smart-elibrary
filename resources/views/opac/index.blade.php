@@ -106,28 +106,75 @@
 			</div>
 		</div> --}}
 
-		<div class="container margin_120_95">
-			<div class="main_title">
-				<h2>Featured Materials</h2>
-				{{-- <p>Usu habeo equidem sanctus no. Suas summo id sed, erat erant oporteat cu pri. In eum omnes molestie. Sed ad debet scaevola, ne mel.</p> --}}
-			</div>
-			<div class="row add_bottom_30">
+		<style>
+	/* ---- Admont Abbey Library inspired "Featured Materials" display shelf ---- */
+	.admont-featured { position: relative; padding: 66px 15px 74px; overflow: hidden;
+		background: radial-gradient(140% 120% at 50% -15%, #fdf9ef 0%, #f6eedb 52%, #efe4c8 100%); }
+	.admont-featured::before { content:""; position:absolute; left:0; right:0; top:0; height:5px;
+		background: linear-gradient(90deg, transparent, #c9a227 16%, #efd88b 50%, #c9a227 84%, transparent); }
+	.admont-head { text-align:center; margin-bottom:30px; }
+	.admont-head .orn { display:block; color:#c9a227; font-size:22px; line-height:1; margin-bottom:2px; }
+	.admont-head h2 { font-family:Georgia,"Palatino Linotype","Book Antiqua",serif; font-size:30px;
+		letter-spacing:3px; text-transform:uppercase; color:#4a3a25; margin:0; font-weight:700; }
+	.admont-head .rule { display:inline-block; width:230px; max-width:72%; height:16px; margin-top:8px; position:relative; }
+	.admont-head .rule::before { content:""; position:absolute; top:50%; left:0; right:0; height:1px; background:#c9a227; }
+	.admont-head .rule::after { content:"\2666"; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+		color:#c9a227; font-size:12px; background:#f7efda; padding:0 9px; }
+	.admont-bay { position:relative; max-width:1140px; margin:0 auto; padding:30px 46px 0;
+		background:linear-gradient(#fefcf6,#f6efdf); border:1px solid #d9c07a; border-radius:5px;
+		box-shadow: inset 0 1px 0 #fff, 0 24px 44px -28px rgba(74,58,37,.55); }
+	.admont-cornice { position:absolute; left:-1px; right:-1px; top:-1px; height:10px; border-radius:5px 5px 0 0;
+		background:linear-gradient(#f0dca0,#cba52a); border-bottom:1px solid #b6901d; }
+	.admont-pil { position:absolute; top:26px; bottom:46px; width:14px; border:1px solid #d9c07a; border-radius:2px;
+		background:repeating-linear-gradient(90deg,#f7efd8,#f7efd8 2px,#e7d9af 3px,#f7efd8 5px); }
+	.admont-pil.l { left:14px; } .admont-pil.r { right:14px; }
+	.admont-shelf-area { position:relative; z-index:2; }
+	.admont-featured #most-downloaded .owl-dots { display:none; }
+	.admont-featured #most-downloaded .item { display:flex; align-items:flex-end; justify-content:center; height:252px; }
+	.admont-featured #most-downloaded .item a { display:inline-block; line-height:0; }
+	.admont-featured #most-downloaded .item img { height:242px !important; width:auto !important; max-width:90% !important;
+		object-fit:contain !important; display:block; border-radius:2px;
+		box-shadow: 0 2px 2px rgba(0,0,0,.28), 0 16px 18px -12px rgba(0,0,0,.55); }
+	.admont-shelf { position:relative; height:30px; margin:-10px -46px 0; z-index:3;
+		background:linear-gradient(#fdf8ec 0%, #f0e6cb 45%, #e3d3a5 62%, #cdb373 100%);
+		border-top:2px solid #d9c07a;
+		box-shadow: 0 -9px 12px -9px rgba(0,0,0,.3), 0 12px 18px -8px rgba(74,58,37,.55); }
+	.admont-shelf::before { content:""; position:absolute; left:0; right:0; top:-2px; height:3px;
+		background:linear-gradient(90deg,transparent,#efd88b,#c9a227,#efd88b,transparent); }
+	.admont-shelf::after { content:""; position:absolute; left:0; right:0; bottom:0; height:7px;
+		background:linear-gradient(#b6901d,#8c6d15); }
+	@media (max-width:767px){
+		.admont-bay { padding:20px 18px 0; }
+		.admont-pil { display:none; }
+		.admont-shelf { margin:-10px -18px 0; }
+		.admont-featured #most-downloaded .item { height:196px; }
+		.admont-featured #most-downloaded .item img { height:186px !important; }
+		.admont-head h2 { font-size:22px; letter-spacing:2px; }
+	}
+	</style>
+	<div class="admont-featured">
+		<div class="admont-head">
+			<span class="orn">&#10087;</span>
+			<h2>Featured Materials</h2>
+			<span class="rule"></span>
+		</div>
+		<div class="admont-bay">
+			<span class="admont-cornice"></span>
+			<span class="admont-pil l"></span>
+			<span class="admont-pil r"></span>
+			<div class="admont-shelf-area">
 				<div id="most-downloaded" class="owl-carousel owl-theme">
 					@foreach(getFeaturedMaterials() as $url)
 						<div class="item">
-							<a href="#">
-								{{-- <div class="views"><i class="icon-download-5"></i></div> --}}
-								<div class="title">
-									{{-- <h3>Title</h3> --}}
-								</div>
-								<img src="{{ $url }}" class="img-fluid img-cover fill" alt="">
-							</a>
+							<a href="#"><img src="{{ $url }}" class="img-fluid img-cover fill" alt=""></a>
 						</div>
 					@endforeach
 				</div>
+				<div class="admont-shelf" aria-hidden="true"></div>
 			</div>
 		</div>
-		<!-- /container -->
+	</div>
+	<!-- /featured -->
 
 		{{-- <div class="bg_color_2">
 			<div class="container margin_120_95">
