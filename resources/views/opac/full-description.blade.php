@@ -73,9 +73,8 @@
 			.fd-authors { color: #555; font-size: 14px; margin-bottom: 10px; }
 			.fd-rating { margin-bottom: 12px; }
 			.fd-stats { margin-bottom: 14px !important; }
-			.fd-actions { display: flex; gap: 10px; align-items: center; margin-bottom: 4px; }
-			.fd-actions form { margin: 0; }
-			.fd-actions .btn_1 { margin: 0; }
+			.fd-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; margin-bottom: 4px; }
+			.fd-actions form { margin: 0; display: flex; }
 			.fd-section { margin-top: 24px; }
 			.fd-section-title { font-size: 14px; font-weight: 700; color: #00a496; text-transform: uppercase; letter-spacing: .3px; margin-bottom: 12px; border-bottom: 2px solid #e6e9ec; padding-bottom: 6px; }
 			.fd-section-title i { margin-right: 6px; vertical-align: middle; }
@@ -92,8 +91,13 @@
 			.fd-copy-badge { font-size: 14px; font-weight: 600; padding: 9px 18px; border-radius: 4px; background: #eef0f2; color: #444; }
 			.fd-copy-badge.ok { background: #e3f5ef; color: #087f5b; }
 			.fd-copy-badge.none { background: #fdecea; color: #c0392b; }
-			.fd-btn { background-color: #029978; color: #fff; }
-			.fd-btn:disabled, .fd-btn[disabled] { background-color: #c2ccc9 !important; color: #fff !important; cursor: not-allowed; opacity: .85; box-shadow: none; }
+			/* Flat, icon-on-top action buttons (icon stacked above the label) */
+			.fd-btn { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-width: 78px; padding: 10px 12px; background: #fff !important; color: #3f4079 !important; border: 1px solid #e3e8ec !important; border-radius: 8px !important; font-size: 12px; font-weight: 600; line-height: 1.1; text-align: center; box-shadow: none; transition: background .12s, border-color .12s, color .12s; }
+			.fd-btn i { font-size: 22px; line-height: 1; color: #029978; }
+			.fd-btn:hover { background: #f1faf7 !important; border-color: #029978 !important; color: #029978 !important; }
+			.fd-btn:hover i { color: #029978; }
+			.fd-btn[disabled], .fd-btn:disabled { background: #f6f8f9 !important; color: #b4babf !important; border-color: #e9edf0 !important; cursor: not-allowed; opacity: 1 !important; }
+			.fd-btn[disabled] i, .fd-btn:disabled i { color: #c4cacf; }
 			/* Read overlay (PDF.js) */
 			.ol-reader { position: fixed; inset: 0; z-index: 20000; background: rgba(18,20,24,.94); display: none; flex-direction: column; }
 			.ol-reader-bar { flex: 0 0 46px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; background: #1b1d21; color: #fff; }
