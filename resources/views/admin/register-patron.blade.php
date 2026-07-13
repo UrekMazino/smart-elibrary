@@ -110,22 +110,35 @@ $(document).ready(function(){
 });
 
 function copyToClipBoard() {
-  // Get the text field
   var copyText = document.getElementById("qrcodeInput");
+  var text = copyText ? copyText.value : '';
 
-  // Select the text field
-  copyText.select();
-  copyText.setSelectionRange(0, 99999); // For mobile devices
+  function showCopied() {
+    var popup = $('#popup-message');
+    popup.css('display', 'block');
+    setTimeout(function () { popup.css('display', 'none'); }, 2000); // hide after 2s
+  }
 
-   // Copy the text inside the text field
-  navigator.clipboard.writeText(copyText.value);
+  // navigator.clipboard needs a secure context (https/localhost); this app runs over http,
+  // so fall back to a temp textarea + execCommand.
+  function fallbackCopy() {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.top = '-9999px';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try { document.execCommand('copy'); showCopied(); }
+    catch (e) { window.prompt('Copy this code:', text); }
+    document.body.removeChild(ta);
+  }
 
-  var popup = $('#popup-message');
-  popup.css('display', 'block');
-
-  setTimeout(function() {
-    popup.css('display', 'none');
-  }, 2000); // Popup message disappears after 2 seconds
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(showCopied, fallbackCopy);
+  } else {
+    fallbackCopy();
+  }
 }
 </script>
 @endsection
