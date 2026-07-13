@@ -107,64 +107,84 @@
 		</div> --}}
 
 		@include('opac.partials.shelf-browser')
-		<div class="container">
-				<div class="row">
-					<div class="col-lg-6 col-sm-12">
-						<div class="container margin_120_95">
-							<div class="main_title">
-								<h2>Recent Uploads</h2>
-							</div>
-							<div class="row add_bottom_30">
-
-								<div class="widget">
-									<ul class="comments-list">
-									@foreach(getLatestMaterial() AS $results)
-									<li>
-										<div class="alignleft">
-											{!! getFrontpage($results->catalog_id) !!}
-										</div>
-										<small>Year : {{ $results->pub_year }}</small>
-										<h3><a href="#" title="" onclick="sendFrm('{{ $results->catalog_id }}')" style="font-size:17px">{{ $results->title_statement }}</a><br><small>{{ $results->joint_authors }}</small></h3>
-									</li>
-									@endforeach
-									</ul>
-								</div>
-							</div>
+		<style>
+			.cover-carousel { max-width:1680px; margin:0 auto; padding:34px 24px 6px; }
+			.cover-carousel .main_title { text-align:center; margin-bottom:16px; }
+			.cc-strip { position:relative; }
+			.cc-track { display:flex; gap:22px; overflow-x:auto; scroll-behavior:smooth; padding:10px 6px 20px; }
+			.cc-track::-webkit-scrollbar { height:8px; }
+			.cc-track::-webkit-scrollbar-track { background:#eef2f1; border-radius:5px; }
+			.cc-track::-webkit-scrollbar-thumb { background:#b9c6c3; border-radius:5px; }
+			.cc-item { flex:0 0 auto; width:150px; text-align:center; }
+			.cc-cover { display:flex; align-items:flex-end; justify-content:center; height:210px; }
+			.cc-cover img { max-height:210px; max-width:100%; width:auto; border-radius:2px; box-shadow:0 2px 6px rgba(0,0,0,.22); transition:transform .14s ease, box-shadow .14s ease; }
+			.cc-cover:hover img { transform:translateY(-5px); box-shadow:0 10px 18px rgba(0,0,0,.28); }
+			.cc-cap { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; margin-top:9px; font-size:13px; line-height:1.32; color:#0176d3; text-decoration:none; font-weight:600; }
+			.cc-cap:hover { text-decoration:underline; }
+			.cc-arrow { position:absolute; top:44%; transform:translateY(-50%); width:46px; height:46px; border-radius:50%; border:1px solid #d0d7de; background:#fff; color:#3f4079; font-size:24px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,.18); z-index:3; }
+			.cc-arrow:hover { background:#00a496; border-color:#00a496; color:#fff; }
+			.cc-arrow.prev { left:-4px; } .cc-arrow.next { right:-4px; }
+			.cc-arrow:disabled { opacity:.3; cursor:default; background:#fff; border-color:#d0d7de; color:#3f4079; }
+		</style>
+		<div class="cover-carousel">
+			<div class="main_title"><h2>Recent Uploads</h2></div>
+			<div class="cc-strip">
+				<button type="button" class="cc-arrow prev" aria-label="Previous">&#8249;</button>
+				<div class="cc-track">
+					@foreach(getLatestMaterial() as $results)
+						<div class="cc-item">
+							<a class="cc-cover" href="{{ url('/full-description/'.$results->catalog_id) }}">
+								<img loading="lazy" src="{{ getThumbnailLink($results->catalog_id) }}" alt="{{ $results->title_statement }}">
+							</a>
+							<a class="cc-cap" href="{{ url('/full-description/'.$results->catalog_id) }}" title="{{ $results->title_statement }}">{{ $results->title_statement }}</a>
 						</div>
-					</div>
-					<div class="col-lg-6 col-sm-12">
-						<div class="container margin_120_95">
-							<div class="main_title">
-								<h2>Related News</h2>
-							</div>
-							<div class="row add_bottom_30">
-								<div class="widget">
-									<ul class="comments-list">
-										@foreach(getLatestNews() AS $news)
-										<li>
-											<div class="alignleft">
-												@if($news->news_cover)
-													<a href="{{ $news->redirect_url ?? '#' }}"><img src="{{ url('/'.$news->news_cover) }}" alt=""></a>
-												@else
-													<a href="#"><img src="{{ url('/frontpages/no-preview.jpg') }}" alt=""></a>
-												@endif
-											</div>
-											<small>{{ \Carbon\Carbon::parse($news->created_at)->diffForHumans() }}</small>
-											<h3>
-												<a href="{{ $news->redirect_url ?? '#' }}" target="_BLANK" title="{{ $news->news_title ?? '' }}" style="font-size:17px;">
-													{{ $news->news_title ?? '' }}
-												</a>
-											</h3>
-										</li>
-										@endforeach
-									</ul>
-								</div>
-							</div>
-						</div>
-					</div>
+					@endforeach
 				</div>
+				<button type="button" class="cc-arrow next" aria-label="Next">&#8250;</button>
+			</div>
 		</div>
-		
+		<div class="cover-carousel">
+			<div class="main_title"><h2>Related News</h2></div>
+			<div class="cc-strip">
+				<button type="button" class="cc-arrow prev" aria-label="Previous">&#8249;</button>
+				<div class="cc-track">
+					@foreach(getLatestNews() as $news)
+						<div class="cc-item">
+							<a class="cc-cover" href="{{ $news->redirect_url ?? '#' }}" @if($news->redirect_url) target="_blank" rel="noopener" @endif>
+								<img loading="lazy" src="{{ $news->news_cover ? url('/'.$news->news_cover) : url('/frontpages/no-preview.jpg') }}" alt="{{ $news->news_title ?? '' }}">
+							</a>
+							<a class="cc-cap" href="{{ $news->redirect_url ?? '#' }}" @if($news->redirect_url) target="_blank" rel="noopener" @endif title="{{ $news->news_title ?? '' }}">{{ $news->news_title ?? '' }}</a>
+						</div>
+					@endforeach
+				</div>
+				<button type="button" class="cc-arrow next" aria-label="Next">&#8250;</button>
+			</div>
+		</div>
+		<script type="text/javascript">
+		(function(){
+			function wire(strip){
+				var track = strip.querySelector('.cc-track');
+				var prev = strip.querySelector('.cc-arrow.prev');
+				var next = strip.querySelector('.cc-arrow.next');
+				if(!track) return;
+				function upd(){
+					var max = track.scrollWidth - track.clientWidth - 2;
+					if(prev) prev.disabled = track.scrollLeft <= 2;
+					if(next) next.disabled = track.scrollLeft >= max;
+					var overflow = track.scrollWidth > track.clientWidth + 4;
+					if(prev) prev.style.display = overflow ? '' : 'none';
+					if(next) next.style.display = overflow ? '' : 'none';
+				}
+				function step(dir){ track.scrollBy({ left: dir * track.clientWidth * 0.85, behavior:'smooth' }); }
+				if(prev) prev.addEventListener('click', function(){ step(-1); });
+				if(next) next.addEventListener('click', function(){ step(1); });
+				track.addEventListener('scroll', upd);
+				window.addEventListener('resize', upd);
+				upd();
+			}
+			document.querySelectorAll('.cc-strip').forEach(wire);
+		})();
+		</script>
 		<!-- /app_section -->
 		<!-- /Hero -->
 <form method="post" action="{{ url('/full-description') }}" id="frm1">
