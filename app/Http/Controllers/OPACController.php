@@ -138,16 +138,17 @@ class OPACController extends Controller
 
     public function toReview()
     {
+        // One entry per material even if it was downloaded several times — multiple
+        // downloads must not require multiple reviews.
+        $list = App\Models\View_to_review::where('user_id',Auth::user()->id)
+                    ->whereNull('to_review')
+                    ->select('catalog_id', \DB::raw('MIN(id) as id'), \DB::raw('MAX(created_at) as created_at'))
+                    ->groupBy('catalog_id')
+                    ->orderBy('created_at','desc')
+                    ->paginate(5);
 
-        $list = App\Models\View_to_review::where('user_id',Auth::user()->id)->whereNull('to_review')->paginate(5);
+        $flag = count($list) > 0;
 
-        $flag = true;
-        if(count($list) == 0)
-        {
-            $flag = false;
-        }
-
-        //$list = App\Models\View_to_review::where('user_id',Auth::user()->id)->whereNull('to_review')->groupBy(['user_id','to_review'])->get();
         return view('opac.to-review',['list' => $list,'flag' => $flag]);
     }
 

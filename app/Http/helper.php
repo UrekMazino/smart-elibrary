@@ -242,7 +242,8 @@ function getNotif($type)
 		switch($type)
 			{
 				case "review":
-					$list = App\Models\View_to_review::where('user_id',Auth::user()->id)->whereNull('to_review')->groupBy(['user_id','to_review'])->count();
+					// Count distinct materials awaiting review (not each download row).
+					$list = App\Models\View_to_review::where('user_id',Auth::user()->id)->whereNull('to_review')->distinct('catalog_id')->count('catalog_id');
 				break;
 
 				case "inquiry":
@@ -267,7 +268,7 @@ function getNotif($type)
 		else
 		{
 			//TO REVIEW
-			$ctr += App\Models\View_to_review::where('user_id',Auth::user()->id)->whereNull('to_review')->groupBy(['user_id','to_review'])->count();
+			$ctr += App\Models\View_to_review::where('user_id',Auth::user()->id)->whereNull('to_review')->distinct('catalog_id')->count('catalog_id');
 
 			if($ctr > 0)
 			{
