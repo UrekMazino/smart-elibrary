@@ -93,10 +93,12 @@ function showThread(id, userid) {
 	}).done(function (datajson) {
 		$("#inquiry_message").text('');
 		jQuery.each(datajson, function (i, obj) {
+			// Patron perspective: your own messages show "You"; every library/admin reply
+			// shows "Library" (the specific admin's name is only revealed in the admin UI).
 			if (userid == obj.replied_by) {
-				$("#inquiry_message").append('<div class="container-msg-reply darker"><p>' + obj.replied_msg + '</p><span class="time-right"><small>' + obj.thread_date + '</small></span></div>');
+				$("#inquiry_message").append('<div class="container-msg-reply darker"><p>' + obj.replied_msg + '</p><span class="time-right"><small>You | ' + obj.thread_date + '</small></span></div>');
 			} else {
-				$("#inquiry_message").append('<div class="container-msg-reply"><p>' + obj.replied_msg + '</p><span class="time-left"><small>' + obj.replied_by_name + " | " + obj.thread_date + '</small></span></div>');
+				$("#inquiry_message").append('<div class="container-msg-reply"><p>' + obj.replied_msg + '</p><span class="time-left"><small>Library | ' + obj.thread_date + '</small></span></div>');
 			}
 		});
 	}).fail(function (datajson) {

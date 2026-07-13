@@ -67,7 +67,7 @@ class OPACController extends Controller
             ->groupBy('reservation_code')
             ->pluck('c', 'reservation_code');
 
-        return view('opac.barrowed',['list' => $list,'flag' => $flag,'unread' => $unread]);
+        return view('opac.transactions',['list' => $list,'flag' => $flag,'unread' => $unread]);
     }
 
     // ---- Patron side of the per-reservation chat (same reservation_messages thread the
