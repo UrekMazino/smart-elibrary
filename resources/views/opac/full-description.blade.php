@@ -153,7 +153,7 @@
 								<li>{{ countNum('review',$result->catalog_id) }} Reviews</li>
 								<li>{{ countNum('download',$result->catalog_id) }} Downloads</li>
 							</ul>
-							@php $pdfUrl = getReadPdfUrl($result->catalog_id); @endphp
+							@php $pdfUrl = getReadUrl($result->catalog_id); @endphp
 							<div class="fd-actions">
 								@if($pdfUrl)
 									<button type="button" class="btn_1 fd-btn" onclick="openReader('{{ $pdfUrl }}', @js($result->title_statement))"><i class="icon-book"></i> Read</button>
@@ -406,10 +406,26 @@
 @section('js')
 <script type="text/javascript">
 var inquiryIsGuest = {{ Auth::check() ? 'false' : 'true' }};
+var inquiryIsBlocked = {{ Auth::check() && Auth::user()->is_blocked ? 'true' : 'false' }};
 var libraryEmail = 'info@fprdi.dost.gov.ph';
 
 function inquire(holdingsid)
 {
+	// Blocked accounts cannot use chat / inquiry.
+	if (inquiryIsBlocked) {
+		if (window.Swal) {
+			Swal.fire({
+				icon: 'warning',
+				title: 'Account blocked',
+				html: 'Your account is <strong>blocked</strong> from sending inquiries.<br>Please contact the library at <a href="mailto:' + libraryEmail + '"><strong>' + libraryEmail + '</strong></a>.',
+				confirmButtonColor: '#00a496'
+			});
+		} else {
+			alert('Your account is blocked from sending inquiries. Please contact the library at ' + libraryEmail + '.');
+		}
+		return;
+	}
+
 	// The inquiry form is for registered users only. Remind guests to email the library instead.
 	if (inquiryIsGuest) {
 		if (window.Swal) {

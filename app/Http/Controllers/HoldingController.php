@@ -73,4 +73,32 @@ class HoldingController extends Controller
 
         return response()->json(['ok' => true]);
     }
+
+    /**
+     * Guarded reader stream. The in-browser reader (PDF.js) loads the file through this
+     * route instead of the raw public path, so we can deny banned accounts the Read
+     * feature. Also enforces the same published/not-deleted rule as full-description.
+     */
+    public function read($catalog_id)
+    {
+        // Banned accounts are not allowed to use the Read feature.
+        abort_if(Auth::check() && Auth::user()->is_banned, 403, 'Your account has been banned from reading materials.');
+
+        // Only public records may be read (published + not deleted).
+        $result = App\Models\ViewCatalog::where('catalog_id',$catalog_id)
+            ->where('is_published',1)
+            ->whereNull('deleted_at')
+            ->first();
+        abort_if(!$result, 404);
+
+        $pdf = App\Models\Multimedia::where('catalog_id',$catalog_id)->first();
+        abort_if(!$pdf, 404);
+
+        $loc  = ltrim((string)$pdf['FileLocation'], '/');
+        $path = public_path($loc);
+        abort_if($loc === '' || !is_file($path), 404);
+
+        // Inline stream (supports range requests) so PDF.js can page through it.
+        return response()->file($path, ['Content-Type' => 'application/pdf']);
+    }
 }

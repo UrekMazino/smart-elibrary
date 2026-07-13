@@ -38,7 +38,9 @@ class User extends Authenticatable
         'position3',
         'position4',
         'username',
-        'location'
+        'location',
+        'is_banned',
+        'is_blocked'
     ];
 
     /**
@@ -58,6 +60,8 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'is_banned'  => 'boolean',
+        'is_blocked' => 'boolean',
     ];
 
     // public function patrontypes()

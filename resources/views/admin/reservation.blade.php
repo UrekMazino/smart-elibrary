@@ -27,8 +27,9 @@
                         <table id="tbl" class="table">
                           <thead>
                             <tr>
-                              <th style="width: 25%">Material Title</th>
-                              <th style="width: 15%">Patron</th>
+                              <th style="width: 22%">Material Title</th>
+                              <th style="width: 14%">Patron</th>
+                              <th>Email</th>
                               <th>Status</th>
                               <th>Reservation Code</th>
                               <th>Date and Time of Visit</th>
@@ -47,6 +48,26 @@
     <!--View patron Modal -->
     @include('admin.modals.view-patron-modal')
 
+    <!-- Reservation chat modal -->
+    <div class="modal fade" id="reservationChatModal" tabindex="-1" role="dialog" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Message patron <small class="text-muted" id="chat-res-code"></small></h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div id="reservation-chat-thread" style="max-height:340px;overflow-y:auto;padding:4px;"></div>
+            <label class="form-label">Your message</label>
+            <textarea class="form-control" id="reservation-chat-message" rows="3" placeholder="Type your message to the patron..."></textarea>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-primary" onclick="sendReservationChat()"><i data-feather="send" class="icon-sm me-1"></i>Send</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
 </div>
 <form method="post" action="{{ url('/admin/reservation/action') }}" id="frm">
@@ -61,12 +82,17 @@
 @section('js')
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net/jquery.dataTables.js') }}"></script>
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net-bs5/dataTables.bootstrap5.js') }}"></script>
-<script> 
+<script>
   let message = "{{ session('message') }}";
   let header = "{{ session('header') }}";
   let viewMaterialUrl = '{{ url("/admin/reservation/material-json") }}';
   let viewPatronUrl = '{{ url("/admin/reservation/patron-json") }}';
   let reservationsUrl = '{{ url("/admin/reservations/json") }}';
+  let reservationChatJsonUrl = '{{ url("/admin/reservation/chat-json") }}';
+  let reservationChatReplyUrl = '{{ url("/admin/reservation/chat/reply") }}';
+  let toggleFlagUrl = '{{ url("/admin/user/toggle-flag") }}';
+  let csrfToken = '{{ csrf_token() }}';
+  let adminUserId = {{ Auth::id() }};
 </script>
 <script src="{{ asset('js/admin/reservation.js') }}"></script>
 <script src="{{ asset('js/admin/view-modals.js') }}"></script>
@@ -75,6 +101,82 @@ $(document).ready(function() {
     @if(session('message'))
         timerNoReloadModal(message, header);
     @endif
+    if (window.feather) feather.replace();
 });
+
+// ---- Reservation chat (admin -> patron, per reservation) ----
+var currentChatCode = null;
+
+function openReservationChat(reservationCode) {
+    currentChatCode = reservationCode;
+    $('#chat-res-code').text('· ' + reservationCode);
+    $('#reservation-chat-message').val('');
+    loadReservationChat();
+    $('#reservationChatModal').modal('show');
+}
+
+function loadReservationChat() {
+    $.getJSON(reservationChatJsonUrl + '/' + encodeURIComponent(currentChatCode), function (rows) {
+        var box = $('#reservation-chat-thread').empty();
+        if (!rows.length) {
+            box.append('<p class="text-muted text-center small mb-0">No messages yet. Start the conversation below.</p>');
+            return;
+        }
+        $.each(rows, function (i, obj) {
+            var mine = (obj.sender_role === 'admin');
+            var name = obj.sender_name || (mine ? 'Admin' : 'Patron');
+            var side = mine ? 'text-end' : 'text-start';
+            var bubble = mine ? 'background:#0d6efd;color:#fff;' : 'background:#f4f6f9;color:#222;';
+            box.append(
+                '<div class="' + side + '" style="margin:8px 0;">' +
+                  '<div style="display:inline-block;max-width:80%;text-align:left;border-radius:10px;padding:8px 12px;' + bubble + '">' +
+                    '<div>' + $('<div>').text(obj.message).html() + '</div>' +
+                    '<small style="opacity:.8;">' + name + ' · ' + obj.created_at + '</small>' +
+                  '</div>' +
+                '</div>'
+            );
+        });
+        box.scrollTop(box[0].scrollHeight);
+    });
+}
+
+function sendReservationChat() {
+    var msg = $('#reservation-chat-message').val().trim();
+    if (!msg) return;
+    $.ajax({
+        type: 'POST',
+        url: reservationChatReplyUrl,
+        data: { _token: csrfToken, reservation_code: currentChatCode, message: msg },
+        dataType: 'json',
+        success: function () { $('#reservation-chat-message').val(''); loadReservationChat(); },
+        error: function () { Swal.fire('Error', 'Could not send the message. Please try again.', 'error'); }
+    });
+}
+
+// ---- Ban / Block a patron ----
+function toggleUserFlag(id, flag) {
+    var isBan = flag === 'banned';
+    Swal.fire({
+      title: 'Are you sure?',
+      html: isBan
+              ? 'A <strong>banned</strong> account cannot log in and cannot use the Read feature.'
+              : 'A <strong>blocked</strong> account cannot use chat / inquiry.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes',
+      cancelButtonText: 'No',
+      reverseButtons: true
+    }).then(function (result) {
+      if (!result.value) return;
+      $.ajax({
+        type: 'POST',
+        url: toggleFlagUrl,
+        data: { _token: csrfToken, user_id: id, flag: flag },
+        dataType: 'json',
+        success: function () { $('#tbl').DataTable().ajax.reload(null, false); },
+        error: function () { Swal.fire('Error', 'Could not update the account. Please try again.', 'error'); }
+      });
+    });
+}
 </script>
 @endsection

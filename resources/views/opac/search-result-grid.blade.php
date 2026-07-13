@@ -117,7 +117,7 @@
 								<span class="ol-hover-rating rating"><i data-star="{{ starRatingAve($results->catalog_id) }}"></i></span>
 							</span>
 						</a>
-						@php $pdfUrl = getReadPdfUrl($results->catalog_id); $canBorrow = checkStocks($results->catalog_id); @endphp
+						@php $pdfUrl = getReadUrl($results->catalog_id); $canBorrow = checkStocks($results->catalog_id); @endphp
 						<div class="ol-actions">
 							<div class="ol-btn-row">
 								@if($pdfUrl)

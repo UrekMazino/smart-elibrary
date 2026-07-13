@@ -190,20 +190,29 @@ class ReservationController extends Controller
             ->take($rowPerPage)
             ->get();
     
+        // Patron email + ban/block state, keyed by user id (kept out of the join above to
+        // avoid ambiguous-column collisions between circulations / circulation_reservations).
+        $patrons = \App\Models\User::whereIn('id', $reservations->pluck('user_id')->filter()->unique()->values())
+                        ->get(['id', 'email', 'is_banned', 'is_blocked'])->keyBy('id');
+
         $data_arr = array();
 
         foreach($reservations as $reservation){
             $title_statement = formatTitle1($reservation->title_statement);
             $status = getCirculationStatusName($reservation->status);
-            
- 
+            $patron = $patrons[$reservation->user_id] ?? null;
+
+
             $data_arr[] = array(
                 "id" => $reservation->id,
                 "user_id" => $reservation->user_id,
                 'requested_by'=> $reservation->requested_by,
+                "email" => $patron->email ?? '',
+                "is_banned" => $patron ? (int) $patron->is_banned : 0,
+                "is_blocked" => $patron ? (int) $patron->is_blocked : 0,
                 "title_statement" => $title_statement,
                 "status" => $status,
-                'reservation_code' => $reservation->reservation_code, 
+                'reservation_code' => $reservation->reservation_code,
                 "catalog_id" => $reservation->catalog_id,
                 "circulation_number" => $reservation->circulation_number,
                 "copy_id" => $reservation->copy_id,
@@ -313,8 +322,48 @@ class ReservationController extends Controller
             'reservation_code' => checkIfFound($reservation, 'reservation_code'),
         );
 
-        return response()->json($response); 
+        return response()->json($response);
     }
-    
+
+    // ---- Per-reservation admin<->patron chat (mirrors the inquiry reply thread) ----
+
+    // Return the message thread for one reservation, oldest first.
+    public function reservationChatJson($reservation_code)
+    {
+        $messages = DB::table('reservation_messages')
+            ->leftJoin('users', 'users.id', '=', 'reservation_messages.sender_id')
+            ->where('reservation_messages.reservation_code', $reservation_code)
+            ->orderBy('reservation_messages.created_at')
+            ->select('reservation_messages.*', 'users.name as sender_name')
+            ->get();
+
+        return response()->json($messages);
+    }
+
+    // Admin posts a reply into a reservation's thread.
+    public function reservationChatReply(Request $request)
+    {
+        $request->validate([
+            'reservation_code' => 'required|string',
+            'message'          => 'required|string',
+        ]);
+
+        // Resolve the patron this reservation belongs to (for thread ownership).
+        $reservation = DB::table('circulation_reservations')
+            ->where('reservation_code', $request->reservation_code)
+            ->first();
+
+        DB::table('reservation_messages')->insert([
+            'reservation_code' => $request->reservation_code,
+            'user_id'          => $reservation->user_id ?? null,
+            'sender_id'        => auth()->id(),
+            'sender_role'      => 'admin',
+            'message'          => $request->message,
+            'created_at'       => now(),
+            'updated_at'       => now(),
+        ]);
+
+        return response()->json(['ok' => true]);
+    }
 
 }

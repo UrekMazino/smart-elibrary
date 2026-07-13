@@ -136,6 +136,8 @@ Route::controller(ReservationController::class)->group(function () {
     Route::get('/admin/reservation/patron-json', 'viewPatron');
     Route::get('/admin/reservation/transaction-json', 'viewTransaction');
     Route::get('/admin/reservation/view-json', 'viewReservation');
+    Route::get('/admin/reservation/chat-json/{reservation_code}', 'reservationChatJson');
+    Route::post('/admin/reservation/chat/reply', 'reservationChatReply');
 });
 
 Route::controller(ReservationOpacController::class)->group(function () {

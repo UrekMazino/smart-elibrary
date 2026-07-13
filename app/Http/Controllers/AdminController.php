@@ -201,29 +201,33 @@ class AdminController extends Controller
 
     public function inquiry()
     {
+        // Inquiries now only come from registered users (guests are directed to email),
+        // so we surface each patron's ban/block state for the admin controls.
         $list = App\Models\View_inquiry::get();
-        // Manual "already replied" flags for guest inquiries (view_inquiries is a SQL view,
-        // so read the flag straight from the inquiries table, keyed by id).
-        $repliedFlags = App\Models\Inquiry::pluck('guest_replied_at', 'id');
-        return view('admin.inquiry', ['list' => $list, 'repliedFlags' => $repliedFlags]);
-    }
-
-    // Admin toggles a guest inquiry as replied / not replied (replies to guests go by email).
-    public function toggleInquiryReplied($id)
-    {
-        $inq = App\Models\Inquiry::find($id);
-        if (! $inq) return response()->json(['ok' => false], 404);
-
-        $inq->guest_replied_at = $inq->guest_replied_at ? null : now();
-        $inq->save();
-
-        return response()->json(['ok' => true, 'replied' => (bool) $inq->guest_replied_at]);
+        $userFlags = App\Models\User::whereIn('id', $list->pluck('user_id')->filter()->unique()->values())
+                        ->get(['id', 'is_banned', 'is_blocked'])->keyBy('id');
+        return view('admin.inquiry', ['list' => $list, 'userFlags' => $userFlags]);
     }
 
     public function inquiryjson()
     {
         $list = App\Models\View_inquiry::get();
         return $list;
+    }
+
+    // Toggle a patron's ban/block flag (used by Patrons, Inquiry and Reservation pages).
+    //   flag=banned  -> cannot log in AND cannot use the Read feature
+    //   flag=blocked -> cannot use chat / inquiry
+    public function toggleUserFlag(Request $request)
+    {
+        $user = App\Models\User::find($request->user_id);
+        if (! $user) return response()->json(['ok' => false], 404);
+
+        $col = $request->flag === 'banned' ? 'is_banned' : 'is_blocked';
+        $user->$col = $user->$col ? 0 : 1;
+        $user->save();
+
+        return response()->json(['ok' => true, 'flag' => $request->flag, 'value' => (bool) $user->$col]);
     }
 
     public function patron()
@@ -350,7 +354,7 @@ class AdminController extends Controller
 
         // Fetch records
         $records = App\Models\User::orderBy($columnName,$columnSortOrder)
-            ->select('id','username','name','email','contactnum','location','created_at')
+            ->select('id','username','name','email','contactnum','location','created_at','is_banned','is_blocked')
             ->where(function ($query) use ($searchValue) {
                 $query->where('name', 'like', '%' . $searchValue . '%')
                     ->orWhere('email', 'like', '%' . $searchValue . '%')
@@ -384,6 +388,8 @@ class AdminController extends Controller
                 "contactnum" => $contactnum,
                 "location" => $location,
                 "created_at" => $created_at,
+                "is_banned" => (int) $record->is_banned,
+                "is_blocked" => (int) $record->is_blocked,
             );
          }
 

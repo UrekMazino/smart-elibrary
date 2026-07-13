@@ -36,6 +36,7 @@ Route::controller(HoldingController::class)->group(function () {
     Route::get('/full-description', 'index2');
     Route::get('/full-description/{holdingsid}', 'index2');
     Route::post('/read/view', 'recordView');
+    Route::get('/read/{catalog_id}', 'read')->whereNumber('catalog_id')->name('read');
 });
 
 //OPAC
@@ -92,9 +93,9 @@ Route::controller(AdminController::class)->group(function () {
     
     Route::get('/admin/inquiry', 'inquiry');
     Route::get('/admin/inquiry/json', 'inquiryjson');
-    Route::post('/admin/inquiry/toggle-replied/{id}', 'toggleInquiryReplied');
     
     Route::get('/admin/patron', 'patron')->name('patrons');
+    Route::post('/admin/user/toggle-flag', 'toggleUserFlag');
 
     Route::get('/admin/report', 'report');
 

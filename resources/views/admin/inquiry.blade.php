@@ -55,40 +55,37 @@
 							</thead>
 							<tbody>
 								@foreach($list AS $lists)
+									@php $uf = $userFlags[$lists->user_id] ?? null; @endphp
 									<tr>
 										<td><div class="inq-msg">{{ $lists->message }}</div></td>
 										<td>{!! getTitle($lists->catalog_id) !!}</td>
-										<td>{{ $lists->fullname }}</td>
+										<td>
+											{{ $lists->fullname }}
+											@if($uf && $uf->is_banned)<span class="badge bg-danger ms-1">Banned</span>@endif
+											@if($uf && $uf->is_blocked)<span class="badge bg-warning text-dark ms-1">Blocked</span>@endif
+										</td>
 										<td>{{ $lists->contactnum }}</td>
 										<td>{{ $lists->email }}</td>
 										<td class="text-center">
-											@if($lists->user_id)
-												@if($lists->total_msg > 0)
-													<span class="badge bg-danger rounded-pill">{{ $lists->total_msg }}</span>
-												@else
-													<span class="text-muted">&mdash;</span>
-												@endif
+											@if($lists->total_msg > 0)
+												<span class="badge bg-danger rounded-pill">{{ $lists->total_msg }}</span>
 											@else
-												@php $replied = !empty($repliedFlags[$lists->id] ?? null); @endphp
-												<div class="form-check form-switch d-inline-flex align-items-center gap-2 justify-content-center mb-0">
-													<input class="form-check-input inq-replied-toggle" type="checkbox" role="switch" data-id="{{ $lists->id }}" {{ $replied ? 'checked' : '' }}>
-													<label class="form-check-label small text-muted mb-0">Replied</label>
-												</div>
+												<span class="text-muted">&mdash;</span>
 											@endif
 										</td>
 										<td data-order="{{ strtotime($lists->created_at) }}">{{ \Carbon\Carbon::parse($lists->created_at)->format('M d, Y g:i A') }}</td>
 										<td class="text-center">
-											@if($lists->user_id)
+											<div class="btn-group">
 												<button class="btn btn-primary btn-sm" onclick="replyInquiry({{ $lists->id }},{{ Auth::user()->id }})"><i data-feather="corner-up-left" class="icon-sm me-1"></i>Reply</button>
-											@elseif($lists->email)
-												@php
-													$mailSubject = rawurlencode('Re: Your inquiry to the eLibrary');
-													$mailBody = rawurlencode("Hi ".$lists->fullname.",\n\nThank you for reaching out to the eLibrary. In response to your inquiry:\n\n\"".$lists->message."\"\n\n");
-												@endphp
-												<a class="btn btn-outline-primary btn-sm" href="mailto:{{ $lists->email }}?subject={{ $mailSubject }}&body={{ $mailBody }}" title="Guest — reply via email"><i data-feather="mail" class="icon-sm me-1"></i>Reply via email</a>
-											@else
-												<span class="badge bg-light text-dark" title="No email provided">Guest</span>
-											@endif
+												@if($lists->user_id)
+													<button type="button" class="btn btn-primary btn-sm dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false"><span class="visually-hidden">Manage</span></button>
+													<div class="dropdown-menu dropdown-menu-end">
+														<h6 class="dropdown-header">Manage account</h6>
+														<a class="dropdown-item text-warning" href="#" onclick="toggleUserFlag({{ $lists->user_id }},'blocked');return false;">{{ $uf && $uf->is_blocked ? 'Unblock account' : 'Block account' }}</a>
+														<a class="dropdown-item text-danger" href="#" onclick="toggleUserFlag({{ $lists->user_id }},'banned');return false;">{{ $uf && $uf->is_banned ? 'Unban account' : 'Ban account' }}</a>
+													</div>
+												@endif
+											</div>
 										</td>
 									</tr>
 								@endforeach
@@ -152,18 +149,30 @@
 		$('#tbl').DataTable({ order: [[6, 'desc']], columnDefs: [{ orderable: false, targets: 7 }] });
 	});
 
-	// Guest inquiries: admin manually toggles "replied" (replies to guests go by email)
-	$(document).on('change', '.inq-replied-toggle', function () {
-		var $t = $(this);
-		$t.prop('disabled', true);
-		$.ajax({
-			url: '{{ url("/admin/inquiry/toggle-replied") }}/' + $t.data('id'),
-			method: 'POST',
-			data: { _token: '{{ csrf_token() }}' },
-			success: function (res) { $t.prop('checked', !!res.replied); },
-			error: function () { $t.prop('checked', !$t.prop('checked')); alert('Could not update the status. Please try again.'); },
-			complete: function () { $t.prop('disabled', false); }
+	// Ban/Block a patron: banned = no login + no Read; blocked = no chat/inquiry.
+	function toggleUserFlag(id, flag) {
+		var isBan = flag === 'banned';
+		Swal.fire({
+			title: 'Are you sure?',
+			html: isBan
+					? 'A <strong>banned</strong> account cannot log in and cannot use the Read feature.'
+					: 'A <strong>blocked</strong> account cannot use chat / inquiry.',
+			icon: 'warning',
+			showCancelButton: true,
+			confirmButtonText: 'Yes',
+			cancelButtonText: 'No',
+			reverseButtons: true
+		}).then(function (result) {
+			if (!result.value) return;
+			$.ajax({
+				type: 'POST',
+				url: '{{ url("/admin/user/toggle-flag") }}',
+				data: { _token: '{{ csrf_token() }}', user_id: id, flag: flag },
+				dataType: 'json',
+				success: function () { location.reload(); },
+				error: function () { Swal.fire('Error', 'Could not update the account. Please try again.', 'error'); }
+			});
 		});
-	});
+	}
 </script>
 @endsection

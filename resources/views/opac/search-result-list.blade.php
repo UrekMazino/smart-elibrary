@@ -115,7 +115,7 @@
 								@if($results->edition != '' && $results->edition != null) &middot; {{ formatText($results->edition) }} ed.@endif
 							</div>
 						</div>
-						@php $pdfUrl = getReadPdfUrl($results->catalog_id); $canBorrow = checkStocks($results->catalog_id); @endphp
+						@php $pdfUrl = getReadUrl($results->catalog_id); $canBorrow = checkStocks($results->catalog_id); @endphp
 						<div class="ol-list-actions">
 							<a href="#0" class="btn_1 ol-full-desc" onclick="submitFrm('{{ $results->catalog_id }}'); return false;">Full description</a>
 							<div class="ol-btn-row">

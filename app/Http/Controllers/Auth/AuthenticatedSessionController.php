@@ -30,6 +30,17 @@ class AuthenticatedSessionController extends Controller
     {
         $request->authenticate();
 
+        // Banned accounts are not allowed to log in.
+        if (Auth::user() && Auth::user()->is_banned) {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return back()->withErrors([
+                'email' => 'This account has been banned. Please contact the library.',
+            ])->onlyInput('email');
+        }
+
         $request->session()->regenerate();
 
         return redirect()->intended(RouteServiceProvider::HOME);

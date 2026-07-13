@@ -480,6 +480,19 @@ function getReadPdfUrl($catalog_id)
 }
 
 /**
+ * Guarded reader URL. Returns the /read/{id} route (streamed through HoldingController::read,
+ * which denies banned accounts) when a readable file exists, else ''. Use this for the
+ * in-browser reader instead of the raw public path.
+ */
+function getReadUrl($catalog_id)
+{
+	// Reuse existence check; only expose the guarded route when a file is actually present.
+	if(getReadPdfUrl($catalog_id) === '') return '';
+
+	return url('/read/'.$catalog_id);
+}
+
+/**
  * Build formatted citations (APA / MLA / Chicago) from a catalog record.
  * Dependency-free and reusable — intended to also back a future citation API so the
  * Project Y RAG can cite eLibrary materials in the same formats. $record needs:

@@ -10,8 +10,14 @@ class InquiryController extends Controller
 {
     public function create()
     {
+        // Blocked accounts cannot use chat / inquiry.
+        if(Auth::check() && Auth::user()->is_blocked)
+        {
+            return redirect()->back()->with('error', 'Your account is blocked from sending inquiries. Please contact the library.');
+        }
+
         $inq = new App\Models\Inquiry;
-        
+
         if(Auth::check())
         {
             $inq->user_id = Auth::user()->id;
@@ -40,6 +46,12 @@ class InquiryController extends Controller
 
     public function reply()
     {
+        // Blocked accounts cannot use chat / inquiry (admins are never blocked).
+        if(Auth::check() && Auth::user()->is_blocked)
+        {
+            return redirect()->back()->with('error', 'Your account is blocked from replying to inquiries. Please contact the library.');
+        }
+
         $inq = new App\Models\Reply_inquiry;
         $inq->inquiry_id = request()->catalog_id_inquiry_reply;
         $inq->user_id = Auth::user()->id;
