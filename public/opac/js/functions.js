@@ -23,9 +23,22 @@
 	var $toTop = $('#toTop');
 	$(window).on("scroll", function () {
 		if ($(this).scrollTop() > 1) {
-			$headerStick.addClass("sticky");
+			if (!$headerStick.hasClass("sticky")) {
+				// The header switches from position:relative to position:fixed here, which
+				// collapses its flow space and shifts content up by the header height. On pages
+				// with the docked search bar (#results) that shift makes #results overlap the
+				// content below it — so reserve the header height with body padding to cancel
+				// the jump. Measured while the header is still in flow (accurate height).
+				if ($('#results').length) {
+					$('body').css('padding-top', $headerStick.outerHeight() + 'px');
+				}
+				$headerStick.addClass("sticky");
+			}
 		} else {
-			$headerStick.removeClass("sticky");
+			if ($headerStick.hasClass("sticky")) {
+				$headerStick.removeClass("sticky");
+				$('body').css('padding-top', '');
+			}
 		};
 		if ($(this).scrollTop() != 0) {
 			$toTop.fadeIn();
@@ -33,6 +46,9 @@
 			$toTop.fadeOut();
 		}
 	});
+	// Apply the correct state on load too (e.g. when the browser restores a scrolled position),
+	// so the header padding compensation is in place before any user scroll.
+	$(window).trigger("scroll");
 	$toTop.on("click", function () {
 		$('body,html').animate({
 			scrollTop: 0
