@@ -8,6 +8,11 @@
 		.admin-page-head .aph-desc { margin:2px 0 0; font-size:13px; color:#8a94a6; }
 		.inq-msg { max-width:340px; }
 		table td { word-break:break-word; vertical-align:top; white-space:normal !important; }
+		/* Keep the action buttons on one line (the global white-space:normal above was
+		   wrapping the Reply icon above its label once the split caret was added). */
+		#tbl td:last-child { white-space:nowrap !important; }
+		#tbl td .btn-group { flex-wrap:nowrap; }
+		#tbl td .btn { white-space:nowrap; }
 
 		.chat-thread { max-height:340px; overflow-y:auto; padding:4px; }
 		.container-msg-reply { border:1px solid #e2e6ec; background-color:#f4f6f9; border-radius:10px; padding:10px 14px; margin:8px 0; }
