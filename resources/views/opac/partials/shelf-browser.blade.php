@@ -27,8 +27,8 @@
 	.shelf-scroll::-webkit-scrollbar { height:10px; }
 	.shelf-scroll::-webkit-scrollbar-track { background:rgba(0,0,0,.25); }
 	.shelf-scroll::-webkit-scrollbar-thumb { background:linear-gradient(#e0c56f,#c9a227); border-radius:6px; }
-	.shelf-row { position:relative; display:flex; gap:16px; width:max-content; align-items:flex-end;
-		padding:16px 8px 16px; margin-bottom:6px; }
+	.shelf-row { position:relative; display:flex; gap:16px; min-width:100%; width:max-content; align-items:flex-end;
+		justify-content:safe center; padding:16px 8px 16px; margin-bottom:6px; }
 	.shelf-row::after { content:""; position:absolute; left:0; right:0; bottom:0; height:14px;
 		background:linear-gradient(#7c5533 0%, #5f3f25 60%, #4a3019 100%);
 		border-top:2px solid #c9a227; box-shadow:0 8px 12px -7px rgba(0,0,0,.7); border-radius:1px; }
@@ -37,6 +37,7 @@
 		box-shadow: 0 2px 3px rgba(0,0,0,.45), 0 12px 14px -9px rgba(0,0,0,.7); }
 	.shelf-book:hover { transform:translateY(-5px); z-index:2; }
 	.shelf-book:hover img { box-shadow: 0 4px 6px rgba(0,0,0,.5), 0 18px 20px -10px rgba(0,0,0,.8); }
+	.shelf-book.no-link { cursor:default; }
 	@media (max-width:991px){ .shelf-book img { height:116px; } .shelf-label{ font-size:17px; } }
 	@media (max-width:575px){ .shelf-book img { height:98px; } .shelf-nav{ width:34px; height:34px; font-size:19px; } }
 </style>
@@ -61,7 +62,7 @@
 							@foreach($__rows as $rowItems)
 								<div class="shelf-row">
 									@foreach($rowItems as $it)
-										<a class="shelf-book" href="{{ $it['url'] ?? '#' }}" @if(empty($it['url'])) onclick="return false" @endif title="{{ $it['title'] }}">
+										<a class="shelf-book{{ empty($it['url']) ? ' no-link' : '' }}" href="{{ $it['url'] ?? '#' }}" @if(empty($it['url'])) onclick="return false" @endif title="{{ $it['title'] }}">
 											<img loading="lazy" src="{{ $it['thumb'] }}" alt="{{ $it['title'] }}">
 										</a>
 									@endforeach
