@@ -785,3 +785,57 @@ function getAnnualReports()
     return $sources;
 }
 
+/**
+ * Category shelves for the home-page shelf browser: Featured Materials, Annual Reports, and
+ * one shelf per material type that actually has published records (empty types are skipped,
+ * most-populated first). Thumbnails only. Each shelf:
+ *   ['key' => ..., 'label' => ..., 'items' => [ ['thumb','url','title'], ... ]].
+ */
+function getShelves($limit = 45)
+{
+    $shelves = [];
+
+    $featured = array_map(function ($u) { return ['thumb' => $u, 'url' => null, 'title' => '']; }, getFeaturedMaterials());
+    if ($featured) {
+        $shelves[] = ['key' => 'featured', 'label' => 'Featured Materials', 'items' => array_slice($featured, 0, $limit)];
+    }
+
+    $annual = array_map(function ($u) { return ['thumb' => $u, 'url' => null, 'title' => '']; }, getAnnualReports());
+    if ($annual) {
+        $shelves[] = ['key' => 'annual', 'label' => 'Annual Reports', 'items' => array_slice($annual, 0, $limit)];
+    }
+
+    // Only material types that have published records (most-populated first), so no empty shelves.
+    $populated = App\Models\ViewCatalog::where('is_published', 1)->whereNull('deleted_at')
+        ->select('material_type_id', DB::raw('count(*) as c'))
+        ->groupBy('material_type_id')->orderByDesc('c')->get();
+
+    $names = DB::table('materials')->pluck('name', 'id');
+
+    foreach ($populated as $p) {
+        if (!$p->material_type_id) continue;
+
+        $rows = App\Models\ViewCatalog::where('material_type_id', $p->material_type_id)
+            ->where('is_published', 1)->whereNull('deleted_at')
+            ->orderByDesc('created_at')->limit($limit)
+            ->get(['catalog_id', 'title_statement']);
+        if ($rows->isEmpty()) continue;
+
+        $items = $rows->map(function ($r) {
+            return [
+                'thumb' => getThumbnailLink($r->catalog_id),
+                'url'   => url('/full-description/' . $r->catalog_id),
+                'title' => $r->title_statement,
+            ];
+        })->all();
+
+        $shelves[] = [
+            'key'   => 'type-' . $p->material_type_id,
+            'label' => $names[$p->material_type_id] ?? 'Other materials',
+            'items' => $items,
+        ];
+    }
+
+    return $shelves;
+}
+
