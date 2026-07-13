@@ -16,14 +16,15 @@ class InquiryController extends Controller
             return redirect()->back()->with('error', 'Your account is blocked from sending inquiries. Please contact the library.');
         }
 
-        // The inquiry message is required (guards against an empty/whitespace-only submission
-        // that bypasses the client-side `required` attribute).
-        if(trim((string) request()->inquiry_message) === '')
+        // Subject and message are both required (guards against empty/whitespace-only
+        // submissions that bypass the client-side `required` attributes).
+        if(trim((string) request()->inquiry_subject) === '' || trim((string) request()->inquiry_message) === '')
         {
-            return redirect()->back()->with('error', 'Please enter your inquiry message.');
+            return redirect()->back()->with('error', 'Please enter both a subject and your inquiry message.');
         }
 
         $inq = new App\Models\Inquiry;
+        $inq->subject = request()->inquiry_subject;
 
         if(Auth::check())
         {

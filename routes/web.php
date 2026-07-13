@@ -69,7 +69,7 @@ Route::controller(SettingController::class)->group(function () {
 //INQUIRY
 use App\Http\Controllers\InquiryController;
 Route::controller(InquiryController::class)->group(function () {
-    Route::post('/inquiry/submit', 'create');
+    Route::post('/inquiry/submit', 'create')->middleware('throttle:5,1'); // max 5 inquiry submits/min
     Route::post('/inquiry/reply', 'reply');
     Route::get('/inquiry/json/{id}', 'json2');
     Route::get('/inquiry/seen/{id}', 'seen');

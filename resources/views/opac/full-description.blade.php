@@ -357,6 +357,8 @@
 					<input type='hidden' name='catalog_id_inquiry' id='catalog_id_inquiry'>
 					<div class="modal-body">
 						{{-- Inquiry form is for registered users only; guests are shown a reminder to email the library. --}}
+						<span>Subject : </span>
+						<input type="text" class="form-control mb-3" name="inquiry_subject" maxlength="150" placeholder="Subject of your inquiry..." required>
 						<span>Message : </span>
 						<textarea class="form-control" name="inquiry_message" rows="4" placeholder="Type your inquiry about this material..." required></textarea>
 					</div>

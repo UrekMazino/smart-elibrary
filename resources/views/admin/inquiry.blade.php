@@ -48,8 +48,8 @@
 						<table id="tbl" class="table table-hover align-middle">
 							<thead>
 								<tr>
-									<th>Message</th>
-									<th>Title</th>
+									<th>Subject</th>
+									<th>Material Title</th>
 									<th>User</th>
 									<th>Contact No.</th>
 									<th>Email</th>
@@ -62,8 +62,9 @@
 								@foreach($list AS $lists)
 									@php $uf = $userFlags[$lists->user_id] ?? null; @endphp
 									<tr>
-										<td><div class="inq-msg">{{ $lists->message }}</div></td>
-										<td>{!! getTitle($lists->catalog_id) !!}</td>
+										<td><div class="inq-msg">{{ $lists->subject }}</div></td>
+										@php $fullTitle = trim(strip_tags((string) getTitle($lists->catalog_id))); @endphp
+										<td><span title="{{ $fullTitle }}">{{ \Illuminate\Support\Str::limit($fullTitle, 55) }}</span></td>
 										<td>
 											{{ $lists->fullname }}
 											@if($uf && $uf->is_banned)<span class="badge bg-danger ms-1">Banned</span>@endif
@@ -81,7 +82,7 @@
 										<td data-order="{{ strtotime($lists->created_at) }}">{{ \Carbon\Carbon::parse($lists->created_at)->format('M d, Y g:i A') }}</td>
 										<td class="text-center">
 											<div class="btn-group">
-												<button class="btn btn-primary btn-sm" onclick="replyInquiry({{ $lists->id }},{{ Auth::user()->id }})"><i data-feather="corner-up-left" class="icon-sm me-1"></i>Reply</button>
+												<button class="btn btn-primary btn-sm" data-subject="{{ $lists->subject }}" data-message="{{ $lists->message }}" onclick="replyInquiry(this,{{ $lists->id }},{{ Auth::user()->id }})"><i data-feather="corner-up-left" class="icon-sm me-1"></i>Reply</button>
 												@if($lists->user_id)
 													<button type="button" class="btn btn-primary btn-sm dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false"><span class="visually-hidden">Manage</span></button>
 													<div class="dropdown-menu dropdown-menu-end">
@@ -132,17 +133,25 @@
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net/jquery.dataTables.js') }}"></script>
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net-bs5/dataTables.bootstrap5.js') }}"></script>
 <script>
-	function replyInquiry(id, userid) {
+	function replyInquiry(btn, id, userid) {
 		$("#inquireReplyModal").modal('show');
 		$("#catalog_id_inquiry_reply").val(id);
 
+		var esc = function (s) { return $('<div>').text(s == null ? '' : s).html(); };
+		var subject = btn && btn.getAttribute('data-subject');
+		var message = btn && btn.getAttribute('data-message');
+
+		var box = $("#inquiry_message").empty();
+		// The reply thread only holds replies, so show the patron's original inquiry
+		// (subject + message) at the top for full context.
+		box.append('<div class="container-msg-reply"><p><span class="text-muted small">Subject</span><br><strong>' + esc(subject) + '</strong></p><p>' + esc(message) + '</p><span class="time-left"><small>Original inquiry</small></span></div>');
+
 		$.getJSON("{{ url('inquiry/json/') }}/" + id).done(function (datajson) {
-			$("#inquiry_message").empty();
 			jQuery.each(datajson, function (i, obj) {
 				if (userid == obj.replied_by) {
-					$("#inquiry_message").append('<div class="container-msg-reply darker"><p>' + obj.replied_msg + '</p><span class="time-right"><small>' + obj.replied_by_name + ' | ' + obj.thread_date + '</small></span></div>');
+					box.append('<div class="container-msg-reply darker"><p>' + obj.replied_msg + '</p><span class="time-right"><small>' + obj.replied_by_name + ' | ' + obj.thread_date + '</small></span></div>');
 				} else {
-					$("#inquiry_message").append('<div class="container-msg-reply"><p>' + obj.replied_msg + '</p><span class="time-left"><small>' + obj.replied_by_name + ' | ' + obj.thread_date + '</small></span></div>');
+					box.append('<div class="container-msg-reply"><p>' + obj.replied_msg + '</p><span class="time-left"><small>' + obj.replied_by_name + ' | ' + obj.thread_date + '</small></span></div>');
 				}
 			});
 		});
