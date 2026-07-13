@@ -72,8 +72,14 @@
 										<td class="text-center">
 											@if($lists->user_id)
 												<button class="btn btn-primary btn-sm" onclick="replyInquiry({{ $lists->id }},{{ Auth::user()->id }})"><i data-feather="corner-up-left" class="icon-sm me-1"></i>Reply</button>
+											@elseif($lists->email)
+												@php
+													$mailSubject = rawurlencode('Re: Your inquiry to the eLibrary');
+													$mailBody = rawurlencode("Hi ".$lists->fullname.",\n\nThank you for reaching out to the eLibrary. In response to your inquiry:\n\n\"".$lists->message."\"\n\n");
+												@endphp
+												<a class="btn btn-outline-primary btn-sm" href="mailto:{{ $lists->email }}?subject={{ $mailSubject }}&body={{ $mailBody }}" title="Guest — reply via email"><i data-feather="mail" class="icon-sm me-1"></i>Reply via email</a>
 											@else
-												<span class="badge bg-light text-dark">Guest</span>
+												<span class="badge bg-light text-dark" title="No email provided">Guest</span>
 											@endif
 										</td>
 									</tr>
