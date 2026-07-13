@@ -358,7 +358,7 @@
 					<div class="modal-body">
 						{{-- Inquiry form is for registered users only; guests are shown a reminder to email the library. --}}
 						<span>Message : </span>
-						<textarea class="form-control" name="inquiry_message" rows="4" placeholder="Type your inquiry about this material..."></textarea>
+						<textarea class="form-control" name="inquiry_message" rows="4" placeholder="Type your inquiry about this material..." required></textarea>
 					</div>
 					<div class="modal-footer">
 						<button type="submit" class="btn btn-success">Submit</button>
