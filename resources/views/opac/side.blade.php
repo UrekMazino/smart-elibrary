@@ -5,7 +5,10 @@
                         <input type="hidden" name="page" value="1">
                         <input type="hidden" name="series_statement_id" value="0">
                         <input type="hidden" name="layout" value="grid">
-                        <input type="hidden" value="all-material" id="checkAll" name="seachtype[]">
+                        {{-- seachtype "0" = all material types; ResultController treats any
+                             other value as a material_type_id filter (the old "all-material"
+                             matched no id, so keyword search always returned empty). --}}
+                        <input type="hidden" value="0" id="checkAll" name="seachtype[]">
 							<div class="form-group">
 								<input type="text" name="query" id="query" class="form-control" placeholder="Search...">
 							</div>
