@@ -58,7 +58,70 @@ class OPACController extends Controller
             $flag = false;
         }
 
-        return view('opac.barrowed',['list' => $list,'flag' => $flag]);
+        // Unread messages from the library (admin) per reservation, for the Messages badge.
+        $unread = \DB::table('reservation_messages')
+            ->whereIn('reservation_code', $list->pluck('reservation_code')->filter()->unique()->values())
+            ->where('sender_role', 'admin')
+            ->whereNull('seen_at')
+            ->select('reservation_code', \DB::raw('count(*) as c'))
+            ->groupBy('reservation_code')
+            ->pluck('c', 'reservation_code');
+
+        return view('opac.barrowed',['list' => $list,'flag' => $flag,'unread' => $unread]);
+    }
+
+    // ---- Patron side of the per-reservation chat (same reservation_messages thread the
+    //      admin uses on /admin/reservations) ----
+
+    public function reservationChatJson($reservation_code)
+    {
+        // A patron may only read a thread for a reservation that is their own.
+        $owns = App\Models\Circulation::where('reservation_code', $reservation_code)
+                    ->where('user_id', Auth::id())->exists();
+        abort_if(!$owns, 403);
+
+        $messages = \DB::table('reservation_messages')
+            ->where('reservation_code', $reservation_code)
+            ->orderBy('created_at')
+            ->get(['id', 'reservation_code', 'sender_role', 'message', 'created_at']);
+
+        // Opening the thread marks the library's messages as seen (clears the badge).
+        \DB::table('reservation_messages')
+            ->where('reservation_code', $reservation_code)
+            ->where('sender_role', 'admin')
+            ->whereNull('seen_at')
+            ->update(['seen_at' => now()]);
+
+        return response()->json($messages);
+    }
+
+    public function reservationChatReply(Request $request)
+    {
+        $request->validate([
+            'reservation_code' => 'required|string',
+            'message'          => 'required|string',
+        ]);
+
+        // Blocked accounts cannot use chat.
+        if (Auth::user()->is_blocked) {
+            return response()->json(['ok' => false, 'error' => 'Your account is blocked from messaging the library.'], 403);
+        }
+
+        $owns = App\Models\Circulation::where('reservation_code', $request->reservation_code)
+                    ->where('user_id', Auth::id())->exists();
+        abort_if(!$owns, 403);
+
+        \DB::table('reservation_messages')->insert([
+            'reservation_code' => $request->reservation_code,
+            'user_id'          => Auth::id(),
+            'sender_id'        => Auth::id(),
+            'sender_role'      => 'patron',
+            'message'          => $request->message,
+            'created_at'       => now(),
+            'updated_at'       => now(),
+        ]);
+
+        return response()->json(['ok' => true]);
     }
 
     public function inquiries()

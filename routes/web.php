@@ -48,6 +48,8 @@ Route::controller(OPACController::class)->prefix('patron')->group(function () {
     Route::get('/transactions', 'transactions');
     Route::get('/to-review', 'toReview');
     Route::get('/inquiries', 'inquiries');
+    Route::get('/reservation/chat-json/{reservation_code}', 'reservationChatJson');
+    Route::post('/reservation/chat/reply', 'reservationChatReply');
 });
 
 
