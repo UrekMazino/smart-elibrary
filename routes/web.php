@@ -92,6 +92,7 @@ Route::controller(AdminController::class)->group(function () {
     
     Route::get('/admin/inquiry', 'inquiry');
     Route::get('/admin/inquiry/json', 'inquiryjson');
+    Route::post('/admin/inquiry/toggle-replied/{id}', 'toggleInquiryReplied');
     
     Route::get('/admin/patron', 'patron')->name('patrons');
 

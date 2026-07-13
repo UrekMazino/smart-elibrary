@@ -202,7 +202,22 @@ class AdminController extends Controller
     public function inquiry()
     {
         $list = App\Models\View_inquiry::get();
-        return view('admin.inquiry',['list' => $list]);
+        // Manual "already replied" flags for guest inquiries (view_inquiries is a SQL view,
+        // so read the flag straight from the inquiries table, keyed by id).
+        $repliedFlags = App\Models\Inquiry::pluck('guest_replied_at', 'id');
+        return view('admin.inquiry', ['list' => $list, 'repliedFlags' => $repliedFlags]);
+    }
+
+    // Admin toggles a guest inquiry as replied / not replied (replies to guests go by email).
+    public function toggleInquiryReplied($id)
+    {
+        $inq = App\Models\Inquiry::find($id);
+        if (! $inq) return response()->json(['ok' => false], 404);
+
+        $inq->guest_replied_at = $inq->guest_replied_at ? null : now();
+        $inq->save();
+
+        return response()->json(['ok' => true, 'replied' => (bool) $inq->guest_replied_at]);
     }
 
     public function inquiryjson()

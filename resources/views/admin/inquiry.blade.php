@@ -62,10 +62,18 @@
 										<td>{{ $lists->contactnum }}</td>
 										<td>{{ $lists->email }}</td>
 										<td class="text-center">
-											@if($lists->total_msg > 0)
-												<span class="badge bg-danger rounded-pill">{{ $lists->total_msg }}</span>
+											@if($lists->user_id)
+												@if($lists->total_msg > 0)
+													<span class="badge bg-danger rounded-pill">{{ $lists->total_msg }}</span>
+												@else
+													<span class="text-muted">&mdash;</span>
+												@endif
 											@else
-												<span class="text-muted">&mdash;</span>
+												@php $replied = !empty($repliedFlags[$lists->id] ?? null); @endphp
+												<div class="form-check form-switch d-inline-flex align-items-center gap-2 justify-content-center mb-0">
+													<input class="form-check-input inq-replied-toggle" type="checkbox" role="switch" data-id="{{ $lists->id }}" {{ $replied ? 'checked' : '' }}>
+													<label class="form-check-label small text-muted mb-0">Replied</label>
+												</div>
 											@endif
 										</td>
 										<td data-order="{{ strtotime($lists->created_at) }}">{{ \Carbon\Carbon::parse($lists->created_at)->format('M d, Y g:i A') }}</td>
@@ -130,7 +138,7 @@
 			$("#inquiry_message").empty();
 			jQuery.each(datajson, function (i, obj) {
 				if (userid == obj.replied_by) {
-					$("#inquiry_message").append('<div class="container-msg-reply darker"><p>' + obj.replied_msg + '</p><span class="time-right"><small>' + obj.thread_date + '</small></span></div>');
+					$("#inquiry_message").append('<div class="container-msg-reply darker"><p>' + obj.replied_msg + '</p><span class="time-right"><small>' + obj.replied_by_name + ' | ' + obj.thread_date + '</small></span></div>');
 				} else {
 					$("#inquiry_message").append('<div class="container-msg-reply"><p>' + obj.replied_msg + '</p><span class="time-left"><small>' + obj.replied_by_name + ' | ' + obj.thread_date + '</small></span></div>');
 				}
@@ -142,6 +150,20 @@
 		'use strict';
 		if (window.feather) feather.replace();
 		$('#tbl').DataTable({ order: [[6, 'desc']], columnDefs: [{ orderable: false, targets: 7 }] });
+	});
+
+	// Guest inquiries: admin manually toggles "replied" (replies to guests go by email)
+	$(document).on('change', '.inq-replied-toggle', function () {
+		var $t = $(this);
+		$t.prop('disabled', true);
+		$.ajax({
+			url: '{{ url("/admin/inquiry/toggle-replied") }}/' + $t.data('id'),
+			method: 'POST',
+			data: { _token: '{{ csrf_token() }}' },
+			success: function (res) { $t.prop('checked', !!res.replied); },
+			error: function () { $t.prop('checked', !$t.prop('checked')); alert('Could not update the status. Please try again.'); },
+			complete: function () { $t.prop('disabled', false); }
+		});
 	});
 </script>
 @endsection
