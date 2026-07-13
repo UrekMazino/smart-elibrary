@@ -372,8 +372,8 @@
                             </div>
                             <div class="col-12">
                                 <div class="form-group">
-                                <span>Email : </span>
-                                    <input class="form-control" name="inquiry_email" type="email" placeholder="">
+                                <span>Email : <small class="text-muted">(our reply will be sent here)</small></span>
+                                    <input class="form-control" name="inquiry_email" type="email" placeholder="you@example.com" required>
                                 </div>
                             </div>
                         </div>
@@ -426,11 +426,49 @@
 
 @section('js')
 <script type="text/javascript">
+var inquiryIsGuest = {{ Auth::check() ? 'false' : 'true' }};
+
 function inquire(holdingsid)
 {
 	$("#catalog_id_inquiry").val(holdingsid);
-	$("#inquireModal").modal('toggle')
+
+	// Guests: notify first that our reply goes to the email they provide, then open the form.
+	if (inquiryIsGuest && window.Swal) {
+		Swal.fire({
+			icon: 'info',
+			title: 'Before you inquire',
+			html: "You're not logged in, so our reply will be sent to the <strong>email address</strong> you provide below.<br><br>Please make sure your email is correct so you receive our response.",
+			confirmButtonText: 'Got it, continue',
+			confirmButtonColor: '#00a496'
+		}).then(function () { $("#inquireModal").modal('show'); });
+	} else {
+		if (inquiryIsGuest) { alert("You're not logged in — our reply will be sent to the email you provide. Please make sure it's correct."); }
+		$("#inquireModal").modal('show');
+	}
 }
+
+// Guests: confirm the email is correct before actually submitting the inquiry.
+$(document).on('submit', '#frm_inquiry', function (e) {
+	if (!inquiryIsGuest) return;
+	var form = this;
+	var email = ($(form).find('[name=inquiry_email]').val() || '').trim();
+	if (!email) return; // native "required"/type=email validation handles empty/invalid
+
+	if (window.Swal) {
+		e.preventDefault();
+		Swal.fire({
+			icon: 'question',
+			title: 'Confirm your email',
+			html: 'We will send our reply to:<br><strong>' + $('<div>').text(email).html() + '</strong><br><br>Is this correct?',
+			showCancelButton: true,
+			confirmButtonText: "Yes, it's correct",
+			cancelButtonText: 'Let me fix it',
+			confirmButtonColor: '#00a496'
+		}).then(function (res) { if (res.isConfirmed) { form.submit(); } });
+	} else {
+		if (!confirm('We will send our reply to: ' + email + '\n\nIs this correct?')) { e.preventDefault(); }
+	}
+});
 
 function confirmReservation()
 {
