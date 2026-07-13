@@ -55,6 +55,10 @@ class NewsController extends Controller
         $news->created_by = Auth::user()->name;
         $news->save();
 
+        // The homepage / sidebar news list is cached for 10 min — refresh it so the new
+        // article appears immediately instead of after the TTL expires.
+        cache()->forget('home_latest_news');
+
         return redirect('/admin/news');
     }
 
@@ -84,6 +88,9 @@ class NewsController extends Controller
 
         $article->save();
 
+        // Bust the cached homepage / sidebar news list so edits show immediately.
+        cache()->forget('home_latest_news');
+
         return redirect('/admin/news')->with('success', 'News article updated successfully.');
     }
     
@@ -95,7 +102,10 @@ class NewsController extends Controller
             ->update([
                     'deleted_at' => now(),
                 ]);
-      
+
+        // Bust the cached homepage / sidebar news list so the deletion takes effect now.
+        cache()->forget('home_latest_news');
+
         return redirect('/admin/news');
     }
 
