@@ -73,17 +73,16 @@
 			serverSide: true,
 			order: [[3, 'desc']],
 			ajax: '{{ url("/admin/news/json") }}',
-			columnDefs: [{ orderable: false, targets: [1, 4] }],
 			columns: [
 				{ data: 'news_title' },
-				{ data: function (row) {
-					return (String(row.featured).toLowerCase() === 'yes')
+				{ data: 'featured', orderable: false, render: function (d) {
+					return (String(d).toLowerCase() === 'yes')
 						? '<span class="badge bg-success">Featured</span>'
 						: '<span class="badge bg-light text-dark">No</span>';
 				} },
 				{ data: 'created_by' },
-				{ data: function (row) { return row.created_at ? new Date(row.created_at).toLocaleString() : ''; } },
-				{ data: function (row) {
+				{ data: 'created_at', render: function (d) { return d ? new Date(d).toLocaleString() : ''; } },
+				{ data: 'id', orderable: false, searchable: false, render: function (d, type, row) {
 					const editUrl = editUrlBase + '/' + row.id;
 					const deleteUrl = deleteUrlBase + '/' + row.id;
 					return `
