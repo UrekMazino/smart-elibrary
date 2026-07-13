@@ -25,11 +25,11 @@
 	.col-scroll::-webkit-scrollbar-track { background:rgba(0,0,0,.22); }
 	.col-scroll::-webkit-scrollbar-thumb { background:linear-gradient(#5fd6c8,#00a496); border-radius:5px; }
 	.col-row { position:relative; display:flex; gap:13px; min-width:100%; width:max-content; align-items:flex-end;
-		justify-content:safe center; padding:22px 4px 14px; }
+		justify-content:safe center; padding:28px 4px 16px; }
 	.col-row::after { content:""; position:absolute; left:0; right:0; bottom:0; height:11px;
 		background:linear-gradient(#0a7268,#064d44); border-top:2px solid #4fd0c2; box-shadow:0 7px 10px -6px rgba(0,0,0,.55); }
 	.col-book { flex:0 0 auto; display:block; line-height:0; position:relative; z-index:1; transition:transform .14s ease; }
-	.col-book img { height:132px; width:auto; max-width:none; border-radius:2px; background:#fff;
+	.col-book img { height:148px; width:auto; max-width:none; border-radius:2px; background:#fff;
 		box-shadow:0 3px 4px rgba(0,0,0,.45), 0 15px 18px -9px rgba(0,0,0,.8); }
 	.col-book:hover { transform:translateY(-4px); z-index:2; }
 	.col-book.no-link { cursor:default; }
@@ -42,8 +42,8 @@
 	.shelf-page:hover { filter:brightness(1.07); } .shelf-page:active { transform:translateY(calc(-50% + 1px)); }
 	.shelf-page:disabled { opacity:.35; cursor:default; filter:none; }
 
-	@media (max-width:1100px){ .col-book img { height:118px; } }
-	@media (max-width:767px){ .shelf-explorer { padding:0 42px; } .shelf-page { width:36px; height:36px; font-size:20px; } .col-book img { height:106px; } }
+	@media (max-width:1100px){ .col-book img { height:132px; } }
+	@media (max-width:767px){ .shelf-explorer { padding:0 42px; } .shelf-page { width:36px; height:36px; font-size:20px; } .col-book img { height:118px; } }
 </style>
 <section class="shelf-browser">
 	<div class="shelf-heading">
