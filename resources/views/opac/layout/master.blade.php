@@ -72,7 +72,7 @@
 								<ul>
 									<li><a href="{{ url('/home') }}">Home</a></li>
 									<li><a href="{{ url('/patron/profile') }}">Profile</a></li>
-									<li><a href="{{ url('/patron/transactions') }}">Reservations</a></li>
+									<li><a href="{{ url('/patron/transactions') }}">Reservations {!! getNotif('reservation') !!}</a></li>
 									<li><a href="{{ url('/patron/inquiries') }}">Inquiries {!! getNotif('inquiry') !!}</a></li>
 									<li><a href="{{ url('/patron/to-review') }}">To Review {!! getNotif('review') !!}</a></li>
 									<form method="POST" id="frmLogout" action="{{ route('logout') }}">

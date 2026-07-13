@@ -209,6 +209,14 @@ function getReservationCount() {
 	return $totalRecords;
 }
 
+// Total unseen chat messages FROM patrons (drives the admin Reservation menu badge).
+function getReservationUnseenMsgCount() {
+	return DB::table('reservation_messages')
+		->where('sender_role', 'patron')
+		->whereNull('seen_at')
+		->count();
+}
+
 function getTitleFromHoldingCopy($id)
 {
 	$record = DB::table('copies')->where('id', $id)->select('title')->first();

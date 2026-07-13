@@ -57,9 +57,12 @@ $('#tbl').DataTable({
                       '</div>';
               }
 
+              var unseenBadge = (row.unseen_msgs && row.unseen_msgs > 0)
+                  ? ' <span class="badge bg-danger" title="Unread patron messages">' + row.unseen_msgs + '</span>' : '';
+
               var replyBtn =
                   '<div class="btn-group" role="group">' +
-                    '<button type="button" class="btn btn-primary btn-xs" onclick="openReservationChat(\'' + row.reservation_code + '\')"><i data-feather="corner-up-left" class="icon-sm me-1"></i>Reply</button>' +
+                    '<button type="button" class="btn btn-primary btn-xs" onclick="openReservationChat(\'' + row.reservation_code + '\')"><i data-feather="corner-up-left" class="icon-sm me-1"></i>Reply' + unseenBadge + '</button>' +
                     manageCaret +
                   '</div>';
 

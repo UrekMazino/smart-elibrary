@@ -107,6 +107,12 @@ $(document).ready(function() {
         timerNoReloadModal(message, header);
     @endif
     if (window.feather) feather.replace();
+
+    // After reading a thread (which marks patron messages seen), refresh the table so
+    // the per-row unread badge clears.
+    $('#reservationChatModal').on('hidden.bs.modal', function () {
+        if ($.fn.DataTable.isDataTable('#tbl')) { $('#tbl').DataTable().ajax.reload(null, false); }
+    });
 });
 
 // ---- Reservation chat (admin -> patron, per reservation) ----

@@ -195,6 +195,15 @@ class ReservationController extends Controller
         $patrons = \App\Models\User::whereIn('id', $reservations->pluck('user_id')->filter()->unique()->values())
                         ->get(['id', 'email', 'is_banned', 'is_blocked'])->keyBy('id');
 
+        // Unseen chat messages from patrons, per reservation (drives the per-row badge).
+        $unseen = DB::table('reservation_messages')
+                        ->whereIn('reservation_code', $reservations->pluck('reservation_code')->filter()->unique()->values())
+                        ->where('sender_role', 'patron')
+                        ->whereNull('seen_at')
+                        ->select('reservation_code', DB::raw('count(*) as c'))
+                        ->groupBy('reservation_code')
+                        ->pluck('c', 'reservation_code');
+
         $data_arr = array();
 
         foreach($reservations as $reservation){
@@ -210,6 +219,7 @@ class ReservationController extends Controller
                 "email" => $patron->email ?? '',
                 "is_banned" => $patron ? (int) $patron->is_banned : 0,
                 "is_blocked" => $patron ? (int) $patron->is_blocked : 0,
+                "unseen_msgs" => (int) ($unseen[$reservation->reservation_code] ?? 0),
                 "title_statement" => $title_statement,
                 "status" => $status,
                 'reservation_code' => $reservation->reservation_code,
@@ -336,6 +346,13 @@ class ReservationController extends Controller
             ->orderBy('reservation_messages.created_at')
             ->select('reservation_messages.*', 'users.name as sender_name')
             ->get();
+
+        // Opening the thread marks the patron's messages as seen (clears the admin badge).
+        DB::table('reservation_messages')
+            ->where('reservation_code', $reservation_code)
+            ->where('sender_role', 'patron')
+            ->whereNull('seen_at')
+            ->update(['seen_at' => now()]);
 
         return response()->json($messages);
     }

@@ -248,6 +248,15 @@ function getNotif($type)
 				case "inquiry":
 					$list = App\Models\View_inquiry_thread::where('user_id',Auth::user()->id)->where('replied_by','!=',Auth::user()->id)->whereNull('seen')->count();
 				break;
+
+				case "reservation":
+					// Unseen messages from the library (admin) in this patron's reservation chats.
+					$list = \DB::table('reservation_messages')
+						->where('user_id',Auth::user()->id)
+						->where('sender_role','admin')
+						->whereNull('seen_at')
+						->count();
+				break;
 			}
 
 		if($type != 'overall')

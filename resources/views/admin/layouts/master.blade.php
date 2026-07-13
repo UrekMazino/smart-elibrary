@@ -167,6 +167,8 @@ License: For each use you must have a valid license purchased only from above li
                   <span class="link-title">Reservation</span>
                   <span class="link-title">
                     <span class="badge border border-primary text-info">{{ getReservationCount() }}</span>
+                    @php $resUnseen = getReservationUnseenMsgCount(); @endphp
+                    @if($resUnseen > 0)<span class="badge bg-danger" title="Unread patron messages">{{ $resUnseen }}</span>@endif
                   </span>
                 </a>
               </li>
