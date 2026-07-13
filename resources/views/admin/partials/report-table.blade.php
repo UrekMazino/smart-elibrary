@@ -59,10 +59,10 @@
 			@endforeach
 		</tbody>
 	@elseif($table == 6)
-		<thead><tr><th>#</th><th>Catalog ID</th><th>Material</th><th>User</th><th>To Review</th><th>Date Downloaded</th></tr></thead>
+		<thead><tr><th>#</th><th>Catalog ID</th><th>Material</th><th>User</th><th>Review Status</th><th>Date Downloaded</th></tr></thead>
 		<tbody>
 			@foreach($list as $i => $r)
-				<tr><td>{{ $i+1 }}</td><td>{{ $r->catalog_id }}</td><td>{{ getTitle($r->catalog_id) }}</td><td>{{ getPatronInfo($r->user_id,'name') }}</td><td>{{ $r->to_review ?: '' }}</td><td>{{ $r->created_at }}</td></tr>
+				<tr><td>{{ $i+1 }}</td><td>{{ $r->catalog_id }}</td><td>{{ getTitle($r->catalog_id) }}</td><td>{{ getPatronInfo($r->user_id,'name') }}</td><td>{{ $r->to_review ? 'Reviewed on '.\Carbon\Carbon::parse($r->to_review)->format('M d, Y') : 'Not yet reviewed' }}</td><td>{{ $r->created_at }}</td></tr>
 			@endforeach
 		</tbody>
 	@elseif($table == 7)
