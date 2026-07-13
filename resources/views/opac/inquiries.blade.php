@@ -2,6 +2,7 @@
 @section('css')
 <style>
 	/* Inquiries — compact, minimalist cards (uniform with Transactions / To Review) */
+	.tx-page { min-height: calc(100vh - 320px); }
 	.tx-head { margin-bottom: 22px; }
 	.tx-head h1 { font-size: 30px; font-weight: 700; color: #222; margin: 0 0 4px; }
 	.tx-head p { color: #8a94a6; font-size: 14px; margin: 0; }
@@ -37,7 +38,7 @@
 @endsection
 @section('content')
 
-	<div class="container margin_60">
+	<div class="container margin_60 tx-page">
 		<div class="row">
 			<div class="col-9">
 				<div class="tx-head">
