@@ -1,115 +1,159 @@
 @extends('opac.layout.master')
 
+@section('css')
+<style>
+	/* Profile — minimalist, uniform with Transactions / Inquiries / To Review */
+	.tx-page { min-height: calc(100vh - 320px); }
+	.tx-head { margin-bottom: 22px; }
+	.tx-head h1 { font-size: 30px; font-weight: 700; color: #222; margin: 0 0 4px; }
+	.tx-head p { color: #8a94a6; font-size: 14px; margin: 0; }
+
+	.pf-card { background: #fff; border: 1px solid #eef0f2; border-radius: 10px; box-shadow: 0 1px 2px rgba(0,0,0,.04); overflow: hidden; }
+	.pf-identity { display: flex; align-items: center; gap: 16px; padding: 20px 22px; background: linear-gradient(90deg, #e7f5f3, #f4faf9); border-bottom: 1px solid #eef0f2; }
+	.pf-avatar { flex: 0 0 auto; width: 56px; height: 56px; border-radius: 50%; background: #00a496; color: #fff; font-size: 20px; font-weight: 700; display: flex; align-items: center; justify-content: center; letter-spacing: .5px; }
+	.pf-name { font-size: 17px; font-weight: 700; color: #222; line-height: 1.2; }
+	.pf-sub { font-size: 13px; color: #6b7280; margin-top: 3px; }
+	.pf-body { padding: 22px; }
+	.pf-card .form-label, .pf-card label { font-size: 12.5px; font-weight: 600; color: #55606b; margin-bottom: 5px; }
+	.pf-card .form-control { border: 1px solid #dfe3e8; border-radius: 7px; padding: 9px 12px; font-size: 14px; color: #333; background: #fff; }
+	.pf-card .form-control:focus { border-color: #00a496; box-shadow: 0 0 0 3px rgba(0,164,150,.12); outline: none; }
+	.pf-card .form-check-input:checked { background-color: #00a496; border-color: #00a496; }
+	.pf-actions { display: flex; justify-content: flex-end; align-items: center; gap: 10px; padding: 16px 22px; border-top: 1px solid #eef0f2; background: #fbfcfd; }
+	.pf-btn { border: 0; border-radius: 7px; padding: 9px 20px; font-size: 13.5px; font-weight: 600; cursor: pointer; transition: background .15s, border-color .15s, color .15s; }
+	.pf-btn-save { background: #00a496; color: #fff; }
+	.pf-btn-save:hover { background: #00897b; color: #fff; }
+	.pf-btn-pass { background: #fff; color: #c0392b; border: 1px solid #f0c8c2; }
+	.pf-btn-pass:hover { background: #fdecea; border-color: #e2b3ab; }
+</style>
+@endsection
+
 @section('content')
-<div class="container margin_60">
-	<div class="main_title">
-		<h1>Profile</h1>
-	</div>
-
-	<form method="POST" id="profile_frm" enctype="multipart/form-data" action="{{ route('update.patron.profile', ['id' => Auth::user()->id]) }}">
-		{{ csrf_field() }}
-
+	<div class="container margin_60 tx-page">
 		<div class="row">
-			<div class="col-6">
-				<div class="mb-3">
-					<label class="form-label">Full Name</label>
-					<input type="text" name="name" class="form-control required" placeholder="Enter full name" value="{{ $user->name }}">
+			<div class="col-9">
+				<div class="tx-head">
+					<h1>Profile</h1>
+					<p>Manage your account details.</p>
 				</div>
-			</div>
-			<div class="col-6">
-				<div class="mb-3">
-					<label class="form-label">Contact number</label>
-					<input type="text" name="contactnum" class="form-control required" placeholder="Enter contact number" value="{{ $user->contactnum }}">
-				</div>
-			</div>
-		</div>
 
-		<div class="row">
-			<div class="col-6">
-				<div class="mb-3">
-					<label class="form-label">Birthdate</label>
-					<input type="date" name="birthdate" class="form-control datepicker required" value="{{ $user->birthdate }}">
-				</div>	
-			</div>
-			<div class="col-6">
-				<div class="mb-3">
-					<label class="form-label">Patron Type</label>
-					<select class="form-control" name="patron_type_id" id="patrontypes_id" required>
-						<option selected disabled>Select Type</option>
-						@foreach (getPatronType() as $patronType)
-							<option value="{{ $patronType->id }}" {{ $patronType->id == $user->patrontypes_id ? 'selected' : '' }}>
-								{{ $patronType->types }}
-							</option>
-						@endforeach
-					</select>
-				</div>
-			</div>
-		</div>
+				@php
+					$parts = preg_split('/\s+/', trim((string) $user->name));
+					$initials = strtoupper(mb_substr($parts[0] ?? 'U', 0, 1) . (isset($parts[1]) ? mb_substr($parts[1], 0, 1) : ''));
+				@endphp
 
-		<div class="row">
-			<div class="col-6">
-				<div class="mb-3">
-					<label class="form-label">Email address</label>
-					<input id="email" type="email" name="email" class="form-control required" placeholder="Enter email" value="{{ $user->email }}">
-				</div>
-			</div>
-			<div class="col-6">
-				<div class="mb-3">
-					<label class="form-label">Affiliation/Agency</label>
-					<input type="text" name="affiliation" class="form-control required" placeholder="Enter affiliation/agency" value="{{ $user->affiliation }}">
-				</div>
-			</div>
-		</div>
-
-		<div class="row">
-			<div class="col-6">
-				<div class="form-group">
-					<label>Sex</label><br>
-					<div class="form-check form-check-inline">
-						<input class="form-check-input" type="radio" name="sex" id="inlineRadio1" value="Male" {{ $user->sex == 'Male' ? 'checked' : '' }}>
-						<label class="form-check-label text-black" for="inlineRadio1">Male</label>
+				<div class="pf-card">
+					<div class="pf-identity">
+						<div class="pf-avatar">{{ $initials ?: 'U' }}</div>
+						<div>
+							<div class="pf-name">{{ $user->name }}</div>
+							<div class="pf-sub">{{ $user->email }}@if($user->library_code) &nbsp;·&nbsp; {{ $user->library_code }}@endif</div>
+						</div>
 					</div>
-					<div class="form-check form-check-inline">
-						<input class="form-check-input" type="radio" name="sex" id="inlineRadio2" value="Female" {{ $user->sex == 'Female' ? 'checked' : '' }}>
-						<label class="form-check-label text-black" for="inlineRadio2">Female</label>
+
+					<form method="POST" id="profile_frm" enctype="multipart/form-data" action="{{ route('update.patron.profile', ['id' => Auth::user()->id]) }}">
+						{{ csrf_field() }}
+						<div class="pf-body">
+							<div class="row">
+								<div class="col-md-6">
+									<div class="mb-3">
+										<label class="form-label">Full Name</label>
+										<input type="text" name="name" class="form-control required" placeholder="Enter full name" value="{{ $user->name }}">
+									</div>
+								</div>
+								<div class="col-md-6">
+									<div class="mb-3">
+										<label class="form-label">Contact number</label>
+										<input type="text" name="contactnum" class="form-control required" placeholder="Enter contact number" value="{{ $user->contactnum }}">
+									</div>
+								</div>
+							</div>
+
+							<div class="row">
+								<div class="col-md-6">
+									<div class="mb-3">
+										<label class="form-label">Birthdate</label>
+										<input type="date" name="birthdate" class="form-control datepicker required" value="{{ $user->birthdate }}">
+									</div>
+								</div>
+								<div class="col-md-6">
+									<div class="mb-3">
+										<label class="form-label">Patron Type</label>
+										<select class="form-control" name="patron_type_id" id="patrontypes_id" required>
+											<option selected disabled>Select Type</option>
+											@foreach (getPatronType() as $patronType)
+												<option value="{{ $patronType->id }}" {{ $patronType->id == $user->patrontypes_id ? 'selected' : '' }}>
+													{{ $patronType->types }}
+												</option>
+											@endforeach
+										</select>
+									</div>
+								</div>
+							</div>
+
+							<div class="row">
+								<div class="col-md-6">
+									<div class="mb-3">
+										<label class="form-label">Email address</label>
+										<input id="email" type="email" name="email" class="form-control required" placeholder="Enter email" value="{{ $user->email }}">
+									</div>
+								</div>
+								<div class="col-md-6">
+									<div class="mb-3">
+										<label class="form-label">Affiliation/Agency</label>
+										<input type="text" name="affiliation" class="form-control required" placeholder="Enter affiliation/agency" value="{{ $user->affiliation }}">
+									</div>
+								</div>
+							</div>
+
+							<div class="row">
+								<div class="col-md-6">
+									<div class="mb-3">
+										<label class="form-label d-block">Sex</label>
+										<div class="form-check form-check-inline">
+											<input class="form-check-input" type="radio" name="sex" id="inlineRadio1" value="Male" {{ $user->sex == 'Male' ? 'checked' : '' }}>
+											<label class="form-check-label" for="inlineRadio1">Male</label>
+										</div>
+										<div class="form-check form-check-inline">
+											<input class="form-check-input" type="radio" name="sex" id="inlineRadio2" value="Female" {{ $user->sex == 'Female' ? 'checked' : '' }}>
+											<label class="form-check-label" for="inlineRadio2">Female</label>
+										</div>
+									</div>
+								</div>
+								<div class="col-md-6">
+									<div class="mb-3">
+										<label class="form-label">Region</label>
+										<select class="form-control required" name="region_id" id="region_id">
+											<option selected disabled>Select Region</option>
+											@foreach (getRegion() as $item)
+												<option value="{{ $item->regCode }}" {{ $item->regCode == $user->region_id ? 'selected' : '' }}>
+													{{ $item->desc }}
+												</option>
+											@endforeach
+										</select>
+									</div>
+								</div>
+							</div>
+
+							<div class="row">
+								<div class="col-12">
+									<div class="mb-1">
+										<label class="form-label">Complete Address</label>
+										<input type="text" id="address" name="address" class="form-control required" value="{{ $user->location }}">
+									</div>
+								</div>
+							</div>
+						</div>
+					</form>
+
+					<div class="pf-actions">
+						<button type="button" class="pf-btn pf-btn-pass" onclick="showChangePasswordModal()">Change Password</button>
+						<button type="button" class="pf-btn pf-btn-save" onclick="submitForm()">Save Changes</button>
 					</div>
 				</div>
 			</div>
-			<div class="col-6">
-				<div class="form-group">
-					<label>Region</label>
-					<select class="form-control required" name="region_id" id="region_id">
-						<option selected disabled>Select Region</option>
-						@foreach (getRegion() as $item)
-							<option value="{{ $item->regCode }}" {{ $item->regCode == $user->region_id ? 'selected' : '' }}>
-								{{ $item->desc }}
-							</option>
-						@endforeach
-					</select>
-				</div>
-			</div>
+			@include('opac.side')
 		</div>
-
-		<div class="row mb-4">
-			<div class="col-12">
-				<div class="form-group">
-					<label>Complete Address</label>
-					<input type="text" id="address" name="address" class="form-control required" value="{{ $user->location }}">
-				</div>
-			</div>
-		</div>
-
-
-	</form>
-
-	<!-- Submit button -->
-	<div id="policy">
-		<center>
-			<span><button type="button" class="btn btn-danger btn-sm" onclick="showChangePasswordModal()">Change Password</button></span>
-			<span><a class="btn_1 btn-lg" onclick="submitForm()">Save Changes</a></span>
-		</center>
 	</div>
-</div>
 @include('opac.modals.change-password-modal')
 @endsection
 
@@ -129,7 +173,7 @@
 					let fieldValue = $(this).val();
 					// Check if the field is empty
 					if (!fieldValue.trim()) {
-						
+
 						allFieldsFilled = false;
 						return false; // Break out of the loop early if any field is empty
 					}
@@ -154,7 +198,7 @@
 						user_email: uemail
 					},
 					success: function(res) {
-						
+
 						if(res.result) {
 							$("#profile_frm").submit();
 						} else {
@@ -172,7 +216,7 @@
 			function showChangePasswordModal()
 			{
 				$('#changePasswordModal').modal('show');
-    			$('#changePasswordModal').fadeIn();
+				$('#changePasswordModal').fadeIn();
 			}
 
 			function showSwal(message, icon) {
@@ -192,7 +236,7 @@
 
 					if (password === confirm_password) {
 						$('#password, #password_confirmation').css('border-color', 'green');
-						$('#change-password-btn').prop('disabled', false); 
+						$('#change-password-btn').prop('disabled', false);
 					} else {
 						$('#password, #password_confirmation').css('border-color', 'red');
 						$('#change-password-btn').prop('disabled', true);
