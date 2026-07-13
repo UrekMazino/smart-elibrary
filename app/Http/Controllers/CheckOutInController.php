@@ -151,44 +151,42 @@ class CheckOutInController extends Controller
 
         DB::table('copies')->where('circulation_number', $request->circulation_code)->update(['status' => 1]);
 
-        $emailSent = NULL;
-        
         if($request->library_code != "N/A") {
 
             $user = DB::table('users')->where('library_code', $request->library_code)->first();
 
-            $mailable = new TransactionMail(['transaction_code' => $request->transaction_code, 'name' => $user->name, 'type' => 'checkin']);
-    
-            // Register the FailedSendingListener
-            Mail::getSwiftMailer()->registerPlugin(new FailedSendingListener);
-    
-            $emailSent = Mail::to($user->email)->send($mailable);
+            // Notify the patron of the check-in. Best-effort only: a mail failure must not
+            // block recording the return. (Laravel 9+ removed Mailer::getSwiftMailer(); the
+            // old SwiftMailer failure listener no longer applies.)
+            if($user) {
+                try {
+                    $mailable = new TransactionMail(['transaction_code' => $request->transaction_code, 'name' => $user->name, 'type' => 'checkin']);
+                    Mail::to($user->email)->send($mailable);
+                } catch (\Throwable $e) {
+                    \Log::warning('Check-in notification email failed: '.$e->getMessage());
+                }
+            }
         }
 
+        // Record the return regardless of whether the notification email went out.
+        DB::table('circulations')->where('transaction_code', $request->transaction_code)->update([
+            'received_at' => now(),
+            'received_by' => $adminUser->name,
+            'total_fine_paid' => $request->total_fine,
+            'waived_amount' => $request->waive_amount,
+            'status' => 5,
+        ]);
 
+        DB::table('circulation_fine_history')->where('transaction_code', $request->transaction_code)->update([
+            'transaction_code' => $request->transaction_code,
+            'overdue_fine_amount' => $request->overdue_fine,
+            'overdue_total_hours' => $request->total_hrs_overdue,
+            'other_fine_amount' => $request->other_fine,
+            'circulation_fine_id' => $request->circulation_fine_id,
+            'other_fine_description' => $request->other_fine_desc,
+            'fine_note' => $request->fine_note,
+        ]);
 
-        if(is_null($emailSent)) {
-
-            DB::table('circulations')->where('transaction_code', $request->transaction_code)->update([
-                'received_at' => now(),
-                'received_by' => $adminUser->name,
-                'total_fine_paid' => $request->total_fine,
-                'waived_amount' => $request->waive_amount,
-                'status' => 5,
-            ]);
-
-            DB::table('circulation_fine_history')->where('transaction_code', $request->transaction_code)->update([
-                'transaction_code' => $request->transaction_code,
-                'overdue_fine_amount' => $request->overdue_fine,
-                'overdue_total_hours' => $request->total_hrs_overdue,
-                'other_fine_amount' => $request->other_fine,
-                'circulation_fine_id' => $request->circulation_fine_id,
-                'other_fine_description' => $request->other_fine_desc,
-                'fine_note' => $request->fine_note,
-            ]);
-        } else {
-            return redirect()->route('checkoutin')->with(['error' => 'Error! Transaction failed.']);     
-        }
         return redirect()->route('checkoutin')->with(['complete' => 'Transaction Complete!']);
     }
 
