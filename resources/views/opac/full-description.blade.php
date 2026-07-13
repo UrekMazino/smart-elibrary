@@ -415,9 +415,9 @@ function inquire(holdingsid)
 		if (window.Swal) {
 			Swal.fire({
 				icon: 'info',
-				title: 'Inquiries are for registered users',
+				title: 'Login required',
 				html: 'Submitting an inquiry here is available to <strong>registered users</strong> only.<br><br>' +
-				      'If you are not registered, please send your inquiry to the library\'s official email:<br>' +
+				      'Please <a href="{{ url('register') }}"><strong>register</strong></a> or send your inquiry to the library\'s official email:<br>' +
 				      '<a href="mailto:' + libraryEmail + '"><strong>' + libraryEmail + '</strong></a>',
 				showCancelButton: true,
 				confirmButtonText: 'Email the library',
