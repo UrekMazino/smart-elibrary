@@ -28,13 +28,9 @@ class ReviewController extends Controller
        $review->remarks = request()->remarks;
        $review->save();
 
-       //MARK AS REVIEWED — one review clears the material from "to review": flag every
-       //un-reviewed download of this material by this user (multiple downloads must not
-       //require multiple reviews).
-       App\Models\Download::where('user_id', Auth::user()->id)
-            ->where('catalog_id', request()->catalog_id)
-            ->whereNull('to_review')
-            ->update(['to_review' => date('Y-m-d')]);
+       //One review is enough for a material: saving this Rating removes it from the
+       //patron's "To Review" list (the list excludes anything they've rated), covering
+       //both the download and the read of that material.
 
        //Back to the reviewed material
        return redirect('/full-description/'.request()->catalog_id)

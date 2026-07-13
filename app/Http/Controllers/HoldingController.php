@@ -98,6 +98,21 @@ class HoldingController extends Controller
         $path = public_path($loc);
         abort_if($loc === '' || !is_file($path), 404);
 
+        // A logged-in patron reading a material adds it to their "To Review" list — the
+        // same as downloading. Recorded once per user + material (idempotent across the
+        // range requests PDF.js makes while paging).
+        if (Auth::check()) {
+            $already = \DB::table('reads')->where('user_id', Auth::id())->where('catalog_id', $catalog_id)->exists();
+            if (! $already) {
+                \DB::table('reads')->insert([
+                    'user_id'    => Auth::id(),
+                    'catalog_id' => $catalog_id,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+        }
+
         // Inline stream (supports range requests) so PDF.js can page through it.
         return response()->file($path, ['Content-Type' => 'application/pdf']);
     }

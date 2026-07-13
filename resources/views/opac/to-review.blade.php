@@ -59,7 +59,7 @@
 								</div>
 							</div>
 							<div class="tx-aside">
-								<button type="button" class="tx-review-btn" onclick="toReview({{ $lists->id }}, '{{ $lists->catalog_id }}')">
+								<button type="button" class="tx-review-btn" onclick="toReview('{{ $lists->catalog_id }}')">
 									<i class="pe-7s-star"></i> Write a review
 								</button>
 							</div>
@@ -78,15 +78,13 @@
 	<form method="post" action="{{ url('/review') }}" id="frm_review">
 		@csrf
 		<input type="hidden" class="form-control" name="catalog_id" id="catalog_id" value="">
-		<input type="hidden" class="form-control" name="download_id" id="download_id" value="">
 	</form>
 @endsection
 
 @section('js')
 <script type="text/javascript">
-function toReview(id, catalog_id) {
+function toReview(catalog_id) {
 	$("#catalog_id").val(catalog_id);
-	$("#download_id").val(id);
 	$("#frm_review").submit();
 }
 </script>

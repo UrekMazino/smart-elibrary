@@ -232,6 +232,25 @@ function countNum($type,$id)
 	}
 }
 
+/**
+ * Materials a patron still needs to review: everything they have downloaded OR read,
+ * minus everything they have already rated. One review clears a material for good, and
+ * it covers both the download and the read of that material. Returns a query builder
+ * yielding rows of { catalog_id, last_at } (distinct per material).
+ */
+function reviewPendingQuery($userId)
+{
+	$engaged = \DB::table('downloads')->where('user_id', $userId)->select('catalog_id', 'created_at')
+		->unionAll(\DB::table('reads')->where('user_id', $userId)->select('catalog_id', 'created_at'));
+
+	return \DB::query()->fromSub($engaged, 'engaged')
+		->select('catalog_id', \DB::raw('MAX(created_at) as last_at'))
+		->whereNotIn('catalog_id', function ($q) use ($userId) {
+			$q->select('catalog_id')->from('ratings')->where('user_id', $userId);
+		})
+		->groupBy('catalog_id');
+}
+
 function getNotif($type)
 {
 	if(Auth::check())
@@ -242,8 +261,8 @@ function getNotif($type)
 		switch($type)
 			{
 				case "review":
-					// Count distinct materials awaiting review (not each download row).
-					$list = App\Models\View_to_review::where('user_id',Auth::user()->id)->whereNull('to_review')->distinct('catalog_id')->count('catalog_id');
+					// Distinct materials awaiting review = (downloaded or read) minus rated.
+					$list = reviewPendingQuery(Auth::user()->id)->get()->count();
 				break;
 
 				case "inquiry":
@@ -268,7 +287,7 @@ function getNotif($type)
 		else
 		{
 			//TO REVIEW
-			$ctr += App\Models\View_to_review::where('user_id',Auth::user()->id)->whereNull('to_review')->distinct('catalog_id')->count('catalog_id');
+			$ctr += reviewPendingQuery(Auth::user()->id)->get()->count();
 
 			if($ctr > 0)
 			{
