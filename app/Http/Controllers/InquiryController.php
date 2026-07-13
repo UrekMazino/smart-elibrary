@@ -32,7 +32,7 @@ class InquiryController extends Controller
 
         $inq->save();
         
-        if(Auth::check() && Auth::user()->usertype = 'Administrator')
+        if(Auth::check() && in_array(Auth::user()->usertype, ['Administrator','Developer']))
             return redirect('/admin/inquiry');
         else
             return view('opac.thank-you',['message' => 'Thank You!<br/>We will contact you as soon as possible!']);
@@ -46,7 +46,8 @@ class InquiryController extends Controller
         $inq->message = request()->inquiry_message_reply;
         $inq->save();
 
-        return redirect('/inquiries');
+        // Return to whichever inquiries page the reply was sent from (admin or patron).
+        return redirect()->back()->with('success', 'Reply sent.');
     }
 
     public function json2($id)
