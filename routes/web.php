@@ -98,6 +98,7 @@ Route::controller(AdminController::class)->group(function () {
     Route::get('/admin/report', 'report');
 
     Route::post('/admin/print-report', 'reportprint');
+    Route::post('/admin/report-preview', 'reportPreview');
 
     Route::post('/admin/patron-borrow', 'assignMaterialToPatron');
 

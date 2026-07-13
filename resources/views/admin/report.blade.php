@@ -2,275 +2,231 @@
 
 @section('css')
 <link rel="stylesheet" href="{{ asset('admin/nobleui/template/assets/vendors/select2/select2.min.css') }}">
+<style>
+	.report-tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:12px; }
+	.report-tile { margin:0; cursor:pointer; }
+	.report-tile input { position:absolute; opacity:0; width:0; height:0; }
+	.report-tile .rt-inner { display:flex; flex-direction:column; gap:5px; height:100%; padding:14px 16px; border:1.5px solid #e6e9ef; border-radius:10px; background:#fff; transition:border-color .12s, box-shadow .12s, background .12s; }
+	.report-tile:hover .rt-inner { border-color:#b9c2d0; }
+	.report-tile input:checked + .rt-inner { border-color:#0d6efd; background:#f3f8ff; box-shadow:0 0 0 3px rgba(13,110,253,.12); }
+	.report-tile .rt-inner svg, .report-tile .rt-inner i { width:22px; height:22px; color:#0d6efd; }
+	.rt-name { font-weight:600; font-size:14px; color:#1f2733; }
+	.rt-desc { font-size:12px; color:#7a8494; line-height:1.3; }
+	.filter-div { display:none; }
+	.report-preview-box { max-height:560px; overflow:auto; }
+	#report-actions { display:none; }
+	.report-hint { color:#8a94a6; }
+</style>
 @endsection
 
 @section('content')
+@php
+	$reportTypes = [
+		['v'=>1,'icon'=>'book',         'name'=>'Acquisition',          'desc'=>'Catalog records by type, source & keyword'],
+		['v'=>2,'icon'=>'users',        'name'=>'Patron',               'desc'=>'Registered library patrons'],
+		['v'=>3,'icon'=>'repeat',       'name'=>'Borrowed Materials',   'desc'=>'Physical copy loans (circulations)'],
+		['v'=>4,'icon'=>'help-circle',  'name'=>'Inquiries',            'desc'=>'Patron inquiries submitted'],
+		['v'=>5,'icon'=>'star',         'name'=>'CSF',                  'desc'=>'Customer satisfaction feedback'],
+		['v'=>6,'icon'=>'download',     'name'=>'Publication Downloads','desc'=>'Materials downloaded by patrons'],
+		['v'=>7,'icon'=>'upload',       'name'=>'Publication Uploads',  'desc'=>'Catalog records added in the period'],
+	];
+	$dateLabels = [2=>'Date Registered',3=>'Date Borrowed',4=>'Date of Inquiry',5=>'Date of CSF',6=>'Date Downloaded',7=>'Date Uploaded'];
+@endphp
 <div class="page-content">
+	<nav class="page-breadcrumb">
+		<ol class="breadcrumb"><li class="breadcrumb-item active" aria-current="page">Reports</li></ol>
+	</nav>
 
-    <nav class="page-breadcrumb">
-        <ol class="breadcrumb">
-        </ol>
-    </nav>
+	<form method="POST" id="frm" target="_blank" action="{{ url('/admin/print-report') }}">
+		@csrf
 
-    <div class="row">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-body">
-                    <h6 class="card-title">REPORT</h6>
-                    <div class="mb-3">
-                        <form method="POST" id="frm" enctype="multipart/form-data" target="_blank" action="{{ url('/admin/print-report') }}">  
-                            {{ csrf_field() }}
-                        <label for="typeReport" class="form-label">Type of Report</label>
-                        <select class="form-select" name="typeReport" id="typeReport">
-                            <option selected disabled>---Select---</option>
-                            <option value="1">Acquisition</option>
-                            <option value="2">Patron</option>
-                            <option value="3">Borrowed Materials</option>
-                            <option value="4">Inquiries</option>
-                            <option value="5">CSF</option>
-                            <option value="6">Publication Downloads</option>
-                            <option value="7">Publication Uploads</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-        </div>
+		{{-- Step 1: choose a report --}}
+		<div class="card mb-3">
+			<div class="card-body">
+				<h6 class="card-title mb-1">1. Choose a report</h6>
+				<p class="report-hint mb-3" style="font-size:13px;">Pick the type of report you want to generate.</p>
+				<div class="report-tiles">
+					@foreach($reportTypes as $t)
+						<label class="report-tile">
+							<input type="radio" name="typeReport" value="{{ $t['v'] }}" data-datelabel="{{ $dateLabels[$t['v']] ?? '' }}">
+							<span class="rt-inner">
+								<i data-feather="{{ $t['icon'] }}"></i>
+								<span class="rt-name">{{ $t['name'] }}</span>
+								<span class="rt-desc">{{ $t['desc'] }}</span>
+							</span>
+						</label>
+					@endforeach
+				</div>
+			</div>
+		</div>
 
-        <div class="col-md-6 filter-row">
-            <div class="card">
-                <div class="card-body">
-                    
-                    <h6 class="card-title">Filter</h6>
+		{{-- Step 2: filters (contextual) --}}
+		<div class="card mb-3" id="filters-card" style="display:none;">
+			<div class="card-body">
+				<h6 class="card-title mb-3">2. Set the filters</h6>
 
-                    <div class="mb-3 filter-div" id="filter-acquisition">
-                        <div class="row">
-                            <div class="col-12">
-                                <label for="typeReport" class="form-label">Keyword/Phrase</label>
-                                <input type="text" class="form-control" name="keyword" placeholder="Enter keyword/phrase..">
-                            </div>
-                        </div>
-                        <br>
-                        <div class="row">
-                            <div class="col-12">
-                                <label for="typeReport" class="form-label">Material Type</label>
-                                <select class="js-example-basic-multiple form-select" id="selectMaterial" name="selectMaterial[]"  multiple="multiple" data-width="100%">
-                                    <option value="0" selected>All</option>
-                                    @foreach(getMaterials() AS $list)
-                                        <option value="{{ $list->id }}">{{ $list->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
+				{{-- Acquisition filters (type 1) --}}
+				<div class="filter-div" id="filter-acquisition">
+					<div class="row g-3">
+						<div class="col-md-4">
+							<label class="form-label">Keyword / Phrase</label>
+							<input type="text" class="form-control" name="keyword" placeholder="Enter keyword/phrase (optional)">
+						</div>
+						<div class="col-md-4">
+							<label class="form-label">Material Type</label>
+							<select class="js-example-basic-multiple form-select" id="selectMaterial" name="selectMaterial[]" multiple="multiple" data-width="100%">
+								<option value="0" selected>All</option>
+								@foreach(getMaterials() AS $list)
+									<option value="{{ $list->id }}">{{ $list->name }}</option>
+								@endforeach
+							</select>
+						</div>
+						<div class="col-md-4">
+							<label class="form-label">Source</label>
+							<select class="js-example-basic-multiple form-select" id="selectSource" name="selectSource[]" multiple="multiple" data-width="100%">
+								<option value="0" selected>All</option>
+								@foreach(getConsortia('all') AS $list)
+									<option value="{{ $list->name }}">{{ $list->name }}</option>
+								@endforeach
+							</select>
+						</div>
+					</div>
+				</div>
 
-                        <br>
-                        <div class="row">
-                            <div class="col-12">
-                                <label for="typeReport" class="form-label">Source</label>
-                                <select class="js-example-basic-multiple form-select" id="selectSource" name="selectSource[]"  multiple="multiple" data-width="100%">
-                                    <option value="0" selected>All</option>
-                                    @foreach(getConsortia('all') AS $list)
-                                        <option value="{{ $list->name }}">{{ $list->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
+				{{-- Date filters (types 2-7) --}}
+				<div class="filter-div" id="filter-date">
+					<label class="form-label" id="date_title">Date</label>
+					<div class="btn-group d-block mb-3" role="group" aria-label="Date filter mode">
+						<input type="radio" class="btn-check" name="select_type" id="st1" value="1" checked>
+						<label class="btn btn-outline-primary btn-sm" for="st1">Single date</label>
+						<input type="radio" class="btn-check" name="select_type" id="st2" value="2">
+						<label class="btn btn-outline-primary btn-sm" for="st2">Monthly</label>
+						<input type="radio" class="btn-check" name="select_type" id="st3" value="3">
+						<label class="btn btn-outline-primary btn-sm" for="st3">Yearly</label>
+						<input type="radio" class="btn-check" name="select_type" id="st4" value="4">
+						<label class="btn btn-outline-primary btn-sm" for="st4">Date range</label>
+					</div>
 
-                        <br/>
-                    </div>
+					<div class="row filter_group" id="filter_date">
+						<div class="col-md-4">
+							<label class="form-label">Select Date</label>
+							<input data-provide="datepicker" name="filter_date_dt" id="filter_date_dt" data-date-autoclose="true" class="form-control" value="{{ date('m/d/Y') }}">
+						</div>
+					</div>
 
-                    <div class="mb-3 filter-div" id="filter-patron">
-                        <div class="row">
-                            <div class="col-12">
-                                <label id="date_title" class="form-label">Date Registered</label>
-                                <div class="row">
-                                    <div class="col-6">
-                                        <span>Filter Type:</span>
-                                        <select class="form-control" name="select_type" id="select_type">
-                                                    <option value="1">Date</option>
-                                                    <option value="2">Monthly</option>
-                                                    <option value="3">Yearly</option>
-                                                    <option value="4">Duration</option>
-                                        </select>
-                                    </div>
-                                </div>
-                
-                                <div class="row filter_group" id="filter_date" style="margin-top: 2.5%;">
-                                    <div class="col-6">
-                                        <span>Select Date:</span>
-                                        <input data-provide="datepicker" name="filter_date_dt" id="filter_date_dt" data-date-autoclose="true" class="form-control" value="{{ date('m/d/Y') }}">
-                                    </div>
-                                </div>
-                
-                                <div class="row filter_group" id="filter_month" style="margin-top: 2.5%;">
-                                    <div class="col-6">
-                                        <span>Select Month:</span>
-                                        <select class="form-control" name="filter_month_mon" id="filter_month_mon">
-                                            <option value="1">January</option>
-                                            <option value="2">February</option>
-                                            <option value="3">March</option>
-                                            <option value="4">April</option>
-                                            <option value="5">May</option>
-                                            <option value="6">June</option>
-                                            <option value="7">July</option>
-                                            <option value="8">August</option>
-                                            <option value="9">September</option>
-                                            <option value="10">October</option>
-                                            <option value="11">November</option>
-                                            <option value="12">December</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-6">
-                                        <span>Select Year:</span>
-                                        <select class="form-control" name="filter_month_year" id="filter_month_year">
-                                            <?php
-                                                $date_now = date('Y');
-                                                for($i = $date_now;$i >= ($date_now - 5);$i--)
-                                                {
-                                                    echo '<option value="'.$i.'">'.$i.'</option>';
-                                                }
-                                            ?>
-                                        </select>
-                                    </div>
-                
-                                </div>
-                
-                                <div class="row filter_group" id="filter_year" style="margin-top: 2.5%;">
-                                    <div class="col-6">
-                                        <span>Select Year:</span>
-                                        <select class="form-control" name="filter_year_yr" id="filter_year_yr">
-                                            <?php
-                                                $date_now = date('Y');
-                                                for($i = $date_now;$i >= ($date_now - 5);$i--)
-                                                {
-                                                    echo '<option value="'.$i.'">'.$i.'</option>';
-                                                }
-                                            ?>
-                                        </select>
-                                    </div>
-                
-                                </div>
-                
-                                <div class="row filter_group" id="filter_duration" style="margin-top: 2.5%;">
-                                    <div class="input-daterange input-group" data-provide="datepicker">
-                                    <div class="col-6">
-                                        <span>Select Date From:</span>
-                                        <input type="text" class="input-sm form-control" name="start"  value="{{ date('m/d/Y') }}">
-                                    </div>
-                                    <div class="col-6">
-                                        <span>Select Date To:</span>
-                                        <input type="text" class="input-sm form-control" name="end"  value="{{ date('m/d/Y') }}">
-                                    </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <br>
-                    </div>
+					<div class="row filter_group g-3" id="filter_month" style="display:none;">
+						<div class="col-md-4">
+							<label class="form-label">Month</label>
+							<select class="form-select" name="filter_month_mon" id="filter_month_mon">
+								@foreach([1=>'January',2=>'February',3=>'March',4=>'April',5=>'May',6=>'June',7=>'July',8=>'August',9=>'September',10=>'October',11=>'November',12=>'December'] as $mn=>$mname)
+									<option value="{{ $mn }}" {{ (int)date('n')==$mn ? 'selected':'' }}>{{ $mname }}</option>
+								@endforeach
+							</select>
+						</div>
+						<div class="col-md-4">
+							<label class="form-label">Year</label>
+							<select class="form-select" name="filter_month_year" id="filter_month_year">
+								@for($i=(int)date('Y'); $i >= (int)date('Y')-5; $i--)<option value="{{ $i }}">{{ $i }}</option>@endfor
+							</select>
+						</div>
+					</div>
 
+					<div class="row filter_group" id="filter_year" style="display:none;">
+						<div class="col-md-4">
+							<label class="form-label">Year</label>
+							<select class="form-select" name="filter_year_yr" id="filter_year_yr">
+								@for($i=(int)date('Y'); $i >= (int)date('Y')-5; $i--)<option value="{{ $i }}">{{ $i }}</option>@endfor
+							</select>
+						</div>
+					</div>
 
+					<div class="row filter_group g-3" id="filter_duration" style="display:none;">
+						<div class="input-daterange row g-3" data-provide="datepicker">
+							<div class="col-md-4">
+								<label class="form-label">From</label>
+								<input type="text" class="form-control" name="start" value="{{ date('m/d/Y') }}">
+							</div>
+							<div class="col-md-4">
+								<label class="form-label">To</label>
+								<input type="text" class="form-control" name="end" value="{{ date('m/d/Y') }}">
+							</div>
+						</div>
+					</div>
+				</div>
 
-                    <p align='right'><button type="submit" class="btn btn-success" id="btnSubmit">Submit</button></p>
-                    </form>
-                </div>
+				<div class="mt-4" id="report-actions">
+					<button type="button" class="btn btn-primary" id="btnPreview"><i data-feather="eye" class="icon-sm me-1"></i>Preview</button>
+					<button type="submit" class="btn btn-outline-secondary" id="btnPrint"><i data-feather="printer" class="icon-sm me-1"></i>Print / Export</button>
+				</div>
+			</div>
+		</div>
+	</form>
 
-
-
-            </div>
-        </div>
-    </div>
+	{{-- Step 3: preview --}}
+	<div class="card" id="preview-card" style="display:none;">
+		<div class="card-body">
+			<h6 class="card-title mb-3">3. Preview</h6>
+			<div class="report-preview-box" id="report-preview">
+				<p class="report-hint mb-0">Set your filters and click <strong>Preview</strong> to see the results here, then <strong>Print / Export</strong> for the printable report (with Excel export).</p>
+			</div>
+		</div>
+	</div>
 </div>
 @endsection
 
 @section('js')
 <script src="{{ asset('admin/nobleui/template/assets/vendors/select2/select2.min.js') }}"></script>
-
 <script>
-$(".filter-div,#btnSubmit,.filter_group").hide();
+$(function () {
+	'use strict';
+	if (window.feather) feather.replace();
+	$(".js-example-basic-multiple").select2();
 
-$(function() {
-  'use strict'
-  $(".js-example-basic-multiple").select2();
+	// Keep "All" and specific selections mutually exclusive in the multi-selects
+	$('.js-example-basic-multiple').on('select2:select', function (e) {
+		var id = this.id;
+		if (e.params.data.id == 0) { $('#'+id).val([0]).trigger('change'); }
+		else { $('#'+id+' option[value="0"]').prop('selected', false); $('#'+id).trigger('change.select2'); }
+	});
+
+	// Choosing a report type -> show the right filters
+	$('input[name=typeReport]').on('change', function () {
+		var v = this.value;
+		$('#filters-card, #preview-card, #report-actions').show();
+		$('.filter-div').hide();
+		if (v === '1') {
+			$('#filter-acquisition').show();
+		} else {
+			$('#filter-date').show();
+			$('#date_title').text($(this).data('datelabel') || 'Date');
+		}
+		$('#report-preview').html('<p class="report-hint mb-0">Click <strong>Preview</strong> to generate the report.</p>');
+	});
+
+	// Date-mode pills -> show the matching input group
+	$('input[name=select_type]').on('change', function () {
+		$('.filter_group').hide();
+		$({'1':'#filter_date','2':'#filter_month','3':'#filter_year','4':'#filter_duration'}[this.value]).show();
+	});
+
+	// Preview (AJAX, in-page)
+	$('#btnPreview').on('click', function () {
+		if (!$('input[name=typeReport]:checked').length) { alert('Please choose a report type first.'); return; }
+		var $box = $('#report-preview');
+		$box.html('<div class="text-muted p-2">Loading&hellip;</div>');
+		$.ajax({
+			url: '{{ url("/admin/report-preview") }}',
+			method: 'POST',
+			data: $('#frm').serialize(),
+			success: function (html) { $box.html(html); },
+			error: function () { $box.html('<div class="alert alert-danger mb-0">Could not generate the report. Please check the filters and try again.</div>'); }
+		});
+	});
+
+	// Print requires a type
+	$('#frm').on('submit', function (e) {
+		if (!$('input[name=typeReport]:checked').length) { e.preventDefault(); alert('Please choose a report type first.'); }
+	});
 });
-
-$("#typeReport").change(function(){
-    $(".filter-div,#btnSubmit").hide();
-    switch(this.value)
-    {
-        case "1":
-            $("#filter-acquisition,#btnSubmit").show();
-        break;
-        case "2":
-            $("#date_title").text('Date Registered');
-            $("#filter_date").show();
-            $("#filter-patron,#btnSubmit").show();
-        break;
-        case "4":
-            $("#date_title").text('Date Inquiry');
-            $("#filter_date").show();
-            $("#filter-patron,#btnSubmit").show();
-        break;
-        case "5":
-            $("#date_title").text('Date of CSF');
-            $("#filter_date").show();
-            $("#filter-patron,#btnSubmit").show();
-        break;
-        case "6":
-            $("#date_title").text('Publication Downloads');
-            $("#filter_date").show();
-            $("#filter-patron,#btnSubmit").show();
-        break;
-        case "7":
-            $("#date_title").text('Publication Uploads');
-            $("#filter_date").show();
-            $("#filter-patron,#btnSubmit").show();
-        break;
-    }
-})
-
-$('.js-example-basic-multiple').change(function () {
-    SelectOption(this.id);
-});
-
-function SelectOption(slect)
-{
-    $('#'+slect).on('select2:select', function (e) {
-    var data = e.params.data;
-    console.log(data.id);
-    if(data.id == 0)
-    {
-        $('#'+slect).val('').change();
-        $('#'+slect).val(0).change();
-    }
-    else
-    {
-        var wanted_option = $('#'+slect+' option[value="0"]');
-        wanted_option.prop('selected', false);
-
-        $('#'+slect).trigger('change.select2');
-
-       // $('#selectColumn').val(0).change();
-    }
-    });
-}
-
-$("#select_type").change(function(){
-        $(".filter_group").hide();
-
-        switch(this.value)
-        {
-            case "1":
-                $("#filter_date").show();
-            break;
-            case "2":
-                $("#filter_month").show();
-            break;
-            case "3":
-                $("#filter_year").show();
-            break;
-            case "4":
-                $("#filter_duration").show();
-            break;
-        }
-    });
 </script>
 @endsection

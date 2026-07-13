@@ -226,167 +226,91 @@ class AdminController extends Controller
         return view('admin.report');
     }
 
-    public function reportprint()
+    // Build [$table, $list] for a report request; shared by preview and print so the
+    // query logic lives in one place. $table maps 1:1 to typeReport.
+    private function buildReport()
     {
-        $ratings = [1 => "Poor", 2 => "Unsatisfactory", 3 => "Satisfactory", 4 => "Very Satisfactory", 5 => "Outstanding"];
-        //CHECK REPORT TYPE 
-        switch (request()->typeReport) {
-            case 1:
-                    $table = 1;
-                    if(request()->selectMaterial === ["0"])
-                    {
-                        $material = false;
-                    }
-                    else
-                    {
-                        $material = true;
-                        $arrMaterial = request()->selectMaterial;
-                    }
+        $applyDate = function ($q, $col = 'created_at') {
+            switch ((int) request()->select_type) {
+                case 1: return $q->whereDate($col, date('Y-m-d', strtotime(request()->filter_date_dt)));
+                case 2: return $q->whereYear($col, request()->filter_month_year)->whereMonth($col, request()->filter_month_mon);
+                case 3: return $q->whereYear($col, request()->filter_year_yr);
+                case 4: return $q->whereBetween($col, [date('Y-m-d', strtotime(request()->start)), date('Y-m-d 23:59:59', strtotime(request()->end))]);
+                default: return $q;
+            }
+        };
 
-                    if(request()->selectSource === ["0"])
-                    {
-                        $source = false;
-                    }
-                    else
-                    {
-                        $source = true;
-                        $arrSource = request()->selectSource;
-                    }
-                    
+        $table = 0;
+        $list  = collect();
 
-                    if($material && $source)
-                    {
-                        if(request()->keyword == '')
-                            $list = App\Models\ViewCatalog::whereIn('material_type_id',$arrMaterial)->whereIn('consortia',$arrSource)->get();
-                        else
-                            $list = App\Models\ViewCatalog::search(request()->keyword)->whereIn('material_type_id',$arrMaterial)->whereIn('consortia',$arrSource)->get();
-                    }
-                    elseif(!$material && $source)
-                    {
-                        if(request()->keyword == '')
-                            $list = App\Models\ViewCatalog::whereIn('consortia',$arrSource)->get();
-                        else
-                            $list = App\Models\ViewCatalog::search(request()->keyword)->whereIn('consortia',$arrSource)->get();
-                    }
-                    elseif($material && !$source)
-                    {
-                        if(request()->keyword == '')
-                        $list = App\Models\ViewCatalog::whereIn('material_type_id',$arrMaterial)->get();
-                        else
-                            $list = App\Models\ViewCatalog::search(request()->keyword)->whereIn('material_type_id',$arrMaterial)->get();
-                    }
-                    elseif(!$material && !$source)
-                    {
-                        $list = App\Models\ViewCatalog::search(request()->keyword)->get();
-                    }
-                    
-            break;
+        switch ((int) request()->typeReport) {
+            case 1: // Acquisition (catalog records by material / source / keyword)
+                $table = 1;
+                $material = !(request()->selectMaterial === ['0'] || empty(request()->selectMaterial));
+                $source   = !(request()->selectSource === ['0'] || empty(request()->selectSource));
+                $q = request()->keyword ? App\Models\ViewCatalog::search(request()->keyword) : App\Models\ViewCatalog::query();
+                if ($material) $q->whereIn('material_type_id', request()->selectMaterial);
+                if ($source)   $q->whereIn('consortia', request()->selectSource);
+                $list = $q->get();
+                break;
 
-            case 2:
+            case 2: // Patron (registered users)
                 $table = 2;
-                switch (request()->select_type) {
-                    case 1:
-                        $list = App\Models\User::whereDate('created_at',date("Y-m-d",strtotime(request()->filter_date_dt)))->get();
-                    break;
-                    case 2:
-                        $list = App\Models\User::whereYear('created_at',request()->filter_month_year)->whereMonth('created_at',request()->filter_month_mon)->get();
-                    break;
-                    case 3:
-                        $list = App\Models\User::whereYear('created_at',request()->filter_year_yr)->get();
-                    break;
-                    case 4:
-                        $from = date("Y-m-d",strtotime(request()->start));
-                        $end = date("Y-m-d",strtotime(request()->end));
+                $list = $applyDate(App\Models\User::where('usertype', 'Patron'))->get();
+                break;
 
-                        $list = App\Models\User::whereBetween('created_at', [$from, $end])->get();
-                    break;
-                }
-            break;
-
-            case 4:
+            case 3: // Borrowed Materials (physical copy loans / circulations)
                 $table = 3;
-                switch (request()->select_type) {
-                    case 1:
-                        $list = App\Models\View_inquiry::whereDate('created_at',date("Y-m-d",strtotime(request()->filter_date_dt)))->get();
-                    break;
-                    case 2:
-                        $list = App\Models\View_inquiry::whereYear('created_at',request()->filter_month_year)->whereMonth('created_at',request()->filter_month_mon)->get();
-                    break;
-                    case 3:
-                        $list = App\Models\View_inquiry::whereYear('created_at',request()->filter_year_yr)->get();
-                    break;
-                    case 4:
-                        $from = date("Y-m-d",strtotime(request()->start));
-                        $end = date("Y-m-d",strtotime(request()->end));
+                $q = DB::table('circulations')
+                    ->leftJoin('circulation_reservations', 'circulation_reservations.reservation_code', '=', 'circulations.reservation_code')
+                    ->leftJoin('users', 'users.id', '=', 'circulations.user_id')
+                    ->leftJoin('circulation_status', 'circulation_status.order_no', '=', 'circulations.status')
+                    ->select('circulations.*', 'circulation_reservations.title_statement as res_title', 'users.name as user_name', 'circulation_status.name as status_name')
+                    ->orderBy('circulations.created_at', 'DESC');
+                $list = $applyDate($q, 'circulations.created_at')->get();
+                break;
 
-                        $list = App\Models\View_inquiry::whereBetween('created_at', [$from, $end])->get();
-                    break;
-                }
-            break;
+            case 4: // Inquiries
+                $table = 4;
+                $list = $applyDate(App\Models\View_inquiry::query())->get();
+                break;
 
-            case 5:
+            case 5: // CSF (customer satisfaction feedback)
                 $table = 5;
-                switch (request()->select_type) {
-                    case 1:
-                        $list = Csf::whereDate('created_at',date("Y-m-d",strtotime(request()->filter_date_dt)))->get();
-                    break;
-                    case 2:
-                        $list = Csf::whereYear('created_at',request()->filter_month_year)->whereMonth('created_at',request()->filter_month_mon)->get();
-                    break;
-                    case 3:
-                        $list = Csf::whereYear('created_at',request()->filter_year_yr)->get();
-                    break;
-                    case 4:
-                        $from = date("Y-m-d",strtotime(request()->start));
-                        $end = date("Y-m-d",strtotime(request()->end));
+                $list = $applyDate(Csf::query())->get();
+                break;
 
-                        $list = Csf::whereBetween('created_at', [$from, $end])->get();
-                    break;
-                }
-            break;
-            case 6:
+            case 6: // Publication Downloads
                 $table = 6;
-                switch (request()->select_type) {
-                    case 1:
-                        $list = Download::whereDate('created_at',date("Y-m-d",strtotime(request()->filter_date_dt)))->get();
-                    break;
-                    case 2:
-                        $list = Download::whereYear('created_at',request()->filter_month_year)->whereMonth('created_at',request()->filter_month_mon)->get();
-                    break;
-                    case 3:
-                        $list = Download::whereYear('created_at',request()->filter_year_yr)->get();
-                    break;
-                    case 4:
-                        $from = date("Y-m-d",strtotime(request()->start));
-                        $end = date("Y-m-d",strtotime(request()->end));
+                $list = $applyDate(Download::query())->get();
+                break;
 
-                        $list = Download::whereBetween('created_at', [$from, $end])->get();
-                    break;
-                }
-            break;
-            case 7:
+            case 7: // Publication Uploads (catalog records added in the period)
                 $table = 7;
-                switch (request()->select_type) {
-                    case 1:
-                        $list = Csf::whereDate('created_at',date("Y-m-d",strtotime(request()->filter_date_dt)))->get();
-                    break;
-                    case 2:
-                        $list = Csf::whereYear('created_at',request()->filter_month_year)->whereMonth('created_at',request()->filter_month_mon)->get();
-                    break;
-                    case 3:
-                        $list = Csf::whereYear('created_at',request()->filter_year_yr)->get();
-                    break;
-                    case 4:
-                        $from = date("Y-m-d",strtotime(request()->start));
-                        $end = date("Y-m-d",strtotime(request()->end));
-
-                        $list = Csf::whereBetween('created_at', [$from, $end])->get();
-                    break;
-                }
-            break;
+                $list = $applyDate(App\Models\ViewCatalog::whereNull('deleted_at'), 'created_at')
+                        ->orderBy('created_at', 'DESC')->get();
+                break;
         }
 
-        return view('admin.print-report',['table' => $table,'list' => $list, 'ratings' => $ratings]);
+        return [$table, $list];
+    }
+
+    private function reportRatings()
+    {
+        return [1 => 'Poor', 2 => 'Unsatisfactory', 3 => 'Satisfactory', 4 => 'Very Satisfactory', 5 => 'Outstanding'];
+    }
+
+    public function reportprint()
+    {
+        [$table, $list] = $this->buildReport();
+        return view('admin.print-report', ['table' => $table, 'list' => $list, 'ratings' => $this->reportRatings()]);
+    }
+
+    // In-page preview: returns just the results table partial (injected via AJAX).
+    public function reportPreview()
+    {
+        [$table, $list] = $this->buildReport();
+        return view('admin.partials.report-table', ['table' => $table, 'list' => $list, 'ratings' => $this->reportRatings(), 'preview' => true]);
     }
 
     public function patronjson(Request $request)
