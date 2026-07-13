@@ -44,7 +44,7 @@
 		<thead><tr><th>#</th><th>Inquiry</th><th>Material</th><th>Name</th><th>Contact No.</th><th>Email</th><th>Date</th></tr></thead>
 		<tbody>
 			@foreach($list as $i => $r)
-				<tr><td>{{ $i+1 }}</td><td>{{ $r->message }}</td><td>{{ formatTitle1($r->title_statement) }}</td><td>{{ $r->fullname }}</td><td>{{ $r->contactnum }}</td><td>{{ $r->email }}</td><td>{{ $r->created_at }}</td></tr>
+				<tr><td>{{ $i+1 }}</td><td>{{ $r->message }}</td><td>{{ $r->title_statement ? formatTitle1($r->title_statement) : getTitle($r->catalog_id) }}</td><td>{{ $r->fullname }}</td><td>{{ $r->contactnum }}</td><td>{{ $r->email }}</td><td>{{ $r->created_at }}</td></tr>
 			@endforeach
 		</tbody>
 	@elseif($table == 5)
@@ -59,10 +59,10 @@
 			@endforeach
 		</tbody>
 	@elseif($table == 6)
-		<thead><tr><th>#</th><th>Catalog ID</th><th>User</th><th>To Review</th><th>Date Downloaded</th></tr></thead>
+		<thead><tr><th>#</th><th>Catalog ID</th><th>Material</th><th>User</th><th>To Review</th><th>Date Downloaded</th></tr></thead>
 		<tbody>
 			@foreach($list as $i => $r)
-				<tr><td>{{ $i+1 }}</td><td>{{ $r->catalog_id }}</td><td>{{ getPatronInfo($r->user_id,'name') }}</td><td>{{ $r->to_review ?: '' }}</td><td>{{ $r->created_at }}</td></tr>
+				<tr><td>{{ $i+1 }}</td><td>{{ $r->catalog_id }}</td><td>{{ getTitle($r->catalog_id) }}</td><td>{{ getPatronInfo($r->user_id,'name') }}</td><td>{{ $r->to_review ?: '' }}</td><td>{{ $r->created_at }}</td></tr>
 			@endforeach
 		</tbody>
 	@elseif($table == 7)
