@@ -2,11 +2,12 @@
 @if(count($__shelves))
 <style>
 	/* ---- Wood + gold category shelf browser (OpenLibrary explore concept) ---- */
-	.shelf-browser { padding: 58px 15px 66px; background: radial-gradient(130% 120% at 50% -10%, #f3ead2 0%, #e9dab6 60%, #e2cfa4 100%); }
+	.shelf-browser { padding: 58px 0 66px; background: radial-gradient(130% 120% at 50% -10%, #f3ead2 0%, #e9dab6 60%, #e2cfa4 100%); }
+	.shelf-browser .container { max-width: 100%; padding-left: 30px; padding-right: 30px; }
 	.shelf-browser .shelf-heading { text-align:center; margin-bottom:22px; }
 	.shelf-browser .shelf-heading .orn { color:#b58a20; font-size:20px; }
 	.shelf-browser .shelf-heading h2 { font-family:Georgia,"Palatino Linotype",serif; font-size:26px; letter-spacing:2px; text-transform:uppercase; color:#4a3a25; margin:4px 0 0; font-weight:700; }
-	.shelf-frame { max-width:1160px; margin:0 auto; border-radius:9px; overflow:hidden; border:1px solid #a9812b;
+	.shelf-frame { max-width:none; margin:0 auto; border-radius:9px; overflow:hidden; border:1px solid #a9812b;
 		box-shadow: inset 0 0 0 3px rgba(201,162,39,.35), 0 30px 60px -30px rgba(50,32,10,.7);
 		background: repeating-linear-gradient(90deg, rgba(0,0,0,.05) 0 3px, rgba(255,255,255,.02) 3px 9px), linear-gradient(#5a3d26,#432c1a); }
 	.shelf-head { display:flex; align-items:center; gap:14px; padding:12px 18px; color:#f4e7c6;
