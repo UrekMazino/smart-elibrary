@@ -1,123 +1,121 @@
 @extends("admin.layouts.master")
 
 @section('css')
-  <!-- Plugin css for this page -->
-	<link rel="stylesheet" href="{{ asset('admin/nobleui/template/assets/vendors/simplemde/simplemde.min.css') }}">
-	<!-- End plugin css for this page -->
+	<style>
+		.admin-page-head { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px; margin-bottom:18px; }
+		.admin-page-head .apt { margin:0; font-size:16px; font-weight:600; }
+		.admin-page-head .aph-desc { margin:2px 0 0; font-size:13px; color:#8a94a6; }
+		#cover_preview { max-height:220px; width:100%; object-fit:cover; border-radius:8px; border:1px solid #e6e9ef; background:#f6f8fa; }
+	</style>
 @endsection
 
 @section('content')
 <div class="page-content">
-    <nav class="page-breadcrumb">
-        <ol class="breadcrumb">
-        </ol>
-    </nav>
-    <div class="row">
-        <div class="col-md-12 grid-margin stretch-card">
-            <div class="card">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-baseline mb-4 mb-md-3">
-                        <h6 class="card-title mb-0">NEWS ARTICLE</h6>
+	<nav class="page-breadcrumb">
+		<ol class="breadcrumb">
+			<li class="breadcrumb-item"><a href="{{ url('/admin/dashboard') }}">Home</a></li>
+			<li class="breadcrumb-item"><a href="{{ url('/admin/news') }}">News Articles</a></li>
+			<li class="breadcrumb-item active" aria-current="page">New Article</li>
+		</ol>
+	</nav>
 
-                        <button type="submit" class="btn p-2 btn-primary" onclick="saveArticle()">
-                          <i class="icon-lg pb-3px text-white" data-feather="save"> </i> SAVE &nbsp&nbsp
-                        </button>
-                      </div>
-                    <form method="post" action="{{ url('/admin/news/create') }}" id="frm_news" enctype="multipart/form-data">
-                      @csrf
-                      <div class="mb-3">
-                          <label for="news_title" class="form-label">Title</label>
-                          <input type="text" class="form-control" id="news_title" name="news_title" autocomplete="off" placeholder="">
-                      </div>
-                      <div class="mb-3 form-check">
-                        <input type="checkbox" class="form-check-input" id="is_featured" name="is_featured">
-                        <label class="form-check-label" for="is_featured">Featured</label>
-                      </div>
-                      <div class="mb-3">
-                        <label for="news_url" class="form-label">Redirect URL</label>
-                        <input type="text" class="form-control" id="news_url" name="news_url" placeholder="e.g https://fprdi.dost.gov.ph/">
-                      </div>
-                      <div class="mb-3">
-                          <label for="news_cover" class="form-label">Cover photo</label>
-                          <input class="form-control" type="file" id="news_cover" name="news_cover" accept="image/jpeg,image/png,image/webp">
-                      </div>
-                      <label for="news_body" class="form-label">Body</label>
-                      <textarea class="form-control" name="news_body" id="tinymceExample" rows="10"></textarea>
-                    </form>
-                    <br>
-                </div>
-            </div>
-        </div>
-    </div>
+	<div class="admin-page-head">
+		<div>
+			<h6 class="apt">New Article</h6>
+			<p class="aph-desc">Create a news article to display on the library home page.</p>
+		</div>
+		<div class="d-flex gap-2">
+			<a href="{{ url('/admin/news') }}" class="btn btn-outline-secondary"><i data-feather="arrow-left" class="icon-sm me-1"></i>Back</a>
+			<button type="button" class="btn btn-primary" onclick="saveArticle()"><i data-feather="save" class="icon-sm me-1"></i>Save Article</button>
+		</div>
+	</div>
+
+	<form method="post" action="{{ url('/admin/news/create') }}" id="frm_news" enctype="multipart/form-data">
+		@csrf
+		<div class="row">
+			<div class="col-lg-8">
+				<div class="card mb-3">
+					<div class="card-body">
+						<div class="mb-3">
+							<label for="news_title" class="form-label">Title</label>
+							<input type="text" class="form-control" id="news_title" name="news_title" autocomplete="off" placeholder="Article title">
+						</div>
+						<div class="mb-3">
+							<label for="news_url" class="form-label">Redirect URL <span class="text-muted">(optional)</span></label>
+							<input type="text" class="form-control" id="news_url" name="news_url" placeholder="e.g. https://fprdi.dost.gov.ph/">
+							<small class="text-muted">Where clicking the article sends the reader. Leave blank to use the article body.</small>
+						</div>
+						<div>
+							<label for="news_body" class="form-label">Body</label>
+							<textarea class="form-control" name="news_body" id="tinymceExample" rows="12"></textarea>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="col-lg-4">
+				<div class="card mb-3">
+					<div class="card-body">
+						<h6 class="card-title">Options</h6>
+						<div class="form-check form-switch">
+							<input type="checkbox" class="form-check-input" role="switch" id="is_featured" name="is_featured">
+							<label class="form-check-label" for="is_featured">Feature on home page</label>
+						</div>
+					</div>
+				</div>
+				<div class="card mb-3">
+					<div class="card-body">
+						<h6 class="card-title">Cover photo</h6>
+						<img id="cover_preview" src="{{ asset('assets/images/placeholder.jpg') }}" alt="Cover preview" class="mb-2">
+						<input class="form-control" type="file" id="news_cover" name="news_cover" onchange="previewImage(event)" accept="image/jpeg,image/png,image/webp">
+						<small class="text-muted">JPG, PNG or WEBP.</small>
+					</div>
+				</div>
+			</div>
+		</div>
+	</form>
 </div>
-
-
-
 @endsection
 
 @section('js')
-<script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net/jquery.dataTables.js') }}"></script>
-<script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net-bs5/dataTables.bootstrap5.js') }}"></script>
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/tinymce/tinymce.min.js') }}"></script>
 <script>
-$(function() {
-  'use strict';
+	$(function () {
+		'use strict';
+		if (window.feather) feather.replace();
+		if ($("#tinymceExample").length) {
+			tinymce.init({
+				selector: '#tinymceExample',
+				height: 420,
+				menubar: false,
+				plugins: ['advlist autolink lists link image charmap preview anchor pagebreak searchreplace wordcount visualblocks visualchars code fullscreen'],
+				toolbar: 'undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image | code fullscreen',
+				image_advtab: true,
+				content_css: []
+			});
+		}
+	});
 
-  //Tinymce editor
-  if ($("#tinymceExample").length) {
-    tinymce.init({
-      selector: '#tinymceExample',
-      height: 400,
-      default_text_color: 'red',
-      plugins: [
-        'advlist autolink lists link image charmap print preview hr anchor pagebreak',
-        'searchreplace wordcount visualblocks visualchars code fullscreen',
-      ],
-      toolbar1: 'undo redo | insert | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image',
-      toolbar2: 'print preview media | forecolor backcolor emoticons | codesample help',
-      image_advtab: true,
-      templates: [{
-          title: 'Test template 1',
-          content: 'Test 1'
-        },
-        {
-          title: 'Test template 2',
-          content: 'Test 2'
-        }
-      ],
-      content_css: []
-    });
-  }
+	function previewImage(event) {
+		var input = event.target;
+		if (input.files && input.files[0]) {
+			var reader = new FileReader();
+			reader.onload = function (e) { document.getElementById('cover_preview').src = e.target.result; };
+			reader.readAsDataURL(input.files[0]);
+		}
+	}
 
-});
-
-
-function saveArticle()
-{
-    Swal.fire({
-      title: 'Are you sure?',
-      text: "You won't be able to revert this!",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonClass: 'me-2',
-      confirmButtonText: 'Yes',
-      cancelButtonText: 'No',
-      reverseButtons: true
-    }).then((result) => {
-      if (result.value) {
-        $("#modalSaving").modal("toggle");
-        $('#frm_news').submit();
-      } else if (
-        // Read more about handling dismissals
-        result.dismiss === Swal.DismissReason.cancel
-      ) {
-        Swal.fire(
-          'Cancelled',
-          'Your news article is safe :)',
-          'error'
-        )
-      }
-    })
-}
+	function saveArticle() {
+		Swal.fire({
+			title: 'Save this article?',
+			text: 'It will be published to the news list.',
+			icon: 'question',
+			showCancelButton: true,
+			confirmButtonText: 'Yes, save',
+			cancelButtonText: 'Cancel',
+			reverseButtons: true
+		}).then((result) => {
+			if (result.value) { $('#frm_news').submit(); }
+		});
+	}
 </script>
 @endsection
