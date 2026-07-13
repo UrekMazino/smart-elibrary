@@ -60,9 +60,14 @@ $('#tbl').DataTable({
               var unseenBadge = (row.unseen_msgs && row.unseen_msgs > 0)
                   ? ' <span class="badge bg-danger" title="Unread patron messages">' + row.unseen_msgs + '</span>' : '';
 
+              // Blocked accounts have the chat feature disabled.
+              var replyMain = (row.is_blocked == 1)
+                  ? '<button type="button" class="btn btn-primary btn-xs" disabled title="Chat disabled — this account is blocked"><i data-feather="corner-up-left" class="icon-sm me-1"></i>Reply</button>'
+                  : '<button type="button" class="btn btn-primary btn-xs" onclick="openReservationChat(\'' + row.reservation_code + '\')"><i data-feather="corner-up-left" class="icon-sm me-1"></i>Reply' + unseenBadge + '</button>';
+
               var replyBtn =
                   '<div class="btn-group" role="group">' +
-                    '<button type="button" class="btn btn-primary btn-xs" onclick="openReservationChat(\'' + row.reservation_code + '\')"><i data-feather="corner-up-left" class="icon-sm me-1"></i>Reply' + unseenBadge + '</button>' +
+                    replyMain +
                     manageCaret +
                   '</div>';
 

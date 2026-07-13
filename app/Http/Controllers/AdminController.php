@@ -227,7 +227,21 @@ class AdminController extends Controller
         $user->$col = $user->$col ? 0 : 1;
         $user->save();
 
-        return response()->json(['ok' => true, 'flag' => $request->flag, 'value' => (bool) $user->$col]);
+        // Banning a patron auto-declines their outstanding reservation tickets
+        // (For Approval / Approved). Checked-out (Open) loans are left untouched.
+        $declined = 0;
+        if ($request->flag === 'banned' && $user->is_banned) {
+            $declined = DB::table('circulations')
+                ->where('user_id', $user->id)
+                ->whereIn('status', [1, 2])
+                ->update([
+                    'status'      => 4,
+                    'declined_at' => now(),
+                    'declined_by' => auth()->user()->name,
+                ]);
+        }
+
+        return response()->json(['ok' => true, 'flag' => $request->flag, 'value' => (bool) $user->$col, 'declined' => $declined]);
     }
 
     public function patron()

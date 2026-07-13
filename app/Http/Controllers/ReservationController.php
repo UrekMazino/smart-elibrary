@@ -171,14 +171,14 @@ class ReservationController extends Controller
         $searchValue = $search_arr['value']; // Search value
 
         // Total records
-        $totalRecords = Circulation::whereIn('status', [1, 2])->count();
+        $totalRecords = Circulation::whereIn('status', [1, 2, 3])->count();
 
         $totalRecordswithFilter = CirculationReservation::select(DB::raw('count(*) as allcount'))->where('title_statement', 'like', '%' . $searchValue . '%')->count();
 
         // Fetch records
         $reservations = Circulation::orderBy($columnName, $columnSortOrder)
             ->join('circulation_reservations', 'circulation_reservations.reservation_code', '=', 'circulations.reservation_code')
-            ->whereIn('status', [1, 2])
+            ->whereIn('status', [1, 2, 3])
             ->where(function ($query) use ($searchValue) {
                 $query->where('title_statement', 'like', '%' . $searchValue . '%')
                     ->orWhere('circulation_reservations.requested_by', 'like', '%' . $searchValue . '%')
