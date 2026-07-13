@@ -853,6 +853,7 @@ class CatalogingController extends Controller
         }
         // CatalogImportProgress::truncate();
 
+        clearHomeCache();
         return view('admin.batch-list', ['message' => 'Successfully saved!']);
 
     }
@@ -1493,6 +1494,7 @@ class CatalogingController extends Controller
 
         $materials = Material::get();
 
+        clearHomeCache();
         return view('admin.create-catalog-record', ['marcTemplates' => $marcTemplates, 'materials' => $materials]);
     }
 
@@ -1511,6 +1513,7 @@ class CatalogingController extends Controller
                 'deleted_by' => $user->id
             ]);
 
+        clearHomeCache();
         return redirect()->back();
     }
 
@@ -1794,6 +1797,7 @@ class CatalogingController extends Controller
 
         $materials = Material::get();
 
+        clearHomeCache();
         return view('admin.catalog-edit-record', ['marcTemplates' => $marcTemplates, 'materials' => $materials, 'record' => $record, 'fieldData' => $fieldData,  'message' => 'Record Updated!']);
 
 

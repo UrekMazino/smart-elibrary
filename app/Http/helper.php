@@ -776,6 +776,20 @@ function getLatestNews()
 	});
 }
 
+/**
+ * Bust the 10-minute homepage/sidebar caches so content changes show immediately
+ * (news add/edit/delete, material create/publish/update/delete, transferring an
+ * acquisition from the on-hold list to the catalog). File cache has no tag support,
+ * so the specific keys are forgotten. home_shelves is keyed by limit — the homepage
+ * uses getShelves(45).
+ */
+function clearHomeCache()
+{
+	cache()->forget('home_latest_news');
+	cache()->forget('home_latest_material');
+	cache()->forget('home_shelves_45');
+}
+
 function getLatestNewsList()
 {
 	$news = App\Models\News::orderBy('created_at','DESC')->limit(5)->get();

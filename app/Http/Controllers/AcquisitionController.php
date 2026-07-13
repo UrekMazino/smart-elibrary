@@ -351,6 +351,7 @@ class AcquisitionController extends Controller
             $pdf->save();
         }
 
+        clearHomeCache();
         return redirect('admin/catalog');
     }
 
@@ -434,15 +435,18 @@ class AcquisitionController extends Controller
     {
         //return request()->action_catalog_id;
         App\Models\Holding::where('id',request()->action_catalog_id)->delete();
+        clearHomeCache();
         return redirect(request()->url);
     }
 
     public function setas()
     {
+        // Transfer a material from the on-hold (acquisition) list into the catalog.
         App\Models\Holding::where('id',request()->action_catalog_id)
         ->update([
                     'catalog_date' => request()->catalog_date
                 ]);
+        clearHomeCache();
         return redirect(request()->url);
     }
 
@@ -722,6 +726,7 @@ class AcquisitionController extends Controller
             "authors" => $authors,
         ];
 
+        clearHomeCache();
         return redirect('admin/edit-acquisition-view-get/'.request()->catalog_id)->with("data",$data);
     }
 
