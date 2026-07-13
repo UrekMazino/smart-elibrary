@@ -8,6 +8,11 @@
       vertical-align: top;
       white-space: normal !important;
     }
+    /* Keep the action buttons on one line (the global white-space:normal above
+       otherwise wraps the Reply icon above its label). */
+    #tbl td:last-child { white-space: nowrap !important; }
+    #tbl td .btn-group { flex-wrap: nowrap; }
+    #tbl td .btn { white-space: nowrap; }
   </style>
 @endsection
 

@@ -26,36 +26,44 @@ $('#tbl').DataTable({
         { data: 'date_of_visit'},
         {
           "data": function (row, type, val, meta) {
+              // Approve / Decline (or Check-out / Revert) stay as their own button group.
               var actions = '';
               if (row.status == 'For Approval') {
                   actions =
-                      '<button type="button" class="btn btn-info btn-xs approve-reservations" aria-haspopup="true" aria-expanded="false" id="approve-reservation-' + row.id + '" disabled onclick="submitConfirmation(1, \'' + row.reservation_code + '\')">Approve</button>' +
-                      '<button type="button" class="btn btn-danger btn-xs" aria-haspopup="true" aria-expanded="false" onclick="submitConfirmation(2,\'' + row.reservation_code + '\')">Decline</button>';
+                      '<div class="btn-group" role="group">' +
+                        '<button type="button" class="btn btn-info btn-xs approve-reservations" aria-haspopup="true" aria-expanded="false" id="approve-reservation-' + row.id + '" disabled onclick="submitConfirmation(1, \'' + row.reservation_code + '\')">Approve</button>' +
+                        '<button type="button" class="btn btn-danger btn-xs" aria-haspopup="true" aria-expanded="false" onclick="submitConfirmation(2,\'' + row.reservation_code + '\')">Decline</button>' +
+                      '</div> ';
               } else if (row.status == 'Approved') {
                   actions =
-                      '<button type="button" class="btn btn-primary btn-xs" aria-haspopup="true" aria-expanded="false" onclick="submitConfirmation(3,\'' + row.reservation_code + '\', \'' + row.circulation_number + '\')">Check-out</button>' +
-                      '<button type="button" class="btn btn-danger btn-xs" aria-haspopup="true" aria-expanded="false" onclick="submitConfirmation(4,\'' + row.reservation_code + '\', \'' + row.circulation_number + '\')">Revert</button>';
+                      '<div class="btn-group" role="group">' +
+                        '<button type="button" class="btn btn-primary btn-xs" aria-haspopup="true" aria-expanded="false" onclick="submitConfirmation(3,\'' + row.reservation_code + '\', \'' + row.circulation_number + '\')">Check-out</button>' +
+                        '<button type="button" class="btn btn-danger btn-xs" aria-haspopup="true" aria-expanded="false" onclick="submitConfirmation(4,\'' + row.reservation_code + '\', \'' + row.circulation_number + '\')">Revert</button>' +
+                      '</div> ';
               }
 
-              // Chat button (per-reservation admin<->patron thread)
-              var chat = '<button type="button" class="btn btn-outline-primary btn-xs" title="Message patron" onclick="openReservationChat(\'' + row.reservation_code + '\')"><i data-feather="message-square"></i></button>';
-
-              // Manage account (ban/block) — only when we know the patron
-              var manage = '';
+              // One combined split button: Reply (open chat) as the primary action, with a
+              // caret that opens Manage account (block / ban).
+              var manageCaret = '';
               if (row.user_id) {
                   var blockLabel = row.is_blocked == 1 ? 'Unblock account' : 'Block account';
                   var banLabel = row.is_banned == 1 ? 'Unban account' : 'Ban account';
-                  manage =
-                      '<div class="btn-group" role="group">' +
-                        '<button type="button" class="btn btn-secondary btn-xs dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">Manage</button>' +
-                        '<div class="dropdown-menu dropdown-menu-end">' +
-                          '<a class="dropdown-item text-warning" href="#" onclick="toggleUserFlag(' + row.user_id + ',\'blocked\');return false;">' + blockLabel + '</a>' +
-                          '<a class="dropdown-item text-danger" href="#" onclick="toggleUserFlag(' + row.user_id + ',\'banned\');return false;">' + banLabel + '</a>' +
-                        '</div>' +
+                  manageCaret =
+                      '<button type="button" class="btn btn-primary btn-xs dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false"><span class="visually-hidden">Manage</span></button>' +
+                      '<div class="dropdown-menu dropdown-menu-end">' +
+                        '<h6 class="dropdown-header">Manage account</h6>' +
+                        '<a class="dropdown-item text-warning" href="#" onclick="toggleUserFlag(' + row.user_id + ',\'blocked\');return false;">' + blockLabel + '</a>' +
+                        '<a class="dropdown-item text-danger" href="#" onclick="toggleUserFlag(' + row.user_id + ',\'banned\');return false;">' + banLabel + '</a>' +
                       '</div>';
               }
 
-              return '<div class="btn-group" role="group">' + actions + chat + '</div> ' + manage;
+              var replyBtn =
+                  '<div class="btn-group" role="group">' +
+                    '<button type="button" class="btn btn-primary btn-xs" onclick="openReservationChat(\'' + row.reservation_code + '\')"><i data-feather="corner-up-left" class="icon-sm me-1"></i>Reply</button>' +
+                    manageCaret +
+                  '</div>';
+
+              return actions + replyBtn;
           }
         },
 
