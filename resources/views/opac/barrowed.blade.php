@@ -1,93 +1,116 @@
 @extends('opac.layout.master')
 @section('content')
 
+	<style>
+		/* Transactions — compact, minimalist cards */
+		.tx-head { margin-bottom: 22px; }
+		.tx-head h1 { font-size: 30px; font-weight: 700; color: #222; margin: 0 0 4px; }
+		.tx-head p { color: #8a94a6; font-size: 14px; margin: 0; }
+		.tx-card { display: flex; align-items: stretch; gap: 16px; background: #fff; border: 1px solid #eef0f2; border-radius: 10px; padding: 14px 16px; margin-bottom: 12px; box-shadow: 0 1px 2px rgba(0,0,0,.04); transition: box-shadow .15s, border-color .15s; }
+		.tx-card:hover { box-shadow: 0 5px 16px rgba(0,0,0,.08); border-color: #d7ece9; }
+		.tx-cover { flex: 0 0 auto; }
+		.tx-cover img { width: 70px; height: 98px; object-fit: cover; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,.18); display: block; background: #f0f2f5; }
+		.tx-body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+		.tx-title { margin: 0 0 4px; font-size: 15px; font-weight: 600; line-height: 1.35; color: #222; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+		.tx-title a { color: inherit; text-decoration: none; }
+		.tx-title a:hover { color: #00a496; }
+		.tx-authors { font-size: 12.5px; color: #6b7280; margin-bottom: 8px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+		.tx-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: #8a94a6; }
+		.tx-meta .rating { line-height: 1; }
+		.tx-aside { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; justify-content: center; gap: 10px; }
+		.tx-status { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .2px; padding: 4px 11px; border-radius: 20px; white-space: nowrap; }
+		.tx-status.s-pending  { background: #eef0f2; color: #555; }
+		.tx-status.s-approved { background: #e3f5ef; color: #087f5b; }
+		.tx-status.s-checkout { background: #fff4e5; color: #b26a00; }
+		.tx-status.s-declined { background: #fdecea; color: #c0392b; }
+		.tx-status.s-complete { background: #e7f5f3; color: #00897b; }
+		.tx-msg-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: #fff; background: #00a496; border: 0; border-radius: 7px; padding: 7px 14px; cursor: pointer; transition: background .15s; white-space: nowrap; }
+		.tx-msg-btn:hover { background: #00897b; }
+		.tx-msg-btn .tx-unread { background: #e5484d; color: #fff; font-size: 10px; font-weight: 700; border-radius: 20px; padding: 1px 6px; line-height: 1.4; }
+		.tx-empty { text-align: center; color: #8a94a6; padding: 48px 16px; background: #fff; border: 1px dashed #dfe3e8; border-radius: 10px; }
+		@media (max-width: 576px) {
+			.tx-card { flex-wrap: wrap; }
+			.tx-aside { width: 100%; flex-direction: row; align-items: center; justify-content: space-between; }
+		}
+	</style>
 
-		<div class="container margin_60">
-			<div class="main_title">
-				<h1>Transactions</h1>
-				{{-- <p>Usu habeo equidem sanctus no. Suas summo id sed, erat erant oporteat cu pri. In eum omnes molestie. Sed ad debet scaevola, ne mel.</p> --}}
-			</div>
-			<div class="row">
-				<div class="col-9">
-					@if($flag)
+	<div class="container margin_60">
+		<div class="row">
+			<div class="col-9">
+				<div class="tx-head">
+					<h1>Transactions</h1>
+					<p>Your reservations and borrowed materials.</p>
+				</div>
+
+				@if($flag)
 					@foreach($list AS $lists)
-					<?php
-					// dd($lists->catalog_id);
-						$holdings = getPublicationDetail($lists->catalog_id);
-					?>
-									<div class="strip_list wow fadeIn">
-										<figure>
-												{!! getFrontpage($lists->catalog_id) !!}
-										</figure>
-										<h3>{!! $holdings['title_statement'] !!}</h3>
-										<span class="text-muted"><br>{!! $holdings['joint_authors'] !!}</span><br>
-
-										Published Date: {!! pubYear($holdings['pub_year']) !!} <br>
-										
-				
-										
-										<div class="rating">
-											<i data-star="{{ $ave = starRatingAve($lists->catalog_id) }}"></i>
-										</div>
-										@if($lists->status == 1)
-											<p align='right'><span class='badge bg-secondary'> Pending </span></p>
-										@elseif($lists->status == 2)
-											<p align='right'><span class='badge bg-success'>Approved </span></p>
-										@elseif($lists->status == 3)
-											<p align='right'><span class='badge bg-warning'>Checkout - Due Date: {{ $lists->due_date  }}  </span></p>
-										@elseif($lists->status == 4)
-											<p align='right'><span class='badge bg-danger'>Declined </span></p>
-										@elseif($lists->status == 5)
-											<p align='right'><span class='badge bg-primary'>Complete ( Returned )</span></p>
-
-										@endif
-										@if($lists->reservation_code)
-											@php $rcUnread = $unread[$lists->reservation_code] ?? 0; @endphp
-											<p align='right' style="margin-top:6px;">
-												<button type="button" class="btn btn-sm" style="background:#00a496;color:#fff;border:0;" onclick="openResChat('{{ $lists->reservation_code }}')">
-													<i class="pe-7s-chat"></i> Messages
-													@if($rcUnread > 0)<span class="badge bg-danger" id="resbadge-{{ $lists->reservation_code }}">{{ $rcUnread }}</span>@endif
-												</button>
-											</p>
-										@endif
-									</div>
-					@endforeach
-					@else
-					<div class="strip_list wow fadeIn">
-						<div class="row">
-							<div class="col-12">
-								<p align='center'>
-									No borrowed materials..
-								</p>
+						@php
+							$holdings  = getPublicationDetail($lists->catalog_id);
+							$cover     = coverBase($lists->catalog_id) ?: 'frontpages/no-preview.jpg';
+							$year      = trim(strip_tags((string) ($holdings['pub_year'] ?? '')));
+							$authors   = trim(strip_tags((string) ($holdings['joint_authors'] ?? '')));
+							$statusMap = [
+								1 => ['Pending', 's-pending'],
+								2 => ['Approved', 's-approved'],
+								3 => ['Checked out' . ($lists->due_date ? ' · due ' . \Carbon\Carbon::parse($lists->due_date)->format('M d, Y') : ''), 's-checkout'],
+								4 => ['Declined', 's-declined'],
+								5 => ['Complete (Returned)', 's-complete'],
+							];
+							$st       = $statusMap[$lists->status] ?? ['—', 's-pending'];
+							$rcUnread = $lists->reservation_code ? ($unread[$lists->reservation_code] ?? 0) : 0;
+						@endphp
+						<div class="tx-card">
+							<div class="tx-cover">
+								<img src="{{ url('/' . $cover) }}" alt="cover">
+							</div>
+							<div class="tx-body">
+								<h3 class="tx-title"><a href="{{ url('/full-description/' . $lists->catalog_id) }}">{!! $holdings['title_statement'] !!}</a></h3>
+								@if($authors !== '')
+									<div class="tx-authors">{!! $holdings['joint_authors'] !!}</div>
+								@endif
+								<div class="tx-meta">
+									<span class="rating"><i data-star="{{ starRatingAve($lists->catalog_id) }}"></i></span>
+									@if($year !== '')<span>Published {{ $year }}</span>@endif
+								</div>
+							</div>
+							<div class="tx-aside">
+								<span class="tx-status {{ $st[1] }}">{{ $st[0] }}</span>
+								@if($lists->reservation_code)
+									<button type="button" class="tx-msg-btn" onclick="openResChat('{{ $lists->reservation_code }}')">
+										<i class="pe-7s-chat"></i> Messages
+										@if($rcUnread > 0)<span class="tx-unread" id="resbadge-{{ $lists->reservation_code }}">{{ $rcUnread }}</span>@endif
+									</button>
+								@endif
 							</div>
 						</div>
-					</div>
-					@endif
-					</div>
-				@include('opac.side')
+					@endforeach
+				@else
+					<div class="tx-empty">You have no transactions yet.</div>
+				@endif
 			</div>
-				<!-- /col -->
+			@include('opac.side')
 		</div>
+	</div>
 
-		<!-- Reservation messages modal -->
-		<div class="modal fade" id="resChatModal" tabindex="-1" role="dialog">
-			<div class="modal-dialog" role="document">
-				<div class="modal-content">
-					<div class="modal-header">
-						<h5 class="modal-title" style="margin:0;">Reservation messages <small class="text-muted" id="resChatCode"></small></h5>
-						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-					</div>
-					<div class="modal-body">
-						<div id="resChatThread" style="max-height:320px;overflow-y:auto;padding:4px;margin-bottom:12px;"></div>
-						<textarea class="form-control" id="resChatMessage" rows="3" placeholder="Type your reply to the library..."></textarea>
-					</div>
-					<div class="modal-footer">
-						<button type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
-						<button type="button" class="btn btn-success" onclick="sendResChat()">Send</button>
-					</div>
+	<!-- Reservation messages modal -->
+	<div class="modal fade" id="resChatModal" tabindex="-1" role="dialog">
+		<div class="modal-dialog" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" style="margin:0;">Reservation messages <small class="text-muted" id="resChatCode"></small></h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<div id="resChatThread" style="max-height:320px;overflow-y:auto;padding:4px;margin-bottom:12px;"></div>
+					<textarea class="form-control" id="resChatMessage" rows="3" placeholder="Type your reply to the library..."></textarea>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
+					<button type="button" class="btn btn-success" onclick="sendResChat()">Send</button>
 				</div>
 			</div>
 		</div>
+	</div>
 @endsection
 
 @section('js')
