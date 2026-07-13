@@ -729,8 +729,9 @@ function getSeries()
 
 function getLatestNews()
 {
-	$news = App\Models\News::where('featured', 'Yes')->orderBy('created_at','DESC')->limit(3)->get();
-	return $news;
+	return cache()->remember('home_latest_news', 600, function () {
+		return App\Models\News::where('featured', 'Yes')->orderBy('created_at','DESC')->limit(3)->get();
+	});
 }
 
 function getLatestNewsList()
@@ -741,12 +742,13 @@ function getLatestNewsList()
 
 function getLatestMaterial()
 {
-	$list = App\Models\ViewCatalog::whereNotNull('created_at')
-		->where('view_catalogs.deleted_at', null)
-		->where('is_published', 1)
-		->orderBy('created_at','DESC')
-		->limit(5)->get();
-	return $list;
+	return cache()->remember('home_latest_material', 600, function () {
+		return App\Models\ViewCatalog::whereNotNull('created_at')
+			->where('view_catalogs.deleted_at', null)
+			->where('is_published', 1)
+			->orderBy('created_at','DESC')
+			->limit(5)->get();
+	});
 }
 
 function getFeaturedMaterials()
@@ -793,6 +795,7 @@ function getAnnualReports()
  */
 function getShelves($limit = 45)
 {
+    return cache()->remember('home_shelves_' . $limit, 600, function () use ($limit) {
     $shelves = [];
 
     $featured = array_map(function ($u) { return ['thumb' => $u, 'url' => null, 'title' => '']; }, getFeaturedMaterials());
@@ -837,5 +840,6 @@ function getShelves($limit = 45)
     }
 
     return $shelves;
+    });
 }
 
