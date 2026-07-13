@@ -8,11 +8,11 @@
 	.shelf-browser .shelf-heading h2 { font-family:Georgia,"Palatino Linotype",serif; font-size:26px; letter-spacing:2px; text-transform:uppercase; color:#0a5f56; margin:4px 0 0; font-weight:700; }
 
 	.shelf-explorer { position:relative; max-width:1680px; margin:0 auto; padding:0 54px; }
-	.shelf-cols { display:flex; gap:20px; align-items:flex-start; }
-	.shelf-col { flex:1 1 0; min-width:0; display:none; border-radius:8px; overflow:hidden; align-self:stretch;
+	.shelf-viewport { overflow:hidden; }
+	.shelf-cols { display:flex; gap:20px; align-items:flex-start; transition:transform .45s cubic-bezier(.4,0,.2,1); will-change:transform; }
+	.shelf-col { flex:0 0 auto; min-width:0; display:flex; flex-direction:column; border-radius:8px; overflow:hidden; align-self:stretch;
 		border:1px solid #0a6e63; box-shadow: inset 0 0 0 3px rgba(255,255,255,.16), 0 24px 44px -26px rgba(4,50,45,.55);
 		background: repeating-linear-gradient(90deg, rgba(0,0,0,.05) 0 3px, rgba(255,255,255,.03) 3px 9px), linear-gradient(#0a8378,#05564d); }
-	.shelf-col.show { display:flex; flex-direction:column; }
 	.shelf-col-head { padding:11px 14px; text-align:center; color:#eafaf7; background:linear-gradient(#064d44,#0a7268);
 		border-bottom:2px solid #4fd0c2; font-family:Georgia,"Palatino Linotype",serif; font-size:16px; letter-spacing:.5px;
 		white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -52,6 +52,7 @@
 	</div>
 	<div class="shelf-explorer">
 		<button type="button" class="shelf-page prev" aria-label="Previous shelves">&#8249;</button>
+		<div class="shelf-viewport">
 		<div class="shelf-cols">
 			@foreach($__shelves as $i => $shelf)
 				<div class="shelf-col" data-idx="{{ $i }}">
@@ -73,6 +74,7 @@
 				</div>
 			@endforeach
 		</div>
+		</div>
 		<button type="button" class="shelf-page next" aria-label="Next shelves">&#8250;</button>
 	</div>
 </section>
@@ -80,23 +82,34 @@
 (function () {
 	var root = document.querySelector('.shelf-browser');
 	if (!root) return;
+	var viewport = root.querySelector('.shelf-viewport');
+	var track = root.querySelector('.shelf-cols');
 	var cols = [].slice.call(root.querySelectorAll('.shelf-col'));
-	if (!cols.length) return;
+	if (!cols.length || !track || !viewport) return;
 	var prev = root.querySelector('.shelf-page.prev');
 	var next = root.querySelector('.shelf-page.next');
-	var start = 0;
+	var GAP = 20, start = 0;
 
 	function windowSize() {
 		var w = window.innerWidth;
 		return w < 768 ? 1 : (w < 1100 ? 2 : 3);   // max 3 shelves at once
 	}
 
-	function render() {
+	// animate=false for initial/resize layout (no slide); true for prev/next
+	function refresh(animate) {
 		var n = windowSize();
+		var vp = viewport.clientWidth;
+		var colW = (vp - (n - 1) * GAP) / n;
+		cols.forEach(function (c) { c.style.width = colW + 'px'; });
+
 		var maxStart = Math.max(0, cols.length - n);
 		if (start > maxStart) start = maxStart;
 		if (start < 0) start = 0;
-		cols.forEach(function (c, k) { c.classList.toggle('show', k >= start && k < start + n); });
+
+		if (!animate) track.style.transition = 'none';
+		track.style.transform = 'translateX(' + (-start * (colW + GAP)) + 'px)';
+		if (!animate) { void track.offsetWidth; track.style.transition = ''; }   // restore transition after reflow
+
 		if (prev) prev.disabled = start <= 0;
 		if (next) next.disabled = start >= maxStart;
 		var hideNav = cols.length <= n;
@@ -104,10 +117,12 @@
 		if (next) next.style.display = hideNav ? 'none' : '';
 	}
 
-	if (prev) prev.addEventListener('click', function () { start = Math.max(0, start - 1); render(); });
-	if (next) next.addEventListener('click', function () { start = start + 1; render(); });
-	window.addEventListener('resize', render);
-	render();
+	if (prev) prev.addEventListener('click', function () { start = Math.max(0, start - 1); refresh(true); });
+	if (next) next.addEventListener('click', function () { start = start + 1; refresh(true); });
+
+	var rt;
+	window.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(function () { refresh(false); }, 120); });
+	refresh(false);
 })();
 </script>
 @endif
