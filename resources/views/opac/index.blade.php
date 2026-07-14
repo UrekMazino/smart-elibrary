@@ -35,9 +35,9 @@
 #sec-search, #sec-shelves, #sec-misc { scroll-margin-top: 110px; }
 .section-nav { position: fixed; top: 50%; right: 20px; transform: translateY(-50%); z-index: 900; display: flex; flex-direction: column; gap: 16px; }
 .section-nav a { position: relative; display: block; width: 13px; height: 13px; }
-.section-nav a i { position: absolute; inset: 0; border-radius: 50%; border: 2px solid #d4618a; background: transparent; transition: background .2s ease, transform .2s ease; }
-.section-nav a:hover i { background: #d4618a; }
-.section-nav a.active i { background: #d4618a; transform: scale(1.28); }
+.section-nav a i { position: absolute; inset: 0; border-radius: 50%; border: 2px solid #c32148; background: transparent; transition: background .2s ease, transform .2s ease; }
+.section-nav a:hover i { background: #c32148; }
+.section-nav a.active i { background: #c32148; transform: scale(1.28); }
 .section-nav a::after { content: attr(data-label); position: absolute; right: 24px; top: 50%; transform: translateY(-50%); white-space: nowrap; background: #a83e63; color: #fff; font-size: 12px; font-weight: 600; letter-spacing: .3px; padding: 4px 10px; border-radius: 6px; box-shadow: 0 3px 8px rgba(0,0,0,.2); opacity: 0; pointer-events: none; transition: opacity .18s ease; }
 .section-nav a:hover::after, .section-nav a.active::after { opacity: 1; }
 @media (max-width: 900px) { .section-nav { display: none; } }
@@ -96,7 +96,7 @@
 	  						</label>
   						</div>
   						@endforeach
-  						
+
 
 					</div>
 				</form>
@@ -124,24 +124,34 @@
 
 		<div id="sec-shelves">@include('opac.partials.shelf-browser')</div>
 		<style>
-			.cover-carousel { max-width:1680px; margin:0 auto; padding:34px 24px 6px; }
-			.cover-carousel .main_title { text-align:center; margin-bottom:16px; }
+			/* Recent section — compact, minimalist carousels (Recent Uploads / Top lists / News) */
+			#sec-misc { padding:26px 0 44px; }
+			.cover-carousel { max-width:1680px; margin:0 auto; padding:16px 24px 4px; }
+			.cover-carousel .main_title { text-align:center; margin-bottom:12px; }
+			.cover-carousel .main_title h2 { font-family:Georgia,"Palatino Linotype",serif; font-size:21px; letter-spacing:1.5px; text-transform:uppercase; color:#0a5f56; font-weight:700; margin:0; }
 			.cc-strip { position:relative; }
-			/* safe center: centers the items when they fit, falls back to flex-start (scrollable,
-			   no clipped first item) when they overflow — so the arrows take over. */
-			.cc-track { display:flex; gap:22px; overflow-x:auto; scroll-behavior:smooth; padding:10px 6px 20px; justify-content:safe center; scrollbar-width:none; -ms-overflow-style:none; }
-			/* Hide the scrollbar — navigation is via the prev/next arrows only (track stays scrollable). */
-			.cc-track::-webkit-scrollbar { display:none; }
-			.cc-item { flex:0 0 auto; width:150px; text-align:center; }
-			.cc-cover { display:flex; align-items:flex-end; justify-content:center; height:210px; }
-			.cc-cover img { max-height:210px; max-width:100%; width:auto; border-radius:2px; box-shadow:0 2px 6px rgba(0,0,0,.22); transition:transform .14s ease, box-shadow .14s ease; }
+			/* safe center: centers items when they fit, else flex-start (scrollable) so the arrows take over. */
+			.cc-track { display:flex; gap:20px; overflow-x:auto; scroll-behavior:smooth; padding:8px 6px 14px; justify-content:safe center; scrollbar-width:none; -ms-overflow-style:none; }
+			.cc-track::-webkit-scrollbar { display:none; }   /* no scrollbar — prev/next arrows only */
+			.cc-item { flex:0 0 auto; width:132px; text-align:center; }
+			.cc-cover { position:relative; display:flex; align-items:flex-end; justify-content:center; height:178px; }
+			.cc-cover img { max-height:178px; max-width:100%; width:auto; border-radius:3px; box-shadow:0 2px 6px rgba(0,0,0,.22); transition:transform .14s ease, box-shadow .14s ease; }
 			.cc-cover:hover img { transform:translateY(-5px); box-shadow:0 10px 18px rgba(0,0,0,.28); }
-			.cc-cap { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; margin-top:9px; font-size:13px; line-height:1.32; color:#0176d3; text-decoration:none; font-weight:600; }
+			.cc-cap { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; margin-top:7px; font-size:12.5px; line-height:1.3; color:#0176d3; text-decoration:none; font-weight:600; }
 			.cc-cap:hover { text-decoration:underline; }
-			.cc-arrow { position:absolute; top:44%; transform:translateY(-50%); width:46px; height:46px; border-radius:50%; border:1px solid #d0d7de; background:#fff; color:#3f4079; font-size:24px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,.18); z-index:3; }
+			.cc-arrow { position:absolute; top:44%; transform:translateY(-50%); width:42px; height:42px; border-radius:50%; border:1px solid #d0d7de; background:#fff; color:#3f4079; font-size:22px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,.16); z-index:3; }
 			.cc-arrow:hover { background:#00a496; border-color:#00a496; color:#fff; }
 			.cc-arrow.prev { left:-4px; } .cc-arrow.next { right:-4px; }
 			.cc-arrow:disabled { opacity:.3; cursor:default; background:#fff; border-color:#d0d7de; color:#3f4079; }
+
+			/* Ranked "Top 10": rank-number overlay + detail badge revealed on hover. */
+			.cover-carousel.ranked .cc-track { padding-top:30px; }
+			.rk-item .cc-cover { overflow:visible; }
+			.rk-num { position:absolute; top:-16px; left:-8px; z-index:3; font-family:Georgia,"Palatino Linotype",serif; font-weight:800; font-size:44px; line-height:1;
+				color:#fff; -webkit-text-stroke:2px #0a5f56; text-shadow:0 2px 5px rgba(0,0,0,.4); pointer-events:none; }
+			.rk-badge { position:absolute; left:0; right:0; bottom:0; z-index:2; background:linear-gradient(transparent, rgba(4,46,42,.92)); color:#fff;
+				font-size:11.5px; font-weight:700; letter-spacing:.2px; text-align:center; padding:20px 6px 7px; border-radius:0 0 3px 3px; opacity:0; transition:opacity .2s ease; pointer-events:none; }
+			.rk-cover:hover .rk-badge { opacity:1; }
 		</style>
 		<div id="sec-misc">
 		<div class="cover-carousel">
@@ -161,6 +171,9 @@
 				<button type="button" class="cc-arrow next" aria-label="Next">&#8250;</button>
 			</div>
 		</div>
+		@include('opac.partials.ranked-carousel', ['title' => 'Most Downloaded', 'items' => getMostDownloaded(10)])
+		@include('opac.partials.ranked-carousel', ['title' => 'Most Viewed', 'items' => getMostViewed(10)])
+		@include('opac.partials.ranked-carousel', ['title' => 'Highest Rating', 'items' => getHighestRated(10)])
 		<div class="cover-carousel">
 			<div class="main_title"><h2>Related News</h2></div>
 			<div class="cc-strip">
@@ -277,7 +290,7 @@
 		$("#catalog_id").val(val);
 		$("#frm1").submit();
 	}
-	
+
 </script>
 @if(!checkCSF() && Auth::user())
 <script type="text/javascript">

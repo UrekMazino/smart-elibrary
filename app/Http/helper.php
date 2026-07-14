@@ -788,6 +788,9 @@ function clearHomeCache()
 	cache()->forget('home_latest_news');
 	cache()->forget('home_latest_material');
 	cache()->forget('home_shelves_45');
+	cache()->forget('home_top_downloaded');
+	cache()->forget('home_top_viewed');
+	cache()->forget('home_top_rated');
 }
 
 function getLatestNewsList()
@@ -804,6 +807,65 @@ function getLatestMaterial()
 			->where('is_published', 1)
 			->orderBy('created_at','DESC')
 			->limit(20)->get();
+	});
+}
+
+/**
+ * Shape aggregate rows (each with catalog_id + title_statement) into homepage ranked-carousel
+ * items: cover thumbnail, link, title, and a hover "detail" string built by $detailFn.
+ */
+function rankItemsMap($rows, callable $detailFn)
+{
+	return $rows->map(function ($r) use ($detailFn) {
+		return [
+			'catalog_id' => $r->catalog_id,
+			'title'      => $r->title_statement,
+			'thumb'      => getThumbnailLink($r->catalog_id),
+			'url'        => url('/full-description/' . $r->catalog_id),
+			'detail'     => $detailFn($r),
+		];
+	})->all();
+}
+
+// Top-N most downloaded published materials (with total download count).
+function getMostDownloaded($limit = 10)
+{
+	return cache()->remember('home_top_downloaded', 600, function () use ($limit) {
+		$rows = DB::table('downloads as d')
+			->join('view_catalogs as v', 'v.catalog_id', '=', 'd.catalog_id')
+			->where('v.is_published', 1)->whereNull('v.deleted_at')
+			->select('d.catalog_id', DB::raw('COUNT(*) as total'), 'v.title_statement')
+			->groupBy('d.catalog_id', 'v.title_statement')
+			->orderByDesc('total')->limit($limit)->get();
+		return rankItemsMap($rows, function ($r) { return number_format($r->total) . ' download' . ($r->total == 1 ? '' : 's'); });
+	});
+}
+
+// Top-N most viewed published materials (with total view count).
+function getMostViewed($limit = 10)
+{
+	return cache()->remember('home_top_viewed', 600, function () use ($limit) {
+		$rows = DB::table('views as vw')
+			->join('view_catalogs as v', 'v.catalog_id', '=', 'vw.catalog_id')
+			->where('v.is_published', 1)->whereNull('v.deleted_at')
+			->select('vw.catalog_id', DB::raw('COUNT(*) as total'), 'v.title_statement')
+			->groupBy('vw.catalog_id', 'v.title_statement')
+			->orderByDesc('total')->limit($limit)->get();
+		return rankItemsMap($rows, function ($r) { return number_format($r->total) . ' view' . ($r->total == 1 ? '' : 's'); });
+	});
+}
+
+// Top-N highest average rating (published), tie-broken by number of votes.
+function getHighestRated($limit = 10)
+{
+	return cache()->remember('home_top_rated', 600, function () use ($limit) {
+		$rows = DB::table('ratings as r')
+			->join('view_catalogs as v', 'v.catalog_id', '=', 'r.catalog_id')
+			->where('v.is_published', 1)->whereNull('v.deleted_at')
+			->select('r.catalog_id', DB::raw('ROUND(AVG(r.rating),1) as rating'), DB::raw('COUNT(*) as votes'), 'v.title_statement')
+			->groupBy('r.catalog_id', 'v.title_statement')
+			->orderByDesc('rating')->orderByDesc('votes')->limit($limit)->get();
+		return rankItemsMap($rows, function ($r) { return '★ ' . number_format($r->rating, 1) . ' · ' . $r->votes . ' rating' . ($r->votes == 1 ? '' : 's'); });
 	});
 }
 
