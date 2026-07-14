@@ -27,6 +27,7 @@
 		.seen-lbl { font-size:11px; color:#8a94a6; margin-right:6px; }
 		.seen-ava { width:22px; height:22px; border-radius:50%; background:#6571ff; color:#fff; font-size:9.5px; font-weight:700; display:inline-flex; align-items:center; justify-content:center; box-shadow:0 0 0 2px #fff; cursor:default; margin-left:-6px; }
 		.seen-ava:first-of-type { margin-left:0; }
+		.seen-ava-patron { background:#00a496; } /* patron read-receipt (distinct from admin avatars) */
 	</style>
 @endsection
 
@@ -165,7 +166,12 @@
 			}).always(function () {
 				$.getJSON("{{ url('inquiry/seen-receipts/') }}/" + id).done(function (res) {
 					$('#inquiry_seen_row').remove();
-					if (res.seens && res.seens.length) {
+					if (!res.lastFromPatron && res.patronSeen && res.patronSeen.seen) {
+						// Admin sent the last message and the patron has read it.
+						box.append('<div id="inquiry_seen_row" class="seen-row"><span class="seen-lbl">Seen by</span>' +
+							'<span class="seen-ava seen-ava-patron" title="Seen by ' + esc(res.patronSeen.name) + ' &middot; ' + esc(res.patronSeen.at) + '">' + esc(res.patronSeen.initials) + '</span></div>');
+					} else if (res.seens && res.seens.length) {
+						// Patron sent the last message: show which admins have read it.
 						var av = res.seens.map(function (s) {
 							return '<span class="seen-ava" title="Seen by ' + esc(s.name) + ' &middot; ' + esc(s.seen_at) + '">' + esc(s.initials) + '</span>';
 						}).join('');

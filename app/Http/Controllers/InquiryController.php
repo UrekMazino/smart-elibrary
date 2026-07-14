@@ -185,10 +185,35 @@ class InquiryController extends Controller
             ];
         })->values();
 
+        // Reverse direction: has the PATRON read the admin's latest message? The
+        // patron's markSeen sets reply_inquiries.seen on staff replies. Only relevant
+        // when the admin sent the last message (otherwise the patron receipt is moot).
+        $patronSeen = ['seen' => false, 'name' => null, 'initials' => '', 'at' => null];
+        if (! $lastFromPatron) {
+            $latestAdminReply = \DB::table('reply_inquiries')
+                ->where('inquiry_id', $id)
+                ->where('user_id', '!=', $inquiry->user_id) // authored by staff, not the patron owner
+                ->orderByDesc('created_at')
+                ->first();
+
+            if ($latestAdminReply && $latestAdminReply->seen) {
+                $pName = \DB::table('users')->where('id', $inquiry->user_id)->value('name') ?: 'Patron';
+                $parts = preg_split('/\s+/', trim((string) $pName)) ?: [];
+                $pInit = strtoupper(substr($parts[0] ?? '', 0, 1) . (count($parts) > 1 ? substr(end($parts), 0, 1) : ''));
+                $patronSeen = [
+                    'seen'     => true,
+                    'name'     => $pName,
+                    'initials' => $pInit !== '' ? $pInit : '?',
+                    'at'       => \Carbon\Carbon::parse($latestAdminReply->seen)->format('M d, Y g:i A'),
+                ];
+            }
+        }
+
         return response()->json([
             'seens'          => $items,
             'anySeen'        => $items->count() > 0,
             'lastFromPatron' => $lastFromPatron,
+            'patronSeen'     => $patronSeen,
         ]);
     }
 }
