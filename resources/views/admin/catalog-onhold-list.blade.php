@@ -3,45 +3,42 @@
 @section('css')
     <link rel="stylesheet" href="{{ asset('admintemplate/nobleui/template/assets/vendors/DataTables/DataTables-1.12.1/css/dataTables.bootstrap5.css') }}">
     <link rel="stylesheet" href="{{ asset('admintemplate/nobleui/template/assets/vendors/DataTables/buttons/css/buttons.bootstrap5.min.css') }}">
-  
+
     <style>
-      table td {
-        word-break: break-word;
-        vertical-align: top;
-        white-space: normal !important;
+      /* Compact, readable catalog table */
+      #tbl { font-size: 13px; width: 100% !important; }
+      #tbl thead th {
+        font-size: 11px; text-transform: uppercase; letter-spacing: .4px;
+        color: #7987a1; white-space: nowrap; padding: 9px 10px;
+        border-bottom: 2px solid #eef0f2; vertical-align: middle;
       }
-      .width45 {
-            width: 30% !important;
-        }
+      #tbl tbody td { padding: 6px 10px; vertical-align: middle !important; white-space: normal; }
+      #tbl tbody tr:hover { background: #f7f9fc; }
+      .tbl-id { color: #a3adc2; font-size: 12px; }
+      .tbl-title {
+        font-weight: 600; color: #22283b; display: inline-block; max-width: 420px;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle;
+      }
+      .tbl-authors {
+        color: #7987a1; display: inline-block; max-width: 220px;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle;
+      }
+      .badge-type {
+        background: #eef1f8; color: #5a6a85; font-weight: 600;
+        text-transform: uppercase; font-size: 10.5px; letter-spacing: .3px;
+      }
+      @media (max-width: 1200px) { .tbl-title { max-width: 260px; } .tbl-authors { max-width: 150px; } }
+      @media (max-width: 768px)  { .tbl-title { max-width: 170px; } .tbl-authors { max-width: 110px; } }
 
-      #loadingSpinnerContainer {
-          position: fixed; 
-          top: 50%; 
-          left: 50%; 
-          transform: translate(-50%, -50%); 
-          z-index: 9999; 
-          display: none;
-      }
-
-      #loadingSpinner {
-          display: inline-block;
-      }
-      #loadingOverlay {
-          position: fixed;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black background */
-          z-index: 9998; /* Place it below the loading spinner */
-          display: none; /* Initially hide it */
-      }
+      #loadingSpinnerContainer { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9999; display: none; }
+      #loadingSpinner { display: inline-block; }
+      #loadingOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); z-index: 9998; display: none; }
     </style>
 @endsection
 
 @section('content')
 <div class="page-content">
-    <div id="loadingOverlay"></div> 
+    <div id="loadingOverlay"></div>
     <div id="loadingSpinnerContainer">
         <div id="loadingSpinner" class="text-center">
             @php for($i = 0; $i < 3; $i++ ) { @endphp
@@ -60,14 +57,14 @@
         <div class="col-md-12">
             <div class="card">
                 <div class="card-body">
-                  <div class="d-flex justify-content-between align-items-baseline mb-4 mb-md-3">
+                  <div class="d-flex justify-content-between align-items-baseline mb-3">
                     <h6 class="card-title mb-0">CATALOG ONHOLD</h6>
-                    <div class="btn-group me-2">
-                      <button class="btn btn-outline-info" onclick="publishAllOnhold()">Publish All</button>
-                      <button class="btn btn-outline-info dropdown-toggle" type="button" id="filterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <div class="btn-group btn-group-sm me-2">
+                      <button class="btn btn-outline-info btn-sm" onclick="publishAllOnhold()">Publish All</button>
+                      <button class="btn btn-outline-info btn-sm dropdown-toggle" type="button" id="filterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                          Resource Filter
                       </button>
-                      <ul class="dropdown-menu" aria-labelledby="filterDropdown">
+                      <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="filterDropdown">
                           <li><button class="dropdown-item filter-btn active" id="all" type="button" onclick="refreshPage()">All</button></li>
                           <li><button class="dropdown-item filter-btn" id="fulltext-only" type="button">w/ Fulltext</button></li>
                           <li><button class="dropdown-item filter-btn" id="coverphoto-only" type="button">w/ Coverphoto</button></li>
@@ -77,20 +74,20 @@
                           <li><button class="dropdown-item filter-btn" id="without-both" type="button">w/o Fulltext & Coverphoto</button></li>
                       </ul>
                   </div>
-                  
+
                   </div>
                   <div class="table-responsive">
-                      <table id="tbl" class="table">
+                      <table id="tbl" class="table table-hover table-sm align-middle mb-0">
                         <thead>
                           <tr>
-                            <th style="width: 5%">Index</th>
+                            <th style="width: 64px">ID</th>
                             <th>Title</th>
-                            <th  style="width: 10%">Material Type</th>
-                            <th>Author</th>
-                            <th>Publication Year</th>
-                            <th style="width: 5%">Fulltext</th>
-                            <th style="width: 5%">Coverphoto</th>
-                            <th style="width: 5%" align="center">Action</th>
+                            <th style="width: 120px">Type</th>
+                            <th style="width: 220px">Author</th>
+                            <th style="width: 90px" class="text-center">Year</th>
+                            <th style="width: 72px" class="text-center">Fulltext</th>
+                            <th style="width: 78px" class="text-center">Cover</th>
+                            <th style="width: 92px" class="text-center">Action</th>
                           </tr>
                         </thead>
                       </table>
@@ -120,9 +117,6 @@
 @endsection
 
 @section('js')
-{{-- <script src="{{ asset('admin/nobleui/template/assets/vendors/datatables.net/jquery.dataTables.js') }}"></script>
-<script src="{{ asset('admin/nobleui/template/assets/vendors/datatables.net-bs5/dataTables.bootstrap5.js') }}"></script> --}}
-
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/DataTables/DataTables-1.12.1/js/jquery.dataTables.min.js') }}"></script>
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/DataTables/DataTables-1.12.1/js/dataTables.bootstrap5.min.js') }}"></script>
 
@@ -135,14 +129,69 @@
 <script>
 
 $(document).ready(function(){
-    // Function to escape special characters
+
+    // Escape for use inside HTML attributes and onclick() strings.
     function escapeHtml(text) {
-      return text.replace(/&/g, '&amp;')
+      return (text == null ? '' : String(text))
+                  .replace(/&/g, '&amp;')
                   .replace(/</g, '&lt;')
                   .replace(/>/g, '&gt;')
                   .replace(/"/g, '&quot;')
                   .replace(/'/g, '&#039;')
                   .replace(/`/g, '&#96;');
+    }
+
+    var OK_BADGE = '<span class="badge rounded-pill border border-success text-success">&#10003;</span>';
+    var NO_BADGE = '<span class="badge rounded-pill border border-danger text-danger">&#10007;</span>';
+
+    function actionMenu(row) {
+      var escapedTitle = escapeHtml(row.title_statement);
+      return '<div class="btn-group btn-group-sm" role="group">' +
+          '<button type="button" class="btn btn-info btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>' +
+          '<div class="dropdown-menu dropdown-menu-end">' +
+              '<a class="dropdown-item" href="#" onclick="viewRecord(' + row.id + ', \'' + escapedTitle + '\')">View Details</a>' +
+              @can("publish-hold.catalog") '<a class="dropdown-item" href="#" onclick="publishMaterial(' + row.id + ')">Add to Record list</a>' + @endcan
+              @can("edit.catalog") '<a class="dropdown-item" href="#" onclick="actionFrm(' + row.id + ',\'edit\')">Edit</a>' + @endcan
+              @can("delete.catalog") '<a class="dropdown-item" href="#" onclick="actionFrm(' + row.id + ',\'delete\')">Delete</a>' + @endcan
+          '</div>' +
+      '</div>';
+    }
+
+    // Shared column definition, used by both the server-side table and the
+    // client-side (filtered) rebuild so both look and sort identically.
+    function makeColumns() {
+      return [
+        { data: 'id', className: 'tbl-id text-nowrap',
+          render: function (d, type) { return type === 'display' ? '#' + escapeHtml(d) : d; } },
+        { data: 'title_statement',
+          render: function (d, type) {
+            if (type !== 'display') return d;
+            return '<span class="tbl-title" title="' + escapeHtml(d) + '">' + (d == null ? '' : d) + '</span>';
+          } },
+        { data: 'material_type', className: 'text-nowrap',
+          render: function (d, type) {
+            if (type !== 'display') return d;
+            return d ? '<span class="badge badge-type rounded-pill">' + d + '</span>' : '<span class="text-muted small">N/A</span>';
+          } },
+        { data: 'authors',
+          render: function (d, type) {
+            if (type !== 'display') return d;
+            if (d == null || d === '') return '<span class="text-muted small">N/A</span>';
+            return '<span class="tbl-authors" title="' + escapeHtml(d) + '">' + d + '</span>';
+          } },
+        { data: 'pub_year', className: 'text-center',
+          render: function (d, type) {
+            if (type !== 'display') return d;
+            var y = (d == null ? '' : String(d).replace(/[\[\]"'.]+/g, ''));
+            return y !== '' ? y : '<span class="text-muted small">N/A</span>';
+          } },
+        { data: 'has_multimedia', orderable: false, className: 'text-center',
+          render: function (d, type) { return type === 'display' ? (d == 1 ? OK_BADGE : NO_BADGE) : d; } },
+        { data: 'has_coverpage', orderable: false, className: 'text-center',
+          render: function (d, type) { return type === 'display' ? (d == 1 ? OK_BADGE : NO_BADGE) : d; } },
+        { data: null, orderable: false, className: 'text-center',
+          render: function (d, type, row) { return actionMenu(row); } },
+      ];
     }
 
     $('.filter-btn').on('click', function() {
@@ -158,201 +207,39 @@ $(document).ready(function(){
         data: {
             "filter_search": selectedFilter,
         },
-        
         dataType: 'json',
         success: function(res) {
-          let searchResultArr = $.map(res.aaData, function(value, key) {
-              return [value];
-          });
-           // Prepare the data in the expected format for DataTables
-          let data = searchResultArr.map(record => ({
-            "id": record.id,
-            "title_statement": record.title_statement,
-            "material_type": record.material_type,
-            "has_multimedia": record.has_multimedia,
-            "has_coverpage": record.has_coverpage,
-            "authors": record.authors,
-            "pub_year": record.pub_year,
-          }));
+          let data = $.map(res.aaData, function(value) { return value; });
           let table = $('#tbl').DataTable();
           table.destroy();
-          table = $('#tbl').DataTable({
+          $('#tbl').DataTable({
             data: data,
-            columns: [
-              { data: 'id' },
-              { 
-                data: 'title_statement',
-                orderable: false
-              },
-              { data: 'material_type' },
-              
-              { 
-                "data": function ( row, type, val, meta ) {
-                    return row.authors == null ? 'N/A' : row.authors
-                }
-              },
-              {
-                "data": function (row, type, val, meta) {
-                  // Check if pub_year is null or undefined
-                  if (row.pub_year == null) {
-                    return 'N/A';
-                  } else {
-                    // Remove square brackets and double quotes using regex
-                    let cleanPubYear = row.pub_year.replace(/[\[\]"'.]+/g, '');
-
-                    return cleanPubYear;
-                  }
-                }
-              },
-              { 
-                "data": function (row, type, val, meta) {
-                  if (type === 'display') {
-                      if (row.has_multimedia == 1) {
-                          return '<span class="badge rounded-pill border border-success text-success">&#10003;</span>'; // Green checkmark
-                      } else {
-                          return '<span class="badge rounded-pill border border-danger text-danger">&#10007;</span>'; // Red "X"
-                      }
-                  }
-                  return row.has_multimedia;
-                },
-                orderable: false
-              },
-              {
-                "data": function (row, type, val, meta) {
-                  if (type === 'display') {
-                      if (row.has_coverpage == 1) {
-                          return '<span class="badge rounded-pill border border-success text-success">&#10003;</span>'; // Green checkmark
-                      } else {
-                          return '<span class="badge rounded-pill border border-danger text-danger">&#10007;</span>'; // Red "X"
-                      }
-                  }
-                  return row.has_coverpage;
-                },
-                orderable: false
-              },
-              { 
-                "data": function(row, type, val, meta) {
-                  let escapedTitle = escapeHtml(row.title_statement);
-                  return '<div class="btn-group" role="group">' +
-                      '<button id="btnGroupDrop1" type="button" class="btn btn-info dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">' +
-                          'Action' +
-                      '</button>' +
-                      '<div class="dropdown-menu" aria-labelledby="btnGroupDrop1">' +
-                          '<a class="dropdown-item" href="#" onclick="viewRecord(' + row.id + ', \'' + escapedTitle + '\')">View Details</a>' +
-                          @can("publish-hold.catalog") '<a class="dropdown-item" href="#" onclick="publishMaterial(' + row.id + ')">Add to Record list</a>' + @endcan
-                          @can("edit.catalog") '<a class="dropdown-item" href="#" onclick="actionFrm(' + row.id + ',\'edit\')">Edit</a>' + @endcan
-                          @can("delete.catalog") '<a class="dropdown-item" href="#" onclick="actionFrm(' + row.id + ',\'delete\')">Delete</a>' + @endcan
-                          // '<a class="dropdown-item" href="#" onclick="downloadMarcFile(' + row.id + ')">Download MARC File</a>' +
-                      '</div>' +
-                  '</div>';
-                },
-                orderable: false
-              },
-            ],
+            autoWidth: false,
+            pageLength: 25,
+            order: [[1, 'asc']],
+            columns: makeColumns(),
           });
           $('#loadingOverlay').hide();
           $('#loadingSpinnerContainer').hide();
         },
         error: function(e) {
-            // Handle the error case
             console.log("Something's wrong!");
             $('#loadingOverlay').hide();
             $('#loadingSpinnerContainer').hide();
         }
-      }); 
+      });
     });
 
-    // DataTable
+    // Main table: server-side, default sort = Title (A → Z), other columns sortable.
     $('#tbl').DataTable({
         processing: true,
         serverSide: true,
+        autoWidth: false,
+        pageLength: 25,
+        order: [[1, 'asc']],
         ajax: '{{ url("/admin/onhold-list-json") }}',
-        columns: [
-            { data: 'id' },
-            { 
-              "data": function ( row, type, val, meta ) {
-                //  let titleFormatted = row.title_statement + " (No PDF)";
-                return row.title_statement;
-              },
-              orderable: false
-            },
-            { data: 'material_type' },
-            { 
-              "data": function ( row, type, val, meta ) {
-                  let maxLength = 50;
-
-                  if(row.authors == null) {
-                    return 'N/A';
-                  } else {
-                    let authors = row.authors;
-                    if (authors.length > maxLength) {
-
-                      let truncatedText = authors.substring(0, maxLength) + '...';
-                      return truncatedText;
-                    } else {
-                      return authors;
-                    }
-                  }
-                   
-              },
-              orderable: false
-            },
-            {
-              "data": function (row, type, val, meta) {
-                // Check if pub_year is null or undefined
-                if (row.pub_year == null) {
-                  return 'N/A';
-                } else {
-                  // Remove square brackets and double quotes using regex
-                  let cleanPubYear = row.pub_year.replace(/[\[\]"'.]+/g, '');
-
-                  return cleanPubYear;
-                }
-              },
-              orderable: false
-            },
-            { 
-              data: 'has_multimedia',
-              render: function(data, type, row) {
-                // console.log(row);
-                  if (type === 'display') {
-                      return data == 1 ? '<span class="badge rounded-pill border border-success text-success">&#10003;</span>' : '<span class="badge rounded-pill border border-danger text-danger">&#10007;</span>';
-                  }
-                  return data;
-              },
-              orderable: false
-            },
-            { 
-              data: 'has_coverpage',
-              render: function(data, type, row) {
-                  if (type === 'display') {
-                      return data == 1 ? '<span class="badge rounded-pill border border-success text-success">&#10003;</span>' : '<span class="badge rounded-pill border border-danger text-danger">&#10007;</span>';
-                  }
-                  return data;
-              },
-              orderable: false
-            },
-            { 
-              "data": function(row, type, val, meta) {
-                let escapedTitle = escapeHtml(row.title_statement);
-                return '<div class="btn-group" role="group">' +
-                    '<button id="btnGroupDrop1" type="button" class="btn btn-info dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">' +
-                        'Action' +
-                    '</button>' +
-                    '<div class="dropdown-menu" aria-labelledby="btnGroupDrop1">' +
-                        '<a class="dropdown-item" href="#" onclick="viewRecord(' + row.id + ', \'' + escapedTitle + '\')">View Details</a>' +
-                        @can("publish-hold.catalog") '<a class="dropdown-item" href="#" onclick="publishMaterial(' + row.id + ')">Add to Record list</a>' + @endcan
-                        @can("edit.catalog") '<a class="dropdown-item" href="#" onclick="actionFrm(' + row.id + ',\'edit\')">Edit</a>' + @endcan
-                        @can("delete.catalog") '<a class="dropdown-item" href="#" onclick="actionFrm(' + row.id + ',\'delete\')">Delete</a>' + @endcan
-                        // '<a class="dropdown-item" href="#" onclick="downloadMarcFile(' + row.id + ')">Download MARC File</a>' +
-                    '</div>' +
-                '</div>';
-              },
-              orderable: false
-
-            
-            },
-        ]
+        columns: makeColumns(),
+        language: { search: '', searchPlaceholder: 'Search title, author, type, year…' }
     });
 
 });
@@ -391,8 +278,8 @@ function publishAllOnhold()
                 title: 'Success',
                 text: 'The record has been updated successfully!',
                 icon: 'success',
-                timer: 1000, // Close the modal after 2000 milliseconds (2 seconds)
-                showConfirmButton: false // Hide the confirm button
+                timer: 1000,
+                showConfirmButton: false
             });
             $("#modalSaving").modal("toggle");
             refreshAjax();
@@ -406,7 +293,6 @@ function publishAllOnhold()
           }
         });
       } else if (
-        // Read more about handling dismissals
         result.dismiss === Swal.DismissReason.cancel
       ) {
         Swal.fire(
@@ -430,8 +316,8 @@ function publishMaterial(id)
           title: 'Success',
           text: 'The record has been updated successfully!',
           icon: 'success',
-          timer: 1000, // Close the modal after 2000 milliseconds (2 seconds)
-          showConfirmButton: false // Hide the confirm button
+          timer: 1000,
+          showConfirmButton: false
       });
       refreshAjax();
     },
@@ -487,11 +373,7 @@ function actionFrm(id,action)
           $("#frm_delete").submit();
         }
 
-
-        
-
       } else if (
-        // Read more about handling dismissals
         result.dismiss === Swal.DismissReason.cancel
       ) {
         Swal.fire(

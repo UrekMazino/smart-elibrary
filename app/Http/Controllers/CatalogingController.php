@@ -1825,17 +1825,27 @@ class CatalogingController extends Controller
         $order_arr = $request->get('order');
         $search_arr = $request->get('search');
 
+        // Whitelist of sortable columns (DataTables column `data` name => real DB column).
+        // Anything outside this list falls back to Title, so the list stays
+        // alphabetical-by-Title unless the admin explicitly sorts another column.
+        $sortMap = [
+            'id'              => 'view_catalogs.catalog_id',
+            'title_statement' => 'view_catalogs.title_statement',
+            'material_type'   => 'view_catalogs.material_type',
+            'authors'         => 'view_catalogs.joint_authors',
+            'pub_year'        => 'view_catalogs.pub_year',
+        ];
+
         if(isset($request->filter_search)) {
-            $columnIndex = 0;
-            $columnName = 'view_catalogs.id';
-            $columnSortOrder = 'desc';
+            $columnName = 'view_catalogs.title_statement';
+            $columnSortOrder = 'asc';
             $searchValue = is_null($search_arr)  ? '' : $search_arr['value'];
             $searchTitle = $request->filter_search;
         } else {
-            $columnIndex = is_null($columnIndex_arr) ? 0 : $columnIndex_arr[0]['column']; // Column index
-            $columnName = is_null($columnName_arr) ? 'view_catalogs.id' : "view_catalogs." . $columnName_arr[$columnIndex]['data']; // Column name
-            $columnName = $columnName == "function" ? "view_catalogs.id" : $columnName;
-            $columnSortOrder = is_null($order_arr) ? 'desc' : $order_arr[0]['dir']; // asc or desc
+            $columnIndex = is_null($columnIndex_arr) ? 1 : $columnIndex_arr[0]['column']; // Column index (default: Title)
+            $requestedData = $columnName_arr[$columnIndex]['data'] ?? 'title_statement'; // DataTables column key
+            $columnName = $sortMap[$requestedData] ?? 'view_catalogs.title_statement'; // Map to DB column; default Title
+            $columnSortOrder = (isset($order_arr[0]['dir']) && strtolower($order_arr[0]['dir']) === 'desc') ? 'desc' : 'asc';
             $searchValue = is_null($search_arr['value']) ? '' : $search_arr['value']; // Search value
             $searchTitle = '';
         }
@@ -1925,7 +1935,7 @@ class CatalogingController extends Controller
         $totalRecords = $query->count();
         $totalRecordswithFilter = $query->count();
 
-        $records = $query->orderBy($columnName, $columnSortOrder === 'asc' ? 'desc' : 'desc')
+        $records = $query->orderBy($columnName, $columnSortOrder)
             ->skip($start)
             ->take($rowperpage)
             ->get();
@@ -1969,17 +1979,27 @@ class CatalogingController extends Controller
         $order_arr = $request->get('order');
         $search_arr = $request->get('search');
 
+        // Whitelist of sortable columns (DataTables column `data` name => real DB column).
+        // Anything outside this list falls back to Title, so the list stays
+        // alphabetical-by-Title unless the admin explicitly sorts another column.
+        $sortMap = [
+            'id'              => 'view_catalogs.catalog_id',
+            'title_statement' => 'view_catalogs.title_statement',
+            'material_type'   => 'view_catalogs.material_type',
+            'authors'         => 'view_catalogs.joint_authors',
+            'pub_year'        => 'view_catalogs.pub_year',
+        ];
+
         if(isset($request->filter_search)) {
-            $columnIndex = 0;
-            $columnName = 'view_catalogs.id';
-            $columnSortOrder = 'desc';
+            $columnName = 'view_catalogs.title_statement';
+            $columnSortOrder = 'asc';
             $searchValue = is_null($search_arr)  ? '' : $search_arr['value'];
             $searchTitle = $request->filter_search;
         } else {
-            $columnIndex = is_null($columnIndex_arr) ? 0 : $columnIndex_arr[0]['column']; // Column index
-            $columnName = is_null($columnName_arr) ? 'view_catalogs.id' : "view_catalogs." . $columnName_arr[$columnIndex]['data']; // Column name
-            $columnName = $columnName == "function" ? "view_catalogs.id" : $columnName;
-            $columnSortOrder = is_null($order_arr) ? 'desc' : $order_arr[0]['dir']; // asc or desc
+            $columnIndex = is_null($columnIndex_arr) ? 1 : $columnIndex_arr[0]['column']; // Column index (default: Title)
+            $requestedData = $columnName_arr[$columnIndex]['data'] ?? 'title_statement'; // DataTables column key
+            $columnName = $sortMap[$requestedData] ?? 'view_catalogs.title_statement'; // Map to DB column; default Title
+            $columnSortOrder = (isset($order_arr[0]['dir']) && strtolower($order_arr[0]['dir']) === 'desc') ? 'desc' : 'asc';
             $searchValue = is_null($search_arr['value']) ? '' : $search_arr['value']; // Search value
             $searchTitle = '';
         }
@@ -2069,7 +2089,7 @@ class CatalogingController extends Controller
         $totalRecords = $query->count();
         $totalRecordswithFilter = $query->count();
 
-        $records = $query->orderBy($columnName, $columnSortOrder === 'asc' ? 'desc' : 'desc')
+        $records = $query->orderBy($columnName, $columnSortOrder)
             ->skip($start)
             ->take($rowperpage)
             ->get();
