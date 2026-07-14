@@ -9,7 +9,7 @@
 	.shelf-browser .shelf-heading .orn { color:#00a496; font-size:20px; }
 	.shelf-browser .shelf-heading h2 { font-family:Georgia,"Palatino Linotype",serif; font-size:26px; letter-spacing:2px; text-transform:uppercase; color:#0a5f56; margin:4px 0 0; font-weight:700; }
 
-	.shelf-explorer { position:relative; max-width:1680px; margin:0 auto; padding:0 10px; }
+	.shelf-explorer { position:relative; max-width:1900px; margin:0 auto; padding:0 10px; }
 	.shelf-viewport { overflow:hidden; }
 	.shelf-cols { display:flex; gap:20px; align-items:flex-start; transition:transform .45s cubic-bezier(.4,0,.2,1); will-change:transform; }
 	.shelf-col { flex:0 0 auto; min-width:0; display:flex; flex-direction:column; border-radius:8px; overflow:hidden; align-self:stretch;
