@@ -102,13 +102,32 @@
 	if (!root) return;
 	var viewport = root.querySelector('.shelf-viewport');
 	var track = root.querySelector('.shelf-cols');
-	var cols = [].slice.call(root.querySelectorAll('.shelf-col'));
-	if (!cols.length || !track || !viewport) return;
+	if (!track || !viewport) return;
+	var realCols = [].slice.call(track.children);
+	var m = realCols.length;
+	if (!m) return;
 	var prev = root.querySelector('.shelf-page.prev');
 	var next = root.querySelector('.shelf-page.next');
-	var GAP = 20, start = 0;
+	var GAP = 20, PEEKF = 0.30, start = 0, animating = false;
 
-	// Per-row horizontal arrows — replace the scrollbar inside each shelf row.
+	// Infinite loop: clone the first/last shelves at each end so paging past an edge
+	// slides seamlessly and wraps around. (Only when there's more than one shelf.)
+	var LOOP = m > 1;
+	var CLONES = Math.min(3, m);   // >= the max shelves ever visible at once
+	if (LOOP) {
+		var frag = document.createDocumentFragment(), i;
+		for (i = 0; i < CLONES; i++) {                                   // append clones of the FIRST shelves
+			var a = realCols[i].cloneNode(true); a.classList.add('shelf-clone'); frag.appendChild(a);
+		}
+		track.appendChild(frag);
+		for (i = CLONES - 1; i >= 0; i--) {                             // prepend clones of the LAST shelves
+			var p = realCols[m - CLONES + i].cloneNode(true); p.classList.add('shelf-clone'); track.insertBefore(p, track.firstChild);
+		}
+	}
+	var cols = [].slice.call(track.children);
+	var base = LOOP ? CLONES : 0;   // physical index of real shelf 0
+
+	// Per-row horizontal arrows on every column (real + clone).
 	var rowUpds = [];
 	[].slice.call(root.querySelectorAll('.col-scroll-wrap')).forEach(function (wrap) {
 		var sc = wrap.querySelector('.col-scroll');
@@ -119,59 +138,74 @@
 			var overflow = sc.scrollWidth > sc.clientWidth + 4;
 			rp.hidden = rn.hidden = !overflow;
 			if (!overflow) return;
-			var max = sc.scrollWidth - sc.clientWidth - 2;
+			var mx = sc.scrollWidth - sc.clientWidth - 2;
 			rp.style.visibility = sc.scrollLeft <= 2 ? 'hidden' : 'visible';
-			rn.style.visibility = sc.scrollLeft >= max ? 'hidden' : 'visible';
+			rn.style.visibility = sc.scrollLeft >= mx ? 'hidden' : 'visible';
 		}
 		rp.addEventListener('click', function () { sc.scrollBy({ left: -sc.clientWidth * 0.8, behavior: 'smooth' }); });
 		rn.addEventListener('click', function () { sc.scrollBy({ left: sc.clientWidth * 0.8, behavior: 'smooth' }); });
 		sc.addEventListener('scroll', updRow);
 		rowUpds.push(updRow);
 	});
+	function updRows() { rowUpds.forEach(function (fn) { fn(); }); }
 
 	function windowSize() {
 		var w = window.innerWidth;
 		return w < 768 ? 1 : (w < 1100 ? 2 : 3);   // max 3 shelves at once
 	}
 
-	// animate=false for initial/resize layout (no slide); true for prev/next
+	function setTransform(offset, animate) {
+		if (!animate) track.style.transition = 'none';
+		track.style.transform = 'translateX(' + (-offset) + 'px)';
+		if (!animate) { void track.offsetWidth; track.style.transition = ''; }   // restore transition after reflow
+	}
+	function showArrows(show) {
+		var d = show ? '' : 'none';
+		if (prev) { prev.style.display = d; prev.disabled = false; }
+		if (next) { next.style.display = d; next.disabled = false; }
+	}
+
 	function refresh(animate) {
 		var n = windowSize();
 		var vp = viewport.clientWidth;
 
-		// If there are more shelves than fit, narrow the columns by PEEK so the adjacent
-		// shelf shows a sliver at the edge (a "there's more" hint). When they all fit, no peek.
-		var hasMore = cols.length > n;
-		var PEEK = !hasMore ? 0 : (n === 1 ? 34 : 48);
-		var colW = (vp - (n - 1) * GAP - PEEK) / n;
+		if (!LOOP || m <= n) {
+			// Every shelf fits — fill the width, no peek, no paging.
+			var cwFit = (vp - (m - 1) * GAP) / m;
+			cols.forEach(function (c) { c.style.width = cwFit + 'px'; });
+			setTransform(base * (cwFit + GAP), animate);
+			showArrows(false);
+			updRows();
+			return;
+		}
+
+		// Looping + both-side peek: narrow the columns so ~PEEKF of each neighbour shows.
+		var colW = (vp - (n + 1) * GAP) / (n + 2 * PEEKF);
+		var PEEK = PEEKF * colW;
 		cols.forEach(function (c) { c.style.width = colW + 'px'; });
 		var step = colW + GAP;
 
-		var maxStart = Math.max(0, cols.length - n);
-		if (start > maxStart) start = maxStart;
-		if (start < 0) start = 0;
-
-		// Right peek on every page except the last; on the last page shift flush-right so there's
-		// no empty gutter (which naturally reveals a left peek of the previous shelf instead).
-		var offset = start * step;
-		if (hasMore && start >= maxStart) offset += PEEK;
-
-		if (!animate) track.style.transition = 'none';
-		track.style.transform = 'translateX(' + (-offset) + 'px)';
-		if (!animate) { void track.offsetWidth; track.style.transition = ''; }   // restore transition after reflow
-
-		if (prev) prev.disabled = start <= 0;
-		if (next) next.disabled = start >= maxStart;
-		var hideNav = !hasMore;
-		if (prev) prev.style.display = hideNav ? 'none' : '';
-		if (next) next.style.display = hideNav ? 'none' : '';
-
-		// Column widths changed -> re-evaluate each row's overflow arrows.
-		rowUpds.forEach(function (fn) { fn(); });
+		var physical = base + start;   // start may be -1..m transiently while wrapping
+		setTransform(physical * step - GAP - PEEK, animate);
+		showArrows(true);
+		updRows();
 	}
 
-	if (prev) prev.addEventListener('click', function () { start = Math.max(0, start - 1); refresh(true); });
-	if (next) next.addEventListener('click', function () { start = start + 1; refresh(true); });
+	function go(delta) {
+		if (animating) return;   // ignore clicks mid-slide
+		animating = true;
+		start += delta;
+		refresh(true);
+		setTimeout(function () {
+			if (start < 0 || start > m - 1) {   // slid onto a clone -> jump to the matching real shelf
+				start = ((start % m) + m) % m;
+				refresh(false);
+			}
+			animating = false;
+		}, 470);
+	}
+	if (prev) prev.addEventListener('click', function () { go(-1); });
+	if (next) next.addEventListener('click', function () { go(1); });
 
 	var rt;
 	window.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(function () { refresh(false); }, 120); });
