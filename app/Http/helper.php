@@ -307,6 +307,19 @@ function getMaterials()
 }
 
 /**
+ * Centralised in-app notifications for the current user (patron or staff),
+ * computed once per request. See App\Services\NotificationService.
+ * Returns ['count' => int, 'items' => [ ['icon','color','title','text','url'], ... ]].
+ */
+function notifications()
+{
+	static $cache = null;
+	if ($cache !== null) return $cache;
+	if (! Auth::check()) return $cache = ['count' => 0, 'items' => []];
+	return $cache = App\Services\NotificationService::for(Auth::user());
+}
+
+/**
  * Read an app setting (settings table), cached per request. Falls back to $default
  * if the table/key is missing (e.g. before the settings table exists).
  */

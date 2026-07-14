@@ -67,6 +67,29 @@
 					<div class="main-menu">
 						<ul>
 							@auth
+							@if(Auth::user()->usertype === 'Patron')
+							<li class="nfy-bell-li" style="position:relative; list-style:none;">
+								@php $nfyCount = notifications()['count']; @endphp
+								<a href="#0" class="nfy-bell-toggle" style="position:relative; display:inline-block;">
+									<i class="pe-7s-bell" style="font-size:28px; vertical-align:middle;"></i>
+									@if($nfyCount > 0)<span class="nfy-badge">{{ $nfyCount > 9 ? '9+' : $nfyCount }}</span>@endif
+								</a>
+								<div class="nfy-pop">
+									@include('partials.notifications')
+								</div>
+							</li>
+							<style>
+								.nfy-pop { display:none; position:absolute; right:0; top:100%; z-index:1050; background:#fff; border:1px solid #e5e8ee; border-radius:12px; box-shadow:0 12px 32px rgba(20,30,60,.16); overflow:hidden; margin-top:8px; }
+								.nfy-pop.open { display:block; }
+							</style>
+							<script>
+							document.addEventListener('click', function (e) {
+								var pop = document.querySelector('.nfy-pop'); if (!pop) return;
+								if (e.target.closest('.nfy-bell-toggle')) { e.preventDefault(); pop.classList.toggle('open'); }
+								else if (!e.target.closest('.nfy-pop')) { pop.classList.remove('open'); }
+							});
+							</script>
+							@endif
 							<li class="submenu">
 								<a href="#0" class="show-submenu">Welcome, {{Auth::user()->name}} <i class="icon-down-open-mini"></i></a>
 								<ul>
