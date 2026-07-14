@@ -113,21 +113,20 @@ class NotificationService
                 url('/admin/reservations'));
         }
 
-        // Inquiries still awaiting a staff reply (no reply from a non-patron yet).
-        $inq = DB::table('inquiries')
-            ->whereNotExists(function ($q) {
-                $q->select(DB::raw(1))
-                    ->from('reply_inquiries')
-                    ->join('users', 'users.id', '=', 'reply_inquiries.user_id')
-                    ->whereColumn('reply_inquiries.inquiry_id', 'inquiries.id')
-                    ->where('users.usertype', '!=', 'Patron');
+        // Inquiries with patron activity THIS admin hasn't opened yet. Opening the
+        // thread (clicking Reply) records a per-admin seen and clears it — no reply
+        // required. A later patron follow-up makes it unread again.
+        $inq = DB::table('inquiries as i')
+            ->leftJoin('inquiry_seens as s', function ($j) use ($user) {
+                $j->on('s.inquiry_id', '=', 'i.id')->where('s.user_id', '=', $user->id);
             })
+            ->whereRaw("GREATEST(i.created_at, COALESCE((SELECT MAX(r.created_at) FROM reply_inquiries r WHERE r.inquiry_id = i.id AND r.user_id = i.user_id), i.created_at)) > COALESCE(s.seen_at, '1970-01-01 00:00:00')")
             ->count();
         if ($inq > 0) {
             $count += $inq;
             $items[] = self::item('help-circle', 'info',
-                $inq . ' ' . self::plural($inq, 'inquiry', 'inquiries') . ' awaiting reply',
-                'Patrons waiting for a response',
+                $inq . ' unread ' . self::plural($inq, 'inquiry', 'inquiries'),
+                'New questions or replies from patrons',
                 url('/admin/inquiry'));
         }
 

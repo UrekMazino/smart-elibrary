@@ -20,6 +20,12 @@
 		.container-msg-reply.darker { border-color:#0d6efd; background-color:#0d6efd; color:#fff; }
 		.time-right { display:block; text-align:right; color:rgba(255,255,255,.85); font-size:11px; }
 		.time-left  { display:block; text-align:left;  color:#8a94a6; font-size:11px; }
+
+		/* Messenger-style "Seen by" admin avatars (stacked, hover for name). */
+		.seen-row { display:flex; align-items:center; justify-content:flex-end; margin-top:6px; padding-right:2px; }
+		.seen-lbl { font-size:11px; color:#8a94a6; margin-right:6px; }
+		.seen-ava { width:22px; height:22px; border-radius:50%; background:#6571ff; color:#fff; font-size:9.5px; font-weight:700; display:inline-flex; align-items:center; justify-content:center; box-shadow:0 0 0 2px #fff; cursor:default; margin-left:-6px; }
+		.seen-ava:first-of-type { margin-left:0; }
 	</style>
 @endsection
 
@@ -152,6 +158,18 @@
 					box.append('<div class="container-msg-reply darker"><p>' + obj.replied_msg + '</p><span class="time-right"><small>' + obj.replied_by_name + ' | ' + obj.thread_date + '</small></span></div>');
 				} else {
 					box.append('<div class="container-msg-reply"><p>' + obj.replied_msg + '</p><span class="time-left"><small>' + obj.replied_by_name + ' | ' + obj.thread_date + '</small></span></div>');
+				}
+			});
+
+			// Seen receipts (Messenger-style): one avatar per admin who has read this
+			// thread; hover reveals the admin's name and time.
+			$.getJSON("{{ url('inquiry/seen-receipts/') }}/" + id).done(function (res) {
+				$('#inquiry_seen_row').remove();
+				if (res.seens && res.seens.length) {
+					var av = res.seens.map(function (s) {
+						return '<span class="seen-ava" title="Seen by ' + esc(s.name) + ' &middot; ' + esc(s.seen_at) + '">' + esc(s.initials) + '</span>';
+					}).join('');
+					box.append('<div id="inquiry_seen_row" class="seen-row"><span class="seen-lbl">Seen by</span>' + av + '</div>');
 				}
 			});
 		});

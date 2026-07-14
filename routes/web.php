@@ -73,6 +73,7 @@ Route::controller(InquiryController::class)->group(function () {
     Route::post('/inquiry/reply', 'reply');
     Route::get('/inquiry/json/{id}', 'json2');
     Route::get('/inquiry/seen/{id}', 'seen');
+    Route::get('/inquiry/seen-receipts/{id}', 'seenReceipts');
 });
 
 

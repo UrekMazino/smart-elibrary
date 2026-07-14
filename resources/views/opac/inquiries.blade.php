@@ -32,6 +32,8 @@
 	.container-msg-reply { border: 1px solid #e2e6ec; background-color: #f4f6f9; color: #222; border-radius: 10px; padding: 10px 14px; margin: 8px 0; }
 	.container-msg-reply p { margin: 0 0 4px; }
 	.container-msg-reply.darker { border-color: #00a496; background-color: #00a496; color: #fff; }
+	.seen-row-patron { display: flex; justify-content: flex-end; margin-top: 4px; padding-right: 2px; }
+	.seen-ava-lib { width: 22px; height: 22px; border-radius: 50%; background: #00a496; color: #fff; font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 0 0 2px #fff; cursor: default; }
 	.time-right { display: block; text-align: right; color: rgba(255,255,255,.85); font-size: 11px; }
 	.time-left  { display: block; text-align: left;  color: #8a94a6; font-size: 11px; }
 </style>
@@ -99,6 +101,15 @@ function showThread(id, userid) {
 				$("#inquiry_message").append('<div class="container-msg-reply darker"><p>' + obj.replied_msg + '</p><span class="time-right"><small>You | ' + obj.thread_date + '</small></span></div>');
 			} else {
 				$("#inquiry_message").append('<div class="container-msg-reply"><p>' + obj.replied_msg + '</p><span class="time-left"><small>Library | ' + obj.thread_date + '</small></span></div>');
+			}
+		});
+
+		// Show a single "Seen by Library" avatar when the library has read your
+		// latest message — one avatar regardless of how many admins actually saw it.
+		$.getJSON("{{ url('inquiry/seen-receipts/') }}/" + id).done(function (res) {
+			$('#inquiry_seen_row').remove();
+			if (res.lastFromPatron && res.anySeen) {
+				$("#inquiry_message").append('<div id="inquiry_seen_row" class="seen-row-patron"><span class="seen-ava-lib" title="Seen by Library">L</span></div>');
 			}
 		});
 	}).fail(function (datajson) {

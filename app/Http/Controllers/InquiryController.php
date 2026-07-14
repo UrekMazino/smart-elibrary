@@ -72,6 +72,16 @@ class InquiryController extends Controller
 
     public function json2($id)
     {
+        // Messenger-style read receipt: when an admin OPENS the thread (clicks Reply),
+        // record a per-admin "seen" — reading it is enough to clear their notification,
+        // no reply required. Multiple admins each get their own row.
+        if (Auth::check() && Auth::user()->usertype !== 'Patron') {
+            \DB::table('inquiry_seens')->updateOrInsert(
+                ['inquiry_id' => $id, 'user_id' => Auth::user()->id],
+                ['seen_at' => now(), 'updated_at' => now()]
+            );
+        }
+
         $inq = App\Models\View_inquiry_thread::where('id',$id)->orderBy('thread_date')->get();
         return $inq;
     }
@@ -80,5 +90,57 @@ class InquiryController extends Controller
     {
         $inq = App\Models\Reply_inquiry::where('inquiry_id',$id)->where('user_id','!=',Auth::user()->id)->update(['seen' => date('Y-m-d H:i:s'),'seen_by' => Auth::user()->id]);
         return $inq;
+    }
+
+    /**
+     * Seen receipts for an inquiry thread.
+     *   - admins: every admin who has viewed the thread at/after the latest message
+     *     (name + initials + time), so the chat can show multiple "Seen by" avatars.
+     *   - patron: a single "Seen by Library" avatar when the library has read the
+     *     patron's most recent message (lastFromPatron && anySeen), regardless of how
+     *     many admins actually saw it.
+     */
+    public function seenReceipts($id)
+    {
+        $inquiry = App\Models\Inquiry::find($id);
+        if (! $inquiry) {
+            return response()->json(['seens' => [], 'anySeen' => false, 'lastFromPatron' => false]);
+        }
+
+        // Latest activity in the thread (real timestamps from the base tables) and
+        // whether that last message came from the patron who owns the inquiry.
+        $lastReply = \DB::table('reply_inquiries')->where('inquiry_id', $id)->orderByDesc('created_at')->first();
+        if ($lastReply) {
+            $lastAt = $lastReply->created_at;
+            $lastFromPatron = ((int) $lastReply->user_id === (int) $inquiry->user_id);
+        } else {
+            $lastAt = $inquiry->created_at;   // only the original patron message
+            $lastFromPatron = true;
+        }
+
+        // Admins who have seen the thread at/after that last message.
+        $seens = \DB::table('inquiry_seens as s')
+            ->join('users as u', 'u.id', '=', 's.user_id')
+            ->where('s.inquiry_id', $id)
+            ->whereNotNull('s.seen_at')
+            ->where('s.seen_at', '>=', $lastAt)
+            ->orderBy('s.seen_at')
+            ->get(['u.id', 'u.name', 's.seen_at']);
+
+        $items = $seens->map(function ($s) {
+            $parts = preg_split('/\s+/', trim((string) $s->name)) ?: [];
+            $initials = strtoupper(substr($parts[0] ?? '', 0, 1) . (count($parts) > 1 ? substr(end($parts), 0, 1) : ''));
+            return [
+                'name'     => $s->name,
+                'initials' => $initials !== '' ? $initials : '?',
+                'seen_at'  => \Carbon\Carbon::parse($s->seen_at)->format('M d, Y g:i A'),
+            ];
+        })->values();
+
+        return response()->json([
+            'seens'          => $items,
+            'anySeen'        => $items->count() > 0,
+            'lastFromPatron' => $lastFromPatron,
+        ]);
     }
 }
