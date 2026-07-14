@@ -49,7 +49,7 @@ Route::controller(OPACController::class)->prefix('patron')->group(function () {
     Route::get('/to-review', 'toReview');
     Route::get('/inquiries', 'inquiries');
     Route::get('/reservation/chat-json/{reservation_code}', 'reservationChatJson');
-    Route::post('/reservation/chat/reply', 'reservationChatReply');
+    Route::post('/reservation/chat/reply', 'reservationChatReply')->middleware('throttle:20,1');
 });
 
 
@@ -70,10 +70,11 @@ Route::controller(SettingController::class)->group(function () {
 use App\Http\Controllers\InquiryController;
 Route::controller(InquiryController::class)->group(function () {
     Route::post('/inquiry/submit', 'create')->middleware('throttle:5,1'); // max 5 inquiry submits/min
-    Route::post('/inquiry/reply', 'reply');
-    Route::get('/inquiry/json/{id}', 'json2');
-    Route::get('/inquiry/seen/{id}', 'seen');
-    Route::get('/inquiry/seen-receipts/{id}', 'seenReceipts');
+    // Reply + thread endpoints require auth; ownership is enforced in the controller.
+    Route::post('/inquiry/reply', 'reply')->middleware(['auth', 'throttle:20,1']);
+    Route::get('/inquiry/json/{id}', 'json2')->middleware('auth');
+    Route::get('/inquiry/seen/{id}', 'seen')->middleware('auth');
+    Route::get('/inquiry/seen-receipts/{id}', 'seenReceipts')->middleware('auth');
 });
 
 

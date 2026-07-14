@@ -23,6 +23,12 @@ class InquiryController extends Controller
             return redirect()->back()->with('error', 'Please enter both a subject and your inquiry message.');
         }
 
+        // Cap length to prevent oversized-payload abuse.
+        if(mb_strlen((string) request()->inquiry_subject) > 255 || mb_strlen((string) request()->inquiry_message) > 5000)
+        {
+            return redirect()->back()->with('error', 'Your subject (max 255) or message (max 5000) is too long.');
+        }
+
         $inq = new App\Models\Inquiry;
         $inq->subject = request()->inquiry_subject;
 
@@ -54,28 +60,56 @@ class InquiryController extends Controller
 
     public function reply()
     {
+        // Cap length to prevent oversized-payload abuse; message is required.
+        $data = request()->validate([
+            'catalog_id_inquiry_reply' => 'required|integer',
+            'inquiry_message_reply'    => 'required|string|max:5000',
+        ]);
+
         // Blocked accounts cannot use chat / inquiry (admins are never blocked).
-        if(Auth::check() && Auth::user()->is_blocked)
+        if(Auth::user()->is_blocked)
         {
             return redirect()->back()->with('error', 'Your account is blocked from replying to inquiries. Please contact the library.');
         }
 
+        // A patron may only reply to their OWN inquiry; staff may reply to any.
+        $this->authorizeInquiry($data['catalog_id_inquiry_reply']);
+
         $inq = new App\Models\Reply_inquiry;
-        $inq->inquiry_id = request()->catalog_id_inquiry_reply;
+        $inq->inquiry_id = $data['catalog_id_inquiry_reply'];
         $inq->user_id = Auth::user()->id;
-        $inq->message = request()->inquiry_message_reply;
+        $inq->message = $data['inquiry_message_reply'];
         $inq->save();
 
         // Return to whichever inquiries page the reply was sent from (admin or patron).
         return redirect()->back()->with('success', 'Reply sent.');
     }
 
+    /**
+     * Authorize access to an inquiry thread: a patron may only touch their OWN
+     * inquiry; staff (non-Patron) may access any. Prevents IDOR / id-enumeration
+     * across the inquiry endpoints. Auth itself is enforced by the route middleware;
+     * this is the per-record check (defence in depth).
+     */
+    private function authorizeInquiry($inquiryId)
+    {
+        $user = Auth::user();
+        abort_if(! $user, 403);
+        if ($user->usertype !== 'Patron') {
+            return; // staff can access all inquiries
+        }
+        $owns = App\Models\Inquiry::where('id', $inquiryId)->where('user_id', $user->id)->exists();
+        abort_if(! $owns, 403);
+    }
+
     public function json2($id)
     {
+        $this->authorizeInquiry($id);
+
         // Messenger-style read receipt: when an admin OPENS the thread (clicks Reply),
         // record a per-admin "seen" — reading it is enough to clear their notification,
         // no reply required. Multiple admins each get their own row.
-        if (Auth::check() && Auth::user()->usertype !== 'Patron') {
+        if (Auth::user()->usertype !== 'Patron') {
             \DB::table('inquiry_seens')->updateOrInsert(
                 ['inquiry_id' => $id, 'user_id' => Auth::user()->id],
                 ['seen_at' => now(), 'updated_at' => now()]
@@ -88,6 +122,7 @@ class InquiryController extends Controller
 
     public function seen($id)
     {
+        $this->authorizeInquiry($id);
         $inq = App\Models\Reply_inquiry::where('inquiry_id',$id)->where('user_id','!=',Auth::user()->id)->update(['seen' => date('Y-m-d H:i:s'),'seen_by' => Auth::user()->id]);
         return $inq;
     }
@@ -102,6 +137,8 @@ class InquiryController extends Controller
      */
     public function seenReceipts($id)
     {
+        $this->authorizeInquiry($id);
+
         $inquiry = App\Models\Inquiry::find($id);
         if (! $inquiry) {
             return response()->json(['seens' => [], 'anySeen' => false, 'lastFromPatron' => false]);

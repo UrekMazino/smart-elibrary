@@ -149,9 +149,9 @@
 		$.getJSON("{{ url('inquiry/json/') }}/" + id).done(function (datajson) {
 			jQuery.each(datajson, function (i, obj) {
 				if (userid == obj.replied_by) {
-					box.append('<div class="container-msg-reply darker"><p>' + obj.replied_msg + '</p><span class="time-right"><small>' + obj.replied_by_name + ' | ' + obj.thread_date + '</small></span></div>');
+					box.append('<div class="container-msg-reply darker"><p>' + esc(obj.replied_msg) + '</p><span class="time-right"><small>' + esc(obj.replied_by_name) + ' | ' + esc(obj.thread_date) + '</small></span></div>');
 				} else {
-					box.append('<div class="container-msg-reply"><p>' + obj.replied_msg + '</p><span class="time-left"><small>' + obj.replied_by_name + ' | ' + obj.thread_date + '</small></span></div>');
+					box.append('<div class="container-msg-reply"><p>' + esc(obj.replied_msg) + '</p><span class="time-left"><small>' + esc(obj.replied_by_name) + ' | ' + esc(obj.thread_date) + '</small></span></div>');
 				}
 			});
 

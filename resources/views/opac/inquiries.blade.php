@@ -89,6 +89,7 @@
 @section('js')
 <script type="text/javascript">
 function showThread(id, userid) {
+	var esc = function (s) { return $('<div>').text(s == null ? '' : s).html(); };
 	$("#catalog_id_inquiry_reply").val(id);
 
 	$.getJSON("{{ url('inquiry/json/') }}/" + id, function (datajson) {
@@ -98,9 +99,9 @@ function showThread(id, userid) {
 			// Patron perspective: your own messages show "You"; every library/admin reply
 			// shows "Library" (the specific admin's name is only revealed in the admin UI).
 			if (userid == obj.replied_by) {
-				$("#inquiry_message").append('<div class="container-msg-reply darker"><p>' + obj.replied_msg + '</p><span class="time-right"><small>You | ' + obj.thread_date + '</small></span></div>');
+				$("#inquiry_message").append('<div class="container-msg-reply darker"><p>' + esc(obj.replied_msg) + '</p><span class="time-right"><small>You | ' + obj.thread_date + '</small></span></div>');
 			} else {
-				$("#inquiry_message").append('<div class="container-msg-reply"><p>' + obj.replied_msg + '</p><span class="time-left"><small>Library | ' + obj.thread_date + '</small></span></div>');
+				$("#inquiry_message").append('<div class="container-msg-reply"><p>' + esc(obj.replied_msg) + '</p><span class="time-left"><small>Library | ' + obj.thread_date + '</small></span></div>');
 			}
 		});
 

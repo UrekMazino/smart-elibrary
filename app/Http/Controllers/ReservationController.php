@@ -361,8 +361,8 @@ class ReservationController extends Controller
     public function reservationChatReply(Request $request)
     {
         $request->validate([
-            'reservation_code' => 'required|string',
-            'message'          => 'required|string',
+            'reservation_code' => 'required|string|max:100',
+            'message'          => 'required|string|max:5000',
         ]);
 
         // Resolve the patron this reservation belongs to (for thread ownership).
