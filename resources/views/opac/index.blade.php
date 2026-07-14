@@ -35,10 +35,10 @@
 #sec-search, #sec-shelves, #sec-misc { scroll-margin-top: 110px; }
 .section-nav { position: fixed; top: 50%; right: 20px; transform: translateY(-50%); z-index: 900; display: flex; flex-direction: column; gap: 16px; }
 .section-nav a { position: relative; display: block; width: 13px; height: 13px; }
-.section-nav a i { position: absolute; inset: 0; border-radius: 50%; border: 2px solid #00a496; background: transparent; transition: background .2s ease, transform .2s ease; }
-.section-nav a:hover i { background: #00a496; }
-.section-nav a.active i { background: #00a496; transform: scale(1.28); }
-.section-nav a::after { content: attr(data-label); position: absolute; right: 24px; top: 50%; transform: translateY(-50%); white-space: nowrap; background: #0a5f56; color: #fff; font-size: 12px; font-weight: 600; letter-spacing: .3px; padding: 4px 10px; border-radius: 6px; box-shadow: 0 3px 8px rgba(0,0,0,.2); opacity: 0; pointer-events: none; transition: opacity .18s ease; }
+.section-nav a i { position: absolute; inset: 0; border-radius: 50%; border: 2px solid #d4618a; background: transparent; transition: background .2s ease, transform .2s ease; }
+.section-nav a:hover i { background: #d4618a; }
+.section-nav a.active i { background: #d4618a; transform: scale(1.28); }
+.section-nav a::after { content: attr(data-label); position: absolute; right: 24px; top: 50%; transform: translateY(-50%); white-space: nowrap; background: #a83e63; color: #fff; font-size: 12px; font-weight: 600; letter-spacing: .3px; padding: 4px 10px; border-radius: 6px; box-shadow: 0 3px 8px rgba(0,0,0,.2); opacity: 0; pointer-events: none; transition: opacity .18s ease; }
 .section-nav a:hover::after, .section-nav a.active::after { opacity: 1; }
 @media (max-width: 900px) { .section-nav { display: none; } }
 </style>
