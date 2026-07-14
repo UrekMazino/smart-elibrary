@@ -335,7 +335,8 @@
     </div>
     --}}
 
-    {{-- ============ Client Satisfaction Feedback (CSF) ============ --}}
+    {{-- ============ Client Satisfaction Feedback — hidden per request (not needed for now) ============ --}}
+    {{--
     <div class="dash-section-label">Client Satisfaction Feedback</div>
     <div class="row">
       <div class="col-xl-3 col-md-4 col-sm-6 grid-margin stretch-card">
@@ -395,6 +396,7 @@
         </div>
       </div>
     </div>
+    --}}
 
     {{-- ============ Website traffic ============ --}}
     <div class="dash-section-label">Website Traffic</div>
