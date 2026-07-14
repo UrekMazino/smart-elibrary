@@ -33,7 +33,7 @@
   font-weight: 500;
 }
 .main-menu > ul > li:hover > a {
-  color: #e74e84;
+  color: #c32148;
 }
 
 /* Opacity mask when left open */
@@ -94,7 +94,7 @@
   /* Submenu*/
   .main-menu ul ul, .main-menu ul li .menu-wrapper {
     position: absolute;
-    border-top: 2px solid #e74e84;
+    border-top: 2px solid #c32148;
     z-index: 1;
     visibility: hidden;
     left: 3px;
@@ -182,7 +182,7 @@
 
   .main-menu ul ul li:hover > a {
     background-color: #f9f9f9;
-    color: #e74e84;
+    color: #c32148;
     padding-left: 18px;
   }
 
@@ -192,7 +192,7 @@
   }
   .main-menu ul ul li.third-level > a:hover {
     background-color: #f9f9f9;
-    color: #e74e84;
+    color: #c32148;
     padding-left: 18px;
     opacity: 1;
   }
@@ -227,7 +227,7 @@
   a.show-submenu:focus,
   a.show-submenu-mega:hover,
   a.show-submenu-mega:focus {
-    color: #e74e84 !important;
+    color: #c32148 !important;
     background-color: #f9f9f9;
   }
 
@@ -253,7 +253,7 @@
   }
 
   .main-menu a:hover {
-    color: #e74e84 !important;
+    color: #c32148 !important;
   }
 
   .main-menu ul > li {

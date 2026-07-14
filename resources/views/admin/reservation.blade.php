@@ -137,7 +137,7 @@ function loadReservationChat() {
             var mine = (obj.sender_role === 'admin');
             var name = obj.sender_name || (mine ? 'Admin' : 'Patron');
             var side = mine ? 'text-end' : 'text-start';
-            var bubble = mine ? 'background:#0d6efd;color:#fff;' : 'background:#f4f6f9;color:#222;';
+            var bubble = mine ? 'background:#7f410a;color:#fff;' : 'background:#f4f6f9;color:#222;';
             box.append(
                 '<div class="' + side + '" style="margin:8px 0;">' +
                   '<div style="display:inline-block;max-width:80%;text-align:left;border-radius:10px;padding:8px 12px;' + bubble + '">' +

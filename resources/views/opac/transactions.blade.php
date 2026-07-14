@@ -14,7 +14,7 @@
 		.tx-body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
 		.tx-title { margin: 0 0 4px; font-size: 15px; font-weight: 600; line-height: 1.35; color: #222; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 		.tx-title a { color: inherit; text-decoration: none; }
-		.tx-title a:hover { color: #00a496; }
+		.tx-title a:hover { color: #7f410a; }
 		.tx-authors { font-size: 12.5px; color: #6b7280; margin-bottom: 8px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
 		.tx-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: #8a94a6; }
 		.tx-meta .rating { line-height: 1; }
@@ -24,9 +24,9 @@
 		.tx-status.s-approved { background: #e3f5ef; color: #087f5b; }
 		.tx-status.s-checkout { background: #fff4e5; color: #b26a00; }
 		.tx-status.s-declined { background: #fdecea; color: #c0392b; }
-		.tx-status.s-complete { background: #e7f5f3; color: #00897b; }
-		.tx-msg-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: #fff; background: #00a496; border: 0; border-radius: 7px; padding: 7px 14px; cursor: pointer; transition: background .15s; white-space: nowrap; }
-		.tx-msg-btn:hover { background: #00897b; }
+		.tx-status.s-complete { background: #f7efe6; color: #5b3611; }
+		.tx-msg-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: #fff; background: #7f410a; border: 0; border-radius: 7px; padding: 7px 14px; cursor: pointer; transition: background .15s; white-space: nowrap; }
+		.tx-msg-btn:hover { background: #5b3611; }
 		.tx-msg-btn .tx-unread { background: #e5484d; color: #fff; font-size: 10px; font-weight: 700; border-radius: 20px; padding: 1px 6px; line-height: 1.4; }
 		.tx-empty { text-align: center; color: #8a94a6; padding: 48px 16px; background: #fff; border: 1px dashed #dfe3e8; border-radius: 10px; }
 		@media (max-width: 576px) {
@@ -142,7 +142,7 @@ function loadResChat() {
 			var mine = (obj.sender_role === 'patron');
 			var who = mine ? 'You' : 'Library';
 			var align = mine ? 'right' : 'left';
-			var bg = mine ? 'background:#00a496;color:#fff;' : 'background:#f0f2f5;color:#222;';
+			var bg = mine ? 'background:#7f410a;color:#fff;' : 'background:#f0f2f5;color:#222;';
 			box.append(
 				'<div style="text-align:' + align + ';margin:8px 0;">' +
 					'<div style="display:inline-block;max-width:80%;text-align:left;border-radius:10px;padding:8px 12px;' + bg + '">' +

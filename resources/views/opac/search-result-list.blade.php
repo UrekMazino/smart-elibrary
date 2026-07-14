@@ -8,7 +8,7 @@
     .ol-list-cover { flex-shrink: 0; width: 75px; text-align: center; }
     .ol-list-cover img { max-width: 75px; max-height: 105px; width: auto; box-shadow: 0 1px 5px rgba(0,0,0,.2); border-radius: 2px; }
     .ol-list-body { flex: 1; min-width: 0; }
-    .ol-list-title { display: inline-block; font-size: 18px; font-weight: 600; line-height: 1.25; color: #0176d3; text-decoration: none; }
+    .ol-list-title { display: inline-block; font-size: 18px; font-weight: 600; line-height: 1.25; color: #7f410a; text-decoration: none; }
     .ol-list-title:hover { text-decoration: underline; }
     .ol-list-author { color: #555; font-size: 14px; margin-top: 2px; }
     .ol-list-rating { margin-top: 5px; }
@@ -17,7 +17,7 @@
     .ol-list-actions .btn_1.ol-full-desc { display: block; width: 100%; text-align: center; border-radius: 4px; font-size: 12px; padding: 6px 10px; white-space: nowrap; }
     .ol-btn-row { display: flex; gap: 6px; }
     .ol-icon-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; height: 30px; border: 1px solid #d0d7de; border-radius: 4px; background: #fff; color: #3f4079; font-size: 14px; cursor: pointer; text-decoration: none; transition: background .12s, color .12s, border-color .12s; }
-    .ol-icon-btn:hover { background: #00a496; border-color: #00a496; color: #fff; }
+    .ol-icon-btn:hover { background: #7f410a; border-color: #7f410a; color: #fff; }
     .ol-icon-btn.disabled { opacity: .5; cursor: not-allowed; background: #f4f5f7; border-color: #e1e4e8; color: #9aa0a6; }
     .ol-icon-btn.disabled:hover { background: #f4f5f7; border-color: #e1e4e8; color: #9aa0a6; }
     @media (max-width: 575px) { .ol-list-actions { display: none; } }
@@ -38,15 +38,15 @@
     .layout_view_inline { margin-bottom: 0; padding: 4px 9px; line-height: 1; }
     .layout_view_inline a { color: #3f4079; font-size: 17px; text-decoration: none; }
     .layout_view_inline a + a { margin-left: 9px; }
-    .layout_view_inline a.active { color: #00a496; }
-    .layout_view_inline a:hover { color: #e74e84; }
+    .layout_view_inline a.active { color: #7f410a; }
+    .layout_view_inline a:hover { color: #c32148; }
     /* Always-visible search bar; JS docks it just below the sticky header. */
     #results { position: -webkit-sticky; position: sticky; top: 0; z-index: 1001; box-shadow: 0 3px 10px rgba(0,0,0,.15); }
     </style>
  @endsection
 
 @section('content')
-   <div id="results" style="background-color: #00a496;">
+   <div id="results" style="background-color: #7f410a;">
        <div class="container">
            <div class="row align-items-center">
                <div class="col-md-6">
@@ -143,7 +143,7 @@
 
 			<aside class="col-xl-3 col-lg-3" id="sidebar">
 				<!-- <div class="box_general_3 booking">
-						<div class="title" style="background-color: #00a496;">
+						<div class="title" style="background-color: #7f410a;">
 						<h3>Filter Result</h3>
 						</div>
 						<ul class="treatments clearfix">
@@ -171,7 +171,7 @@
 
 
 				<div class="box_general_3 booking">
-						<div class="title title_with_layout" style="background-color: #00a496;">
+						<div class="title title_with_layout" style="background-color: #7f410a;">
 						<h3>Filter Result</h3>
 						<div class="layout_view layout_view_inline">
 							<a href="#0" data-bs-toggle="tooltip" data-bs-placement="top" title="Grid View"><i class="icon-th" onclick="changeLayout('grid')"></i></a>

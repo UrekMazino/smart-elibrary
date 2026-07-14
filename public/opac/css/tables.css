@@ -275,8 +275,8 @@ a:hover {
     display: none;
   }
   .popular .pricing-wrapper > li {
-    box-shadow: inset 0 0 0 3px #e74e84;
-    border: 2px solid #e74e84;
+    box-shadow: inset 0 0 0 3px #c32148;
+    border: 2px solid #c32148;
   }
   .cd-has-margins .pricing-wrapper > li, .cd-has-margins .popular .pricing-wrapper > li {
     -webkit-box-shadow: 0px 0px 15px 0px rgba(0, 0, 0, 0.1);
@@ -339,7 +339,7 @@ a:hover {
   color: #fff;
 }
 .popular .pricing-header {
-  background-color: #e74e84;
+  background-color: #c32148;
 }
 @media only screen and (min-width: 768px) {
   .pricing-header {
@@ -351,7 +351,7 @@ a:hover {
     background-color: transparent;
   }
   .popular .pricing-header {
-    color: #e74e84;
+    color: #c32148;
     background-color: transparent;
   }
   .pricing-header h2 {
@@ -397,7 +397,7 @@ a:hover {
   }
   .popular .currency, .popular
   .price-duration {
-    color: #e74e84;
+    color: #c32148;
   }
 
   .currency {
@@ -562,7 +562,7 @@ a:hover {
     color: #fff;
   }
   .popular .select-plan {
-    background-color: #e74e84;
+    background-color: #c32148;
   }
   .no-touch .popular .select-plan:hover {
     background-color: #e43874;

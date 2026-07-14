@@ -9,19 +9,19 @@
 	.tx-head p { color: #8a94a6; font-size: 14px; margin: 0; }
 
 	.pf-card { background: #fff; border: 1px solid #eef0f2; border-radius: 10px; box-shadow: 0 1px 2px rgba(0,0,0,.04); overflow: hidden; }
-	.pf-identity { display: flex; align-items: center; gap: 16px; padding: 20px 22px; background: linear-gradient(90deg, #e7f5f3, #f4faf9); border-bottom: 1px solid #eef0f2; }
-	.pf-avatar { flex: 0 0 auto; width: 56px; height: 56px; border-radius: 50%; background: #00a496; color: #fff; font-size: 20px; font-weight: 700; display: flex; align-items: center; justify-content: center; letter-spacing: .5px; }
+	.pf-identity { display: flex; align-items: center; gap: 16px; padding: 20px 22px; background: linear-gradient(90deg, #f7efe6, #f4faf9); border-bottom: 1px solid #eef0f2; }
+	.pf-avatar { flex: 0 0 auto; width: 56px; height: 56px; border-radius: 50%; background: #7f410a; color: #fff; font-size: 20px; font-weight: 700; display: flex; align-items: center; justify-content: center; letter-spacing: .5px; }
 	.pf-name { font-size: 17px; font-weight: 700; color: #222; line-height: 1.2; }
 	.pf-sub { font-size: 13px; color: #6b7280; margin-top: 3px; }
 	.pf-body { padding: 22px; }
 	.pf-card .form-label, .pf-card label { font-size: 12.5px; font-weight: 600; color: #55606b; margin-bottom: 5px; }
 	.pf-card .form-control { border: 1px solid #dfe3e8; border-radius: 7px; padding: 9px 12px; font-size: 14px; color: #333; background: #fff; }
-	.pf-card .form-control:focus { border-color: #00a496; box-shadow: 0 0 0 3px rgba(0,164,150,.12); outline: none; }
-	.pf-card .form-check-input:checked { background-color: #00a496; border-color: #00a496; }
+	.pf-card .form-control:focus { border-color: #7f410a; box-shadow: 0 0 0 3px rgba(127,65,10,.12); outline: none; }
+	.pf-card .form-check-input:checked { background-color: #7f410a; border-color: #7f410a; }
 	.pf-actions { display: flex; justify-content: flex-end; align-items: center; gap: 10px; padding: 16px 22px; border-top: 1px solid #eef0f2; background: #fbfcfd; }
 	.pf-btn { border: 0; border-radius: 7px; padding: 9px 20px; font-size: 13.5px; font-weight: 600; cursor: pointer; transition: background .15s, border-color .15s, color .15s; }
-	.pf-btn-save { background: #00a496; color: #fff; }
-	.pf-btn-save:hover { background: #00897b; color: #fff; }
+	.pf-btn-save { background: #7f410a; color: #fff; }
+	.pf-btn-save:hover { background: #5b3611; color: #fff; }
 	.pf-btn-pass { background: #fff; color: #c0392b; border: 1px solid #f0c8c2; }
 	.pf-btn-pass:hover { background: #fdecea; border-color: #e2b3ab; }
 </style>

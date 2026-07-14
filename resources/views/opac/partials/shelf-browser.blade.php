@@ -6,17 +6,17 @@
 	/* Heading now carries the prev/next paging arrows, flanking the title. */
 	.shelf-browser .shelf-heading { display:flex; align-items:center; justify-content:center; gap:20px; margin-bottom:22px; }
 	.shelf-browser .shelf-title { text-align:center; }
-	.shelf-browser .shelf-heading .orn { color:#00a496; font-size:20px; }
-	.shelf-browser .shelf-heading h2 { font-family:Georgia,"Palatino Linotype",serif; font-size:26px; letter-spacing:2px; text-transform:uppercase; color:#0a5f56; margin:4px 0 0; font-weight:700; }
+	.shelf-browser .shelf-heading .orn { color:#c32148; font-size:20px; }
+	.shelf-browser .shelf-heading h2 { font-family:Georgia,"Palatino Linotype",serif; font-size:26px; letter-spacing:2px; text-transform:uppercase; color: #7f410a; margin:4px 0 0; font-weight:700; }
 
 	.shelf-explorer { position:relative; max-width:1900px; margin:0 auto; padding:0 10px; }
 	.shelf-viewport { overflow:hidden; }
 	.shelf-cols { display:flex; gap:20px; align-items:flex-start; transition:transform .45s cubic-bezier(.4,0,.2,1); will-change:transform; }
 	.shelf-col { flex:0 0 auto; min-width:0; display:flex; flex-direction:column; border-radius:8px; overflow:hidden; align-self:stretch;
-		border:1px solid #0a6e63; box-shadow: inset 0 0 0 3px rgba(255,255,255,.16), 0 24px 44px -26px rgba(4,50,45,.55);
-		background: repeating-linear-gradient(90deg, rgba(0,0,0,.05) 0 3px, rgba(255,255,255,.03) 3px 9px), linear-gradient(#0a8378,#05564d); }
-	.shelf-col-head { padding:11px 14px; text-align:center; color:#eafaf7; background:linear-gradient(#064d44,#0a7268);
-		border-bottom:2px solid #4fd0c2; font-family:Georgia,"Palatino Linotype",serif; font-size:16px; letter-spacing:.5px;
+		border: 1px solid #49290f; box-shadow: inset 0 0 0 3px rgba(255,255,255,.16), 0 24px 44px -26px rgba(4,50,45,.55);
+		background: repeating-linear-gradient(90deg, rgba(0,0,0,.05) 0 3px, rgba(255,255,255,.03) 3px 9px), linear-gradient(#212529, #212529); }
+	.shelf-col-head { padding:11px 14px; text-align:center; color:#eafaf7; background: linear-gradient(#67410b, #452204);
+		border-bottom: 2px solid #b77844; font-family:Georgia,"Palatino Linotype",serif; font-size:16px; letter-spacing:.5px;
 		white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 	.shelf-col-body { padding:4px 0 10px; }
 
@@ -33,7 +33,7 @@
 		box-shadow:0 2px 10px rgba(0,0,0,.42), inset 0 0 0 1px rgba(255,255,255,.18);
 		opacity:0; transition:opacity .22s ease, background .18s ease; }
 	.col-scroll-wrap:hover .row-arrow { opacity:1; }
-	.row-arrow:hover { background:rgba(0,164,150,.85); }
+	.row-arrow:hover { background:rgba(127,65,10,.85); }
 	.row-arrow.prev { left:7px; } .row-arrow.next { right:7px; }
 	.row-arrow[hidden] { display:none; }
 	.col-row { position:relative; display:flex; gap:15px; min-width:100%; width:max-content; align-items:flex-end;
@@ -41,8 +41,8 @@
 	/* Shelf board: a solid wooden ledge with a lit front edge + depth shadow under each row,
 	   so every row reads as its own distinct shelf. */
 	.col-row::after { content:""; position:absolute; left:0; right:0; bottom:0; height:17px;
-		background:linear-gradient(#0e9284 0, #0a7268 45%, #063f39 100%);
-		border-top:2px solid #7fe8db; box-shadow:0 2px 0 rgba(0,0,0,.35), 0 11px 13px -6px rgba(0,0,0,.62); }
+		background: linear-gradient(#ffba68 0, #79490a 45%, #5b3611 100%);
+		border-top: 2px solid #ffd5a7; box-shadow:0 2px 0 rgba(0,0,0,.35), 0 11px 13px -6px rgba(0,0,0,.62); }
 	.col-book { flex:0 0 auto; display:block; line-height:0; position:relative; z-index:1; transition:transform .14s ease; }
 	/* natural proportions, capped -> heights vary a bit like a real shelf; bottoms align via flex-end */
 	.col-book img { display:block; width:auto; height:auto; max-height:186px; max-width:144px; border-radius:2px; background:#fff;
@@ -52,11 +52,11 @@
 
 	/* Minimalist paging arrows: thin flat outline circle that fills teal on hover. */
 	.shelf-page { flex:0 0 auto; width:38px; height:38px; border-radius:50%;
-		border:1.5px solid #14a091; background:transparent; cursor:pointer; color:#0a7268; font-size:18px; line-height:1;
+		border: 1.5px solid #a06e14; background:transparent; cursor:pointer; color: #49290f; font-size:18px; line-height:1;
 		display:flex; align-items:center; justify-content:center; transition:background .16s ease, color .16s ease, border-color .16s ease; }
-	.shelf-page:hover { background:#00a496; border-color:#00a496; color:#fff; }
+	.shelf-page:hover { background:#a06e14; border-color:#a06e14; color:#fff; }
 	.shelf-page:active { transform:translateY(1px); }
-	.shelf-page:disabled { opacity:.3; cursor:default; background:transparent; color:#0a7268; }
+	.shelf-page:disabled { opacity:.3; cursor:default; background:transparent; color:#724e0a; }
 
 	@media (max-width:1100px){ .col-book img { max-height:162px; max-width:126px; } }
 	@media (max-width:767px){ .shelf-explorer { padding:0 8px; } .shelf-page { width:34px; height:34px; font-size:16px; } .col-book img { max-height:140px; max-width:110px; } }
