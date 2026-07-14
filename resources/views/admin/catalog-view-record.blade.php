@@ -24,13 +24,18 @@
 @section('content')
 <div class="page-content">
 
-    <nav class="page-breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ url('/admin/record-list') }}">Record list</a></li>
-            <li class="breadcrumb-item active" aria-current="page">View details</li>
-			<li class="breadcrumb-item active" aria-current="page">{{ $title }}</li>
-        </ol>
-    </nav>
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+        <nav class="page-breadcrumb mb-0">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url('/admin/record-list') }}">Record list</a></li>
+                <li class="breadcrumb-item active" aria-current="page">View details</li>
+                <li class="breadcrumb-item active" aria-current="page">{{ $title }}</li>
+            </ol>
+        </nav>
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="goBack()">
+            <i data-feather="arrow-left" class="icon-sm"></i> Back
+        </button>
+    </div>
 
     <div class="row">
         <div class="col-md-12">
@@ -300,6 +305,16 @@
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/DataTables/buttons/js/buttons.bootstrap5.min.js') }}"></script>
 
 <script>
+// Return to the list the admin came from (record-list or on-hold-list);
+// fall back to the record list if there's no history to go back to.
+function goBack() {
+    if (document.referrer && window.history.length > 1) {
+        window.history.back();
+    } else {
+        window.location.href = "{{ url('/admin/record-list') }}";
+    }
+}
+
 function copyCitation(id) {
     var el = document.getElementById(id);
     if (!el || !navigator.clipboard) return;
