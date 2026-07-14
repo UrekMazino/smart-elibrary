@@ -13,13 +13,13 @@
 	.tx-body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
 	.tx-title { margin: 0 0 5px; font-size: 15px; font-weight: 600; line-height: 1.35; color: #222; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
 	.tx-title a { color: inherit; text-decoration: none; }
-	.tx-title a:hover { color: #7f410a; }
+	.tx-title a:hover { color: #00a496; }
 	.tx-msg { font-size: 13px; color: #556; margin-bottom: 8px; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-	.tx-msg .q { color: #7f410a; font-weight: 700; margin-right: 4px; }
+	.tx-msg .q { color: #00a496; font-weight: 700; margin-right: 4px; }
 	.tx-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: #8a94a6; }
 	.tx-aside { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; justify-content: center; gap: 10px; }
-	.tx-msg-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: #fff; background: #7f410a; border: 0; border-radius: 7px; padding: 8px 16px; cursor: pointer; transition: background .15s; white-space: nowrap; }
-	.tx-msg-btn:hover { background: #5b3611; }
+	.tx-msg-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: #fff; background: #00a496; border: 0; border-radius: 7px; padding: 8px 16px; cursor: pointer; transition: background .15s; white-space: nowrap; }
+	.tx-msg-btn:hover { background: #00897b; }
 	.tx-msg-btn .tx-unread { background: #e5484d; color: #fff; font-size: 10px; font-weight: 700; border-radius: 20px; padding: 1px 6px; line-height: 1.4; }
 	.tx-empty { text-align: center; color: #8a94a6; padding: 48px 16px; background: #fff; border: 1px dashed #dfe3e8; border-radius: 10px; }
 	.tx-pagination { margin-top: 18px; }
@@ -31,7 +31,7 @@
 	/* Thread bubbles inside the shared inquiry modal */
 	.container-msg-reply { border: 1px solid #e2e6ec; background-color: #f4f6f9; color: #222; border-radius: 10px; padding: 10px 14px; margin: 8px 0; }
 	.container-msg-reply p { margin: 0 0 4px; }
-	.container-msg-reply.darker { border-color: #7f410a; background-color: #7f410a; color: #fff; }
+	.container-msg-reply.darker { border-color: #00a496; background-color: #00a496; color: #fff; }
 	.time-right { display: block; text-align: right; color: rgba(255,255,255,.85); font-size: 11px; }
 	.time-left  { display: block; text-align: left;  color: #8a94a6; font-size: 11px; }
 </style>

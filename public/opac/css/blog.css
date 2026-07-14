@@ -206,7 +206,7 @@ article.blog .post_info ul li:last-child {
   color: #333;
 }
 .comments-list h3 a:hover {
-  color: #c32148;
+  color: #e74e84;
 }
 .comments-list li {
   margin-bottom: 10px;
@@ -251,7 +251,7 @@ article.blog .post_info ul li:last-child {
   color: #333;
 }
 .widget ul.cats a:hover {
-  color: #c32148;
+  color: #e74e84;
 }
 .widget ul.cats a span {
   position: absolute;
@@ -271,7 +271,7 @@ article.blog .post_info ul li:last-child {
   display: inline-block;
 }
 .tags a:hover {
-  background-color: #c32148;
+  background-color: #e74e84;
   color: #fff;
 }
 
@@ -317,7 +317,7 @@ article.blog .post_info ul li:last-child {
   color: #999;
 }
 .postmeta ul li a:hover {
-  color: #c32148;
+  color: #e74e84;
 }
 
 .dropcaps p:first-child::first-letter {

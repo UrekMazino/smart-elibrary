@@ -17,7 +17,7 @@
 		.chat-thread { max-height:340px; overflow-y:auto; padding:4px; }
 		.container-msg-reply { border:1px solid #e2e6ec; background-color:#f4f6f9; border-radius:10px; padding:10px 14px; margin:8px 0; }
 		.container-msg-reply p { margin:0 0 4px; }
-		.container-msg-reply.darker { border-color:#7f410a; background-color:#7f410a; color:#fff; }
+		.container-msg-reply.darker { border-color:#0d6efd; background-color:#0d6efd; color:#fff; }
 		.time-right { display:block; text-align:right; color:rgba(255,255,255,.85); font-size:11px; }
 		.time-left  { display:block; text-align:left;  color:#8a94a6; font-size:11px; }
 	</style>

@@ -6,7 +6,7 @@
 	<style>
 		.accordion-button:not(.collapsed) {
 			color: #fff;
-			background-color: #cf9b63;
+			background-color: #74d1c6;
 			box-shadow: inset 0 -1px 0 rgba(0,0,0,.125);
 		}
 	</style>
@@ -30,7 +30,7 @@
 	@csrf
 	<input type="hidden" class="form-control" name="catalog_id" value="{{ $result->catalog_id }}">
 </form>
-		<div id="results" style="background-color: #7f410a;">
+		<div id="results" style="background-color: #00a496;">
 			<div class="container">
 				<div class="row align-items-center">
 					<div class="col-md-6">
@@ -76,7 +76,7 @@
 			.fd-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; margin-bottom: 4px; }
 			.fd-actions form { margin: 0; display: flex; }
 			.fd-section { margin-top: 24px; }
-			.fd-section-title { font-size: 14px; font-weight: 700; color: #7f410a; text-transform: uppercase; letter-spacing: .3px; margin-bottom: 12px; border-bottom: 2px solid #e6e9ec; padding-bottom: 6px; }
+			.fd-section-title { font-size: 14px; font-weight: 700; color: #00a496; text-transform: uppercase; letter-spacing: .3px; margin-bottom: 12px; border-bottom: 2px solid #e6e9ec; padding-bottom: 6px; }
 			.fd-section-title i { margin-right: 6px; vertical-align: middle; }
 			.fd-table { width: 100%; border-collapse: collapse; font-size: 14px; }
 			.fd-table th, .fd-table td { text-align: left; vertical-align: top; padding: 8px 12px; border-bottom: 1px solid #eef0f2; }
@@ -84,18 +84,18 @@
 			.fd-table td { color: #444; }
 			.fd-table td.fd-justify { text-align: justify; }
 			.fd-citation { background: #f7f9fa; border: 1px solid #e6e9ec; border-radius: 4px; padding: 14px 16px; }
-			.fd-citation-style { display: inline-block; font-size: 11px; font-weight: 700; color: #fff; background: #7f410a; border-radius: 3px; padding: 2px 8px; margin-bottom: 8px; }
+			.fd-citation-style { display: inline-block; font-size: 11px; font-weight: 700; color: #fff; background: #00a496; border-radius: 3px; padding: 2px 8px; margin-bottom: 8px; }
 			.fd-citation p { margin: 0; font-size: 14px; line-height: 1.55; color: #333; }
-			.fd-copy-btn { margin-top: 12px !important; font-size: 12px; padding: 5px 14px; background-color: #6a3708; }
+			.fd-copy-btn { margin-top: 12px !important; font-size: 12px; padding: 5px 14px; background-color: #029978; }
 			.fd-copies { display: flex; gap: 12px; flex-wrap: wrap; }
 			.fd-copy-badge { font-size: 14px; font-weight: 600; padding: 9px 18px; border-radius: 4px; background: #eef0f2; color: #444; }
 			.fd-copy-badge.ok { background: #e3f5ef; color: #087f5b; }
 			.fd-copy-badge.none { background: #fdecea; color: #c0392b; }
 			/* Flat, icon-on-top action buttons (icon stacked above the label) */
 			.fd-btn { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-width: 78px; padding: 10px 12px; background: #fff !important; color: #3f4079 !important; border: 1px solid #e3e8ec !important; border-radius: 8px !important; font-size: 12px; font-weight: 600; line-height: 1.1; text-align: center; box-shadow: none; transition: background .12s, border-color .12s, color .12s; }
-			.fd-btn i { font-size: 22px; line-height: 1; color: #6a3708; }
-			.fd-btn:hover { background: #f1faf7 !important; border-color: #6a3708 !important; color: #6a3708 !important; }
-			.fd-btn:hover i { color: #6a3708; }
+			.fd-btn i { font-size: 22px; line-height: 1; color: #029978; }
+			.fd-btn:hover { background: #f1faf7 !important; border-color: #029978 !important; color: #029978 !important; }
+			.fd-btn:hover i { color: #029978; }
 			.fd-btn[disabled], .fd-btn:disabled { background: #f6f8f9 !important; color: #b4babf !important; border-color: #e9edf0 !important; cursor: not-allowed; opacity: 1 !important; }
 			.fd-btn[disabled] i, .fd-btn:disabled i { color: #c4cacf; }
 			/* Read overlay (PDF.js) */
@@ -132,7 +132,7 @@
 			@endif
 			<div class="row">
 				<div class="col-xl-9 col-lg-8 order-2">
-					<nav id="secondary_nav" style="background-color: #7f410a;">
+					<nav id="secondary_nav" style="background-color: #00a496;">
 						<div class="container">
 							<ul class="clearfix">
 								<li><a href="#section_1" class="active">General info</a></li>
@@ -248,7 +248,7 @@
 					</figure>
 					@if(checkStocks($result->catalog_id))
 					<div class="box_general_3 booking">
-							<div class="title text-center" style="background-color: #7f410a;">
+							<div class="title text-center" style="background-color: #00a496;">
 								<h3>Schedule Reservation</h3>
 								<small>Monday to Friday 08:00am-05:00pm</small>
 							</div>
@@ -302,12 +302,12 @@
 					</div>
 					@else
 					<div class="box_general_3 booking">
-						<div class="title text-center" style="background-color: #7f410a;">
+						<div class="title text-center" style="background-color: #00a496;">
 							<h3>NOT AVAILABLE FOR BORROWING</h3>
 						</div>
 						<div class="row">
 							<div class="col-12 text-center">
-								<h6 >No physical copy available.</h6>
+								<h6 >No copies available.</h6>
 							</div>
 						</div>
 					</div>
@@ -315,7 +315,7 @@
 					<!-- /box_general -->
 					{{-- Ratings summary + submit review (moved from the reviews section) --}}
 					<div class="box_general_3 booking fd-review-box">
-						<div id="review_summary" style="background-color: #7f410a;">
+						<div id="review_summary" style="background-color: #00a496;">
 							<div class="fd-avg-num">{{ $ave }}</div>
 							<div class="fd-avg-meta">
 								<div class="rating"><i data-star="{{ $ave }}" style="font-size: 18px;"></i></div>
@@ -420,7 +420,7 @@ function inquire(holdingsid)
 				icon: 'warning',
 				title: 'Account blocked',
 				html: 'Your account is <strong>blocked</strong> from sending inquiries.<br>Please contact the library at <a href="mailto:' + libraryEmail + '"><strong>' + libraryEmail + '</strong></a>.',
-				confirmButtonColor: '#7f410a'
+				confirmButtonColor: '#00a496'
 			});
 		} else {
 			alert('Your account is blocked from sending inquiries. Please contact the library at ' + libraryEmail + '.');
@@ -440,7 +440,7 @@ function inquire(holdingsid)
 				showCancelButton: true,
 				confirmButtonText: 'Email the library',
 				cancelButtonText: 'Close',
-				confirmButtonColor: '#7f410a'
+				confirmButtonColor: '#00a496'
 			}).then(function (res) {
 				if (res.isConfirmed) { window.location.href = 'mailto:' + libraryEmail + '?subject=' + encodeURIComponent('Library Inquiry'); }
 			});

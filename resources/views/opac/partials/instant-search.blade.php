@@ -14,7 +14,7 @@
 	.instant-meta { font-size: 11.5px; color: #777; margin-top: 2px; }
 	.instant-type, .instant-year { margin-left: 8px; }
 	.instant-empty, .instant-loading { padding: 14px; color: #888; font-size: 13px; text-align: center; }
-	.instant-seeall { display: block; padding: 9px 12px; text-align: center; font-size: 12.5px; font-weight: 700; color: #6a3708; background: #f6f9f8; text-decoration: none; border-top: 1px solid #eef0f2; }
+	.instant-seeall { display: block; padding: 9px 12px; text-align: center; font-size: 12.5px; font-weight: 700; color: #029978; background: #f6f9f8; text-decoration: none; border-top: 1px solid #eef0f2; }
 	.instant-seeall:hover { background: #eef7f4; }
 </style>
 

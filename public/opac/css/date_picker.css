@@ -785,7 +785,7 @@ fieldset[disabled] .datepicker table tr td span.active.disabled:hover.active {
 }
 .datepicker thead tr th.prev:hover,
 .datepicker thead tr th.next:hover {
-	color: #c32148;
+	color: #e74e84;
 }
 .datepicker thead tr th.prev:before {
   content: '\e9f1';
