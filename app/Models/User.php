@@ -21,6 +21,10 @@ class User extends Authenticatable
      *
      * @var array<int, string>
      */
+    // NOTE: `usertype`, `is_banned` and `is_blocked` are deliberately NOT mass-assignable.
+    // They are privilege-sensitive, so they must be set explicitly (e.g. $user->usertype = ...;
+    // $user->save()) — this prevents a User::create($request->all()) / update() from ever
+    // letting a registrant make themselves an Administrator or unban their own account.
     protected $fillable = [
         'name',
         'email',
@@ -28,7 +32,6 @@ class User extends Authenticatable
         'affiliation',
         'sex',
         'birthdate',
-        'usertype',
         'password',
         'patrontypes_id',
         'library_code',
@@ -39,8 +42,6 @@ class User extends Authenticatable
         'position4',
         'username',
         'location',
-        'is_banned',
-        'is_blocked'
     ];
 
     /**

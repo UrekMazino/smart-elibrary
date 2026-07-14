@@ -41,6 +41,10 @@ class RegisteredUserController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'contactnum' => ['required', 'string', 'max:255'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+        ], [
+            // Generic message so we don't explicitly confirm that an email is already
+            // registered (avoids account enumeration via the registration form).
+            'email.unique' => "This email address can't be used to register. If you already have an account, please sign in or reset your password.",
         ]);
 
 

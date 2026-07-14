@@ -617,9 +617,12 @@ class AdminController extends Controller
                 'contactnum' => $request->contactNumber,
                 'password' => Hash::make($password),
                 'library_code' => $libraryCode,
-                'usertype' => 'Administrator'
             ]);
-            
+
+            // usertype is not mass-assignable (privilege-sensitive) — set it explicitly.
+            $user->usertype = 'Administrator';
+            $user->save();
+
             $user->assignRole($request->role);
 
             event(new Registered($user));
