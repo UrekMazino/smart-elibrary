@@ -1,0 +1,1874 @@
+[
+    {
+        "id": 1,
+        "indicator": "# - Undefined",
+        "created_at": "2023-07-21 14:39:50",
+        "updated_at": "2023-07-21 14:39:52"
+    },
+    {
+        "id": 2,
+        "indicator": "# - Library and Archives Canada",
+        "created_at": "2024-07-21 14:39:51",
+        "updated_at": "2023-07-21 14:39:52"
+    },
+    {
+        "id": 3,
+        "indicator": "7 - Source specified in subfield $2",
+        "created_at": "2023-07-21 14:40:22",
+        "updated_at": "2023-07-21 14:40:23"
+    },
+    {
+        "id": 4,
+        "indicator": "# - Copyright or legal deposit number",
+        "created_at": "2023-07-21 14:42:28",
+        "updated_at": "2023-07-21 14:42:30"
+    },
+    {
+        "id": 5,
+        "indicator": "8 - No display constant generated",
+        "created_at": "2023-07-21 14:42:41",
+        "updated_at": "2023-07-21 14:42:42"
+    },
+    {
+        "id": 6,
+        "indicator": "# - No level specified",
+        "created_at": "2023-07-21 14:44:54",
+        "updated_at": "2023-07-21 14:44:55"
+    },
+    {
+        "id": 7,
+        "indicator": "0 - Continuing resource of international interest",
+        "created_at": "2023-07-21 14:45:05",
+        "updated_at": "2023-07-21 14:45:06"
+    },
+    {
+        "id": 8,
+        "indicator": "1 - Continuing resource not of international inter",
+        "created_at": "2023-07-21 14:45:16",
+        "updated_at": "2023-07-21 14:45:17"
+    },
+    {
+        "id": 9,
+        "indicator": "0 - International Standard Recording Code",
+        "created_at": "2023-07-21 14:46:18",
+        "updated_at": "2023-07-21 14:46:19"
+    },
+    {
+        "id": 10,
+        "indicator": "1 - Universal Product Code",
+        "created_at": "2023-07-21 14:46:37",
+        "updated_at": "2023-07-21 14:46:37"
+    },
+    {
+        "id": 11,
+        "indicator": "2 - International Standard Music Number",
+        "created_at": "2023-07-21 14:46:49",
+        "updated_at": "2023-07-21 14:46:49"
+    },
+    {
+        "id": 12,
+        "indicator": "3 - International Article Number",
+        "created_at": "2023-07-21 14:47:00",
+        "updated_at": "2023-07-21 14:47:01"
+    },
+    {
+        "id": 13,
+        "indicator": "4 - Serial Item and Contribution Identifier",
+        "created_at": "2023-07-21 14:47:20",
+        "updated_at": "2023-07-21 14:47:20"
+    },
+    {
+        "id": 15,
+        "indicator": "8 - Unspecified type of standard number or code",
+        "created_at": "2023-07-21 14:48:27",
+        "updated_at": "2023-07-21 14:48:28"
+    },
+    {
+        "id": 16,
+        "indicator": "# - No information provided",
+        "created_at": "2023-07-21 14:50:24",
+        "updated_at": "2023-07-21 14:50:25"
+    },
+    {
+        "id": 17,
+        "indicator": "0 - No difference",
+        "created_at": "2023-07-21 14:50:43",
+        "updated_at": "2023-07-21 14:50:44"
+    },
+    {
+        "id": 18,
+        "indicator": "1 - Difference",
+        "created_at": "2023-07-21 14:50:55",
+        "updated_at": "2023-07-21 14:50:55"
+    },
+    {
+        "id": 19,
+        "indicator": "0 - Issue number",
+        "created_at": "2023-07-21 14:54:23",
+        "updated_at": "2023-07-21 14:54:24"
+    },
+    {
+        "id": 20,
+        "indicator": "1 - Matrix number",
+        "created_at": "2023-07-21 14:54:34",
+        "updated_at": "2023-07-21 14:54:35"
+    },
+    {
+        "id": 21,
+        "indicator": "2 - Plate number",
+        "created_at": "2023-07-21 14:54:52",
+        "updated_at": "2023-07-21 14:54:53"
+    },
+    {
+        "id": 22,
+        "indicator": "3 - Other music publisher number",
+        "created_at": "2023-07-21 14:55:21",
+        "updated_at": "2023-07-21 14:55:22"
+    },
+    {
+        "id": 23,
+        "indicator": "4 - Video recording publisher number",
+        "created_at": "2023-07-21 14:55:31",
+        "updated_at": "2023-07-21 14:55:32"
+    },
+    {
+        "id": 24,
+        "indicator": "5 - Other publisher number",
+        "created_at": "2023-07-21 14:55:50",
+        "updated_at": "2023-07-21 14:55:51"
+    },
+    {
+        "id": 25,
+        "indicator": "6 - Distributor number",
+        "created_at": "2023-07-21 14:56:01",
+        "updated_at": "2023-07-21 14:56:02"
+    },
+    {
+        "id": 26,
+        "indicator": "0 - No note, no added entry",
+        "created_at": "2023-07-21 14:57:20",
+        "updated_at": "2023-07-21 14:57:20"
+    },
+    {
+        "id": 27,
+        "indicator": "1 - Note, added entry",
+        "created_at": "2023-07-21 14:57:32",
+        "updated_at": "2023-07-21 14:57:33"
+    },
+    {
+        "id": 28,
+        "indicator": "2 - Note, no added entry",
+        "created_at": "2023-07-21 14:57:43",
+        "updated_at": "2023-07-21 14:57:44"
+    },
+    {
+        "id": 29,
+        "indicator": "3 - No note, added entry",
+        "created_at": "2023-07-21 14:57:58",
+        "updated_at": "2023-07-21 14:57:59"
+    },
+    {
+        "id": 30,
+        "indicator": "# - No date information",
+        "created_at": "2023-07-21 15:01:30",
+        "updated_at": "2023-07-21 15:01:31"
+    },
+    {
+        "id": 31,
+        "indicator": "0 - Single date",
+        "created_at": "2023-07-21 15:01:40",
+        "updated_at": "2023-07-21 15:01:41"
+    },
+    {
+        "id": 32,
+        "indicator": "1 - Multiple single dates",
+        "created_at": "2023-07-21 15:01:49",
+        "updated_at": "2023-07-21 15:01:49"
+    },
+    {
+        "id": 33,
+        "indicator": "2 - Range of dates",
+        "created_at": "2023-07-21 15:02:03",
+        "updated_at": "2023-07-21 15:02:04"
+    },
+    {
+        "id": 34,
+        "indicator": "0 - Capture",
+        "created_at": "2023-07-21 15:04:20",
+        "updated_at": "2023-07-21 15:04:21"
+    },
+    {
+        "id": 35,
+        "indicator": "1 - Broadcast",
+        "created_at": "2023-07-21 15:04:31",
+        "updated_at": "2023-07-21 15:04:31"
+    },
+    {
+        "id": 36,
+        "indicator": "2 - Finding",
+        "created_at": "2023-07-21 15:04:41",
+        "updated_at": "2023-07-21 15:04:42"
+    },
+    {
+        "id": 37,
+        "indicator": "0 - Scale indeterminable/No scale recorded",
+        "created_at": "2023-07-21 15:07:23",
+        "updated_at": "2023-07-21 15:07:24"
+    },
+    {
+        "id": 38,
+        "indicator": "1 - Single scale",
+        "created_at": "2023-07-21 15:07:49",
+        "updated_at": "2023-07-21 15:07:49"
+    },
+    {
+        "id": 39,
+        "indicator": "3 - Range of scales",
+        "created_at": "2023-07-21 15:08:18",
+        "updated_at": "2023-07-21 15:08:19"
+    },
+    {
+        "id": 40,
+        "indicator": "# - Not applicable",
+        "created_at": "2023-07-21 15:09:24",
+        "updated_at": "2023-07-21 15:09:25"
+    },
+    {
+        "id": 41,
+        "indicator": "0 - Outer ring",
+        "created_at": "2023-07-21 15:09:51",
+        "updated_at": "2023-07-21 15:09:52"
+    },
+    {
+        "id": 42,
+        "indicator": "1 - Exclusion ring",
+        "created_at": "2023-07-21 15:10:18",
+        "updated_at": "2023-07-21 15:10:18"
+    },
+    {
+        "id": 43,
+        "indicator": "# - Not applicable/No information provided/Earliest",
+        "created_at": "2023-07-21 15:11:46",
+        "updated_at": "2023-07-21 15:11:46"
+    },
+    {
+        "id": 44,
+        "indicator": "2 - Intervening",
+        "created_at": "2023-07-21 15:12:09",
+        "updated_at": "2023-07-21 15:12:10"
+    },
+    {
+        "id": 45,
+        "indicator": "3 - Current/Latest",
+        "created_at": "2023-07-21 15:12:29",
+        "updated_at": "2023-07-21 15:12:29"
+    },
+    {
+        "id": 46,
+        "indicator": "0 - Item not a translation/does not include a tran",
+        "created_at": "2023-07-21 15:17:49",
+        "updated_at": "2023-07-21 15:17:49"
+    },
+    {
+        "id": 47,
+        "indicator": "1 - Item is or includes a translation",
+        "created_at": "2023-07-21 15:18:08",
+        "updated_at": "2023-07-21 15:18:09"
+    },
+    {
+        "id": 48,
+        "indicator": "# - MARC language code",
+        "created_at": "2023-07-21 15:20:05",
+        "updated_at": "2023-07-21 15:20:06"
+    },
+    {
+        "id": 49,
+        "indicator": "# - Subfield $b or $c not present",
+        "created_at": "2023-07-21 15:22:58",
+        "updated_at": "2023-07-21 15:22:59"
+    },
+    {
+        "id": 50,
+        "indicator": "0 - Single date/time",
+        "created_at": "2023-07-21 15:23:27",
+        "updated_at": "2023-07-21 15:23:28"
+    },
+    {
+        "id": 51,
+        "indicator": "1 - Multiple single dates/times",
+        "created_at": "2023-07-21 15:23:59",
+        "updated_at": "2023-07-21 15:24:00"
+    },
+    {
+        "id": 52,
+        "indicator": "2 - Range of dates/times",
+        "created_at": "2023-07-21 15:24:16",
+        "updated_at": "2023-07-21 15:24:17"
+    },
+    {
+        "id": 53,
+        "indicator": "1 - Work",
+        "created_at": "2023-07-21 15:25:44",
+        "updated_at": "2023-07-21 15:25:44"
+    },
+    {
+        "id": 54,
+        "indicator": "2 - Expression",
+        "created_at": "2023-07-21 15:26:02",
+        "updated_at": "2023-07-21 15:26:03"
+    },
+    {
+        "id": 55,
+        "indicator": "3 - Manifestation",
+        "created_at": "2023-07-21 15:26:23",
+        "updated_at": "2023-07-21 15:26:23"
+    },
+    {
+        "id": 56,
+        "indicator": "# - MARC musical composition code",
+        "created_at": "2023-07-21 15:27:49",
+        "updated_at": "2023-07-21 15:27:49"
+    },
+    {
+        "id": 57,
+        "indicator": "# - MARC code",
+        "created_at": "2023-07-21 15:48:10",
+        "updated_at": "2023-07-21 15:48:10"
+    },
+    {
+        "id": 58,
+        "indicator": "0 - Item is in LC",
+        "created_at": "2023-07-21 15:49:53",
+        "updated_at": "2023-07-21 15:49:54"
+    },
+    {
+        "id": 59,
+        "indicator": "1 - Item is not in LC",
+        "created_at": "2023-07-21 15:50:14",
+        "updated_at": "2023-07-21 15:50:15"
+    },
+    {
+        "id": 60,
+        "indicator": "0 - Assigned by LC",
+        "created_at": "2023-07-21 15:51:36",
+        "updated_at": "2023-07-21 15:51:37"
+    },
+    {
+        "id": 61,
+        "indicator": "4 - Assigned by agency other than LC",
+        "created_at": "2023-07-21 15:52:08",
+        "updated_at": "2023-07-21 15:52:08"
+    },
+    {
+        "id": 62,
+        "indicator": "# - Library of Congress Classification",
+        "created_at": "2023-07-21 15:53:29",
+        "updated_at": "2023-07-21 15:53:30"
+    },
+    {
+        "id": 63,
+        "indicator": "1 - U.S. Dept. of Defense Classification",
+        "created_at": "2023-07-21 15:54:50",
+        "updated_at": "2023-07-21 15:54:50"
+    },
+    {
+        "id": 64,
+        "indicator": "# - Information not provided",
+        "created_at": "2023-07-21 15:57:08",
+        "updated_at": "2023-07-21 15:57:09"
+    },
+    {
+        "id": 65,
+        "indicator": "0 - Work held by LAC",
+        "created_at": "2023-07-21 15:57:32",
+        "updated_at": "2023-07-21 15:57:33"
+    },
+    {
+        "id": 66,
+        "indicator": "1 - Work not held by LAC",
+        "created_at": "2023-07-21 15:57:54",
+        "updated_at": "2023-07-21 15:57:54"
+    },
+    {
+        "id": 67,
+        "indicator": "0 - LC-based call number assigned by LAC",
+        "created_at": "2023-07-21 15:58:48",
+        "updated_at": "2023-07-21 15:58:48"
+    },
+    {
+        "id": 68,
+        "indicator": "1 - Complete LC class number assigned by LAC",
+        "created_at": "2023-07-21 16:00:48",
+        "updated_at": "2023-07-21 16:00:48"
+    },
+    {
+        "id": 69,
+        "indicator": "2 - Incomplete LC class number assigned by LAC",
+        "created_at": "2023-07-21 16:01:07",
+        "updated_at": "2023-07-21 16:01:08"
+    },
+    {
+        "id": 70,
+        "indicator": "3 - LC-based call number assigned by the contributing library",
+        "created_at": "2023-07-21 16:01:27",
+        "updated_at": "2023-07-21 16:01:28"
+    },
+    {
+        "id": 71,
+        "indicator": "4 - Complete LC class number assigned by the contributing library",
+        "created_at": "2023-07-21 16:01:48",
+        "updated_at": "2023-07-21 16:01:49"
+    },
+    {
+        "id": 72,
+        "indicator": "5 - Incomplete LC class number assigned by the contributing library",
+        "created_at": "2023-07-21 16:02:08",
+        "updated_at": "2023-07-21 16:02:08"
+    },
+    {
+        "id": 73,
+        "indicator": "6 - Other call number assigned by LAC",
+        "created_at": "2023-07-21 16:02:26",
+        "updated_at": "2023-07-21 16:02:27"
+    },
+    {
+        "id": 74,
+        "indicator": "7 - Other class number assigned by LAC",
+        "created_at": "2023-07-21 16:02:48",
+        "updated_at": "2023-07-21 16:02:49"
+    },
+    {
+        "id": 75,
+        "indicator": "8 - Other call number assigned by the contributing library",
+        "created_at": "2023-07-21 16:04:30",
+        "updated_at": "2023-07-21 16:04:31"
+    },
+    {
+        "id": 76,
+        "indicator": "9 - Other class number assigned by the contributing library",
+        "created_at": "2023-07-21 16:04:49",
+        "updated_at": "2023-07-21 16:05:01"
+    },
+    {
+        "id": 77,
+        "indicator": "0 - Item is in NLM",
+        "created_at": "2023-07-21 16:16:14",
+        "updated_at": "2023-07-21 16:16:15"
+    },
+    {
+        "id": 78,
+        "indicator": "1 - Item is not in NLM",
+        "created_at": "2023-07-21 16:16:24",
+        "updated_at": "2023-07-21 16:16:25"
+    },
+    {
+        "id": 79,
+        "indicator": "0 - Assigned by NLM",
+        "created_at": "2023-07-21 16:17:23",
+        "updated_at": "2023-07-21 16:17:24"
+    },
+    {
+        "id": 80,
+        "indicator": "4 - Assigned by agency other than NLM",
+        "created_at": "2023-07-21 16:17:40",
+        "updated_at": "2023-07-21 16:17:40"
+    },
+    {
+        "id": 81,
+        "indicator": "0 - Item is in NAL",
+        "created_at": "2023-07-21 16:20:00",
+        "updated_at": "2023-07-21 16:20:00"
+    },
+    {
+        "id": 82,
+        "indicator": "1 - Item is not in NAL",
+        "created_at": "2023-07-21 16:20:20",
+        "updated_at": "2023-07-21 16:20:21"
+    },
+    {
+        "id": 83,
+        "indicator": "0 - NAL subject category code list",
+        "created_at": "2023-07-21 16:21:53",
+        "updated_at": "2023-07-21 16:21:53"
+    },
+    {
+        "id": 84,
+        "indicator": "0 - Full",
+        "created_at": "2023-07-21 16:31:10",
+        "updated_at": "2023-07-21 16:31:11"
+    },
+    {
+        "id": 85,
+        "indicator": "1 - Abridged",
+        "created_at": "2023-07-21 16:31:35",
+        "updated_at": "2023-07-21 16:31:41"
+    },
+    {
+        "id": 86,
+        "indicator": "0 - Full edition",
+        "created_at": "2023-07-21 16:33:12",
+        "updated_at": "2023-07-21 16:33:13"
+    },
+    {
+        "id": 87,
+        "indicator": "1 - Abridged edition",
+        "created_at": "2023-07-21 16:34:04",
+        "updated_at": "2023-07-21 16:34:04"
+    },
+    {
+        "id": 88,
+        "indicator": "7 - Other edition specified in subfield $2",
+        "created_at": "2023-07-21 16:34:03",
+        "updated_at": "2023-07-21 16:34:05"
+    },
+    {
+        "id": 89,
+        "indicator": "# - Source specified in subfield $2",
+        "created_at": "2023-07-21 16:39:50",
+        "updated_at": "2023-07-21 16:39:52"
+    },
+    {
+        "id": 90,
+        "indicator": "0 - Superintendent of Documents Classification System",
+        "created_at": "2023-07-21 16:40:13",
+        "updated_at": "2023-07-21 16:40:14"
+    },
+    {
+        "id": 91,
+        "indicator": "1 - Government of Canada Publications: Outline of Classification",
+        "created_at": "2023-07-21 16:40:36",
+        "updated_at": "2023-07-21 16:40:36"
+    },
+    {
+        "id": 92,
+        "indicator": "0 - Forename",
+        "created_at": "2023-07-21 16:44:21",
+        "updated_at": "2023-07-21 16:44:22"
+    },
+    {
+        "id": 93,
+        "indicator": "1 - Surname",
+        "created_at": "2023-07-21 16:44:39",
+        "updated_at": "2023-07-21 16:44:41"
+    },
+    {
+        "id": 94,
+        "indicator": "3 - Family name",
+        "created_at": "2023-07-21 16:44:57",
+        "updated_at": "2023-07-21 16:44:57"
+    },
+    {
+        "id": 95,
+        "indicator": "0 - Inverted name",
+        "created_at": "2023-07-21 16:50:33",
+        "updated_at": "2023-07-21 16:50:34"
+    },
+    {
+        "id": 96,
+        "indicator": "1 - Jurisdiction name",
+        "created_at": "2023-07-21 16:51:04",
+        "updated_at": "2023-07-21 16:51:05"
+    },
+    {
+        "id": 97,
+        "indicator": "2 - Name in direct order",
+        "created_at": "2023-07-21 16:51:26",
+        "updated_at": "2023-07-21 16:51:27"
+    },
+    {
+        "id": 98,
+        "indicator": "0 - Number of nonfiling characters",
+        "created_at": "2023-07-21 16:53:49",
+        "updated_at": "2023-07-21 16:53:50"
+    },
+    {
+        "id": 99,
+        "indicator": "1 - Number of nonfiling characters",
+        "created_at": "2023-07-21 16:54:13",
+        "updated_at": "2023-07-21 16:54:14"
+    },
+    {
+        "id": 100,
+        "indicator": "2 - Number of nonfiling characters",
+        "created_at": "2023-07-21 16:54:12",
+        "updated_at": "2023-07-21 16:54:15"
+    },
+    {
+        "id": 101,
+        "indicator": "3 - Number of nonfiling characters",
+        "created_at": "2023-07-21 16:54:21",
+        "updated_at": "2023-07-21 16:54:24"
+    },
+    {
+        "id": 102,
+        "indicator": "4 - Number of nonfiling characters",
+        "created_at": "2023-07-21 16:54:41",
+        "updated_at": "2023-07-21 16:54:44"
+    },
+    {
+        "id": 103,
+        "indicator": "5 - Number of nonfiling characters",
+        "created_at": "2023-07-21 16:54:51",
+        "updated_at": "2023-07-21 16:54:52"
+    },
+    {
+        "id": 104,
+        "indicator": "6 - Number of nonfiling characters",
+        "created_at": "2023-07-21 16:55:02",
+        "updated_at": "2023-07-21 16:55:02"
+    },
+    {
+        "id": 105,
+        "indicator": "7 - Number of nonfiling characters",
+        "created_at": "2023-07-21 16:55:10",
+        "updated_at": "2023-07-21 16:55:10"
+    },
+    {
+        "id": 106,
+        "indicator": "8 - Number of nonfiling characters",
+        "created_at": "2023-07-21 16:55:18",
+        "updated_at": "2023-07-21 16:55:21"
+    },
+    {
+        "id": 107,
+        "indicator": "9 - Number of nonfiling characters",
+        "created_at": "2023-07-21 16:55:29",
+        "updated_at": "2023-07-21 16:55:30"
+    },
+    {
+        "id": 108,
+        "indicator": "0 - No added entry",
+        "created_at": "2023-07-21 16:57:21",
+        "updated_at": "2023-07-21 16:57:22"
+    },
+    {
+        "id": 109,
+        "indicator": "1 - Added entry",
+        "created_at": "2023-07-21 16:57:46",
+        "updated_at": "2023-07-21 16:57:47"
+    },
+    {
+        "id": 110,
+        "indicator": "# - Abbreviated key title",
+        "created_at": "2023-07-21 16:58:34",
+        "updated_at": "2023-07-21 16:58:35"
+    },
+    {
+        "id": 111,
+        "indicator": "0 - Other abbreviated title",
+        "created_at": "2023-07-21 16:58:57",
+        "updated_at": "2023-07-21 16:58:57"
+    },
+    {
+        "id": 112,
+        "indicator": "0 - No nonfiling characters",
+        "created_at": "2023-07-21 17:00:16",
+        "updated_at": "2023-07-21 17:00:17"
+    },
+    {
+        "id": 114,
+        "indicator": "0 - Not printed or displayed",
+        "created_at": "2023-07-21 18:05:15",
+        "updated_at": "2023-07-21 18:05:16"
+    },
+    {
+        "id": 115,
+        "indicator": "1 - Printed or displayed",
+        "created_at": "2023-07-21 18:05:41",
+        "updated_at": "2023-07-21 18:05:42"
+    },
+    {
+        "id": 116,
+        "indicator": "0 - Note, no added entry",
+        "created_at": "2023-07-21 18:24:24",
+        "updated_at": "2023-07-21 18:24:25"
+    },
+    {
+        "id": 117,
+        "indicator": "1 - Note, added entry",
+        "created_at": "2023-07-21 18:25:43",
+        "updated_at": "2023-07-21 18:25:44"
+    },
+    {
+        "id": 118,
+        "indicator": "2 - No note, no added entry",
+        "created_at": "2023-07-21 18:26:08",
+        "updated_at": "2023-07-21 18:26:09"
+    },
+    {
+        "id": 119,
+        "indicator": "# - No type specified",
+        "created_at": "2023-07-21 18:36:20",
+        "updated_at": "2023-07-21 18:36:21"
+    },
+    {
+        "id": 120,
+        "indicator": "0 - Portion of title",
+        "created_at": "2023-07-21 18:36:43",
+        "updated_at": "2023-07-21 18:36:44"
+    },
+    {
+        "id": 121,
+        "indicator": "1 - Parallel title",
+        "created_at": "2023-07-21 18:37:06",
+        "updated_at": "2023-07-21 18:37:07"
+    },
+    {
+        "id": 122,
+        "indicator": "2 - Distinctive title",
+        "created_at": "2023-07-21 18:37:26",
+        "updated_at": "2023-07-21 18:37:27"
+    },
+    {
+        "id": 123,
+        "indicator": "3 - Other title",
+        "created_at": "2023-07-21 18:37:49",
+        "updated_at": "2023-07-21 18:37:50"
+    },
+    {
+        "id": 124,
+        "indicator": "4 - Cover title",
+        "created_at": "2023-07-21 18:38:19",
+        "updated_at": "2023-07-21 18:38:20"
+    },
+    {
+        "id": 125,
+        "indicator": "5 - Added title page title",
+        "created_at": "2023-07-21 18:38:38",
+        "updated_at": "2023-07-21 18:38:39"
+    },
+    {
+        "id": 126,
+        "indicator": "6 - Caption title",
+        "created_at": "2023-07-21 18:43:58",
+        "updated_at": "2023-07-21 18:43:59"
+    },
+    {
+        "id": 127,
+        "indicator": "7 - Running title",
+        "created_at": "2023-07-21 18:45:48",
+        "updated_at": "2023-07-21 18:45:49"
+    },
+    {
+        "id": 128,
+        "indicator": "8 - Spine title",
+        "created_at": "2023-07-21 18:46:06",
+        "updated_at": "2023-07-21 18:46:07"
+    },
+    {
+        "id": 129,
+        "indicator": "0 - Display note",
+        "created_at": "2023-07-21 18:50:44",
+        "updated_at": "2023-07-21 18:50:44"
+    },
+    {
+        "id": 130,
+        "indicator": "1 - Do not display note",
+        "created_at": "2023-07-21 18:52:03",
+        "updated_at": "2023-07-21 18:52:04"
+    },
+    {
+        "id": 132,
+        "indicator": "2 - Intervening publisher",
+        "created_at": "2023-07-21 18:58:11",
+        "updated_at": "2023-07-21 18:58:11"
+    },
+    {
+        "id": 133,
+        "indicator": "3 - Current/latest publisher",
+        "created_at": "2023-07-21 18:58:34",
+        "updated_at": "2023-07-21 18:58:34"
+    },
+    {
+        "id": 134,
+        "indicator": "0 - Production",
+        "created_at": "2023-07-21 19:06:51",
+        "updated_at": "2023-07-21 19:06:51"
+    },
+    {
+        "id": 135,
+        "indicator": "1 - Publication",
+        "created_at": "2023-07-21 19:08:55",
+        "updated_at": "2023-07-21 19:08:56"
+    },
+    {
+        "id": 136,
+        "indicator": "2 - Distribution",
+        "created_at": "2023-07-21 19:09:12",
+        "updated_at": "2023-07-21 19:09:13"
+    },
+    {
+        "id": 137,
+        "indicator": "3 - Manufacture",
+        "created_at": "2023-07-21 19:09:41",
+        "updated_at": "2023-07-21 19:09:42"
+    },
+    {
+        "id": 138,
+        "indicator": "4 - Copyright notice date",
+        "created_at": "2023-07-21 19:16:06",
+        "updated_at": "2023-07-21 19:16:06"
+    },
+    {
+        "id": 139,
+        "indicator": "1 - Primary",
+        "created_at": "2023-07-21 19:18:09",
+        "updated_at": "2023-07-21 19:18:10"
+    },
+    {
+        "id": 140,
+        "indicator": "2 - Secondary",
+        "created_at": "2023-07-21 19:18:27",
+        "updated_at": "2023-07-21 19:18:28"
+    },
+    {
+        "id": 141,
+        "indicator": "0 - Mailing",
+        "created_at": "2023-07-21 19:30:14",
+        "updated_at": "2023-07-21 19:30:13"
+    },
+    {
+        "id": 142,
+        "indicator": "7 - Type specified in subfield $i",
+        "created_at": "2023-07-21 19:30:35",
+        "updated_at": "2023-07-21 19:30:36"
+    },
+    {
+        "id": 143,
+        "indicator": "# - Hours",
+        "created_at": "2023-07-22 06:11:22",
+        "updated_at": "2023-07-22 06:11:23"
+    },
+    {
+        "id": 144,
+        "indicator": "0 - Adaptive features to access primary content",
+        "created_at": "2023-07-22 06:15:15",
+        "updated_at": "2023-07-22 06:15:16"
+    },
+    {
+        "id": 145,
+        "indicator": "1 - Adaptive features to access secondary content",
+        "created_at": "2023-07-22 06:15:38",
+        "updated_at": "2023-07-22 06:15:38"
+    },
+    {
+        "id": 146,
+        "indicator": "0 - Horizontal coordinate system",
+        "created_at": "2023-07-22 06:16:29",
+        "updated_at": "2023-07-22 06:16:29"
+    },
+    {
+        "id": 147,
+        "indicator": "1 - Vertical coordinate system",
+        "created_at": "2023-07-22 06:16:44",
+        "updated_at": "2023-07-22 06:16:45"
+    },
+    {
+        "id": 148,
+        "indicator": "0 - Geographic",
+        "created_at": "2023-07-22 06:17:45",
+        "updated_at": "2023-07-22 06:17:46"
+    },
+    {
+        "id": 149,
+        "indicator": "1 - Map projection",
+        "created_at": "2023-07-22 06:18:03",
+        "updated_at": "2023-07-22 06:18:03"
+    },
+    {
+        "id": 150,
+        "indicator": "2 - Grid coordinate system",
+        "created_at": "2023-07-22 06:18:15",
+        "updated_at": "2023-07-22 06:18:16"
+    },
+    {
+        "id": 151,
+        "indicator": "3 - Local planar",
+        "created_at": "2023-07-22 06:18:53",
+        "updated_at": "2023-07-22 06:18:54"
+    },
+    {
+        "id": 152,
+        "indicator": "4 - Local",
+        "created_at": "2023-07-22 06:19:57",
+        "updated_at": "2023-07-22 06:19:57"
+    },
+    {
+        "id": 153,
+        "indicator": "5 - Geodetic model",
+        "created_at": "2023-07-22 06:20:20",
+        "updated_at": "2023-07-22 06:20:20"
+    },
+    {
+        "id": 154,
+        "indicator": "6 - Altitude",
+        "created_at": "2023-07-22 06:20:35",
+        "updated_at": "2023-07-22 06:20:36"
+    },
+    {
+        "id": 155,
+        "indicator": "7 - Method specified in $2",
+        "created_at": "2023-07-22 06:20:54",
+        "updated_at": "2023-07-22 06:20:55"
+    },
+    {
+        "id": 156,
+        "indicator": "8 - Depth",
+        "created_at": "2023-07-22 06:21:04",
+        "updated_at": "2023-07-22 06:21:05"
+    },
+    {
+        "id": 157,
+        "indicator": "0 - Document",
+        "created_at": "2023-07-22 06:25:43",
+        "updated_at": "2023-07-22 06:25:44"
+    },
+    {
+        "id": 158,
+        "indicator": "1 - Title",
+        "created_at": "2023-07-22 06:26:06",
+        "updated_at": "2023-07-22 06:26:07"
+    },
+    {
+        "id": 159,
+        "indicator": "2 - Abstract",
+        "created_at": "2023-07-22 06:26:21",
+        "updated_at": "2023-07-22 06:26:22"
+    },
+    {
+        "id": 160,
+        "indicator": "3 - Contents note",
+        "created_at": "2023-07-22 06:26:36",
+        "updated_at": "2023-07-22 06:26:36"
+    },
+    {
+        "id": 161,
+        "indicator": "4 - Author",
+        "created_at": "2023-07-22 06:26:51",
+        "updated_at": "2023-07-22 06:26:52"
+    },
+    {
+        "id": 162,
+        "indicator": "5 - Record",
+        "created_at": "2023-07-22 06:27:07",
+        "updated_at": "2023-07-22 06:27:07"
+    },
+    {
+        "id": 163,
+        "indicator": "8 - None of the above",
+        "created_at": "2023-07-22 06:27:23",
+        "updated_at": "2023-07-22 06:27:24"
+    },
+    {
+        "id": 164,
+        "indicator": "0 - Private",
+        "created_at": "2023-07-22 06:30:18",
+        "updated_at": "2023-07-22 06:30:19"
+    },
+    {
+        "id": 165,
+        "indicator": "1 - Not private",
+        "created_at": "2023-07-22 06:30:37",
+        "updated_at": "2023-07-22 06:30:38"
+    },
+    {
+        "id": 166,
+        "indicator": "0 - Formatted style",
+        "created_at": "2023-07-22 06:32:27",
+        "updated_at": "2023-07-22 06:32:28"
+    },
+    {
+        "id": 167,
+        "indicator": "1 - Unformatted note",
+        "created_at": "2023-07-22 06:32:54",
+        "updated_at": "2023-07-22 06:32:55"
+    },
+    {
+        "id": 168,
+        "indicator": "0 - Starting information",
+        "created_at": "2023-07-22 06:34:34",
+        "updated_at": "2023-07-22 06:34:34"
+    },
+    {
+        "id": 169,
+        "indicator": "1 - Ending information",
+        "created_at": "2023-07-22 06:34:53",
+        "updated_at": "2023-07-22 06:34:53"
+    },
+    {
+        "id": 170,
+        "indicator": "# - Not specified",
+        "created_at": "2023-07-22 06:35:46",
+        "updated_at": "2023-07-22 06:35:46"
+    },
+    {
+        "id": 171,
+        "indicator": "0 - Closed",
+        "created_at": "2023-07-22 06:36:03",
+        "updated_at": "2023-07-22 06:36:03"
+    },
+    {
+        "id": 172,
+        "indicator": "1 - Open",
+        "created_at": "2023-07-22 06:36:23",
+        "updated_at": "2023-07-22 06:36:23"
+    },
+    {
+        "id": 173,
+        "indicator": "7 - Source specified in $2",
+        "created_at": "2023-07-22 06:38:41",
+        "updated_at": "2023-07-22 06:38:41"
+    },
+    {
+        "id": 174,
+        "indicator": "0 - Medium of performance",
+        "created_at": "2023-07-22 06:40:24",
+        "updated_at": "2023-07-22 06:40:25"
+    },
+    {
+        "id": 175,
+        "indicator": "1 - Partial medium of performance",
+        "created_at": "2023-07-22 06:40:43",
+        "updated_at": "2023-07-22 06:40:44"
+    },
+    {
+        "id": 176,
+        "indicator": "2 - Medium of performance of musical content of representative expression",
+        "created_at": "2023-07-22 06:41:42",
+        "updated_at": "2023-07-22 06:41:43"
+    },
+    {
+        "id": 177,
+        "indicator": "3 - Partial medium of performance of musical content of representative expression",
+        "created_at": "2023-07-22 06:42:06",
+        "updated_at": "2023-07-22 06:42:06"
+    },
+    {
+        "id": 178,
+        "indicator": "0 - Not intended for access",
+        "created_at": "2023-07-22 06:43:14",
+        "updated_at": "2023-07-22 06:43:15"
+    },
+    {
+        "id": 179,
+        "indicator": "1 - Intended for access",
+        "created_at": "2023-07-22 06:43:30",
+        "updated_at": "2023-07-22 06:43:31"
+    },
+    {
+        "id": 180,
+        "indicator": "# - Relationship to original unknown",
+        "created_at": "2023-07-22 06:44:58",
+        "updated_at": "2023-07-22 06:44:59"
+    },
+    {
+        "id": 181,
+        "indicator": "0 - Original key",
+        "created_at": "2023-07-22 06:45:14",
+        "updated_at": "2023-07-22 06:45:14"
+    },
+    {
+        "id": 182,
+        "indicator": "1 - Transposed key",
+        "created_at": "2023-07-22 06:45:32",
+        "updated_at": "2023-07-22 06:45:33"
+    },
+    {
+        "id": 183,
+        "indicator": "2 - Key of representative expression",
+        "created_at": "2023-07-22 06:45:47",
+        "updated_at": "2023-07-22 06:45:47"
+    },
+    {
+        "id": 184,
+        "indicator": "1 - Creation of work",
+        "created_at": "2023-07-22 06:48:09",
+        "updated_at": "2023-07-22 06:48:09"
+    },
+    {
+        "id": 185,
+        "indicator": "2 - Creation of aggregate work",
+        "created_at": "2023-07-22 06:48:20",
+        "updated_at": "2023-07-22 06:48:20"
+    },
+    {
+        "id": 186,
+        "indicator": "0 - Series not traced",
+        "created_at": "2023-07-22 06:49:52",
+        "updated_at": "2023-07-22 06:49:52"
+    },
+    {
+        "id": 187,
+        "indicator": "1 - Series traced",
+        "created_at": "2023-07-22 06:50:02",
+        "updated_at": "2023-07-22 06:50:03"
+    },
+    {
+        "id": 188,
+        "indicator": "0 - Contents",
+        "created_at": "2023-07-22 06:51:58",
+        "updated_at": "2023-07-22 06:51:58"
+    },
+    {
+        "id": 189,
+        "indicator": "1 - Incomplete contents",
+        "created_at": "2023-07-22 06:52:31",
+        "updated_at": "2023-07-22 06:52:34"
+    },
+    {
+        "id": 190,
+        "indicator": "2 - Partial contents",
+        "created_at": "2023-07-22 06:52:52",
+        "updated_at": "2023-07-22 06:52:52"
+    },
+    {
+        "id": 191,
+        "indicator": "# - Basic",
+        "created_at": "2023-07-22 06:54:17",
+        "updated_at": "2023-07-22 06:54:18"
+    },
+    {
+        "id": 192,
+        "indicator": "0 - Enhanced",
+        "created_at": "2023-07-22 06:54:29",
+        "updated_at": "2023-07-22 06:54:29"
+    },
+    {
+        "id": 193,
+        "indicator": "0 - No restrictions",
+        "created_at": "2023-07-22 06:55:59",
+        "updated_at": "2023-07-22 06:56:00"
+    },
+    {
+        "id": 194,
+        "indicator": "1 - Restrictions apply",
+        "created_at": "2023-07-22 06:56:20",
+        "updated_at": "2023-07-22 06:56:19"
+    },
+    {
+        "id": 195,
+        "indicator": "0 - Coverage unknown",
+        "created_at": "2023-07-22 06:58:08",
+        "updated_at": "2023-07-22 06:58:08"
+    },
+    {
+        "id": 196,
+        "indicator": "1 - Coverage complete",
+        "created_at": "2023-07-22 06:58:18",
+        "updated_at": "2023-07-22 06:58:19"
+    },
+    {
+        "id": 197,
+        "indicator": "2 - Coverage is selective",
+        "created_at": "2023-07-22 06:58:31",
+        "updated_at": "2023-07-22 06:58:31"
+    },
+    {
+        "id": 198,
+        "indicator": "3 - Location in source not given",
+        "created_at": "2023-07-22 06:58:40",
+        "updated_at": "2023-07-22 06:58:41"
+    },
+    {
+        "id": 199,
+        "indicator": "4 - Location in source given",
+        "created_at": "2023-07-22 06:58:49",
+        "updated_at": "2023-07-22 06:58:49"
+    },
+    {
+        "id": 200,
+        "indicator": "0 - No display constant generated",
+        "created_at": "2023-07-22 07:00:07",
+        "updated_at": "2023-07-22 07:00:07"
+    },
+    {
+        "id": 201,
+        "indicator": "1 - Cast",
+        "created_at": "2023-07-22 07:00:16",
+        "updated_at": "2023-07-22 07:00:17"
+    },
+    {
+        "id": 202,
+        "indicator": "# - Type of file",
+        "created_at": "2023-07-22 07:02:03",
+        "updated_at": "2023-07-22 07:02:03"
+    },
+    {
+        "id": 203,
+        "indicator": "# - Summary",
+        "created_at": "2023-07-22 07:03:28",
+        "updated_at": "2023-07-22 07:03:28"
+    },
+    {
+        "id": 204,
+        "indicator": "0 - Subject",
+        "created_at": "2023-07-22 07:03:42",
+        "updated_at": "2023-07-22 07:03:43"
+    },
+    {
+        "id": 205,
+        "indicator": "1 - Review",
+        "created_at": "2023-07-22 07:03:53",
+        "updated_at": "2023-07-22 07:03:53"
+    },
+    {
+        "id": 206,
+        "indicator": "2 - Scope and content",
+        "created_at": "2023-07-22 07:04:16",
+        "updated_at": "2023-07-22 07:04:17"
+    },
+    {
+        "id": 207,
+        "indicator": "3 - Abstract",
+        "created_at": "2023-07-22 07:04:30",
+        "updated_at": "2023-07-22 07:04:31"
+    },
+    {
+        "id": 208,
+        "indicator": "4 - Content advice",
+        "created_at": "2023-07-22 07:04:45",
+        "updated_at": "2023-07-22 07:04:45"
+    },
+    {
+        "id": 209,
+        "indicator": "# - Audience",
+        "created_at": "2023-07-22 07:06:02",
+        "updated_at": "2023-07-22 07:06:03"
+    },
+    {
+        "id": 210,
+        "indicator": "0 - Reading grade level",
+        "created_at": "2023-07-22 07:06:17",
+        "updated_at": "2023-07-22 07:06:18"
+    },
+    {
+        "id": 211,
+        "indicator": "1 - Interest age level",
+        "created_at": "2023-07-22 07:06:28",
+        "updated_at": "2023-07-22 07:06:28"
+    },
+    {
+        "id": 212,
+        "indicator": "2 - Interest grade level",
+        "created_at": "2023-07-22 07:06:56",
+        "updated_at": "2023-07-22 07:06:57"
+    },
+    {
+        "id": 213,
+        "indicator": "3 - Special audience characteristics",
+        "created_at": "2023-07-22 07:07:11",
+        "updated_at": "2023-07-22 07:07:12"
+    },
+    {
+        "id": 214,
+        "indicator": "4 - Motivation/interest level",
+        "created_at": "2023-07-22 07:07:40",
+        "updated_at": "2023-07-22 07:07:40"
+    },
+    {
+        "id": 215,
+        "indicator": "# - Geographic coverage",
+        "created_at": "2023-07-22 07:09:18",
+        "updated_at": "2023-07-22 07:09:19"
+    },
+    {
+        "id": 216,
+        "indicator": "# - Cite as",
+        "created_at": "2023-07-22 07:10:31",
+        "updated_at": "2023-07-22 07:10:31"
+    },
+    {
+        "id": 217,
+        "indicator": "0 - Reading program",
+        "created_at": "2023-07-22 07:11:51",
+        "updated_at": "2023-07-22 07:11:51"
+    },
+    {
+        "id": 218,
+        "indicator": "0 - Accessibility technical details",
+        "created_at": "2023-07-22 07:13:25",
+        "updated_at": "2023-07-22 07:13:26"
+    },
+    {
+        "id": 219,
+        "indicator": "1 - Accessibility features",
+        "created_at": "2023-07-22 07:13:34",
+        "updated_at": "2023-07-22 07:13:35"
+    },
+    {
+        "id": 220,
+        "indicator": "2 - Accessibility deficiencies",
+        "created_at": "2023-07-22 07:13:49",
+        "updated_at": "2023-07-22 07:13:50"
+    },
+    {
+        "id": 221,
+        "indicator": "1 - Holder of originals",
+        "created_at": "2023-07-22 07:15:42",
+        "updated_at": "2023-07-22 07:15:42"
+    },
+    {
+        "id": 222,
+        "indicator": "2 - Holder of duplicates",
+        "created_at": "2023-07-22 07:15:58",
+        "updated_at": "2023-07-22 07:15:59"
+    },
+    {
+        "id": 223,
+        "indicator": "0 - Associated materials",
+        "created_at": "2023-07-22 07:20:33",
+        "updated_at": "2023-07-22 07:20:34"
+    },
+    {
+        "id": 224,
+        "indicator": "1 - Related materials",
+        "created_at": "2023-07-22 07:20:45",
+        "updated_at": "2023-07-22 07:20:46"
+    },
+    {
+        "id": 225,
+        "indicator": "0 - Biographical sketch",
+        "created_at": "2023-07-22 07:22:35",
+        "updated_at": "2023-07-22 07:22:35"
+    },
+    {
+        "id": 226,
+        "indicator": "1 - Administrative history",
+        "created_at": "2023-07-22 07:22:47",
+        "updated_at": "2023-07-22 07:22:47"
+    },
+    {
+        "id": 227,
+        "indicator": "# - Indexes",
+        "created_at": "2023-07-22 07:24:56",
+        "updated_at": "2023-07-22 07:24:57"
+    },
+    {
+        "id": 228,
+        "indicator": "0 - Finding aids",
+        "created_at": "2023-07-22 07:25:11",
+        "updated_at": "2023-07-22 07:25:12"
+    },
+    {
+        "id": 229,
+        "indicator": "# - Documentation",
+        "created_at": "2023-07-22 07:28:08",
+        "updated_at": "2023-07-22 07:28:08"
+    },
+    {
+        "id": 230,
+        "indicator": "# - File size",
+        "created_at": "2023-07-22 07:30:44",
+        "updated_at": "2023-07-22 07:30:45"
+    },
+    {
+        "id": 231,
+        "indicator": "0 - Case file characteristics",
+        "created_at": "2023-07-22 07:31:07",
+        "updated_at": "2023-07-22 07:31:08"
+    },
+    {
+        "id": 232,
+        "indicator": "# - Methodology",
+        "created_at": "2023-07-22 07:32:12",
+        "updated_at": "2023-07-22 07:32:12"
+    },
+    {
+        "id": 233,
+        "indicator": "# - Publications",
+        "created_at": "2023-07-22 07:34:58",
+        "updated_at": "2023-07-22 07:34:58"
+    },
+    {
+        "id": 234,
+        "indicator": "# - Awards",
+        "created_at": "2023-07-22 07:38:01",
+        "updated_at": "2023-07-22 07:38:02"
+    },
+    {
+        "id": 235,
+        "indicator": "0 - Source of description",
+        "created_at": "2023-07-22 07:39:40",
+        "updated_at": "2023-07-22 07:39:41"
+    },
+    {
+        "id": 236,
+        "indicator": "1 - Latest issue consulted",
+        "created_at": "2023-07-22 07:40:06",
+        "updated_at": "2023-07-22 07:40:07"
+    },
+    {
+        "id": 237,
+        "indicator": "0 - Library of Congress Subject Headings",
+        "created_at": "2023-07-22 07:42:53",
+        "updated_at": "2023-07-22 07:42:54"
+    },
+    {
+        "id": 238,
+        "indicator": "1 - Library of Congress Children's and Young Adults' Subject Headings",
+        "created_at": "2023-07-22 07:43:38",
+        "updated_at": "2023-07-22 07:43:39"
+    },
+    {
+        "id": 239,
+        "indicator": "2 - Medical Subject Headings",
+        "created_at": "2023-07-22 07:43:56",
+        "updated_at": "2023-07-22 07:43:57"
+    },
+    {
+        "id": 240,
+        "indicator": "3 - National Agricultural Library subject authority file",
+        "created_at": "2023-07-22 07:44:06",
+        "updated_at": "2023-07-22 07:44:07"
+    },
+    {
+        "id": 241,
+        "indicator": "4 - Source not specified",
+        "created_at": "2023-07-22 07:44:29",
+        "updated_at": "2023-07-22 07:44:29"
+    },
+    {
+        "id": 242,
+        "indicator": "5 - Canadian Subject Headings",
+        "created_at": "2023-07-22 07:44:52",
+        "updated_at": "2023-07-22 07:44:52"
+    },
+    {
+        "id": 243,
+        "indicator": "6 - RÃ©pertoire de vedettes-matiÃ¨re",
+        "created_at": "2023-07-22 07:45:32",
+        "updated_at": "2023-07-22 07:45:33"
+    },
+    {
+        "id": 244,
+        "indicator": "0 - No level specified",
+        "created_at": "2023-07-22 07:53:34",
+        "updated_at": "2023-07-22 07:53:34"
+    },
+    {
+        "id": 245,
+        "indicator": "0 - Topical term",
+        "created_at": "2023-07-22 07:58:39",
+        "updated_at": "2023-07-22 07:58:40"
+    },
+    {
+        "id": 246,
+        "indicator": "1 - Personal name",
+        "created_at": "2023-07-22 07:58:53",
+        "updated_at": "2023-07-22 07:58:53"
+    },
+    {
+        "id": 247,
+        "indicator": "2 - Corporate name",
+        "created_at": "2023-07-22 07:59:21",
+        "updated_at": "2023-07-22 07:59:22"
+    },
+    {
+        "id": 248,
+        "indicator": "3 - Meeting name",
+        "created_at": "2023-07-22 07:59:32",
+        "updated_at": "2023-07-22 07:59:32"
+    },
+    {
+        "id": 249,
+        "indicator": "4 - Chronological term",
+        "created_at": "2023-07-22 07:59:46",
+        "updated_at": "2023-07-22 07:59:47"
+    },
+    {
+        "id": 250,
+        "indicator": "5 - Geographic name",
+        "created_at": "2023-07-22 08:00:07",
+        "updated_at": "2023-07-22 08:00:07"
+    },
+    {
+        "id": 251,
+        "indicator": "6 - Genre/form term",
+        "created_at": "2023-07-22 08:00:25",
+        "updated_at": "2023-07-22 08:00:26"
+    },
+    {
+        "id": 252,
+        "indicator": "0 - Faceted",
+        "created_at": "2023-07-22 08:03:02",
+        "updated_at": "2023-07-22 08:03:02"
+    },
+    {
+        "id": 253,
+        "indicator": "2 - Analytical entry",
+        "created_at": "2023-07-22 08:09:22",
+        "updated_at": "2023-07-22 08:09:23"
+    },
+    {
+        "id": 254,
+        "indicator": "2 - Other",
+        "created_at": "2023-07-22 08:36:49",
+        "updated_at": "2023-07-22 08:36:49"
+    },
+    {
+        "id": 255,
+        "indicator": "# - Main series",
+        "created_at": "2023-07-22 08:42:32",
+        "updated_at": "2023-07-22 08:42:33"
+    },
+    {
+        "id": 256,
+        "indicator": "# - Has subseries",
+        "created_at": "2023-07-22 08:43:35",
+        "updated_at": "2023-07-22 08:43:35"
+    },
+    {
+        "id": 257,
+        "indicator": "# - Translation of",
+        "created_at": "2023-07-22 08:44:49",
+        "updated_at": "2023-07-22 08:44:48"
+    },
+    {
+        "id": 258,
+        "indicator": "# - Translated as",
+        "created_at": "2023-07-22 08:45:50",
+        "updated_at": "2023-07-22 08:45:51"
+    },
+    {
+        "id": 259,
+        "indicator": "# - Has supplement",
+        "created_at": "2023-07-22 08:46:38",
+        "updated_at": "2023-07-22 08:46:39"
+    },
+    {
+        "id": 260,
+        "indicator": "# - Supplement to",
+        "created_at": "2023-07-22 08:47:28",
+        "updated_at": "2023-07-22 08:47:29"
+    },
+    {
+        "id": 261,
+        "indicator": "0 - Parent",
+        "created_at": "2023-07-22 08:47:44",
+        "updated_at": "2023-07-22 08:47:44"
+    },
+    {
+        "id": 262,
+        "indicator": "# - In",
+        "created_at": "2023-07-22 08:48:47",
+        "updated_at": "2023-07-22 08:48:48"
+    },
+    {
+        "id": 263,
+        "indicator": "# - Constituent unit",
+        "created_at": "2023-07-22 08:49:48",
+        "updated_at": "2023-07-22 08:49:49"
+    },
+    {
+        "id": 264,
+        "indicator": "# - Other edition available",
+        "created_at": "2023-07-22 08:50:48",
+        "updated_at": "2023-07-22 08:50:49"
+    },
+    {
+        "id": 265,
+        "indicator": "# - Available in another form",
+        "created_at": "2023-07-22 08:51:35",
+        "updated_at": "2023-07-22 08:51:36"
+    },
+    {
+        "id": 266,
+        "indicator": "# - Issued with",
+        "created_at": "2023-07-22 08:52:31",
+        "updated_at": "2023-07-22 08:52:31"
+    },
+    {
+        "id": 267,
+        "indicator": "0 - Continues",
+        "created_at": "2023-07-22 08:53:31",
+        "updated_at": "2023-07-22 08:53:31"
+    },
+    {
+        "id": 268,
+        "indicator": "1 - Continues in part",
+        "created_at": "2023-07-22 08:53:52",
+        "updated_at": "2023-07-22 08:53:53"
+    },
+    {
+        "id": 269,
+        "indicator": "2 - Supersedes",
+        "created_at": "2023-07-22 08:54:16",
+        "updated_at": "2023-07-22 08:54:16"
+    },
+    {
+        "id": 270,
+        "indicator": "3 - Supersedes in part",
+        "created_at": "2023-07-22 08:54:31",
+        "updated_at": "2023-07-22 08:54:31"
+    },
+    {
+        "id": 271,
+        "indicator": "4 - Formed by the union of ... and ...",
+        "created_at": "2023-07-22 08:55:01",
+        "updated_at": "2023-07-22 08:55:02"
+    },
+    {
+        "id": 272,
+        "indicator": "5 - Absorbed",
+        "created_at": "2023-07-22 08:55:04",
+        "updated_at": "2023-07-22 08:55:04"
+    },
+    {
+        "id": 273,
+        "indicator": "6 - Absorbed in part",
+        "created_at": "2023-07-22 08:55:22",
+        "updated_at": "2023-07-22 08:55:23"
+    },
+    {
+        "id": 274,
+        "indicator": "7 - Separated from",
+        "created_at": "2023-07-22 08:55:38",
+        "updated_at": "2023-07-22 08:55:38"
+    },
+    {
+        "id": 275,
+        "indicator": "0 - Continued by",
+        "created_at": "2023-07-22 08:56:59",
+        "updated_at": "2023-07-22 08:56:59"
+    },
+    {
+        "id": 276,
+        "indicator": "1 - Continued in part by",
+        "created_at": "2023-07-22 08:57:15",
+        "updated_at": "2023-07-22 08:57:15"
+    },
+    {
+        "id": 277,
+        "indicator": "2 - Superseded by",
+        "created_at": "2023-07-22 08:57:31",
+        "updated_at": "2023-07-22 08:57:32"
+    },
+    {
+        "id": 278,
+        "indicator": "3 - Superseded in part by",
+        "created_at": "2023-07-22 08:57:47",
+        "updated_at": "2023-07-22 08:57:48"
+    },
+    {
+        "id": 279,
+        "indicator": "4 - Absorbed by",
+        "created_at": "2023-07-22 08:58:03",
+        "updated_at": "2023-07-22 08:58:04"
+    },
+    {
+        "id": 280,
+        "indicator": "5 - Absorbed in part by",
+        "created_at": "2023-07-22 08:58:27",
+        "updated_at": "2023-07-22 08:58:27"
+    },
+    {
+        "id": 281,
+        "indicator": "6 - Split into ... and ...",
+        "created_at": "2023-07-22 08:58:51",
+        "updated_at": "2023-07-22 08:58:51"
+    },
+    {
+        "id": 282,
+        "indicator": "7 - Merged with ... to form ...",
+        "created_at": "2023-07-22 08:59:09",
+        "updated_at": "2023-07-22 08:59:10"
+    },
+    {
+        "id": 283,
+        "indicator": "8 - Changed back to",
+        "created_at": "2023-07-22 08:59:24",
+        "updated_at": "2023-07-22 08:59:25"
+    },
+    {
+        "id": 284,
+        "indicator": "# - Data source",
+        "created_at": "2023-07-22 09:00:57",
+        "updated_at": "2023-07-22 09:00:57"
+    },
+    {
+        "id": 285,
+        "indicator": "# - Related item",
+        "created_at": "2023-07-22 09:01:54",
+        "updated_at": "2023-07-22 09:01:55"
+    },
+    {
+        "id": 286,
+        "indicator": "# - Parallel description in another language of cataloging",
+        "created_at": "2023-07-22 09:02:54",
+        "updated_at": "2023-07-22 09:02:54"
+    },
+    {
+        "id": 287,
+        "indicator": "0 - Library of Congress classification",
+        "created_at": "2023-07-22 09:08:05",
+        "updated_at": "2023-07-22 09:08:05"
+    },
+    {
+        "id": 288,
+        "indicator": "1 - Dewey Decimal classification",
+        "created_at": "2023-07-22 09:08:19",
+        "updated_at": "2023-07-22 09:08:20"
+    },
+    {
+        "id": 289,
+        "indicator": "2 - National Library of Medicine classification",
+        "created_at": "2023-07-22 09:08:34",
+        "updated_at": "2023-07-22 09:08:34"
+    },
+    {
+        "id": 290,
+        "indicator": "3 - Superintendent of Documents classification",
+        "created_at": "2023-07-22 09:08:50",
+        "updated_at": "2023-07-22 09:08:50"
+    },
+    {
+        "id": 291,
+        "indicator": "4 - Shelving control number",
+        "created_at": "2023-07-22 09:09:10",
+        "updated_at": "2023-07-22 09:09:10"
+    },
+    {
+        "id": 292,
+        "indicator": "5 - Title",
+        "created_at": "2023-07-22 09:09:28",
+        "updated_at": "2023-07-22 09:09:28"
+    },
+    {
+        "id": 293,
+        "indicator": "6 - Shelved separately",
+        "created_at": "2023-07-22 09:09:48",
+        "updated_at": "2023-07-22 09:09:49"
+    },
+    {
+        "id": 294,
+        "indicator": "8 - Other scheme",
+        "created_at": "2023-07-22 09:10:21",
+        "updated_at": "2023-07-22 09:10:22"
+    },
+    {
+        "id": 295,
+        "indicator": "0 - Not enumeration",
+        "created_at": "2023-07-22 09:12:00",
+        "updated_at": "2023-07-22 09:12:00"
+    },
+    {
+        "id": 296,
+        "indicator": "1 - Primary enumeration",
+        "created_at": "2023-07-22 09:12:18",
+        "updated_at": "2023-07-22 09:12:18"
+    },
+    {
+        "id": 297,
+        "indicator": "2 - Alternative enumeration",
+        "created_at": "2023-07-22 09:12:31",
+        "updated_at": "2023-07-22 09:12:32"
+    },
+    {
+        "id": 298,
+        "indicator": "0 - Email",
+        "created_at": "2023-07-22 09:14:20",
+        "updated_at": "2023-07-22 09:14:21"
+    },
+    {
+        "id": 299,
+        "indicator": "1 - FTP",
+        "created_at": "2023-07-22 09:14:30",
+        "updated_at": "2023-07-22 09:14:30"
+    },
+    {
+        "id": 300,
+        "indicator": "2 - Remote login (Telnet)",
+        "created_at": "2023-07-22 09:14:39",
+        "updated_at": "2023-07-22 09:14:40"
+    },
+    {
+        "id": 301,
+        "indicator": "3 - Dial-up",
+        "created_at": "2023-07-22 09:14:49",
+        "updated_at": "2023-07-22 09:14:50"
+    },
+    {
+        "id": 302,
+        "indicator": "4 - HTTP",
+        "created_at": "2023-07-22 09:15:04",
+        "updated_at": "2023-07-22 09:15:04"
+    },
+    {
+        "id": 303,
+        "indicator": "7 - Method specified in subfield $2",
+        "created_at": "2023-07-22 09:15:18",
+        "updated_at": "2023-07-22 09:15:18"
+    },
+    {
+        "id": 304,
+        "indicator": "0 - Resource",
+        "created_at": "2023-07-22 09:16:09",
+        "updated_at": "2023-07-22 09:16:10"
+    },
+    {
+        "id": 305,
+        "indicator": "1 - Version of resource",
+        "created_at": "2023-07-22 09:16:18",
+        "updated_at": "2023-07-22 09:16:19"
+    },
+    {
+        "id": 306,
+        "indicator": "2 - Related resource",
+        "created_at": "2023-07-22 09:16:36",
+        "updated_at": "2023-07-22 09:16:36"
+    },
+    {
+        "id": 307,
+        "indicator": "3 - Component part(s) of resource",
+        "created_at": "2023-07-22 09:16:47",
+        "updated_at": "2023-07-22 09:16:48"
+    },
+    {
+        "id": 308,
+        "indicator": "4 - Version of component part(s) of resource",
+        "created_at": "2023-07-22 09:17:06",
+        "updated_at": "2023-07-22 09:17:07"
+    },
+    {
+        "id": 343,
+        "indicator": "# - No information provided/not applicable",
+        "created_at": "2023-07-22 09:53:03",
+        "updated_at": "2023-07-22 09:53:04"
+    },
+    {
+        "id": 344,
+        "indicator": "0 - Fully machine-generated",
+        "created_at": "2023-07-22 09:53:23",
+        "updated_at": "2023-07-22 09:53:23"
+    },
+    {
+        "id": 345,
+        "indicator": "1 - Partially machine-generated",
+        "created_at": "2023-07-22 09:53:42",
+        "updated_at": "2023-07-22 09:53:43"
+    },
+    {
+        "id": 346,
+        "indicator": "2 - Not machine-generated",
+        "created_at": "2023-07-22 09:54:07",
+        "updated_at": "2023-07-22 09:54:07"
+    },
+    {
+        "id": 347,
+        "indicator": "0 - Leader",
+        "created_at": "2023-07-22 09:55:47",
+        "updated_at": "2023-07-22 09:55:48"
+    },
+    {
+        "id": 348,
+        "indicator": "1 - Variable control fields (002-009)",
+        "created_at": "2023-07-22 09:55:56",
+        "updated_at": "2023-07-22 09:55:56"
+    },
+    {
+        "id": 349,
+        "indicator": "2 - Variable data fields (010-999)",
+        "created_at": "2023-07-22 09:56:10",
+        "updated_at": "2023-07-22 09:56:11"
+    }
+]

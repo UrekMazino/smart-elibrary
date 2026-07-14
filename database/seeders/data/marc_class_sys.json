@@ -1,0 +1,16 @@
+[
+    {
+        "id": 1,
+        "code": "LOC",
+        "name": "Library of Congress",
+        "created_at": "2023-07-22 15:06:23",
+        "updated_at": "2023-07-22 15:06:24"
+    },
+    {
+        "id": 2,
+        "code": "DDC",
+        "name": "Dewey Decimal Classification",
+        "created_at": "2023-07-22 15:07:08",
+        "updated_at": "2023-07-22 15:07:09"
+    }
+]

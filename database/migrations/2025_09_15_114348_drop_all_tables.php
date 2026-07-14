@@ -18,17 +18,20 @@ class DropAllTables extends Migration
         // Increase GROUP_CONCAT limit
         DB::statement('SET GROUP_CONCAT_MAX_LEN = 32768;');
 
-        // Generate DROP TABLE statements for all base tables
-        $dropList = DB::selectOne(
-            "SELECT GROUP_CONCAT(CONCAT('DROP TABLE IF EXISTS `', table_name, '`')) AS statement " .
+        // Build ONE valid `DROP TABLE IF EXISTS `a`,`b`,...` statement. (The previous version
+        // chained many `DROP TABLE IF EXISTS `x`` clauses with commas — invalid SQL.) Exclude
+        // Laravel's own migrations / personal_access_tokens tables so migrate:fresh doesn't drop
+        // the migration-tracking table mid-run.
+        $tableList = DB::selectOne(
+            "SELECT GROUP_CONCAT(CONCAT('`', table_name, '`')) AS list " .
             "FROM information_schema.tables " .
-            "WHERE table_schema = ? AND table_type = 'BASE TABLE'",
+            "WHERE table_schema = ? AND table_type = 'BASE TABLE' " .
+            "AND table_name NOT IN ('migrations','personal_access_tokens')",
             [DB::getDatabaseName()]
-        )->statement;
+        )->list;
 
-        if ($dropList) {
-            // Execute the DROP TABLE statements
-            DB::statement($dropList);
+        if ($tableList) {
+            DB::statement('DROP TABLE IF EXISTS ' . $tableList);
         }
 
         // Re-enable foreign key checks

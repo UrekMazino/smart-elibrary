@@ -1,0 +1,20 @@
+[
+    {
+        "id": 1,
+        "name": "Not Applicable/Not Provided/Earliest",
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2,
+        "name": "Intervening",
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 3,
+        "name": "Current/Last",
+        "created_at": null,
+        "updated_at": null
+    }
+]

@@ -1,0 +1,62 @@
+[
+    {
+        "id": 1,
+        "name": "Water Damage",
+        "created_at": "2023-07-12 09:08:34",
+        "updated_at": "2023-07-12 09:08:35"
+    },
+    {
+        "id": 2,
+        "name": "Cover Damage",
+        "created_at": "2023-07-12 09:09:49",
+        "updated_at": "2023-07-12 09:09:50"
+    },
+    {
+        "id": 3,
+        "name": "Spine Damage",
+        "created_at": "2023-07-12 09:10:03",
+        "updated_at": "2023-07-12 09:10:04"
+    },
+    {
+        "id": 4,
+        "name": "Page Tears",
+        "created_at": "2023-07-12 09:10:18",
+        "updated_at": "2023-07-12 09:10:19"
+    },
+    {
+        "id": 5,
+        "name": "Highlighting and Underlining",
+        "created_at": "2023-07-12 09:10:34",
+        "updated_at": "2023-07-12 09:10:35"
+    },
+    {
+        "id": 6,
+        "name": "Writing or Annotations",
+        "created_at": "2023-07-12 09:11:05",
+        "updated_at": "2023-07-12 09:11:06"
+    },
+    {
+        "id": 7,
+        "name": "Dog-Eared Pages",
+        "created_at": "2023-07-12 09:11:15",
+        "updated_at": "2023-07-12 09:11:16"
+    },
+    {
+        "id": 8,
+        "name": "Loose Binding",
+        "created_at": "2023-07-12 09:11:26",
+        "updated_at": "2023-07-12 09:11:27"
+    },
+    {
+        "id": 9,
+        "name": "Dust Jacket Damage",
+        "created_at": "2023-07-12 09:11:37",
+        "updated_at": "2023-07-12 09:11:37"
+    },
+    {
+        "id": 10,
+        "name": "Excessive Wear",
+        "created_at": "2023-07-12 09:11:47",
+        "updated_at": "2023-07-12 09:11:48"
+    }
+]
