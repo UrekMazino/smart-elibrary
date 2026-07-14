@@ -30,10 +30,26 @@
 	border-top: 1px solid #e3e6ea; color: #2563eb; font-weight: 600; font-size: 14px; text-decoration: none;
 }
 .instant-seeall:hover { background: #eef4ff; color: #1d4ed8; }
+
+/* ---- Minimalist section nav: fixed dots on the right, smooth-scroll to each section ---- */
+#sec-search, #sec-shelves, #sec-misc { scroll-margin-top: 110px; }
+.section-nav { position: fixed; top: 50%; right: 20px; transform: translateY(-50%); z-index: 900; display: flex; flex-direction: column; gap: 16px; }
+.section-nav a { position: relative; display: block; width: 13px; height: 13px; }
+.section-nav a i { position: absolute; inset: 0; border-radius: 50%; border: 2px solid #00a496; background: transparent; transition: background .2s ease, transform .2s ease; }
+.section-nav a:hover i { background: #00a496; }
+.section-nav a.active i { background: #00a496; transform: scale(1.28); }
+.section-nav a::after { content: attr(data-label); position: absolute; right: 24px; top: 50%; transform: translateY(-50%); white-space: nowrap; background: #0a5f56; color: #fff; font-size: 12px; font-weight: 600; letter-spacing: .3px; padding: 4px 10px; border-radius: 6px; box-shadow: 0 3px 8px rgba(0,0,0,.2); opacity: 0; pointer-events: none; transition: opacity .18s ease; }
+.section-nav a:hover::after, .section-nav a.active::after { opacity: 1; }
+@media (max-width: 900px) { .section-nav { display: none; } }
 </style>
 @endsection
 
 @section('content')
+	<nav class="section-nav" aria-label="Page sections">
+		<a href="#sec-search"  data-label="Search"  class="active"><i></i></a>
+		<a href="#sec-shelves" data-label="Shelves"><i></i></a>
+		<a href="#sec-misc"    data-label="Recent"><i></i></a>
+	</nav>
 {{-- @if(Auth::user() && !checkCSF()) {{ session(['message' => 'Hello! Can we have a minute of your time to answer our CSF form. Thank you!']); }} @endif --}}
 		@if (session('message'))
 			<div class="alert @if(!checkCSF())alert-warning @else alert-success @endif text-center" style="margin-bottom:0; padding: 10px 1rem;" role="alert">
@@ -42,7 +58,7 @@
 			@php session()->forget('message'); @endphp
 		@endif
 
-		<div class="hero_home version_1">
+		<div class="hero_home version_1" id="sec-search">
 			<div class="content">
 				<h3><img src="{{ asset('opac/img/elibrary-06.png') }}" alt="" width="400"class="img-fluid"></h3>
 				<p>
@@ -106,7 +122,7 @@
 			</div>
 		</div> --}}
 
-		@include('opac.partials.shelf-browser')
+		<div id="sec-shelves">@include('opac.partials.shelf-browser')</div>
 		<style>
 			.cover-carousel { max-width:1680px; margin:0 auto; padding:34px 24px 6px; }
 			.cover-carousel .main_title { text-align:center; margin-bottom:16px; }
@@ -127,6 +143,7 @@
 			.cc-arrow.prev { left:-4px; } .cc-arrow.next { right:-4px; }
 			.cc-arrow:disabled { opacity:.3; cursor:default; background:#fff; border-color:#d0d7de; color:#3f4079; }
 		</style>
+		<div id="sec-misc">
 		<div class="cover-carousel">
 			<div class="main_title"><h2>Recent Uploads</h2></div>
 			<div class="cc-strip">
@@ -186,7 +203,8 @@
 			document.querySelectorAll('.cc-strip').forEach(wire);
 		})();
 		</script>
-		<!-- /app_section -->
+		</div>{{-- /#sec-misc --}}
+			<!-- /app_section -->
 		<!-- /Hero -->
 <form method="post" action="{{ url('/full-description') }}" id="frm1">
 	@csrf
@@ -216,7 +234,36 @@
 
 @section('js')
 <script type="text/javascript">
-	
+	// ---- Minimalist section nav: smooth-scroll (offset for the sticky header) + scrollspy ----
+	(function () {
+		var nav = document.querySelector('.section-nav');
+		if (!nav) return;
+		var links = [].slice.call(nav.querySelectorAll('a'));
+		var secs = links.map(function (a) { return document.querySelector(a.getAttribute('href')); });
+		function headerOffset() {
+			var h = document.querySelector('header.header_sticky');
+			return (h ? h.offsetHeight : 90) + 10;
+		}
+		links.forEach(function (a) {
+			a.addEventListener('click', function (e) {
+				var t = document.querySelector(a.getAttribute('href'));
+				if (!t) return;
+				e.preventDefault();
+				var y = t.getBoundingClientRect().top + window.pageYOffset - headerOffset();
+				window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+			});
+		});
+		function setActive(i) { links.forEach(function (l, j) { l.classList.toggle('active', i === j); }); }
+		if ('IntersectionObserver' in window) {
+			var io = new IntersectionObserver(function (entries) {
+				entries.forEach(function (en) {
+					if (en.isIntersecting) { var i = secs.indexOf(en.target); if (i > -1) setActive(i); }
+				});
+			}, { rootMargin: '-45% 0px -45% 0px', threshold: 0 });
+			secs.forEach(function (s) { if (s) io.observe(s); });
+		}
+	})();
+
 	$("#checkAll").click(function () {
         $('.form-check-input').not(this).prop('checked', false);
       });
