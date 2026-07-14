@@ -3,11 +3,13 @@
 <style>
 	/* ---- eLibrary teal color scheme: multi-column shelf explorer ---- */
 	.shelf-browser { padding: 52px 24px 64px; background: radial-gradient(130% 120% at 50% -10%, #f1faf8 0%, #dcefeb 62%, #cfe8e3 100%); }
-	.shelf-browser .shelf-heading { text-align:center; margin-bottom:22px; }
+	/* Heading now carries the prev/next paging arrows, flanking the title. */
+	.shelf-browser .shelf-heading { display:flex; align-items:center; justify-content:center; gap:20px; margin-bottom:22px; }
+	.shelf-browser .shelf-title { text-align:center; }
 	.shelf-browser .shelf-heading .orn { color:#00a496; font-size:20px; }
 	.shelf-browser .shelf-heading h2 { font-family:Georgia,"Palatino Linotype",serif; font-size:26px; letter-spacing:2px; text-transform:uppercase; color:#0a5f56; margin:4px 0 0; font-weight:700; }
 
-	.shelf-explorer { position:relative; max-width:1680px; margin:0 auto; padding:0 54px; }
+	.shelf-explorer { position:relative; max-width:1680px; margin:0 auto; padding:0 10px; }
 	.shelf-viewport { overflow:hidden; }
 	.shelf-cols { display:flex; gap:20px; align-items:flex-start; transition:transform .45s cubic-bezier(.4,0,.2,1); will-change:transform; }
 	.shelf-col { flex:0 0 auto; min-width:0; display:flex; flex-direction:column; border-radius:8px; overflow:hidden; align-self:stretch;
@@ -45,24 +47,26 @@
 	.col-book:hover { transform:translateY(-4px); z-index:2; }
 	.col-book.no-link { cursor:default; }
 
-	.shelf-page { position:absolute; top:46%; transform:translateY(-50%); width:44px; height:44px; border-radius:50%; z-index:6;
+	.shelf-page { flex:0 0 auto; width:44px; height:44px; border-radius:50%;
 		border:1px solid #0a6e63; cursor:pointer; color:#053f39; font-size:24px; line-height:1;
 		background:radial-gradient(circle at 35% 30%, #6fe0d2, #00a496 70%);
 		display:flex; align-items:center; justify-content:center; box-shadow: inset 0 1px 1px rgba(255,255,255,.55), 0 2px 5px rgba(0,0,0,.35); }
-	.shelf-page.prev { left:2px; } .shelf-page.next { right:2px; }
-	.shelf-page:hover { filter:brightness(1.07); } .shelf-page:active { transform:translateY(calc(-50% + 1px)); }
-	.shelf-page:disabled { opacity:.35; cursor:default; filter:none; }
+	.shelf-page:hover { filter:brightness(1.07); } .shelf-page:active { transform:translateY(1px); }
+	.shelf-page:disabled { opacity:.3; cursor:default; filter:none; }
 
 	@media (max-width:1100px){ .col-book img { max-height:136px; max-width:106px; } }
-	@media (max-width:767px){ .shelf-explorer { padding:0 42px; } .shelf-page { width:36px; height:36px; font-size:20px; } .col-book img { max-height:120px; max-width:94px; } }
+	@media (max-width:767px){ .shelf-explorer { padding:0 8px; } .shelf-page { width:36px; height:36px; font-size:20px; } .col-book img { max-height:120px; max-width:94px; } }
 </style>
 <section class="shelf-browser">
 	<div class="shelf-heading">
-		<span class="orn">&#10087;</span>
-		<h2>Browse the Shelves</h2>
+		<button type="button" class="shelf-page prev" aria-label="Previous shelves">&#8249;</button>
+		<div class="shelf-title">
+			<span class="orn">&#10087;</span>
+			<h2>Browse the Shelves</h2>
+		</div>
+		<button type="button" class="shelf-page next" aria-label="Next shelves">&#8250;</button>
 	</div>
 	<div class="shelf-explorer">
-		<button type="button" class="shelf-page prev" aria-label="Previous shelves">&#8249;</button>
 		<div class="shelf-viewport">
 		<div class="shelf-cols">
 			@foreach($__shelves as $i => $shelf)
@@ -90,7 +94,6 @@
 			@endforeach
 		</div>
 		</div>
-		<button type="button" class="shelf-page next" aria-label="Next shelves">&#8250;</button>
 	</div>
 </section>
 <script type="text/javascript">
@@ -135,20 +138,31 @@
 	function refresh(animate) {
 		var n = windowSize();
 		var vp = viewport.clientWidth;
-		var colW = (vp - (n - 1) * GAP) / n;
+
+		// If there are more shelves than fit, narrow the columns by PEEK so the adjacent
+		// shelf shows a sliver at the edge (a "there's more" hint). When they all fit, no peek.
+		var hasMore = cols.length > n;
+		var PEEK = !hasMore ? 0 : (n === 1 ? 34 : 48);
+		var colW = (vp - (n - 1) * GAP - PEEK) / n;
 		cols.forEach(function (c) { c.style.width = colW + 'px'; });
+		var step = colW + GAP;
 
 		var maxStart = Math.max(0, cols.length - n);
 		if (start > maxStart) start = maxStart;
 		if (start < 0) start = 0;
 
+		// Right peek on every page except the last; on the last page shift flush-right so there's
+		// no empty gutter (which naturally reveals a left peek of the previous shelf instead).
+		var offset = start * step;
+		if (hasMore && start >= maxStart) offset += PEEK;
+
 		if (!animate) track.style.transition = 'none';
-		track.style.transform = 'translateX(' + (-start * (colW + GAP)) + 'px)';
+		track.style.transform = 'translateX(' + (-offset) + 'px)';
 		if (!animate) { void track.offsetWidth; track.style.transition = ''; }   // restore transition after reflow
 
 		if (prev) prev.disabled = start <= 0;
 		if (next) next.disabled = start >= maxStart;
-		var hideNav = cols.length <= n;
+		var hideNav = !hasMore;
 		if (prev) prev.style.display = hideNav ? 'none' : '';
 		if (next) next.style.display = hideNav ? 'none' : '';
 
