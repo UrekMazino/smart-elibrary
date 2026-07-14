@@ -895,6 +895,11 @@ function getShelves($limit = 45)
         ];
     }
 
+    // Arrange the shelves alphabetically by label (case-insensitive).
+    usort($shelves, function ($a, $b) {
+        return strcasecmp($a['label'], $b['label']);
+    });
+
     return $shelves;
     });
 }
