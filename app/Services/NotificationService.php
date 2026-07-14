@@ -116,12 +116,7 @@ class NotificationService
         // Inquiries with patron activity THIS admin hasn't opened yet. Opening the
         // thread (clicking Reply) records a per-admin seen and clears it — no reply
         // required. A later patron follow-up makes it unread again.
-        $inq = DB::table('inquiries as i')
-            ->leftJoin('inquiry_seens as s', function ($j) use ($user) {
-                $j->on('s.inquiry_id', '=', 'i.id')->where('s.user_id', '=', $user->id);
-            })
-            ->whereRaw("GREATEST(i.created_at, COALESCE((SELECT MAX(r.created_at) FROM reply_inquiries r WHERE r.inquiry_id = i.id AND r.user_id = i.user_id), i.created_at)) > COALESCE(s.seen_at, '1970-01-01 00:00:00')")
-            ->count();
+        $inq = count(self::unreadInquiryIds($user));
         if ($inq > 0) {
             $count += $inq;
             $items[] = self::item('help-circle', 'info',
@@ -131,6 +126,22 @@ class NotificationService
         }
 
         return ['count' => $count, 'items' => $items];
+    }
+
+    /**
+     * IDs of inquiries with patron activity the given admin hasn't opened since the
+     * latest patron message. Single source of truth for both the bell count and the
+     * per-row "unseen" dot on the admin inquiry table.
+     */
+    public static function unreadInquiryIds(User $user): array
+    {
+        return DB::table('inquiries as i')
+            ->leftJoin('inquiry_seens as s', function ($j) use ($user) {
+                $j->on('s.inquiry_id', '=', 'i.id')->where('s.user_id', '=', $user->id);
+            })
+            ->whereRaw("GREATEST(i.created_at, COALESCE((SELECT MAX(r.created_at) FROM reply_inquiries r WHERE r.inquiry_id = i.id AND r.user_id = i.user_id), i.created_at)) > COALESCE(s.seen_at, '1970-01-01 00:00:00')")
+            ->pluck('i.id')
+            ->all();
     }
 
     protected static function item(string $icon, string $color, string $title, string $text, string $url): array

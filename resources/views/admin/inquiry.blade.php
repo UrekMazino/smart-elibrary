@@ -21,6 +21,7 @@
 		.time-right { display:block; text-align:right; color:rgba(255,255,255,.85); font-size:11px; }
 		.time-left  { display:block; text-align:left;  color:#8a94a6; font-size:11px; }
 
+		.reply-dot { position:absolute; top:-3px; right:-3px; width:10px; height:10px; background:#ff3366; border-radius:50%; border:2px solid #fff; }
 		/* Messenger-style "Seen by" admin avatars (stacked, hover for name). */
 		.seen-row { display:flex; align-items:center; justify-content:flex-end; margin-top:6px; padding-right:2px; }
 		.seen-lbl { font-size:11px; color:#8a94a6; margin-right:6px; }
@@ -59,7 +60,6 @@
 									<th>User</th>
 									<th>Contact No.</th>
 									<th>Email</th>
-									<th class="text-center">Replies</th>
 									<th>Date</th>
 									<th class="text-center">Action</th>
 								</tr>
@@ -78,17 +78,10 @@
 										</td>
 										<td>{{ $lists->contactnum }}</td>
 										<td>{{ $lists->email }}</td>
-										<td class="text-center">
-											@if($lists->total_msg > 0)
-												<span class="badge bg-danger rounded-pill">{{ $lists->total_msg }}</span>
-											@else
-												<span class="text-muted">&mdash;</span>
-											@endif
-										</td>
 										<td data-order="{{ strtotime($lists->created_at) }}">{{ \Carbon\Carbon::parse($lists->created_at)->format('M d, Y g:i A') }}</td>
 										<td class="text-center">
 											<div class="btn-group">
-												<button class="btn btn-primary btn-sm" data-subject="{{ $lists->subject }}" data-message="{{ $lists->message }}" onclick="replyInquiry(this,{{ $lists->id }},{{ Auth::user()->id }})"><i data-feather="corner-up-left" class="icon-sm me-1"></i>Reply</button>
+												<button class="btn btn-primary btn-sm position-relative" data-subject="{{ $lists->subject }}" data-message="{{ $lists->message }}" onclick="replyInquiry(this,{{ $lists->id }},{{ Auth::user()->id }})">@if(isset($unread[$lists->id]))<span class="reply-dot" title="Unseen message"></span>@endif<i data-feather="corner-up-left" class="icon-sm me-1"></i>Reply</button>
 												@if($lists->user_id)
 													<button type="button" class="btn btn-primary btn-sm dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false"><span class="visually-hidden">Manage</span></button>
 													<div class="dropdown-menu dropdown-menu-end">
@@ -140,6 +133,7 @@
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net-bs5/dataTables.bootstrap5.js') }}"></script>
 <script>
 	function replyInquiry(btn, id, userid) {
+		if (btn) $(btn).find('.reply-dot').remove();
 		$("#inquireReplyModal").modal('show');
 		$("#catalog_id_inquiry_reply").val(id);
 
@@ -178,7 +172,7 @@
 	$(function () {
 		'use strict';
 		if (window.feather) feather.replace();
-		$('#tbl').DataTable({ order: [[6, 'desc']], columnDefs: [{ orderable: false, targets: 7 }] });
+		$('#tbl').DataTable({ order: [[5, 'desc']], columnDefs: [{ orderable: false, targets: 6 }] });
 	});
 
 	// Ban/Block a patron: banned = no login + no Read; blocked = no chat/inquiry.
