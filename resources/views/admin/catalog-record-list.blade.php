@@ -23,9 +23,10 @@
         color: #7987a1; display: inline-block; max-width: 220px;
         overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle;
       }
-      .badge-type {
-        background: #eef1f8; color: #5a6a85; font-weight: 600;
-        text-transform: uppercase; font-size: 10.5px; letter-spacing: .3px;
+      /* #tbl prefix beats the template's `.badge { color:#fff }` (same specificity otherwise). */
+      #tbl .badge-type {
+        background: #e4e9f2; color: #33415c; font-weight: 600;
+        font-size: 11.5px; letter-spacing: .2px;
       }
       @media (max-width: 1200px) { .tbl-title { max-width: 260px; } .tbl-authors { max-width: 150px; } }
       @media (max-width: 768px)  { .tbl-title { max-width: 170px; } .tbl-authors { max-width: 110px; } }
