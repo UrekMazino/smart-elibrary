@@ -155,16 +155,23 @@
 				}
 			});
 
-			// Seen receipts (Messenger-style): one avatar per admin who has read this
-			// thread; hover reveals the admin's name and time.
-			$.getJSON("{{ url('inquiry/seen-receipts/') }}/" + id).done(function (res) {
-				$('#inquiry_seen_row').remove();
-				if (res.seens && res.seens.length) {
-					var av = res.seens.map(function (s) {
-						return '<span class="seen-ava" title="Seen by ' + esc(s.name) + ' &middot; ' + esc(s.seen_at) + '">' + esc(s.initials) + '</span>';
-					}).join('');
-					box.append('<div id="inquiry_seen_row" class="seen-row"><span class="seen-lbl">Seen by</span>' + av + '</div>');
-				}
+			// Mark this admin as having read the thread (POST -> CSRF-protected, no
+			// side effects on a GET), then load the seen receipts so this admin appears.
+			$.ajax({
+				type: 'POST',
+				url: "{{ url('inquiry/mark-seen') }}/" + id,
+				data: { _token: "{{ csrf_token() }}" },
+				dataType: 'json'
+			}).always(function () {
+				$.getJSON("{{ url('inquiry/seen-receipts/') }}/" + id).done(function (res) {
+					$('#inquiry_seen_row').remove();
+					if (res.seens && res.seens.length) {
+						var av = res.seens.map(function (s) {
+							return '<span class="seen-ava" title="Seen by ' + esc(s.name) + ' &middot; ' + esc(s.seen_at) + '">' + esc(s.initials) + '</span>';
+						}).join('');
+						box.append('<div id="inquiry_seen_row" class="seen-row"><span class="seen-lbl">Seen by</span>' + av + '</div>');
+					}
+				});
 			});
 		});
 	}

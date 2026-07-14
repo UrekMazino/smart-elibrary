@@ -73,7 +73,8 @@ Route::controller(InquiryController::class)->group(function () {
     // Reply + thread endpoints require auth; ownership is enforced in the controller.
     Route::post('/inquiry/reply', 'reply')->middleware(['auth', 'throttle:20,1']);
     Route::get('/inquiry/json/{id}', 'json2')->middleware('auth');
-    Route::get('/inquiry/seen/{id}', 'seen')->middleware('auth');
+    // Marking a thread seen changes state -> POST (CSRF-protected), not a GET.
+    Route::post('/inquiry/mark-seen/{id}', 'markSeen')->middleware(['auth', 'throttle:60,1']);
     Route::get('/inquiry/seen-receipts/{id}', 'seenReceipts')->middleware('auth');
 });
 

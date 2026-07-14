@@ -116,10 +116,12 @@ function showThread(id, userid) {
 	}).fail(function (datajson) {
 	});
 
-	$.getJSON("{{ url('inquiry/seen/') }}/" + id, function (datajson) {
-	}).done(function (datajson) {
-		// mark replies as seen
-	}).fail(function (datajson) {
+	// Mark the library's replies as seen (POST -> CSRF-protected, not a GET side effect).
+	$.ajax({
+		type: 'POST',
+		url: "{{ url('inquiry/mark-seen') }}/" + id,
+		data: { _token: "{{ csrf_token() }}" },
+		dataType: 'json'
 	});
 
 	$("#inquireReplyModal").modal('toggle');

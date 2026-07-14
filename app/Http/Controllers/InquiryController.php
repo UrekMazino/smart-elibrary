@@ -104,27 +104,38 @@ class InquiryController extends Controller
 
     public function json2($id)
     {
+        // Pure read: authorize + return the thread. The "seen" state change is done
+        // separately via the markSeen() POST so this GET has no side effects.
         $this->authorizeInquiry($id);
-
-        // Messenger-style read receipt: when an admin OPENS the thread (clicks Reply),
-        // record a per-admin "seen" — reading it is enough to clear their notification,
-        // no reply required. Multiple admins each get their own row.
-        if (Auth::user()->usertype !== 'Patron') {
-            \DB::table('inquiry_seens')->updateOrInsert(
-                ['inquiry_id' => $id, 'user_id' => Auth::user()->id],
-                ['seen_at' => now(), 'updated_at' => now()]
-            );
-        }
 
         $inq = App\Models\View_inquiry_thread::where('id',$id)->orderBy('thread_date')->get();
         return $inq;
     }
 
-    public function seen($id)
+    /**
+     * Mark an inquiry thread as read for the current viewer. A POST (not a GET) so the
+     * state change is CSRF-protected and can't be triggered by prefetch/embedding.
+     *   - staff : upsert a per-admin inquiry_seens row (Messenger-style read receipt;
+     *             drives the bell count + the Reply-button dot). No reply required.
+     *   - patron: mark the library's replies as seen (clears their unread badge).
+     */
+    public function markSeen($id)
     {
         $this->authorizeInquiry($id);
-        $inq = App\Models\Reply_inquiry::where('inquiry_id',$id)->where('user_id','!=',Auth::user()->id)->update(['seen' => date('Y-m-d H:i:s'),'seen_by' => Auth::user()->id]);
-        return $inq;
+        $user = Auth::user();
+
+        if ($user->usertype !== 'Patron') {
+            \DB::table('inquiry_seens')->updateOrInsert(
+                ['inquiry_id' => $id, 'user_id' => $user->id],
+                ['seen_at' => now(), 'updated_at' => now()]
+            );
+        } else {
+            App\Models\Reply_inquiry::where('inquiry_id', $id)
+                ->where('user_id', '!=', $user->id)
+                ->update(['seen' => now(), 'seen_by' => $user->id]);
+        }
+
+        return response()->json(['ok' => true]);
     }
 
     /**
