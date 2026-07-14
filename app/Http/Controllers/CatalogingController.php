@@ -905,45 +905,65 @@ class CatalogingController extends Controller
         $order_arr = $request->get('order');
         $search_arr = $request->get('search');
 
-        $columnIndex = $columnIndex_arr[0]['column']; // Column index
-        $columnName = $columnName_arr[$columnIndex]['data']; // Column name
-        $columnSortOrder = $order_arr[0]['dir']; // asc or desc
-        $searchValue = $search_arr['value']; // Search value
+        // Whitelisted sortable columns; default = most recent import first.
+        $sortable = [
+            'id'            => 'catalog_imports.id',
+            'material_type' => 'materials.name',
+            'comment'       => 'catalog_imports.comment',
+            'created_at'    => 'catalog_imports.created_at',
+        ];
+        $columnIndex     = $columnIndex_arr[0]['column'] ?? 0;
+        $requestedData   = $columnName_arr[$columnIndex]['data'] ?? 'created_at';
+        $orderColumn     = $sortable[$requestedData] ?? 'catalog_imports.created_at';
+        $columnSortOrder = (isset($order_arr[0]['dir']) && strtolower($order_arr[0]['dir']) === 'asc') ? 'asc' : 'desc';
+        $searchValue     = $search_arr['value'] ?? '';
 
          // Total records
         $totalRecords = CatalogImport::where('deleted_at', null)->count();
 
         
 
-        $totalRecordswithFilter = CatalogImport::select(DB::raw('count(*) as allcount'))->where(function ($query) use ($searchValue) {
-            $query->where('no_of_records', 'like', '%' . $searchValue . '%')
-                ->orWhere('status', 'like', '%' . $searchValue . '%')
-                ->orWhere('created_at', 'like', '%' . $searchValue . '%');
-        })->where('deleted_at', null)->count();
+        $totalRecordswithFilter = CatalogImport::leftJoin('materials', 'materials.id', '=', 'catalog_imports.material_type_id')
+            ->where(function ($query) use ($searchValue) {
+                $query->where('catalog_imports.no_of_records', 'like', '%' . $searchValue . '%')
+                    ->orWhere('catalog_imports.comment', 'like', '%' . $searchValue . '%')
+                    ->orWhere('materials.name', 'like', '%' . $searchValue . '%')
+                    ->orWhere('catalog_imports.created_at', 'like', '%' . $searchValue . '%');
+            })->where('catalog_imports.deleted_at', null)->count();
 
-        // Fetch records
-        $records = CatalogImport::select('*', 'catalog_imports.id as batch_id', \DB::raw('count(case when catalog_imports.id = catalogs.catalog_import_id and catalogs.deleted_at is null then 1 else null end) as current_no_of_records'))
-        ->join('catalogs', 'catalogs.catalog_import_id', '=', 'catalog_imports.id')
-        ->where(function ($query) use ($searchValue) {
-            $query->where('no_of_records', 'like', '%' . $searchValue . '%')
-                ->orWhere('catalog_imports.status', 'like', '%' . $searchValue . '%')
-                ->orWhere('catalog_imports.created_at', 'like', '%' . $searchValue . '%');
-        })
-        ->where('catalog_imports.deleted_at', null)
-        ->orderBy('catalog_imports.'.$columnName, $columnSortOrder === 'asc' ? 'desc' : 'asc')
-        ->groupBy('catalog_imports.id')
-        ->skip($start)
-        ->take($rowPerPage)
-        ->get();
+        // Fetch records (join materials for the type name; count live catalog rows)
+        $records = CatalogImport::select(
+                'catalog_imports.id as batch_id',
+                'catalog_imports.no_of_records',
+                'catalog_imports.comment',
+                'catalog_imports.created_at',
+                'materials.name as material_type',
+                \DB::raw('count(case when catalog_imports.id = catalogs.catalog_import_id and catalogs.deleted_at is null then 1 else null end) as current_no_of_records')
+            )
+            ->join('catalogs', 'catalogs.catalog_import_id', '=', 'catalog_imports.id')
+            ->leftJoin('materials', 'materials.id', '=', 'catalog_imports.material_type_id')
+            ->where(function ($query) use ($searchValue) {
+                $query->where('catalog_imports.no_of_records', 'like', '%' . $searchValue . '%')
+                    ->orWhere('catalog_imports.comment', 'like', '%' . $searchValue . '%')
+                    ->orWhere('materials.name', 'like', '%' . $searchValue . '%')
+                    ->orWhere('catalog_imports.created_at', 'like', '%' . $searchValue . '%');
+            })
+            ->where('catalog_imports.deleted_at', null)
+            ->groupBy('catalog_imports.id', 'catalog_imports.no_of_records', 'catalog_imports.comment', 'catalog_imports.created_at', 'materials.name')
+            ->orderBy($orderColumn, $columnSortOrder)
+            ->skip($start)
+            ->take($rowPerPage)
+            ->get();
 
         $data_arr = array();
 
-        foreach($records as $index => $record){
+        foreach($records as $record){
             $data_arr[] = array(
-                "id" =>  $record->batch_id,
+                "id" => $record->batch_id,
                 "init_no_of_records" => $record->no_of_records,
                 "current_no_of_records" => $record->current_no_of_records,
-                "status" => $record->status,
+                "material_type" => $record->material_type,
+                "comment" => $record->comment,
                 "created_at" => $record->created_at,
             );
         }
