@@ -70,8 +70,10 @@ class NotificationService
                 url('/patron/inquiries'));
         }
 
-        // Materials awaiting the patron's review.
-        $review = reviewPendingQuery($user->id)->count();
+        // Materials awaiting the patron's review. reviewPendingQuery() is grouped by
+        // catalog_id, so ->count() would return a single group's row-count; count the
+        // distinct materials with ->get()->count() (same as getNotif('review')).
+        $review = reviewPendingQuery($user->id)->get()->count();
         if ($review > 0) {
             $count += $review;
             $items[] = self::item('star', 'warning',
