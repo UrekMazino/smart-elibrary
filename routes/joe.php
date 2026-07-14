@@ -26,6 +26,7 @@ use App\Http\Controllers\ConfigurationController;
 Route::controller(AdminController::class, 'admin')->group(function () {
     Route::get('/admin/count-dynamicdates/json', 'countdynamicdates');
     Route::get('/admin/per-date-chart/json', 'perDateChartJson');
+    Route::get('/admin/views-traffic/json', 'viewsTrafficJson');
     Route::get('/admin/register', 'registerPatron')->name('register_patron');
     Route::get('/admin/profile/validate-email/', 'validateEmail');
     Route::get('/admin/update-librarycode', 'updatePatronLibraryCode');

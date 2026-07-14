@@ -20,91 +20,81 @@ $(function() {
 
 
 
-  // Apex Line chart start
+  // Website traffic — real per-month view counts (Guest vs Registered), lazy-loaded.
+  // The data is fetched (and the chart rendered) only when it scrolls into view, so
+  // it never adds to initial page-load cost. The endpoint itself is cached server-side.
   if ($('#numberOfViewsChart').length) {
-    var randomNumbersA = [];
-    var randomNumbersB = [];
-    for (var i = 0; i < 5; i++) {
-      var randomNumberA = Math.floor(Math.random() * 100); // Generates a random number between 0 and 99
-      var randomNumberB = Math.floor(Math.random() * 100); // Generates a random number between 0 and 99
-      randomNumbersA.push(randomNumberA);
-      randomNumbersB.push(randomNumberB);
-    }
-    var lineChartOptions = {
-      chart: {
-        type: "line",
-        height: '320',
-        parentHeightOffset: 0,
-        foreColor: colors.bodyColor,
-        background: colors.cardBg,
-        toolbar: {
-          show: false
+    var viewsChartLoaded = false;
+
+    var renderViewsChart = function () {
+      if (viewsChartLoaded) return;
+      viewsChartLoaded = true;
+
+      $.ajax({
+        type: 'GET',
+        url: (typeof getViewsTrafficUrl !== 'undefined') ? getViewsTrafficUrl : '/admin/views-traffic/json',
+        dataType: 'json',
+        success: function (res) {
+          var lineChartOptions = {
+            chart: {
+              type: "line",
+              height: '320',
+              parentHeightOffset: 0,
+              foreColor: colors.bodyColor,
+              background: colors.cardBg,
+              toolbar: { show: false },
+            },
+            theme: { mode: 'light' },
+            tooltip: { theme: 'light' },
+            colors: [colors.primary, colors.warning],
+            grid: {
+              padding: { bottom: -4 },
+              borderColor: colors.gridBorder,
+              xaxis: { lines: { show: true } }
+            },
+            series: [
+              { name: "Registered User", data: res.registered || [] },
+              { name: "Guest", data: res.guest || [] }
+            ],
+            xaxis: {
+              type: "category",
+              categories: res.labels || [],
+              axisBorder: { color: colors.gridBorder },
+              axisTicks: { color: colors.gridBorder },
+            },
+            markers: { size: 3 },
+            legend: {
+              show: true,
+              position: "top",
+              horizontalAlign: 'center',
+              fontFamily: fontFamily,
+              itemMargin: { horizontal: 8, vertical: 0 },
+            },
+            stroke: { width: 3, curve: "smooth", lineCap: "round" },
+            noData: { text: 'No view data yet.' }
+          };
+          var apexLineChart = new ApexCharts(document.querySelector("#numberOfViewsChart"), lineChartOptions);
+          apexLineChart.render();
         },
-      },
-      theme: {
-        mode: 'light'
-      },
-      tooltip: {
-        theme: 'light'
-      },
-      colors: [colors.primary, colors.danger, colors.warning],
-      grid: {
-        padding: {
-          bottom: -4
-        },
-        borderColor: colors.gridBorder,
-        xaxis: {
-          lines: {
-            show: true
-          }
+        error: function () {
+          $('#numberOfViewsChart').html('<p class="text-muted text-center mb-0 py-5">Unable to load traffic data.</p>');
         }
-      },
-      series: [
-        {
-          name: "Guest",
-          data: randomNumbersA
-        },
-        {
-          name: "Registered User",
-          data: randomNumbersB
-        }
-      ],
-      xaxis: {
-        type: "text",
-        categories: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
-        lines: {
-          show: true
-        },
-        axisBorder: {
-          color: colors.gridBorder,
-        },
-        axisTicks: {
-          color: colors.gridBorder,
-        },
-      },
-      markers: {
-        size: 0,
-      },
-      legend: {
-        show: true,
-        position: "top",
-        horizontalAlign: 'center',
-        fontFamily: fontFamily,
-        itemMargin: {
-          horizontal: 8,
-          vertical: 0
-        },
-      },
-      stroke: {
-        width: 3,
-        curve: "smooth",
-        lineCap: "round"
-      },
+      });
     };
-    var apexLineChart = new ApexCharts(document.querySelector("#numberOfViewsChart"), lineChartOptions);
-    apexLineChart.render();
+
+    // Lazy-load: render on first scroll-into-view; fall back to immediate render if unsupported.
+    if ('IntersectionObserver' in window) {
+      var viewsObserver = new IntersectionObserver(function (entries, obs) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) { renderViewsChart(); obs.disconnect(); }
+        });
+      }, { rootMargin: '150px' });
+      viewsObserver.observe(document.querySelector('#numberOfViewsChart'));
+    } else {
+      renderViewsChart();
+    }
   }
-  // Apex Line chart end
+  // Website traffic end
 
 
 

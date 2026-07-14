@@ -208,6 +208,45 @@ class AdminController extends Controller
             ]);
     }
 
+    /**
+     * Website traffic for the dashboard "Number of Views" chart: real per-month
+     * view counts for the last 6 months, split into Guest vs Registered.
+     *
+     * Lazy-loaded by the dashboard (fetched only when the chart scrolls into view)
+     * and cached for 10 minutes, so it never blocks page load and the aggregation
+     * runs at most once per cache window regardless of table size.
+     */
+    public function viewsTrafficJson()
+    {
+        $data = cache()->remember('dash_views_traffic_6m', 600, function () {
+            $start = Carbon::now()->startOfMonth()->subMonths(5); // 6 buckets incl. current month
+
+            // is_guest is stored as the strings 'YES' / 'NO'.
+            $rows = DB::table('views')
+                ->where('created_at', '>=', $start)
+                ->selectRaw("DATE_FORMAT(created_at, '%Y-%m') as ym")
+                ->selectRaw("SUM(is_guest = 'YES') as guest")
+                ->selectRaw("SUM(is_guest <> 'YES') as registered")
+                ->groupBy('ym')
+                ->get()
+                ->keyBy('ym');
+
+            // Build a continuous 6-month axis, filling any empty months with 0.
+            $labels = $guest = $registered = [];
+            for ($i = 5; $i >= 0; $i--) {
+                $m = Carbon::now()->startOfMonth()->subMonths($i);
+                $key = $m->format('Y-m');
+                $labels[]     = $m->format('M Y');
+                $guest[]      = (int) ($rows[$key]->guest ?? 0);
+                $registered[] = (int) ($rows[$key]->registered ?? 0);
+            }
+
+            return ['labels' => $labels, 'guest' => $guest, 'registered' => $registered];
+        });
+
+        return response()->json($data);
+    }
+
     public function borrowed()
     {
         return view('admin.borrowed');

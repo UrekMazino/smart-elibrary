@@ -452,6 +452,7 @@
     let countDynamicDates = '{{ url("/admin/count-dynamicdates/json") }}';
     let getRatingsUrl = '{{ url("/csf/get-ratings/json") }}';
     let getPerDateChartUrl = '{{ url("/admin/per-date-chart/json") }}';
+    let getViewsTrafficUrl = '{{ url("/admin/views-traffic/json") }}';
   </script>
 
 @endsection
