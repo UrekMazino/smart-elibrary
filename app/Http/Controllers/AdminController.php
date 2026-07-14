@@ -173,19 +173,38 @@ class AdminController extends Controller
 
         foreach($materialTypes as $mT) {
             $materialTypesArr[$mT->id] = $mT->name;
-        }   
+        }
 
-        return view('admin.index', 
+        // --- Operational snapshot: real, actionable counts surfaced on the dashboard ---
+        //   circulation status: 1 = For Approval, 2 = Approved, 3 = Open (checked out),
+        //   4 = Declined, 5 = Closed/Returned
+        $pendingReservations = DB::table('circulations')->where('status', 1)->count();
+        $activeLoans         = DB::table('circulations')->where('status', 3)->count();
+        $onHoldMaterials     = $totalUncatalogs;                 // catalogs with is_published = 0
+        $totalInquiries      = DB::table('inquiries')->count();
+
+        // --- Collection completeness: distinct catalogs that have full-text / a cover ---
+        $withFulltext = DB::table('multimedia')->whereNull('deleted_at')->distinct()->count('catalog_id');
+        $withCover    = DB::table('frontpages')->whereNull('deleted_at')->distinct()->count('catalog_id');
+
+        return view('admin.index',
             [
                 'totalUsers' => $totalUsers,
-                'totalDownloads' => $totalDownloads, 
+                'totalDownloads' => $totalDownloads,
                 'totalTitles' => $totalTitles,
                 'totalPublications' => $totalCatalogs,
-                'patronTypes' => $patronTypes, 
+                'patronTypes' => $patronTypes,
                 'usersByPatronType' => $usersByPatronType,
                 'patronTypesArr' => $patronTypesArr,
                 'holdingsByMaterialType' => $holdingsByMaterialType,
                 'materialTypesArr' => $materialTypesArr,
+                // operational snapshot + collection completeness
+                'pendingReservations' => $pendingReservations,
+                'activeLoans' => $activeLoans,
+                'onHoldMaterials' => $onHoldMaterials,
+                'totalInquiries' => $totalInquiries,
+                'withFulltext' => $withFulltext,
+                'withCover' => $withCover,
             ]);
     }
 
