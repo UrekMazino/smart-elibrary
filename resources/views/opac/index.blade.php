@@ -125,13 +125,13 @@
 		<div id="sec-shelves">@include('opac.partials.shelf-browser')</div>
 		<style>
 			/* Recent section — compact, minimalist carousels (Recent Uploads / Top lists / News) */
-			#sec-misc { padding:26px 0 44px; }
-			.cover-carousel { max-width:1680px; margin:0 auto; padding:16px 24px 4px; }
-			.cover-carousel .main_title { text-align:center; margin-bottom:12px; }
+			#sec-misc { padding:20px 0 36px; }
+			.cover-carousel { max-width:1680px; margin:0 auto; padding:4px 24px 2px; }
+			.cover-carousel .main_title { text-align:center; margin-bottom:6px; }
 			.cover-carousel .main_title h2 { font-family:Georgia,"Palatino Linotype",serif; font-size:21px; letter-spacing:1.5px; text-transform:uppercase; color:#0a5f56; font-weight:700; margin:0; }
 			.cc-strip { position:relative; }
 			/* safe center: centers items when they fit, else flex-start (scrollable) so the arrows take over. */
-			.cc-track { display:flex; gap:20px; overflow-x:auto; scroll-behavior:smooth; padding:8px 6px 14px; justify-content:safe center; scrollbar-width:none; -ms-overflow-style:none; }
+			.cc-track { display:flex; gap:20px; overflow-x:auto; scroll-behavior:smooth; padding:4px 6px 8px; justify-content:safe center; scrollbar-width:none; -ms-overflow-style:none; }
 			.cc-track::-webkit-scrollbar { display:none; }   /* no scrollbar — prev/next arrows only */
 			.cc-item { flex:0 0 auto; width:132px; text-align:center; }
 			.cc-cover { position:relative; display:flex; align-items:flex-end; justify-content:center; height:178px; }
@@ -145,7 +145,7 @@
 			.cc-arrow:disabled { opacity:.3; cursor:default; background:#fff; border-color:#d0d7de; color:#3f4079; }
 
 			/* Ranked "Top 10": rank-number overlay + detail badge revealed on hover. */
-			.cover-carousel.ranked .cc-track { padding-top:30px; }
+			.cover-carousel.ranked .cc-track { padding-top:24px; }
 			.rk-item .cc-cover { overflow:visible; }
 			.rk-num { position:absolute; top:-16px; left:-8px; z-index:3; font-family:Georgia,"Palatino Linotype",serif; font-weight:800; font-size:44px; line-height:1;
 				color:#fff; -webkit-text-stroke:2px #0a5f56; text-shadow:0 2px 5px rgba(0,0,0,.4); pointer-events:none; }
@@ -154,6 +154,9 @@
 			.rk-cover:hover .rk-badge { opacity:1; }
 		</style>
 		<div id="sec-misc">
+		@include('opac.partials.ranked-carousel', ['title' => 'Most Downloaded', 'items' => getMostDownloaded(10)])
+		@include('opac.partials.ranked-carousel', ['title' => 'Most Viewed', 'items' => getMostViewed(10)])
+		@include('opac.partials.ranked-carousel', ['title' => 'Highest Rating', 'items' => getHighestRated(10)])
 		<div class="cover-carousel">
 			<div class="main_title"><h2>Recent Uploads</h2></div>
 			<div class="cc-strip">
@@ -171,9 +174,6 @@
 				<button type="button" class="cc-arrow next" aria-label="Next">&#8250;</button>
 			</div>
 		</div>
-		@include('opac.partials.ranked-carousel', ['title' => 'Most Downloaded', 'items' => getMostDownloaded(10)])
-		@include('opac.partials.ranked-carousel', ['title' => 'Most Viewed', 'items' => getMostViewed(10)])
-		@include('opac.partials.ranked-carousel', ['title' => 'Highest Rating', 'items' => getHighestRated(10)])
 		<div class="cover-carousel">
 			<div class="main_title"><h2>Related News</h2></div>
 			<div class="cc-strip">
