@@ -18,12 +18,22 @@
 		white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 	.shelf-col-body { padding:4px 0 10px; }
 
-	.col-scroll { overflow-x:auto; overflow-y:hidden; padding:0 14px;
+	.col-scroll-wrap { position:relative; }
+	.col-scroll { overflow-x:auto; overflow-y:hidden; padding:0 14px; scrollbar-width:none; -ms-overflow-style:none;
 		/* recessed interior: shadow cast by the shelf above onto the books below */
 		box-shadow: inset 0 14px 16px -12px rgba(0,0,0,.7), inset 8px 0 10px -10px rgba(0,0,0,.5), inset -8px 0 10px -10px rgba(0,0,0,.5); }
-	.col-scroll::-webkit-scrollbar { height:8px; }
-	.col-scroll::-webkit-scrollbar-track { background:rgba(0,0,0,.22); }
-	.col-scroll::-webkit-scrollbar-thumb { background:linear-gradient(#5fd6c8,#00a496); border-radius:5px; }
+	.col-scroll::-webkit-scrollbar { display:none; }   /* scrollbar removed — use the per-row arrows */
+	/* Per-row prev/next: frosted, semi-transparent, revealed on hover of the row. */
+	.row-arrow { position:absolute; top:calc(50% + 4px); transform:translateY(-50%); width:26px; height:50px; z-index:4;
+		border:0; border-radius:8px; cursor:pointer; color:#f2fdfb; font-size:19px; line-height:1;
+		display:flex; align-items:center; justify-content:center;
+		background:rgba(4,46,42,.40); -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px);
+		box-shadow:0 2px 10px rgba(0,0,0,.42), inset 0 0 0 1px rgba(255,255,255,.18);
+		opacity:0; transition:opacity .22s ease, background .18s ease; }
+	.col-scroll-wrap:hover .row-arrow { opacity:1; }
+	.row-arrow:hover { background:rgba(0,164,150,.85); }
+	.row-arrow.prev { left:7px; } .row-arrow.next { right:7px; }
+	.row-arrow[hidden] { display:none; }
 	.col-row { position:relative; display:flex; gap:13px; min-width:100%; width:max-content; align-items:flex-end;
 		justify-content:safe center; padding:28px 4px 16px; }
 	.col-row::after { content:""; position:absolute; left:0; right:0; bottom:0; height:11px;
@@ -61,14 +71,18 @@
 					<div class="shelf-col-body">
 						@php $__rows = array_chunk($shelf['items'], (int) ceil(max(1, count($shelf['items'])) / 3)); @endphp
 						@foreach($__rows as $rowItems)
-							<div class="col-scroll">
-								<div class="col-row">
-									@foreach($rowItems as $it)
-										<a class="col-book{{ empty($it['url']) ? ' no-link' : '' }}" href="{{ $it['url'] ?? '#' }}" @if(empty($it['url'])) onclick="return false" @endif title="{{ $it['title'] }}">
-											<img loading="lazy" src="{{ $it['thumb'] }}" alt="{{ $it['title'] }}">
-										</a>
-									@endforeach
+							<div class="col-scroll-wrap">
+								<button type="button" class="row-arrow prev" aria-label="Scroll left" tabindex="-1" hidden>&#8249;</button>
+								<div class="col-scroll">
+									<div class="col-row">
+										@foreach($rowItems as $it)
+											<a class="col-book{{ empty($it['url']) ? ' no-link' : '' }}" href="{{ $it['url'] ?? '#' }}" @if(empty($it['url'])) onclick="return false" @endif title="{{ $it['title'] }}">
+												<img loading="lazy" src="{{ $it['thumb'] }}" alt="{{ $it['title'] }}">
+											</a>
+										@endforeach
+									</div>
 								</div>
+								<button type="button" class="row-arrow next" aria-label="Scroll right" tabindex="-1" hidden>&#8250;</button>
 							</div>
 						@endforeach
 					</div>
@@ -90,6 +104,27 @@
 	var prev = root.querySelector('.shelf-page.prev');
 	var next = root.querySelector('.shelf-page.next');
 	var GAP = 20, start = 0;
+
+	// Per-row horizontal arrows — replace the scrollbar inside each shelf row.
+	var rowUpds = [];
+	[].slice.call(root.querySelectorAll('.col-scroll-wrap')).forEach(function (wrap) {
+		var sc = wrap.querySelector('.col-scroll');
+		var rp = wrap.querySelector('.row-arrow.prev');
+		var rn = wrap.querySelector('.row-arrow.next');
+		if (!sc || !rp || !rn) return;
+		function updRow() {
+			var overflow = sc.scrollWidth > sc.clientWidth + 4;
+			rp.hidden = rn.hidden = !overflow;
+			if (!overflow) return;
+			var max = sc.scrollWidth - sc.clientWidth - 2;
+			rp.style.visibility = sc.scrollLeft <= 2 ? 'hidden' : 'visible';
+			rn.style.visibility = sc.scrollLeft >= max ? 'hidden' : 'visible';
+		}
+		rp.addEventListener('click', function () { sc.scrollBy({ left: -sc.clientWidth * 0.8, behavior: 'smooth' }); });
+		rn.addEventListener('click', function () { sc.scrollBy({ left: sc.clientWidth * 0.8, behavior: 'smooth' }); });
+		sc.addEventListener('scroll', updRow);
+		rowUpds.push(updRow);
+	});
 
 	function windowSize() {
 		var w = window.innerWidth;
@@ -116,6 +151,9 @@
 		var hideNav = cols.length <= n;
 		if (prev) prev.style.display = hideNav ? 'none' : '';
 		if (next) next.style.display = hideNav ? 'none' : '';
+
+		// Column widths changed -> re-evaluate each row's overflow arrows.
+		rowUpds.forEach(function (fn) { fn(); });
 	}
 
 	if (prev) prev.addEventListener('click', function () { start = Math.max(0, start - 1); refresh(true); });
