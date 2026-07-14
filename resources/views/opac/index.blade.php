@@ -113,10 +113,9 @@
 			.cc-strip { position:relative; }
 			/* safe center: centers the items when they fit, falls back to flex-start (scrollable,
 			   no clipped first item) when they overflow — so the arrows take over. */
-			.cc-track { display:flex; gap:22px; overflow-x:auto; scroll-behavior:smooth; padding:10px 6px 20px; justify-content:safe center; }
-			.cc-track::-webkit-scrollbar { height:8px; }
-			.cc-track::-webkit-scrollbar-track { background:#eef2f1; border-radius:5px; }
-			.cc-track::-webkit-scrollbar-thumb { background:#b9c6c3; border-radius:5px; }
+			.cc-track { display:flex; gap:22px; overflow-x:auto; scroll-behavior:smooth; padding:10px 6px 20px; justify-content:safe center; scrollbar-width:none; -ms-overflow-style:none; }
+			/* Hide the scrollbar — navigation is via the prev/next arrows only (track stays scrollable). */
+			.cc-track::-webkit-scrollbar { display:none; }
 			.cc-item { flex:0 0 auto; width:150px; text-align:center; }
 			.cc-cover { display:flex; align-items:flex-end; justify-content:center; height:210px; }
 			.cc-cover img { max-height:210px; max-width:100%; width:auto; border-radius:2px; box-shadow:0 2px 6px rgba(0,0,0,.22); transition:transform .14s ease, box-shadow .14s ease; }
