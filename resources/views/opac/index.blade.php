@@ -111,7 +111,9 @@
 			.cover-carousel { max-width:1680px; margin:0 auto; padding:34px 24px 6px; }
 			.cover-carousel .main_title { text-align:center; margin-bottom:16px; }
 			.cc-strip { position:relative; }
-			.cc-track { display:flex; gap:22px; overflow-x:auto; scroll-behavior:smooth; padding:10px 6px 20px; }
+			/* safe center: centers the items when they fit, falls back to flex-start (scrollable,
+			   no clipped first item) when they overflow — so the arrows take over. */
+			.cc-track { display:flex; gap:22px; overflow-x:auto; scroll-behavior:smooth; padding:10px 6px 20px; justify-content:safe center; }
 			.cc-track::-webkit-scrollbar { height:8px; }
 			.cc-track::-webkit-scrollbar-track { background:#eef2f1; border-radius:5px; }
 			.cc-track::-webkit-scrollbar-thumb { background:#b9c6c3; border-radius:5px; }

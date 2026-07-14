@@ -772,7 +772,7 @@ function getSeries()
 function getLatestNews()
 {
 	return cache()->remember('home_latest_news', 600, function () {
-		return App\Models\News::where('featured', 'Yes')->orderBy('created_at','DESC')->limit(3)->get();
+		return App\Models\News::where('featured', 'Yes')->orderBy('created_at','DESC')->limit(12)->get();
 	});
 }
 
@@ -803,7 +803,7 @@ function getLatestMaterial()
 			->where('view_catalogs.deleted_at', null)
 			->where('is_published', 1)
 			->orderBy('created_at','DESC')
-			->limit(5)->get();
+			->limit(20)->get();
 	});
 }
 
