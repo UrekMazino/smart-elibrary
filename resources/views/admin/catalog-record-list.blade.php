@@ -13,6 +13,7 @@
         border-bottom: 2px solid #eef0f2; vertical-align: middle;
       }
       #tbl tbody td { padding: 6px 10px; vertical-align: middle !important; white-space: normal; }
+      #tbl tbody tr { cursor: pointer; }
       #tbl tbody tr:hover { background: #f7f9fc; }
       .tbl-id { color: #a3adc2; font-size: 12px; }
       .tbl-title {
@@ -241,6 +242,13 @@ $(document).ready(function(){
         ajax: '{{ url("/admin/record-list-json") }}',
         columns: makeColumns(),
         language: { search: '', searchPlaceholder: 'Search title, author, type, year…' }
+    });
+
+    // Whole row clickable -> View Details. Ignore clicks on the Action menu / any control.
+    $('#tbl').on('click', 'tbody tr', function (e) {
+        if ($(e.target).closest('a, button, .btn-group, .dropdown-menu').length) return;
+        var data = $('#tbl').DataTable().row(this).data();
+        if (data && data.id != null) { viewRecord(data.id, data.title_statement); }
     });
 
 });
