@@ -2259,6 +2259,11 @@ class CatalogingController extends Controller
                         'updated_at' => now(),
                     ]);
             }
+
+            // Bust the cached homepage carousels/shelves (they bake in cover thumbnails) so
+            // the new cover shows immediately instead of after the 10-min TTL.
+            clearHomeCache();
+
             $record = Catalog::select('catalogs.*')
             ->where('catalogs.id',$request->catalog_id)
             ->first(); 
@@ -2288,6 +2293,10 @@ class CatalogingController extends Controller
             ->update([
             'deleted_at' => now()
         ]);
+
+        // Removed cover must drop from the cached homepage carousels/shelves immediately.
+        clearHomeCache();
+
         $coverPage = Frontpage::where('catalog_id',$request->catalog_id)->whereNull('deleted_at')->first();
         $fullText = Multimedia::where('catalog_id',$request->catalog_id)->whereNull('deleted_at')->first();
         $record = Catalog::select('catalogs.*')
