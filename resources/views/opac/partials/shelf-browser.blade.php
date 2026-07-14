@@ -36,26 +36,30 @@
 	.row-arrow:hover { background:rgba(0,164,150,.85); }
 	.row-arrow.prev { left:7px; } .row-arrow.next { right:7px; }
 	.row-arrow[hidden] { display:none; }
-	.col-row { position:relative; display:flex; gap:13px; min-width:100%; width:max-content; align-items:flex-end;
-		justify-content:safe center; padding:28px 4px 16px; }
-	.col-row::after { content:""; position:absolute; left:0; right:0; bottom:0; height:11px;
-		background:linear-gradient(#0a7268,#064d44); border-top:2px solid #4fd0c2; box-shadow:0 7px 10px -6px rgba(0,0,0,.55); }
+	.col-row { position:relative; display:flex; gap:15px; min-width:100%; width:max-content; align-items:flex-end;
+		justify-content:safe center; padding:38px 6px 26px; }
+	/* Shelf board: a solid wooden ledge with a lit front edge + depth shadow under each row,
+	   so every row reads as its own distinct shelf. */
+	.col-row::after { content:""; position:absolute; left:0; right:0; bottom:0; height:17px;
+		background:linear-gradient(#0e9284 0, #0a7268 45%, #063f39 100%);
+		border-top:2px solid #7fe8db; box-shadow:0 2px 0 rgba(0,0,0,.35), 0 11px 13px -6px rgba(0,0,0,.62); }
 	.col-book { flex:0 0 auto; display:block; line-height:0; position:relative; z-index:1; transition:transform .14s ease; }
 	/* natural proportions, capped -> heights vary a bit like a real shelf; bottoms align via flex-end */
-	.col-book img { display:block; width:auto; height:auto; max-height:154px; max-width:120px; border-radius:2px; background:#fff;
+	.col-book img { display:block; width:auto; height:auto; max-height:186px; max-width:144px; border-radius:2px; background:#fff;
 		box-shadow:0 3px 4px rgba(0,0,0,.45), 0 15px 18px -9px rgba(0,0,0,.8); }
 	.col-book:hover { transform:translateY(-4px); z-index:2; }
 	.col-book.no-link { cursor:default; }
 
-	.shelf-page { flex:0 0 auto; width:44px; height:44px; border-radius:50%;
-		border:1px solid #0a6e63; cursor:pointer; color:#053f39; font-size:24px; line-height:1;
-		background:radial-gradient(circle at 35% 30%, #6fe0d2, #00a496 70%);
-		display:flex; align-items:center; justify-content:center; box-shadow: inset 0 1px 1px rgba(255,255,255,.55), 0 2px 5px rgba(0,0,0,.35); }
-	.shelf-page:hover { filter:brightness(1.07); } .shelf-page:active { transform:translateY(1px); }
-	.shelf-page:disabled { opacity:.3; cursor:default; filter:none; }
+	/* Minimalist paging arrows: thin flat outline circle that fills teal on hover. */
+	.shelf-page { flex:0 0 auto; width:38px; height:38px; border-radius:50%;
+		border:1.5px solid #14a091; background:transparent; cursor:pointer; color:#0a7268; font-size:18px; line-height:1;
+		display:flex; align-items:center; justify-content:center; transition:background .16s ease, color .16s ease, border-color .16s ease; }
+	.shelf-page:hover { background:#00a496; border-color:#00a496; color:#fff; }
+	.shelf-page:active { transform:translateY(1px); }
+	.shelf-page:disabled { opacity:.3; cursor:default; background:transparent; color:#0a7268; }
 
-	@media (max-width:1100px){ .col-book img { max-height:136px; max-width:106px; } }
-	@media (max-width:767px){ .shelf-explorer { padding:0 8px; } .shelf-page { width:36px; height:36px; font-size:20px; } .col-book img { max-height:120px; max-width:94px; } }
+	@media (max-width:1100px){ .col-book img { max-height:162px; max-width:126px; } }
+	@media (max-width:767px){ .shelf-explorer { padding:0 8px; } .shelf-page { width:34px; height:34px; font-size:16px; } .col-book img { max-height:140px; max-width:110px; } }
 </style>
 <section class="shelf-browser">
 	<div class="shelf-heading">
