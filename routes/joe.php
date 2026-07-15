@@ -27,11 +27,11 @@ Route::controller(AdminController::class, 'admin')->group(function () {
     Route::get('/admin/count-dynamicdates/json', 'countdynamicdates')->middleware('can:access.dashboard');
     Route::get('/admin/per-date-chart/json', 'perDateChartJson')->middleware('can:access.dashboard');
     Route::get('/admin/views-traffic/json', 'viewsTrafficJson')->middleware('can:access.dashboard');
-    Route::get('/admin/register', 'registerPatron')->name('register_patron');
+    Route::get('/admin/register', 'registerPatron')->name('register_patron')->middleware('can:access.accounts');
     Route::get('/admin/profile/validate-email/', 'validateEmail');
-    Route::get('/admin/update-librarycode', 'updatePatronLibraryCode');
+    Route::get('/admin/update-librarycode', 'updatePatronLibraryCode')->middleware('can:access.accounts');
     Route::get('/admin/profile', 'profile');
-    Route::post('/admin/register/store', 'storePatron');
+    Route::post('/admin/register/store', 'storePatron')->middleware('can:access.accounts');
     Route::post('/admin/profile/update', 'updateProfile');
     Route::post('/admin/profile/update/password', 'updatePassword');
     
@@ -64,7 +64,7 @@ Route::controller(RolePermissionController::class, 'admin')->group(function () {
     Route::delete('/admin/permissions/delete/{id}', 'destroyPermission')->name('admin.delete_permission');
 });
 
-Route::controller(InventoryController::class)->group(function () {
+Route::controller(InventoryController::class)->middleware('can:access.inventory')->group(function () {
     Route::get('/admin/inventory-list-json', 'physicalInventoryListJson');
 });
 Route::controller(ConfigurationController::class, 'admin')->group(function () {
@@ -83,7 +83,7 @@ Route::controller(ConfigurationController::class, 'admin')->group(function () {
     
 });
 
-Route::controller(CatalogingController::class, 'admin')->group(function () {
+Route::controller(CatalogingController::class, 'admin')->middleware('can:access.cataloging')->group(function () {
     Route::get('/admin/create-record', 'createRecord');
     Route::post('/admin/view-record', 'viewRecord');
     Route::post('/admin/view-batch', 'viewBatch');
@@ -131,7 +131,7 @@ Route::controller(CatalogingController::class, 'admin')->group(function () {
 });
 
 
-Route::controller(ReservationController::class)->group(function () {
+Route::controller(ReservationController::class)->middleware('can:circulation.reservation.view')->group(function () {
     Route::get('/admin/reservations', 'reservations')->name('reservations');
     Route::get('/admin/reservations/json', 'reservation_json');
     Route::post('/admin/reservation/action', 'reservation_action')->middleware('can:manage.circulation.reservation');
@@ -147,7 +147,7 @@ Route::controller(ReservationOpacController::class)->group(function () {
     Route::post('/request-reservation', 'requestReservation');
 });
 
-Route::controller(CheckOutInController::class, 'admin')->group(function () {
+Route::controller(CheckOutInController::class, 'admin')->middleware('can:manage.circulation.checkouts')->group(function () {
     Route::get('/admin/check-out-in', 'checkoutin')->name('checkoutin');
     Route::post('/admin/check-out-in/find-material', 'findMaterial');
     Route::post('/admin/check-out-in/find-patron', 'findPatron');

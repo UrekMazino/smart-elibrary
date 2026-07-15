@@ -61,7 +61,7 @@ Route::controller(DownloadController::class)->group(function () {
 
 //SETTINGS
 use App\Http\Controllers\SettingController;
-Route::controller(SettingController::class)->group(function () {
+Route::controller(SettingController::class)->middleware('can:access.configuration')->group(function () {
     Route::get('/admin/settings', 'index');
     Route::post('/admin/settings', 'update');
 });
@@ -93,13 +93,13 @@ use App\Http\Controllers\AdminController;
 Route::controller(AdminController::class)->group(function () {
     Route::get('/admin/dashboard', 'dashboard')->middleware('can:access.dashboard');
 
-    Route::get('/admin/borrowed', 'borrowed');
+    Route::get('/admin/borrowed', 'borrowed')->middleware('can:access.circulation.transaction');
     Route::get('/admin/visits', 'visit');
-    
-    Route::get('/admin/inquiry', 'inquiry');
-    Route::get('/admin/inquiry/json', 'inquiryjson');
-    
-    Route::get('/admin/patron', 'patron')->name('patrons');
+
+    Route::get('/admin/inquiry', 'inquiry')->middleware('can:access.inquiry');
+    Route::get('/admin/inquiry/json', 'inquiryjson')->middleware('can:access.inquiry');
+
+    Route::get('/admin/patron', 'patron')->name('patrons')->middleware('can:access.accounts');
     Route::post('/admin/user/toggle-flag', 'toggleUserFlag')->middleware('can:manage.patron.status');
 
     Route::get('/admin/report', 'report')->middleware('can:access.reports');
@@ -107,19 +107,19 @@ Route::controller(AdminController::class)->group(function () {
     Route::post('/admin/print-report', 'reportprint')->middleware('can:access.reports');
     Route::post('/admin/report-preview', 'reportPreview')->middleware('can:access.reports');
 
-    Route::post('/admin/patron-borrow', 'assignMaterialToPatron');
+    Route::post('/admin/patron-borrow', 'assignMaterialToPatron')->middleware('can:access.accounts');
 
-    Route::post('/admin/patron-action', 'actionPatron');
+    Route::post('/admin/patron-action', 'actionPatron')->middleware('can:access.accounts');
 
-    Route::get('/admin/patron/json', 'patronjson');
+    Route::get('/admin/patron/json', 'patronjson')->middleware('can:access.accounts');
 
 
 });
 
 //ADMIN
 use App\Http\Controllers\AcquisitionController;
-Route::controller(AcquisitionController::class)->group(function () {
-        
+Route::controller(AcquisitionController::class)->middleware('can:access.cataloging')->group(function () {
+
     Route::get('/admin/new-acquisition', 'index2');
     Route::post('/admin/acquisition/create', 'create');
     Route::post('/admin/edit-acquisition-view', 'editview');
@@ -138,14 +138,14 @@ Route::controller(AcquisitionController::class)->group(function () {
 });
 
 use App\Http\Controllers\BorrowController;
-Route::controller(BorrowController::class)->group(function () {  
+Route::controller(BorrowController::class)->middleware('can:access.circulation.transaction')->group(function () {
     Route::get('/admin/borrowed/json', 'json');
     Route::post('/admin/borrowed/action', 'action');
 
 });
 
 use App\Http\Controllers\InventoryController;
-Route::controller(InventoryController::class)->group(function () {
+Route::controller(InventoryController::class)->middleware('can:access.inventory')->group(function () {
     Route::get('/admin/inventory', 'inventory');
     Route::get('/admin/inventory/json/{cirno}', 'getCopy');
     Route::get('/admin/inventory/presented', 'presented');
@@ -157,7 +157,7 @@ Route::controller(InventoryController::class)->group(function () {
 
 
 use App\Http\Controllers\NewsController;
-Route::controller(NewsController::class)->group(function () {
+Route::controller(NewsController::class)->middleware('can:access.news')->group(function () {
     Route::get('/admin/news', 'index');
     Route::get('/admin/news/add', 'create');
     Route::get('/admin/news/json', 'json');
