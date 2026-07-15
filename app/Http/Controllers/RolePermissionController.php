@@ -28,7 +28,7 @@ class RolePermissionController extends Controller
             'create.catalog.import' => 'Cataloging', 'edit.catalog.import' => 'Cataloging', 'delete.catalog.import' => 'Cataloging', 'publish-hold.catalog' => 'Cataloging',
             'access.circulation' => 'Circulation', 'access.circulation.transaction' => 'Circulation', 'circulation.reservation.view' => 'Circulation', 'manage.circulation.reservation' => 'Circulation', 'manage.circulation.checkouts' => 'Circulation',
             'access.accounts' => 'Accounts & Patrons', 'create.patron' => 'Accounts & Patrons', 'edit.patron' => 'Accounts & Patrons', 'delete.patron' => 'Accounts & Patrons', 'manage.patron.status' => 'Accounts & Patrons',
-            'access.configuration' => 'Configuration', 'view.config.template' => 'Configuration', 'create.config.template' => 'Configuration', 'edit.config.template' => 'Configuration', 'delete.config.template' => 'Configuration',
+            'access.configuration' => 'Configuration', 'view.config.template' => 'Configuration', 'create.config.template' => 'Configuration', 'edit.config.template' => 'Configuration', 'delete.config.template' => 'Configuration', 'manage.ai.mode' => 'Configuration',
             'access.inquiry' => 'Inquiry', 'access.inventory' => 'Inventory', 'access.news' => 'News', 'access.reports' => 'Reports',
         ];
         return $map[$name] ?? 'Other';

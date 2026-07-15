@@ -325,12 +325,25 @@ function notifications()
  */
 function setting($key, $default = null)
 {
-	static $cache = null;
-	if ($cache === null) {
+	// Memoised per request. Held in the container rather than a function static so it can
+	// be flushed (settingsFlush) — a `static` would survive for the life of the process,
+	// which is fine under mod_php/FPM but wrong anywhere the app is long-lived (Octane,
+	// queue workers, tests) and makes a just-saved setting unreadable until a restart.
+	if (! app()->bound('app.settings')) {
 		try { $cache = App\Models\Setting::pluck('value', 'key')->all(); }
 		catch (\Throwable $e) { $cache = []; }
+		app()->instance('app.settings', $cache);
 	}
+
+	$cache = app('app.settings');
+
 	return array_key_exists($key, $cache) ? $cache[$key] : $default;
+}
+
+/** Drop the memoised settings so the next setting() re-reads the table. */
+function settingsFlush()
+{
+	app()->forgetInstance('app.settings');
 }
 
 /** A boolean app setting: true unless explicitly '0'. */

@@ -19,11 +19,17 @@ class ResultController extends Controller
         // AI mode: same search box, different engine. The page renders immediately with a
         // skeleton and pulls the answer from /search/ai-answer, so a slow generation never
         // holds up the response (§10.5/§10.7) — and it's the shape SSE streaming will drop into.
-        if($request->input('mode') === 'ai' && trim((string) $request->input('query')) !== '')
+        //
+        // Gated on the admin switch. Falls THROUGH to keyword search rather than 404ing:
+        // this is a search someone actually typed, so if AI mode was turned off (or a stale
+        // link/bookmark points here) they still get results instead of an error page.
+        $ai = app(AiSearchService::class);
+
+        if($ai->isEnabled() && $request->input('mode') === 'ai' && trim((string) $request->input('query')) !== '')
         {
             return view('opac.search-result-ai', [
                 'query' => trim((string) $request->input('query')),
-                'ai'    => app(AiSearchService::class),
+                'ai'    => $ai,
             ]);
         }
 

@@ -96,7 +96,10 @@
 					<input type="hidden" name="mode" id="search-mode" value="">
 					<div id="custom-search-input">
 
-						{{-- Engine toggle: Classic (Meilisearch) <-> AI mode (Hermes/RAG) --}}
+						{{-- Engine toggle: Classic (Meilisearch) <-> AI mode (Hermes/RAG).
+						     Hidden when AI mode is switched off in Admin > Settings; the routes
+						     are gated server-side too, so this is presentation only. --}}
+						@if(settingEnabled('ai_mode_enabled', false))
 						<div class="mode-toggle" role="tablist" aria-label="Search mode">
 							<button type="button" class="mode-btn active" data-mode="" role="tab" aria-selected="true">
 								<span class="mode-ico">&#128269;</span> Search
@@ -105,6 +108,7 @@
 								<span class="mode-ico">&#10022;</span> AI mode
 							</button>
 						</div>
+						@endif
 
 						<div class="instant-wrap">
 						<div class="input-group">
@@ -460,9 +464,12 @@
 })();
 </script>
 
+@if(settingEnabled('ai_mode_enabled', false))
 <script type="text/javascript">
 // Search-engine toggle: Classic (Meilisearch) <-> AI mode (Hermes/RAG).
 // Only swaps which engine the form targets — the search box itself is shared.
+// Not emitted at all when AI mode is off, so a remembered 'ai' choice in localStorage
+// can't resurrect the mode after an admin switches it off.
 (function () {
 	var STORAGE_KEY = 'elib_search_mode';
 	var $form   = $('#frm');
@@ -510,5 +517,6 @@
 	apply(saved === 'ai' ? 'ai' : '', false);
 })();
 </script>
+@endif
 
 @endsection

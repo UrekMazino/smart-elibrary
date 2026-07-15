@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Setting;
 use App\Models\ViewCatalog;
+use App\Services\AiSearchService;
 
 class SettingController extends Controller
 {
@@ -17,6 +18,7 @@ class SettingController extends Controller
     {
         return view('admin.settings', [
             'settings' => Setting::pluck('value', 'key'),
+            'ai'       => app(AiSearchService::class),
         ]);
     }
 
@@ -30,7 +32,42 @@ class SettingController extends Controller
             );
         }
 
+        // AI mode needs its own permission on top of access.configuration, so turning the
+        // OPAC's AI on/off is a deliberate grant rather than something every config admin
+        // inherits.
+        //
+        // Handled separately, NOT in the loop above: the switch isn't rendered for someone
+        // without the permission, so its checkbox is absent from their POST — and the
+        // absent-means-'0' rule would silently switch AI mode off every time they saved
+        // this page for any other reason.
+        if ($request->user()->can('manage.ai.mode')) {
+            Setting::updateOrCreate(
+                ['key' => 'ai_mode_enabled'],
+                ['value' => $request->boolean('ai_mode_enabled') ? '1' : '0']
+            );
+        }
+
+        settingsFlush();   // don't serve this request's stale memoised copy
+
         return redirect('/admin/settings')->with('success', 'Settings saved.');
+    }
+
+    /**
+     * Agent connection status for the AI mode card (§10.7 health).
+     * Read-only: it reports, it never changes configuration.
+     */
+    public function aiStatus(AiSearchService $ai)
+    {
+        $health = $ai->health();
+
+        return response()->json([
+            'enabled'  => $ai->isEnabled(),
+            'stub'     => $ai->isStub(),
+            'endpoint' => $ai->endpoint(),
+            'ok'       => $health['ok'],
+            'status'   => $health['status'],
+            'detail'   => $health['detail'],
+        ]);
     }
 
     /**

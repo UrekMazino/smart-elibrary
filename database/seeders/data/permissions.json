@@ -277,5 +277,14 @@
         "description": "Allows approving or declining reservation requests",
         "created_at": "2026-07-15 11:03:22",
         "updated_at": "2026-07-15 11:03:22"
+    },
+    {
+        "id": 37,
+        "name": "manage.ai.mode",
+        "guard_name": "web",
+        "display_name": "Manage AI Mode",
+        "description": "Allows enabling or disabling AI mode in the OPAC",
+        "created_at": "2026-07-16 02:51:31",
+        "updated_at": "2026-07-16 02:51:31"
     }
 ]

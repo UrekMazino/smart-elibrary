@@ -32,13 +32,61 @@ class AiSearchService
     }
 
     /**
+     * The admin kill switch (Admin > Settings > AI mode). Off by default: AI mode has to
+     * be turned on deliberately, so a fresh install never exposes it.
+     *
+     * This is the ONE source of truth for "is AI mode on" — the OPAC toggle, the routes
+     * and the middleware all read it, so switching off genuinely removes the feature
+     * rather than just hiding the button.
+     */
+    public function isEnabled(): bool
+    {
+        return settingEnabled('ai_mode_enabled', false);
+    }
+
+    /** Where the agent lives (§10.3: from .env, never the database). */
+    public function endpoint(): string
+    {
+        return (string) config('services.hermes.url');
+    }
+
+    /**
      * Is the AI backend usable right now? (§10.7: re-index running / GPU busy / gateway
      * down -> the page degrades to a calm notice and keyword search stays fully usable.)
-     * Real version: a cached GET /healthz against the gateway.
      */
     public function isAvailable(): bool
     {
-        return true;
+        if (! $this->isEnabled()) {
+            return false;
+        }
+
+        // While stubbed there's nothing to reach, so "available" just means switched on.
+        if ($this->isStub()) {
+            return true;
+        }
+
+        return $this->health()['ok'];   // real: cached GET /healthz
+    }
+
+    /**
+     * Liveness of the agent gateway, for the Settings status line / Test connection.
+     *
+     * @return array{ok:bool, status:string, detail:string}
+     */
+    public function health(): array
+    {
+        if ($this->isStub()) {
+            return [
+                'ok'     => false,
+                'status' => 'not_configured',
+                'detail' => 'Not connected yet — AI mode is running on placeholder answers.',
+            ];
+        }
+
+        // Real implementation (later):
+        //   $r = Http::withToken(config('services.hermes.token'))->timeout(5)->get($this->endpoint().'/healthz');
+        //   return ['ok' => $r->successful(), 'status' => ..., 'detail' => ...];
+        return ['ok' => false, 'status' => 'unreachable', 'detail' => 'No agent gateway configured.'];
     }
 
     /**

@@ -35,6 +35,29 @@
                             &ldquo;no&nbsp;preview&rdquo; image. Uploaded covers are always shown either way.
                         </p>
 
+                        @can('manage.ai.mode')
+                        <hr class="my-4">
+
+                        <h6 class="card-title mb-1">AI mode</h6>
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" role="switch"
+                                   id="ai_mode_enabled" name="ai_mode_enabled" value="1"
+                                   {{ ($settings['ai_mode_enabled'] ?? '0') == '1' ? 'checked' : '' }}>
+                            <label class="form-check-label" for="ai_mode_enabled">
+                                Enable AI mode in the OPAC
+                            </label>
+                        </div>
+                        <p class="text-muted mb-3" style="font-size: 13px;">
+                            Adds an <strong>AI mode</strong> toggle to the public search, answering
+                            questions from the collection with sources instead of listing keyword
+                            matches. When <strong>off</strong>, it disappears from the OPAC entirely
+                            and its endpoints stop responding &mdash; keyword search is unaffected
+                            either way.
+                        </p>
+
+                        <div id="aiStatusBox" class="mb-3"></div>
+                        @endcan
+
                         <button type="submit" class="btn btn-primary">Save Settings</button>
                     </form>
                 </div>
@@ -115,8 +138,47 @@ function runDriftScan(silent) {
         .always(function () { $btn.prop('disabled', false); });
 }
 
+@can('manage.ai.mode')
+// AI agent connection status. The endpoint and token live in .env (never the database,
+// never sent to the browser) — this only reports whether the agent answers.
+function renderAiStatus(r) {
+    var tone  = r.ok ? 'ok' : (r.stub ? 'pending' : 'down'),
+        color = r.ok ? '#1c7c54' : (r.stub ? '#a06e14' : '#c92a4b'),
+        bg    = r.ok ? '#e8f6ef' : (r.stub ? '#fff5e0' : '#ffe9ee'),
+        label = r.ok ? 'Connected' : (r.stub ? 'Not connected yet' : 'Unreachable');
+
+    $('#aiStatusBox').html(
+        '<div style="border:1px solid ' + bg + ';background:' + bg + ';border-radius:6px;padding:10px 12px;font-size:12.5px;">' +
+          '<div class="d-flex justify-content-between align-items-center flex-wrap gap-2">' +
+            '<span><strong style="color:' + color + ';">&#9679; ' + label + '</strong>' +
+              '<span class="text-muted"> &mdash; ' + $('<div>').text(r.detail || '').html() + '</span></span>' +
+            '<button type="button" id="aiTestBtn" class="btn btn-outline-secondary btn-sm">Test connection</button>' +
+          '</div>' +
+          '<div class="text-muted mt-2" style="font-size:11.5px;">' +
+            'Agent: Local (Hermes) &middot; Endpoint: <code>' + $('<div>').text(r.endpoint || '—').html() + '</code>' +
+            ' &middot; set in <code>.env</code>, not here &mdash; secrets stay out of the database.' +
+          '</div>' +
+        '</div>'
+    );
+}
+
+function loadAiStatus() {
+    $('#aiStatusBox').html('<span class="text-muted" style="font-size:12.5px;">Checking the agent…</span>');
+    $.getJSON("{{ url('/admin/settings/ai-status') }}")
+        .done(renderAiStatus)
+        .fail(function () {
+            $('#aiStatusBox').html('<span class="text-danger" style="font-size:12.5px;">Could not read the agent status.</span>');
+        });
+}
+@endcan
+
 $(function () {
     if (window.feather) feather.replace();
+
+    @can('manage.ai.mode')
+        loadAiStatus();
+        $('#aiStatusBox').on('click', '#aiTestBtn', function () { loadAiStatus(); });
+    @endcan
 
     $('#scanBtn').on('click', function () { runDriftScan(false); });
 

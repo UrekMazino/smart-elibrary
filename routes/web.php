@@ -26,9 +26,11 @@ require __DIR__.'/annarose.php';
 use App\Http\Controllers\ResultController;
 Route::get('/results', [ResultController::class, 'index']);
 Route::get('/search/suggest', [ResultController::class, 'suggest']);   // instant-search JSON (OPAC overlay)
-// AI mode answer (OPAC "Ask the Library"). Throttled: each real request will be a full
-// generation on one GPU, so the edge has to shed load (RAG_INTEGRATION_PLAN.md §10.5).
-Route::get('/search/ai-answer', [ResultController::class, 'aiAnswer'])->middleware('throttle:10,1');
+// AI mode answer (OPAC "Ask the Library").
+//  - ai.enabled : the admin kill switch (Settings). Off -> 404, feature genuinely gone.
+//  - throttle   : each real request will be a full generation on one GPU, so the edge
+//                 has to shed load (RAG_INTEGRATION_PLAN.md §10.5).
+Route::get('/search/ai-answer', [ResultController::class, 'aiAnswer'])->middleware(['ai.enabled', 'throttle:10,1']);
 
 
 
@@ -77,6 +79,8 @@ Route::controller(SettingController::class)->middleware('can:access.configuratio
     Route::get('/admin/settings/scan-search', 'scanSearchIndex')->middleware('throttle:10,1');
     // Manual "Re-sync search index" button (rebuilds Meilisearch from the DB).
     Route::post('/admin/settings/reindex-search', 'reindexSearch')->middleware('throttle:5,1');
+    // AI agent connection status (read-only) for the AI mode card.
+    Route::get('/admin/settings/ai-status', 'aiStatus')->middleware(['can:manage.ai.mode', 'throttle:20,1']);
 });
 
 //INQUIRY
