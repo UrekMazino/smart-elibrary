@@ -13,8 +13,10 @@ class DatabaseSeeder extends Seeder
      * database/seeders/data/{table}.json (a snapshot of the reference data). Run with:
      *   php artisan migrate:fresh --seed
      *
-     * Note: `users` is intentionally limited to the two admin/patron accounts in the JSON,
-     * and `model_has_roles` to their role links.
+     * Note: `users` is intentionally limited to the working accounts in the JSON
+     * (developer, super admin, one patron), and `model_has_roles` to their role links.
+     * Re-snapshot both from the live DB whenever an account you rely on changes —
+     * seedTable() TRUNCATES, so anything absent from the JSON is gone after a reseed.
      */
     private array $tables = [
         // Access control (roles/permissions before the pivots that reference them)
