@@ -12,7 +12,6 @@ Route::controller(MarcController::class)->group(function () {
 
 use App\Http\Controllers\ProfileController;
 Route::controller(ProfileController::class)->group(function () {
-    // Route::post('/profile/update', 'update');
     Route::get('/patron/profile/validate-email/', 'checkEmail');
 });
 

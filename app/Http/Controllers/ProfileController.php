@@ -13,21 +13,6 @@ class ProfileController extends Controller
         $this->middleware(['auth','patron']);
     }
 
-    public function update()
-    {
-        $patron = User::where('id',request()->userid)
-                    ->update([
-                        'name' => request()->fullname,
-                        'contactnum' => request()->contactnum,
-                        'affiliation' => request()->affiliation,
-                        'sex' => request()->sex,
-                        'birthdate' => request()->birthdate,
-                        'patrontypes_id' => request()->patrontypes_id,
-                        'region_id' => request()->region_id,
-                    ]);
-        return redirect('profile', )->with('success', 'Profile updated successfully!');
-    }
-
     public function checkEmail(Request $request)
     {
        // Trim leading and trailing whitespaces
