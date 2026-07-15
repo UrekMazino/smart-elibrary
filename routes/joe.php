@@ -35,11 +35,16 @@ Route::controller(AdminController::class, 'admin')->group(function () {
     Route::post('/admin/profile/update', 'updateProfile');
     Route::post('/admin/profile/update/password', 'updatePassword');
     
-    Route::get('/superadmin/admin-list', 'administrators')->name('administrators');
-    Route::get('/superadmin/admin-create', 'createAdministrator')->name('admin.create');
-    Route::post('/superadmin/admin-store', 'storeAdministrator')->name('admin.store');
-    Route::get('/superadmin/administrators/json', 'adminJson');
-    Route::post('/superadmin/admin-change-role', 'adminChangeRole')->name('admin.change_role');
+    // Administrator management (admin accounts + role assignment) — super_admin/developer
+    // only (developer implicitly has access to everything). Enforced at the route, not
+    // just hidden via the sidebar @hasanyrole.
+    Route::middleware('role:super_admin|developer')->group(function () {
+        Route::get('/superadmin/admin-list', 'administrators')->name('administrators');
+        Route::get('/superadmin/admin-create', 'createAdministrator')->name('admin.create');
+        Route::post('/superadmin/admin-store', 'storeAdministrator')->name('admin.store');
+        Route::get('/superadmin/administrators/json', 'adminJson');
+        Route::post('/superadmin/admin-change-role', 'adminChangeRole')->name('admin.change_role');
+    });
 });
 
 Route::controller(RolePermissionController::class, 'admin')->group(function () {
