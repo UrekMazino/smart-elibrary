@@ -64,6 +64,8 @@ use App\Http\Controllers\SettingController;
 Route::controller(SettingController::class)->middleware('can:access.configuration')->group(function () {
     Route::get('/admin/settings', 'index');
     Route::post('/admin/settings', 'update');
+    // Drift scan (read-only: compares the index against the DB and reports the drift).
+    Route::get('/admin/settings/scan-search', 'scanSearchIndex')->middleware('throttle:10,1');
     // Manual "Re-sync search index" button (rebuilds Meilisearch from the DB).
     Route::post('/admin/settings/reindex-search', 'reindexSearch')->middleware('throttle:5,1');
 });

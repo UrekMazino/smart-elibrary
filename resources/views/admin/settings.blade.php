@@ -54,10 +54,17 @@
                         rebuilds the index from the database &mdash; safe to run any time.
                     </p>
 
-                    <button type="button" id="reindexBtn" class="btn btn-outline-primary">
-                        <i data-feather="refresh-cw" class="icon-sm me-1"></i>Re-sync search index
-                    </button>
-                    <span id="reindexStatus" class="ms-2" style="font-size: 13px;"></span>
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <button type="button" id="scanBtn" class="btn btn-outline-secondary">
+                            <i data-feather="activity" class="icon-sm me-1"></i>Run drift scan
+                        </button>
+                        <button type="button" id="reindexBtn" class="btn btn-outline-primary">
+                            <i data-feather="refresh-cw" class="icon-sm me-1"></i>Re-sync search index
+                        </button>
+                        <span id="reindexStatus" style="font-size: 13px;"></span>
+                    </div>
+
+                    <div id="driftResult" class="mt-3" style="display:none;"></div>
                 </div>
             </div>
         </div>
@@ -67,8 +74,51 @@
 
 @section('js')
 <script>
+// Inline-styled chips (avoids the admin template's `.badge { color:#fff }` override).
+function driftChip(label, val, tone) {
+    var bg = tone === 'danger' ? '#ffe9ee' : (tone === 'warn' ? '#fff5e0' : '#eef1f8'),
+        fg = tone === 'danger' ? '#c92a4b' : (tone === 'warn' ? '#a06e14' : '#4a5a78');
+    return '<span style="display:inline-block;background:' + bg + ';color:' + fg + ';border-radius:20px;' +
+           'padding:3px 10px;font-size:12px;font-weight:600;margin:0 6px 6px 0;">' + label + ': ' + val + '</span>';
+}
+
+function runDriftScan(silent) {
+    var $btn = $('#scanBtn'), $out = $('#driftResult');
+    $btn.prop('disabled', true);
+    if (!silent) $out.show().html('<span class="text-muted" style="font-size:13px;">Scanning the index…</span>');
+
+    return $.getJSON("{{ url('/admin/settings/scan-search') }}")
+        .done(function (r) {
+            var head = r.in_sync
+                ? '<strong class="text-success">&#10003; In sync</strong> <span class="text-muted">&mdash; the search index matches the database.</span>'
+                : '<strong class="text-danger">Drift detected &mdash; ' + r.drift + ' issue(s)</strong> ' +
+                  '<span class="text-muted">&mdash; click <strong>Re-sync search index</strong> to rebuild.</span>';
+
+            var chips = driftChip('Indexed', r.index_docs) +
+                        driftChip('DB rows', r.db_rows) +
+                        driftChip('Orphaned', r.orphans, r.orphans ? 'danger' : null) +
+                        driftChip('Stale', r.stale, r.stale ? 'warn' : null) +
+                        driftChip('Missing', r.missing, r.missing ? 'warn' : null);
+
+            $out.show().html('<div style="font-size:13px;">' + head + '<div class="mt-2">' + chips + '</div>' +
+                '<div class="text-muted" style="font-size:12px;">' +
+                'Orphaned = indexed but deleted from the database (only a re-sync clears these) &middot; ' +
+                'Stale = indexed values no longer match the database &middot; ' +
+                'Missing = in the database but not indexed.</div></div>');
+        })
+        .fail(function (xhr) {
+            var msg = (xhr.responseJSON && xhr.responseJSON.message)
+                    ? xhr.responseJSON.message
+                    : 'Scan failed. Check that Meilisearch is running.';
+            $out.show().html('<span class="text-danger" style="font-size:13px;">' + msg + '</span>');
+        })
+        .always(function () { $btn.prop('disabled', false); });
+}
+
 $(function () {
     if (window.feather) feather.replace();
+
+    $('#scanBtn').on('click', function () { runDriftScan(false); });
 
     $('#reindexBtn').on('click', function () {
         var $btn = $(this),
@@ -86,6 +136,7 @@ $(function () {
         }).done(function (res) {
             $status.removeClass('text-muted text-danger').addClass('text-success')
                    .text('Done — ' + res.rows + ' record(s) indexed.');
+            runDriftScan(true);   // re-scan so the report shows it's now in sync
         }).fail(function (xhr) {
             var msg = (xhr.responseJSON && xhr.responseJSON.message)
                     ? xhr.responseJSON.message
