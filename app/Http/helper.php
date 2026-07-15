@@ -920,62 +920,18 @@ function getHighestRated($limit = 10)
 	});
 }
 
-function getFeaturedMaterials()
-{
-    $path = public_path('featured');
-    $files = File::files($path);
-
-    $allowedExtensions = ['jpg', 'jpeg', 'png', 'tif', 'tiff'];
-
-    $sources = [];
-
-    foreach ($files as $file) {
-        if (in_array(strtolower($file->getExtension()), $allowedExtensions)) {
-            $sources[] = url('featured/' . $file->getFilename());
-        }
-    }
-
-    return $sources;
-}
-
-function getAnnualReports()
-{
-    $path = public_path('annual_report');
-    $files = File::files($path);
-
-    $allowedExtensions = ['jpg', 'jpeg', 'png', 'tif', 'tiff'];
-
-    $sources = [];
-
-    foreach ($files as $file) {
-        if (in_array(strtolower($file->getExtension()), $allowedExtensions)) {
-            $sources[] = url('annual_report/' . $file->getFilename());
-        }
-    }
-
-    return $sources;
-}
-
 /**
- * Category shelves for the home-page shelf browser: Featured Materials, Annual Reports, and
- * one shelf per material type that actually has published records (empty types are skipped,
- * most-populated first). Thumbnails only. Each shelf:
+ * Category shelves for the home-page shelf browser: one shelf per material type that
+ * actually has published records (empty types are skipped, most-populated first).
+ * Thumbnails only. Each shelf:
  *   ['key' => ..., 'label' => ..., 'items' => [ ['thumb','url','title'], ... ]].
+ *
+ * Every shelf is catalog-driven, so each item links to its record.
  */
 function getShelves($limit = 45)
 {
     return cache()->remember('home_shelves_' . $limit, 600, function () use ($limit) {
     $shelves = [];
-
-    $featured = array_map(function ($u) { return ['thumb' => $u, 'url' => null, 'title' => '']; }, getFeaturedMaterials());
-    if ($featured) {
-        $shelves[] = ['key' => 'featured', 'label' => 'Featured Materials', 'items' => array_slice($featured, 0, $limit)];
-    }
-
-    $annual = array_map(function ($u) { return ['thumb' => $u, 'url' => null, 'title' => '']; }, getAnnualReports());
-    if ($annual) {
-        $shelves[] = ['key' => 'annual', 'label' => 'Annual Reports', 'items' => array_slice($annual, 0, $limit)];
-    }
 
     // Only material types that have published records (most-populated first), so no empty shelves.
     $populated = App\Models\ViewCatalog::where('is_published', 1)->whereNull('deleted_at')
