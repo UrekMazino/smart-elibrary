@@ -38,18 +38,32 @@ class ImportCorpusCatalog extends Command
 
     protected $description = 'Import the Project Y corpus (metadata.jsonl) as catalog records';
 
-    /** Real ids from marctags_loc / marctag_subfields_loc — see field_data below. */
+    /**
+     * Real ids from marctags_loc / marctag_subfields_loc. The tags mirror what FPRDI's
+     * own .mrc records carry (041 language, 100 authors, 245 title, 260 imprint,
+     * 300 extent, 520 abstract, 650 subjects).
+     */
     private const TAG_LDR = 2501;
+    private const TAG_041 = 167;
     private const TAG_245 = 507;
     private const TAG_100 = 349;
     private const TAG_260 = 583;
+    private const TAG_300 = 623;
     private const TAG_500 = 1053;
+    private const TAG_520 = 1157;
+    private const TAG_650 = 1596;
 
     private const SUB_LDR_06 = 2619;
+    private const SUB_041_A  = 167;
     private const SUB_245_A  = 507;
+    private const SUB_245_C  = 509;
     private const SUB_100_A  = 349;
+    private const SUB_260_B  = 584;
     private const SUB_260_C  = 585;
+    private const SUB_300_A  = 623;
     private const SUB_500_A  = 1053;
+    private const SUB_520_A  = 1157;
+    private const SUB_650_A  = 1596;
 
     public function handle(): int
     {
@@ -173,7 +187,7 @@ class ImportCorpusCatalog extends Command
                 'marc_class_sys_id' => 1,
                 // The join key back to the RAG index (chunks are keyed by stem).
                 'accession_number'  => $rec['stem'],
-                'field_data'        => $this->fieldData($title, $rec['authors'] ?? null, $year, $note),
+                'field_data'        => $this->fieldData($rec, $title, $note),
                 'is_published'      => $hold ? 0 : 1,
                 'created_by'        => 'corpus-import',
                 'updated_by'        => 'corpus-import',
@@ -185,6 +199,11 @@ class ImportCorpusCatalog extends Command
                 'material_type'    => $type,
                 'material_type_id' => $typeId,
                 'title_statement'  => $title,
+                // The OPAC reads these columns directly, and Meilisearch indexes them —
+                // so the abstract is what makes these records findable by topic rather
+                // than by title alone.
+                'summary'          => $rec['abstract'] ?? null,
+                'publisher'        => $rec['publisher'] ?? null,
                 'general_note'     => $note ?: null,
                 'pub_year'         => $year,
                 'joint_authors'    => $rec['authors'] ?? null,
@@ -227,54 +246,75 @@ class ImportCorpusCatalog extends Command
     }
 
     /**
-     * Minimal but valid MARC field_data, in the shape the record editor reads/writes
-     * (see CatalogingController::storeRecord, which parses these tag/subfield codes).
+     * MARC field_data in the shape the record editor reads/writes (see
+     * CatalogingController::storeRecord, which parses these tag/subfield codes).
+     *
+     * Tags follow FPRDI's existing .mrc records: 041 language, 100 authors, 245 title +
+     * statement of responsibility, 260 imprint, 300 extent, 500 note, 520 abstract,
+     * 650 subjects. Only fields the document actually stated are written — an absent
+     * tag is honest, an empty one is noise.
      */
-    private function fieldData(string $title, ?string $authors, ?string $year, ?string $note): string
+    private function fieldData(array $rec, string $title, ?string $note): string
     {
         $fields = [];
         $i = 0;
 
-        $fields[] = [
-            'marctag' => ['index' => ++$i, 'id' => (string) self::TAG_LDR, 'code' => 'LDR', 'description' => 'Leader'],
-            'subfield' => [
-                ['sub-index' => 1, 'id' => self::SUB_LDR_06, 'code' => 'LDR$06', 'description' => 'Type of record', 'value' => 'a'],
-            ],
-        ];
+        $add = function (int $tagId, string $code, string $desc, array $subs) use (&$fields, &$i) {
+            $subfields = [];
+            $n = 0;
+            foreach ($subs as [$subId, $subCode, $subDesc, $value]) {
+                if ($value === null || $value === '') {
+                    continue;
+                }
+                $subfields[] = ['sub-index' => ++$n, 'id' => $subId, 'code' => $subCode,
+                                'description' => $subDesc, 'value' => $value];
+            }
+            if ($subfields) {
+                $fields[] = [
+                    'marctag'  => ['index' => ++$i, 'id' => (string) $tagId, 'code' => $code, 'description' => $desc],
+                    'subfield' => $subfields,
+                ];
+            }
+        };
 
-        $fields[] = [
-            'marctag' => ['index' => ++$i, 'id' => (string) self::TAG_245, 'code' => '245', 'description' => 'Title Statement'],
-            'subfield' => [
-                ['sub-index' => 1, 'id' => self::SUB_245_A, 'code' => '245$a', 'description' => 'Title', 'value' => $title],
-            ],
-        ];
+        $add(self::TAG_LDR, 'LDR', 'Leader', [
+            [self::SUB_LDR_06, 'LDR$06', 'Type of record', 'a'],
+        ]);
 
-        if ($authors) {
-            $fields[] = [
-                'marctag' => ['index' => ++$i, 'id' => (string) self::TAG_100, 'code' => '100', 'description' => 'Main Entry - Personal Name'],
-                'subfield' => [
-                    ['sub-index' => 1, 'id' => self::SUB_100_A, 'code' => '100$a', 'description' => 'Personal name', 'value' => $authors],
-                ],
-            ];
-        }
+        $add(self::TAG_041, '041', 'Language Code', [
+            [self::SUB_041_A, '041$a', 'Language code of text/sound track or separate title', $rec['language'] ?? null],
+        ]);
 
-        if ($year) {
-            $fields[] = [
-                'marctag' => ['index' => ++$i, 'id' => (string) self::TAG_260, 'code' => '260', 'description' => 'Publication, Distribution, etc. (Imprint)'],
-                'subfield' => [
-                    ['sub-index' => 1, 'id' => self::SUB_260_C, 'code' => '260$c', 'description' => 'Date of publication, distribution, etc.', 'value' => $year],
-                ],
-            ];
-        }
+        $add(self::TAG_100, '100', 'Main Entry - Personal Name', [
+            [self::SUB_100_A, '100$a', 'Personal name', $rec['authors'] ?? null],
+        ]);
 
-        if ($note) {
-            $fields[] = [
-                'marctag' => ['index' => ++$i, 'id' => (string) self::TAG_500, 'code' => '500', 'description' => 'General Note'],
-                'subfield' => [
-                    ['sub-index' => 1, 'id' => self::SUB_500_A, 'code' => '500$a', 'description' => 'General note', 'value' => $note],
-                ],
-            ];
-        }
+        $add(self::TAG_245, '245', 'Title Statement', [
+            [self::SUB_245_A, '245$a', 'Title', $title],
+            [self::SUB_245_C, '245$c', 'Statement of responsibility, etc.', $rec['responsibility'] ?? null],
+        ]);
+
+        $add(self::TAG_260, '260', 'Publication, Distribution, etc. (Imprint)', [
+            [self::SUB_260_B, '260$b', 'Name of publisher, distributor, etc.', $rec['publisher'] ?? null],
+            [self::SUB_260_C, '260$c', 'Date of publication, distribution, etc.', $rec['year'] ?? null],
+        ]);
+
+        // Page count comes from the index (a fact), not from the model.
+        $add(self::TAG_300, '300', 'Physical Description', [
+            [self::SUB_300_A, '300$a', 'Extent', !empty($rec['pages']) ? $rec['pages'] . ' p.' : null],
+        ]);
+
+        $add(self::TAG_520, '520', 'Summary, etc.', [
+            [self::SUB_520_A, '520$a', 'Summary, etc.', $rec['abstract'] ?? null],
+        ]);
+
+        $add(self::TAG_650, '650', 'Subject Added Entry - Topical Term', [
+            [self::SUB_650_A, '650$a', 'Topical term or geographic name entry element', $rec['subjects'] ?? null],
+        ]);
+
+        $add(self::TAG_500, '500', 'General Note', [
+            [self::SUB_500_A, '500$a', 'General note', $note ?: null],
+        ]);
 
         return json_encode($fields, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     }
