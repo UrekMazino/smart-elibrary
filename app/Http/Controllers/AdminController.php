@@ -409,163 +409,185 @@ class AdminController extends Controller
         return view('admin.partials.report-table', ['table' => $table, 'list' => $list, 'ratings' => $this->reportRatings(), 'preview' => true]);
     }
 
+    /**
+     * Whitelist the DataTables sort column. The client sends the column's `data` key, which
+     * would otherwise go straight into orderBy() — unsafe, and it breaks outright for
+     * render-only columns (Roles/Action) whose `data` isn't a real DB column.
+     * Anything unrecognised falls back to Name, the default sort on both people tables.
+     */
+    private function userSortColumn($requested)
+    {
+        $sortMap = [
+            'name'       => 'name',
+            'email'      => 'email',
+            'contactnum' => 'contactnum',
+            'location'   => 'location',
+            'created_at' => 'created_at',
+        ];
+
+        return $sortMap[$requested] ?? 'name';
+    }
+
     public function patronjson(Request $request)
     {
-        $draw = $request->get('draw');
-        $start = $request->get("start");
-        $rowperpage = $request->get("length"); // Rows display per page
+        $draw       = $request->get('draw');
+        $start      = $request->get('start');
+        $rowperpage = $request->get('length'); // Rows display per page
 
-        $columnIndex_arr = $request->get('order');
         $columnName_arr = $request->get('columns');
-        $order_arr = $request->get('order');
-        $search_arr = $request->get('search');
+        $order_arr      = $request->get('order');
+        $search_arr     = $request->get('search');
 
-        $columnIndex = $columnIndex_arr[0]['column']; // Column index
-        $columnName = $columnName_arr[$columnIndex]['data']; // Column name
-        $columnSortOrder = $order_arr[0]['dir']; // asc or desc
-        $searchValue = $search_arr['value']; // Search value
+        $columnIndex     = $order_arr[0]['column'];
+        $columnName      = $this->userSortColumn($columnName_arr[$columnIndex]['data'] ?? 'name');
+        $columnSortOrder = strtolower($order_arr[0]['dir']) === 'desc' ? 'desc' : 'asc';
+        $searchValue     = $search_arr['value'];
 
-        // Total records
-        $totalRecords = App\Models\User::where('usertype','Patron')->count();
-        $totalRecordswithFilter = App\Models\User::select('count(*) as allcount')->where('usertype','Patron')->where('name', 'like', '%' .$searchValue . '%')->count();
+        // Status filter chips (All / Active / Blocked / Banned). "Active" = neither flag set.
+        $status = $request->get('status_filter', 'all');
+        $applyStatus = function ($query) use ($status) {
+            if ($status === 'banned')  $query->where('is_banned', 1);
+            if ($status === 'blocked') $query->where('is_blocked', 1);
+            if ($status === 'active')  $query->where('is_banned', 0)->where('is_blocked', 0);
+            return $query;
+        };
 
-        // Fetch records
-        $records = App\Models\User::orderBy($columnName,$columnSortOrder)
-            ->select('id','username','name','email','contactnum','location','created_at','is_banned','is_blocked')
-            ->where(function ($query) use ($searchValue) {
-                $query->where('name', 'like', '%' . $searchValue . '%')
+        // The search terms have to match the fetch query below, otherwise the row count
+        // disagrees with the rows actually returned and paging breaks.
+        $applySearch = function ($query) use ($searchValue) {
+            return $query->where(function ($q) use ($searchValue) {
+                $q->where('name', 'like', '%' . $searchValue . '%')
                     ->orWhere('email', 'like', '%' . $searchValue . '%')
                     ->orWhere('contactnum', 'like', '%' . $searchValue . '%')
                     ->orWhere('library_code', 'like', '%' . $searchValue . '%')
                     ->orWhere('location', 'like', '%' . $searchValue . '%')
                     ->orWhere('created_at', 'like', '%' . $searchValue . '%');
-            })
-            ->where('usertype','Patron')
+            });
+        };
+
+        $base = fn () => App\Models\User::where('usertype', 'Patron');
+
+        $totalRecords           = $base()->count();
+        $totalRecordswithFilter = $applySearch($applyStatus($base()))->count();
+
+        $records = $applySearch($applyStatus($base()))
+            ->select('id', 'username', 'name', 'email', 'contactnum', 'library_code', 'location', 'created_at', 'is_banned', 'is_blocked')
+            ->orderBy($columnName, $columnSortOrder)
             ->skip($start)
             ->take($rowperpage)
             ->get();
 
         $data_arr = array();
 
-        foreach($records as $record){
-            $id = $record->id;
-            $username = $record->username;
-            $name = $record->name;
-            $email = $record->email;
-            $contactnum = $record->contactnum;
-            $location = $record->location;
-            $created_at = date('Y-m-d H:i:s',strtotime($record->created_at));
-            
- 
+        foreach ($records as $record) {
             $data_arr[] = array(
-                "id" => $id,
-                "username" => $username,
-                "name" => $name,
-                "email" => $email,
-                "contactnum" => $contactnum,
-                "location" => $location,
-                "created_at" => $created_at,
-                "is_banned" => (int) $record->is_banned,
-                "is_blocked" => (int) $record->is_blocked,
+                "id"           => $record->id,
+                "username"     => $record->username,
+                "name"         => $record->name,
+                "email"        => $record->email,
+                "contactnum"   => $record->contactnum,
+                "library_code" => $record->library_code,
+                "location"     => $record->location,
+                "created_at"   => date('Y-m-d H:i:s', strtotime($record->created_at)),
+                "is_banned"    => (int) $record->is_banned,
+                "is_blocked"   => (int) $record->is_blocked,
             );
-         }
+        }
 
-         $response = array(
-            "draw" => intval($draw),
-            "iTotalRecords" => $totalRecords,
+        // Counts for the status chips — one grouped query, not three.
+        $flags = $base()->selectRaw('SUM(is_banned = 1) AS banned, SUM(is_blocked = 1) AS blocked, SUM(is_banned = 0 AND is_blocked = 0) AS active')->first();
+
+        $response = array(
+            "draw"                 => intval($draw),
+            "iTotalRecords"        => $totalRecords,
             "iTotalDisplayRecords" => $totalRecordswithFilter,
-            "aaData" => $data_arr
-         );
- 
-         return response()->json($response); 
+            "aaData"               => $data_arr,
+            "counts"               => [
+                'all'     => $totalRecords,
+                'active'  => (int) $flags->active,
+                'blocked' => (int) $flags->blocked,
+                'banned'  => (int) $flags->banned,
+            ],
+        );
 
+        return response()->json($response);
     }
     
     public function adminJson(Request $request)
     {
-        $draw = $request->get('draw');
-        $start = $request->get("start");
-        $rowperpage = $request->get("length"); // Rows display per page
+        $draw       = $request->get('draw');
+        $start      = $request->get('start');
+        $rowperpage = $request->get('length'); // Rows display per page
 
-        $columnIndex_arr = $request->get('order');
         $columnName_arr = $request->get('columns');
-        $order_arr = $request->get('order');
-        $search_arr = $request->get('search');
+        $order_arr      = $request->get('order');
+        $search_arr     = $request->get('search');
 
-        $columnIndex = $columnIndex_arr[0]['column']; // Column index
-        $columnName = $columnName_arr[$columnIndex]['data']; // Column name
-        $columnSortOrder = $order_arr[0]['dir']; // asc or desc
-        $searchValue = $search_arr['value']; // Search value
+        $columnIndex     = $order_arr[0]['column'];
+        $columnName      = $this->userSortColumn($columnName_arr[$columnIndex]['data'] ?? 'name');
+        $columnSortOrder = strtolower($order_arr[0]['dir']) === 'desc' ? 'desc' : 'asc';
+        $searchValue     = $search_arr['value'];
 
-        // Total records
-        // $totalRecords = App\Models\User::whereIn('usertype', ['Administrator', 'Developer'])->count();
-        $totalRecords = App\Models\User::where('usertype','Administrator')->count();
-        $totalRecordswithFilter = App\Models\User::select('count(*) as allcount')->where('usertype','Administrator')->where('name', 'like', '%' .$searchValue . '%')->count();
-
-        // Fetch records
-        $records = App\Models\User::orderBy($columnName,$columnSortOrder)
-            ->select('id','username','name','email','contactnum','location','created_at')
-            ->where(function ($query) use ($searchValue) {
-                $query->where('name', 'like', '%' . $searchValue . '%')
+        // The search terms have to match the fetch query below, otherwise the row count
+        // disagrees with the rows actually returned and paging breaks.
+        $applySearch = function ($query) use ($searchValue) {
+            return $query->where(function ($q) use ($searchValue) {
+                $q->where('name', 'like', '%' . $searchValue . '%')
                     ->orWhere('email', 'like', '%' . $searchValue . '%')
                     ->orWhere('contactnum', 'like', '%' . $searchValue . '%')
                     ->orWhere('library_code', 'like', '%' . $searchValue . '%')
                     ->orWhere('location', 'like', '%' . $searchValue . '%');
-            })
-            ->where('usertype','Administrator')
+            });
+        };
+
+        $base = fn () => App\Models\User::where('usertype', 'Administrator');
+
+        $totalRecords           = $base()->count();
+        $totalRecordswithFilter = $applySearch($base())->count();
+
+        // Eager-load roles + their permissions: without this each row fires its own
+        // queries for getRoleNames()/getPermissionsViaRoles() (N+1).
+        $records = $applySearch($base())
+            ->select('id', 'username', 'name', 'email', 'contactnum', 'location', 'created_at')
+            ->with('roles.permissions')
+            ->orderBy($columnName, $columnSortOrder)
             ->skip($start)
             ->take($rowperpage)
             ->get();
 
         $data_arr = array();
 
-        foreach($records as $record){
-            $id = $record->id;
-            $username = $record->username;
-            $name = $record->name;
-            $email = $record->email;
-            $contactnum = $record->contactnum;
-            $location = $record->location;
-            $created_at = date('Y-m-d H:i:s',strtotime($record->created_at));
+        foreach ($records as $record) {
+            $perm = $record->roles
+                        ->flatMap->permissions
+                        ->pluck('display_name')
+                        ->filter()
+                        ->unique()
+                        ->sort(fn ($a, $b) => strcmp($a, $b))
+                        ->values()
+                        ->all();
 
-
-            $user = User::find($record->id);
-
-            // Get roles associated with the user
-            $roles = $user->getRoleNames();
-
-            $permissions = $user->getPermissionsViaRoles();
-            $perm = [];
-            foreach($permissions as $index => $permission) {
-                $perm[$index] = $permission->display_name;
-            }
-            // Sort the $perm array based on display_name
-            usort($perm, function ($a, $b) {
-                return strcmp($a, $b);
-            });
-            
             $data_arr[] = array(
-                "id" => $id,
-                "username" => $username,
-                "name" => $name,
-                "email" => $email,
-                "contactnum" => $contactnum,
+                "id"          => $record->id,
+                "username"    => $record->username,
+                "name"        => $record->name,
+                "email"       => $record->email,
+                "contactnum"  => $record->contactnum,
                 "permissions" => $perm,
-                "roles" => $roles,
-                "location" => $location,
-                "created_at" => $created_at,
+                "roles"       => $record->roles->pluck('name')->all(),
+                "location"    => $record->location,
+                "created_at"  => date('Y-m-d H:i:s', strtotime($record->created_at)),
             );
-         }
+        }
 
-         $response = array(
-            "draw" => intval($draw),
-            "iTotalRecords" => $totalRecords,
+        $response = array(
+            "draw"                 => intval($draw),
+            "iTotalRecords"        => $totalRecords,
             "iTotalDisplayRecords" => $totalRecordswithFilter,
-            "aaData" => $data_arr
-         );
- 
-         return response()->json($response); 
+            "aaData"               => $data_arr
+        );
 
+        return response()->json($response);
     }
 
     public function createAdministrator(Request $request)
