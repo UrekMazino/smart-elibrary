@@ -891,6 +891,14 @@ class CatalogingController extends Controller
                     'deleted_by' => $user->id
                 ]);
 
+        // Same as destroyRecord: the query-builder update bypasses Scout, so remove the
+        // whole batch from the search index (else the docs linger with deleted_at = null).
+        ViewCatalog::where('catalog_import_id', $request->id)->get()->unsearchable();
+
+        // Deleting a batch changes the collection -> bust the home caches (destroyRecord
+        // already does this; batch delete was missing it and left a stale homepage).
+        clearHomeCache();
+
         return redirect()->back();
     }
 
@@ -1532,6 +1540,11 @@ class CatalogingController extends Controller
                 'deleted_at' => now(),
                 'deleted_by' => $user->id
             ]);
+
+        // Query-builder updates bypass Scout, so drop the record from the search index.
+        // Otherwise its Meilisearch doc keeps deleted_at = null, still matches the OPAC's
+        // "deleted_at IS NULL" filter, and inflates the result count vs what's shown.
+        optional(ViewCatalog::where('catalog_id', $request->id)->first())->unsearchable();
 
         clearHomeCache();
         return redirect()->back();

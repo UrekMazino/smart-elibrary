@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use App\Models\Setting;
+use App\Models\ViewCatalog;
 
 class SettingController extends Controller
 {
@@ -30,5 +32,33 @@ class SettingController extends Controller
         }
 
         return redirect('/admin/settings')->with('success', 'Settings saved.');
+    }
+
+    /**
+     * Rebuild the OPAC search index (Meilisearch) from the database — the source of truth.
+     *
+     * flush removes stale/orphaned documents (records deleted or re-imported over time can
+     * leave documents behind), then import re-adds every current row with fresh filter
+     * values. Run this if search result counts ever disagree with what the results page
+     * shows. Manual button rather than a schedule.
+     */
+    public function reindexSearch()
+    {
+        @set_time_limit(600);
+
+        try {
+            Artisan::call('scout:flush', ['model' => ViewCatalog::class]);
+            Artisan::call('scout:import', ['model' => ViewCatalog::class]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'ok'      => false,
+                'message' => 'Re-sync failed: ' . $e->getMessage(),
+            ], 500);
+        }
+
+        return response()->json([
+            'ok'   => true,
+            'rows' => ViewCatalog::count(),
+        ]);
     }
 }
