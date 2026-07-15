@@ -6,6 +6,9 @@ use Illuminate\Http\Request;
 use App;
 use Auth;
 use App\Models\User;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules;
 
 use MeiliSearch\Client;
 
@@ -23,29 +26,64 @@ class OPACController extends Controller
         return view('opac.profile', ['user' => $user]);
     }
 
+    /**
+     * The {id} in the route is ignored on purpose — the signed-in user is the only account
+     * that can be edited here, so passing someone else's id changes nothing.
+     */
     public function updatePatronProfile(Request $request, $id)
     {
-        $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255'],
-            'contactnum' => ['required', 'string', 'max:255'],
-            'birthdate' => ['required', 'string', 'max:100']
-        ]);
-        User::where('id',Auth::user()->id)
-            ->update([
-                'name' => $request->name,
-                'contactnum' => $request->contactnum,
-                'affiliation' => $request->affiliation,
-                'sex' => $request->sex,
-                'birthdate' => $request->birthdate,
-                'patrontypes_id' => $request->patron_type_id,
-                'region_id' => $request->region_id,
-                'email' => $request->email,
-                'location' => $request->address
-            ]);
+        $user = Auth::user();
 
-        $user = User::find(Auth::user()->id);
-        return view('opac.profile', ['user' => $user, 'success' => 'Profile updated successfully!']);
+        // Email uniqueness was only checked by the /patron/profile/validate-email AJAX call
+        // the page makes before submitting — i.e. not at all for anything posting directly.
+        $data = $request->validate([
+            'name'           => ['required', 'string', 'max:255'],
+            'email'          => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+            'contactnum'     => ['required', 'string', 'max:255'],
+            'birthdate'      => ['required', 'string', 'max:50'],
+            'affiliation'    => ['nullable', 'string', 'max:255'],
+            'sex'            => ['nullable', Rule::in(['Male', 'Female'])],   // column is an enum
+            'patron_type_id' => ['required', 'exists:patrontypes,id'],        // NOT NULL column
+            'region_id'      => ['nullable', 'string', 'max:10', 'exists:regions,regCode'],
+            'address'        => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $user->update([
+            'name'           => $data['name'],
+            'contactnum'     => $data['contactnum'],
+            'affiliation'    => $data['affiliation'] ?? null,
+            'sex'            => $data['sex'] ?? null,
+            'birthdate'      => $data['birthdate'],
+            'patrontypes_id' => $data['patron_type_id'],
+            'region_id'      => $data['region_id'] ?? null,
+            'email'          => $data['email'],
+            'location'       => $data['address'] ?? null,
+        ]);
+
+        // Redirect rather than render: a refresh used to re-submit the form.
+        return redirect('/patron/profile')->with('success', 'Profile updated.');
+    }
+
+    /**
+     * Patrons had no password endpoint of their own: the Change Password modal on this page
+     * posted to /admin/profile/update/password, which sits behind the `admin` middleware, so
+     * a patron was silently redirected to the homepage and their password was never changed.
+     * Mirrors AdminController@updatePassword.
+     */
+    public function updatePassword(Request $request)
+    {
+        // Named bag so the page can tell a failed password change apart from a failed
+        // profile save and re-open the modal with the right messages.
+        $request->validateWithBag('updatePassword', [
+            'current_password' => ['required', 'current_password'],
+            'password'         => ['required', 'confirmed', Rules\Password::defaults()],
+        ]);
+
+        $user = Auth::user();
+        $user->password = Hash::make($request->password);
+        $user->save();
+
+        return redirect('/patron/profile')->with('success', 'Password changed.');
     }
 
     public function transactions()

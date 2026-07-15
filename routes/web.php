@@ -44,7 +44,13 @@ use App\Http\Controllers\OPACController;
 
 Route::controller(OPACController::class)->prefix('patron')->group(function () {
     Route::get('/profile', 'profile');
-    Route::post('/profile/update/{id}', 'updatePatronProfile')->name('update.patron.profile');
+    // Patrons' own password endpoint. The modal used to post to /admin/profile/update/password,
+    // which the `admin` middleware bounced, so the change silently never happened.
+    // Throttled: it takes the current password, so it's guessable by brute force.
+    // Declared before the {id} route below, which would otherwise match "password" as an id.
+    Route::post('/profile/update/password', 'updatePassword')->name('update.patron.password')->middleware('throttle:10,1');
+    // whereNumber so this can never swallow a literal path segment (see above).
+    Route::post('/profile/update/{id}', 'updatePatronProfile')->name('update.patron.profile')->whereNumber('id');
     Route::get('/transactions', 'transactions');
     Route::get('/to-review', 'toReview');
     Route::get('/inquiries', 'inquiries');

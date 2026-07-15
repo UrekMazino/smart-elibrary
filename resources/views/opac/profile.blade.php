@@ -24,6 +24,19 @@
 	.pf-btn-save:hover { background: #00897b; color: #fff; }
 	.pf-btn-pass { background: #fff; color: #c0392b; border: 1px solid #f0c8c2; }
 	.pf-btn-pass:hover { background: #fdecea; border-color: #e2b3ab; }
+
+	/* Change-password modal — matches the card above it */
+	.pw-modal { border: 0; border-radius: 10px; }
+	.pw-modal .modal-header, .pw-modal .modal-footer { border-color: #eef0f2; }
+	.pw-modal .modal-title { font-size: 16px; font-weight: 700; color: #222; }
+	.pw-modal .form-label { font-size: 12.5px; font-weight: 600; color: #55606b; margin-bottom: 5px; }
+	.pw-modal .form-control { border: 1px solid #dfe3e8; border-radius: 7px; padding: 9px 12px; font-size: 14px; }
+	.pw-modal .form-control:focus { border-color: #00a496; box-shadow: 0 0 0 3px rgba(0,164,150,.12); outline: none; }
+	.pw-modal .form-control.is-invalid { border-color: #c0392b; }
+	.pw-hint { display: block; font-size: 11.5px; color: #a3adc2; margin-top: 4px; }
+	.pw-hint.ok { color: #00a496; }
+	.pw-hint.bad { color: #c0392b; }
+	.pw-error { display: block; font-size: 11.5px; color: #c0392b; margin-top: 4px; }
 </style>
 @endsection
 
@@ -162,7 +175,8 @@
 		<script>
 			$("#region_id").val("{{ Auth::user()->region_id }}");
 			$("#patrontypes_id").val("{{ Auth::user()->patrontypes_id }}");
-			$("input[name=sex][value={{ Auth::user()->sex }}]").prop('checked', true);
+			// Quoted: an unset sex produced [value=], an invalid selector that threw.
+			$('input[name=sex][value="{{ Auth::user()->sex }}"]').prop('checked', true);
 
 			function submitForm()
 			{
@@ -230,32 +244,34 @@
 			}
 
 			$(document).ready(function(){
-				$('#password_confirmation').on('keyup', function () {
-					let password = $('#password').val();
-					let confirm_password = $(this).val();
+				// Live match hint. The Update button is NOT gated on this — the server is
+				// what enforces it, and a disabled button left people stuck with no reason.
+				function checkMatch() {
+					var pw = $('#password').val(), confirmPw = $('#password_confirmation').val();
+					var $note = $('#password-match');
+					if (!confirmPw) { $note.text('').removeClass('ok bad'); return; }
+					if (pw === confirmPw) $note.text('Passwords match.').addClass('ok').removeClass('bad');
+					else                  $note.text('Passwords do not match.').addClass('bad').removeClass('ok');
+				}
+				$('#password, #password_confirmation').on('keyup', checkMatch);
 
-					if (password === confirm_password) {
-						$('#password, #password_confirmation').css('border-color', 'green');
-						$('#change-password-btn').prop('disabled', false);
-					} else {
-						$('#password, #password_confirmation').css('border-color', 'red');
-						$('#change-password-btn').prop('disabled', true);
-					}
-				});
-
+				// Re-open the modal when the password form came back with errors.
+				@if($errors->updatePassword->any())
+					$('#changePasswordModal').modal('show');
+				@endif
 			});
 		</script>
-		@if (isset($error))
+		@if (session('success'))
 			<script>
 				$(document).ready(function(){
-					showSwal("{{ $error }}", "error");
+					showSwal("{{ session('success') }}", "success");
 				});
 			</script>
 		@endif
-		@if (isset($success))
+		@if ($errors->getBag('default')->any())
 			<script>
 				$(document).ready(function(){
-					showSwal("{{ $success }}", "success");
+					showSwal("{{ $errors->getBag('default')->first() }}", "error");
 				});
 			</script>
 		@endif

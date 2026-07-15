@@ -33,7 +33,8 @@ Route::controller(AdminController::class, 'admin')->group(function () {
     Route::get('/admin/profile', 'profile');
     Route::post('/admin/register/store', 'storePatron')->middleware('can:access.accounts');
     Route::post('/admin/profile/update', 'updateProfile');
-    Route::post('/admin/profile/update/password', 'updatePassword');
+    // Throttled: it takes the current password, so it's guessable by brute force.
+    Route::post('/admin/profile/update/password', 'updatePassword')->middleware('throttle:10,1');
     
     // Administrator management (admin accounts + role assignment) — super_admin/developer
     // only (developer implicitly has access to everything). Enforced at the route, not
