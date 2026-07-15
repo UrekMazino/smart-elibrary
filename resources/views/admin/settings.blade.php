@@ -92,6 +92,35 @@
             </div>
         </div>
     </div>
+
+    <div class="row">
+        <div class="col-md-8 grid-margin stretch-card">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title mb-1">Cache</h6>
+                    <p class="text-muted mb-2" style="font-size: 13px;">
+                        The homepage panels and the dashboard chart are cached for 10 minutes, so a
+                        change can take a moment to appear &mdash; and bulk operations can leave them
+                        stale for longer. Clearing is safe to run any time: it only drops cached
+                        copies, never data.
+                    </p>
+                    <p class="text-muted mb-3" style="font-size: 12px;">
+                        Clears the homepage/sidebar panels, the dashboard chart, and compiled page
+                        templates. Leaves everything else alone &mdash; <strong>nobody is signed
+                        out</strong>, sign-in protection isn&rsquo;t reset, and the search index
+                        isn&rsquo;t touched (that&rsquo;s <em>Re-sync</em> above).
+                    </p>
+
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <button type="button" id="clearCacheBtn" class="btn btn-outline-secondary">
+                            <i data-feather="trash-2" class="icon-sm me-1"></i>Clear cache
+                        </button>
+                        <span id="clearCacheStatus" style="font-size: 13px;"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 @endsection
 
@@ -181,6 +210,30 @@ $(function () {
     @endcan
 
     $('#scanBtn').on('click', function () { runDriftScan(false); });
+
+    $('#clearCacheBtn').on('click', function () {
+        var $btn = $(this), $status = $('#clearCacheStatus');
+
+        $btn.prop('disabled', true);
+        $status.removeClass('text-success text-danger').addClass('text-muted').text('Clearing…');
+
+        $.ajax({
+            type: 'POST',
+            url: "{{ url('/admin/settings/clear-cache') }}",
+            data: { _token: "{{ csrf_token() }}" },
+            dataType: 'json'
+        }).done(function (res) {
+            $status.removeClass('text-muted text-danger').addClass('text-success')
+                   .text('Cleared — ' + res.cache_entries + ' cached item(s), ' + res.views_cleared + ' compiled view(s).');
+        }).fail(function (xhr) {
+            var msg = (xhr.responseJSON && xhr.responseJSON.message)
+                    ? xhr.responseJSON.message
+                    : 'Clear cache failed. Please try again.';
+            $status.removeClass('text-muted text-success').addClass('text-danger').text(msg);
+        }).always(function () {
+            $btn.prop('disabled', false);
+        });
+    });
 
     $('#reindexBtn').on('click', function () {
         var $btn = $(this),

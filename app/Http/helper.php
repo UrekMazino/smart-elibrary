@@ -811,12 +811,37 @@ function getLatestNews()
  */
 function clearHomeCache()
 {
-	cache()->forget('home_latest_news');
-	cache()->forget('home_latest_material');
-	cache()->forget('home_shelves_45');
-	cache()->forget('home_top_downloaded');
-	cache()->forget('home_top_viewed');
-	cache()->forget('home_top_rated');
+	foreach (homeCacheKeys() as $key) {
+		cache()->forget($key);
+	}
+}
+
+/** The homepage/sidebar cached panels. */
+function homeCacheKeys()
+{
+	return [
+		'home_latest_news',
+		'home_latest_material',
+		'home_shelves_45',      // keyed by limit; the homepage uses getShelves(45)
+		'home_top_downloaded',
+		'home_top_viewed',
+		'home_top_rated',
+	];
+}
+
+/**
+ * Every cache key this app owns — what the Settings "Clear cache" button drops.
+ * ADD NEW KEYS HERE when you add a cache, or the button silently won't clear it.
+ *
+ * Enumerated rather than Cache::flush() on purpose: the cache store also holds the
+ * rate limiter's counters, so flushing would reset LOGIN brute-force protection for
+ * every IP (and reset the clear-cache endpoint's own throttle, making it unlimitable).
+ */
+function appCacheKeys()
+{
+	return array_merge(homeCacheKeys(), [
+		'dash_views_traffic_6m',   // dashboard "Number of Views" chart (AdminController)
+	]);
 }
 
 function getLatestNewsList()
