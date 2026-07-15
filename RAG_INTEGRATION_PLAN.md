@@ -153,6 +153,119 @@ Build every feature so it *feeds* or *consumes* the RAG cleanly:
 - **Meilisearch instant search** — the keyword half of the hybrid search story.
 - **JSON endpoint pattern** (`/search/suggest`) — the shape RAG endpoints will follow.
 
+## 10. Conversational "Ask the Library" via Hermes — endpoint contract (Discord-parity)
+
+**Principle (copied from the Discord bot):** **Hermes is the brain.** It runs the agent loop, owns
+`search_docs`, and enforces the `locked-rag` guardrails (corpus-only, anti-fabrication,
+prompt-extraction hardening). The eLibrary chat is just **another transport** in front of the same
+Hermes — exactly like the Discord adapter. Laravel ships a message in and renders the reply out; it
+does **not** re-implement orchestration or safety.
+
+This *refines* §3: there are **two seams**, for two different jobs:
+- **Retrieval-only** — `POST /rag/search` (§3): the non-conversational "related passages" panel next
+  to Meilisearch. Stateless, fast, no LLM, no agent.
+- **Conversational agent** — this section: the flagship "Ask the Library" chat. Routes **through
+  Hermes**, inheriting the hardened agent. **Do not** build a second answer-orchestrator in Laravel
+  or in the FastAPI wrapper.
+
+Both seams can live in **one HTTP service** (extend the §3 Phase-1 FastAPI app with an `/agent/*`
+route family that drives Hermes) — one process, two seams.
+
+### 10.1 Topology
+```
+Browser chat (OPAC) ── HTTPS, patron-authenticated
+   ▼
+Laravel (eLibrary)              owns: auth, conversation store, UI, citation bridge
+   │  server-side POST · localhost · + shared token
+   ▼
+Hermes HTTP gateway (new: 127.0.0.1, private)   ── a web transport beside the Discord one
+   ▼
+Hermes agent ─► search_docs ─► LanceDB (BGE-M3 + reranker)
+            └─► Qwen (llama-server :8080) for synthesis
+```
+The gateway is a thin HTTP entry to the **existing** Hermes agent — not a new brain.
+
+### 10.2 Endpoint contract — `POST /agent/chat` (localhost-only, token-guarded)
+Request (Laravel → Hermes):
+```
+{ "conversation_id": "<uuid, Laravel-owned>",
+  "message": "<user question>",
+  "history": [ {"role":"user|assistant","content":"…"}, … ],  // recent turns, Laravel-supplied
+  "profile": "elibrary-rag",        // locked-rag profile for the web surface
+  "user_ref": "patron:{id}|guest",  // opaque, for rate-limit/abuse only — no PII
+  "stream": true }
+```
+Response (final JSON, or terminal SSE event):
+```
+{ "answer": "<synthesized, corpus-grounded text>",
+  "sources": [ {"catalog_id": 123, "page": 7, "score": 0.82, "snippet": "…"}, … ],
+  "abstained": false,               // true when the corpus can't support an answer
+  "usage": {"tokens": …, "took_ms": …},
+  "conversation_id": "…" }
+```
+- **`sources[].catalog_id` is mandatory** — the citation join key. A source with no catalog_id is
+  returned flagged so Laravel hides/down-ranks it (never cite a filename).
+- **`abstained`** surfaces the anti-fabrication behaviour as a UI empty-state.
+
+### 10.3 Auth & exposure
+- Hermes gateway binds **`127.0.0.1` only** (never public), same host as eLibrary + llama-server.
+- Laravel is the **only** internet-facing surface; it calls Hermes server-side (Guzzle) with a
+  **shared secret** (`HERMES_GATEWAY_TOKEN` in `.env`, sent as a header; rotatable).
+- The browser never talks to Hermes; the token never reaches the client.
+
+### 10.4 Session / conversation ownership
+- **Laravel owns conversations** (it has auth + DB + chat UIs already). Store turns in a
+  `rag_conversations`/`rag_messages` pair (or reuse a chat table); the UI shows + revisits history.
+- Laravel sends `conversation_id` + the **last N turns** as `history`; **Hermes stays request-scoped**
+  — no server-side memory to sync, no cross-user leakage. N is a token-budgeted window.
+- Benefit: history, search, moderation, deletion all live where auth + audit already are.
+
+### 10.5 Concurrency & the single GPU (the real new constraint vs Discord)
+- Discord traffic is bursty/low; a public web chat can have many people press "send" at once, and
+  **each request is a full Qwen generation on one 4080**.
+- Put a **concurrency limit + queue in front of Hermes**: max **N in-flight** generations (start
+  N=1–2, measure), queue the rest with a "thinking…/waiting…" UI, and shed load past a max queue
+  depth rather than thrash the box.
+- **Rate-limit at the Laravel edge too** (per patron/IP — reuse the `throttle` pattern from the
+  inquiry/reservation chat).
+- Keep the §3 rule: heavy re-indexing stops llama-server → chat shows "temporarily unavailable".
+
+### 10.6 Streaming UX
+- Local Qwen isn't instant → **stream tokens** (feels responsive). Transport: **SSE**
+  Hermes → Laravel → browser (simplest, one-way); the **final SSE event carries `sources[]` +
+  `abstained`** so citations render after the text.
+- Fallback: `stream:false` → a single JSON response (same data, slower feel).
+
+### 10.7 Health & graceful degradation
+- Hermes gateway exposes `GET /healthz` (model loaded? LanceDB open? queue depth). Laravel caches it.
+- Unhealthy (re-index running / GPU busy / gateway down) → chat shows a calm **"AI is temporarily
+  unavailable"**; Meilisearch keyword search + the normal catalog stay fully usable.
+- **Never hang** a web request on a stuck generation — enforce a gateway **and** client timeout.
+
+### 10.8 Citation mapping (the §3/§5 bridge, per answer)
+- Hermes `sources[].catalog_id` → Laravel `view_catalogs` → **`buildCitations()`** → source cards
+  linking `/full-description/{catalog_id}` (APA/MLA/Chicago). Same bridge; chat consumes it per turn.
+
+### 10.9 What changes vs the Discord bot
+| | Discord | eLibrary chat |
+|---|---|---|
+| Brain | Hermes agent | **same Hermes agent** |
+| Guardrails | `locked-rag` | **same profile** (web is *more* hostile → keep it strict) |
+| Transport | Discord adapter | **new HTTP gateway** (127.0.0.1) |
+| Memory | Hermes/Discord-side | **Laravel-owned** (history sent per request) |
+| Concurrency | low, bursty | **higher → queue + edge rate-limit** |
+| Identity | Discord user | **patron auth** (opaque `user_ref` to Hermes) |
+
+### 10.10 Build order (slots into §7)
+- **Phase 1.5** (after §7 Phase-1 retrieval service): stand up the **Hermes HTTP gateway**
+  (`/agent/chat`, `/healthz`) wrapping the existing agent + `locked-rag`; test with **curl** (token +
+  a known question, check `sources[].catalog_id` + `abstained`) before any Laravel code.
+- **Phase 2** gains the Laravel side: conversation store, Guzzle client (+ shared token), SSE
+  streaming, and the "Ask the Library" chat UI (reuse existing chat components) rendering `answer`
+  + `buildCitations()` source cards + the `abstained` empty-state.
+
+---
+
 > Cross-reference: Project Y specifics (llama-server, docs MCP, LanceDB, nginx proxy, GPU rules)
 > live in the ProjectY repo docs (`rag/RAG_PLAN_AND_PROGRESS.md`, `HERMES_SECURITY_LOCKDOWN…md`,
 > `STARTING_HERMES_GUIDE.md`). This file is the **eLibrary side** of that integration.
