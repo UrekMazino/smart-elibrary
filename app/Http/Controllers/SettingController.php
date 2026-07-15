@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Artisan;
 use App\Models\Setting;
 use App\Models\ViewCatalog;
 
@@ -125,8 +124,12 @@ class SettingController extends Controller
         @set_time_limit(600);
 
         try {
-            Artisan::call('scout:flush', ['model' => ViewCatalog::class]);
-            Artisan::call('scout:import', ['model' => ViewCatalog::class]);
+            // NOTE: do NOT use Artisan::call('scout:flush'/'scout:import') here — Scout only
+            // registers its commands when runningInConsole(), so over HTTP they don't exist
+            // ("The command scout:flush does not exist"). These are exactly what those
+            // commands call internally, and they work in any context.
+            ViewCatalog::removeAllFromSearch();   // = scout:flush  (drops stale/orphaned docs)
+            ViewCatalog::makeAllSearchable();     // = scout:import (re-adds every current row)
         } catch (\Throwable $e) {
             return response()->json([
                 'ok'      => false,
