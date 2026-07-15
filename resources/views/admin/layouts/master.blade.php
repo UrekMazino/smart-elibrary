@@ -74,11 +74,11 @@ License: For each use you must have a valid license purchased only from above li
       </div>
       <div class="sidebar-body">
         <ul class="nav">
-            <li class="nav-item nav-category">Menu</li>
+            <li class="nav-item nav-category">Overview</li>
             @can('access.dashboard')
             <li class="nav-item">
               <a href="{{ url('/admin/dashboard') }}" class="nav-link">
-                <i class="link-icon" data-feather="box"></i>
+                <i class="link-icon" data-feather="grid"></i>
                 <span class="link-title">Dashboard</span>
               </a>
             </li>
@@ -86,7 +86,7 @@ License: For each use you must have a valid license purchased only from above li
             @can('access.inquiry')
               <li class="nav-item">
                 <a href="{{ url('/admin/inquiry') }}" class="nav-link">
-                  <i class="link-icon" data-feather="info"></i>
+                  <i class="link-icon" data-feather="message-square"></i>
                   <span class="link-title">Inquiries</span>
                 </a>
               </li>
@@ -94,7 +94,7 @@ License: For each use you must have a valid license purchased only from above li
             @can('access.news') 
               <li class="nav-item">
                 <a href="{{ url('/admin/news') }}" class="nav-link">
-                  <i class="link-icon"><i class="mdi mdi-newspaper"></i></i>
+                  <i class="link-icon" data-feather="rss"></i>
                   <span class="link-title">News Article</span>
                 </a>
               </li>
@@ -102,23 +102,17 @@ License: For each use you must have a valid license purchased only from above li
             @can('access.reports')
               <li class="nav-item">
                 <a href="{{ url('/admin/report') }}" class="nav-link">
-                  <i class="link-icon"><i class="mdi mdi-chart-bar"></i></i>
+                  <i class="link-icon" data-feather="bar-chart-2"></i>
                   <span class="link-title">Reports</span>
                 </a>
               </li>
             @endcan
           @can('access.cataloging')
             <li class="nav-item nav-category">Cataloging</li>
-            <!-- <li class="nav-item">
-              <a href="{{ url('/admin/new-acquisition') }}" class="nav-link">
-                <i class="link-icon"><i class="mdi mdi-book-plus"></i></i>
-                <span class="link-title">New</span>
-              </a>
-            </li> -->
             @can('create.catalog')
               <li class="nav-item">
                 <a href="{{ url('/admin/create-record') }}" class="nav-link">
-                  <i class="link-icon"><i class="mdi mdi-book-plus"></i></i>
+                  <i class="link-icon" data-feather="file-plus"></i>
                   <span class="link-title">Create New Record</span>
                 </a>
               </li>
@@ -126,7 +120,7 @@ License: For each use you must have a valid license purchased only from above li
             @can('view.catalog.importlist')
               <li class="nav-item">
                 <a href="{{ url('/admin/batch-list') }}" class="nav-link">
-                  <i class="link-icon"><i class="mdi mdi-bookmark-plus"></i></i>
+                  <i class="link-icon" data-feather="upload"></i>
                   <span class="link-title">Batch Import</span>
                 </a>
               </li>
@@ -134,32 +128,19 @@ License: For each use you must have a valid license purchased only from above li
             @can('view.catalog.list')
               <li class="nav-item">
                 <a href="{{ url('/admin/record-list') }}" class="nav-link">
-                  <i class="link-icon"><i class="mdi mdi-bookmark-plus"></i></i>
+                  <i class="link-icon" data-feather="book"></i>
                   <span class="link-title">Record List</span>
                 </a>
               </li>
 
               <li class="nav-item">
                 <a href="{{ url('/admin/on-hold-list') }}" class="nav-link">
-                  <i class="link-icon"><i class="mdi mdi-bookmark-plus"></i></i>
+                  <i class="link-icon" data-feather="pause-circle"></i>
                   <span class="link-title">On-Hold</span>
                 </a>
               </li>
             @endcan
           @endcan
-          <!-- <li class="nav-item">
-            <a href="{{ url('/admin/catalog') }}" class="nav-link">
-              <i class="link-icon"><i class="mdi mdi-bookmark-plus"></i></i>
-              <span class="link-title">Catalog</span>
-            </a>
-          </li>
-
-          <li class="nav-item">
-            <a href="{{ url('/admin/uncat') }}" class="nav-link">
-              <i class="link-icon"><i class="mdi mdi-bookmark-remove"></i></i>
-              <span class="link-title">Uncatalog</span>
-            </a>
-          </li> -->
           @can('access.circulation')
             <li class="nav-item nav-category">Circulation</li>
             @can('circulation.reservation.view')
@@ -178,7 +159,7 @@ License: For each use you must have a valid license purchased only from above li
             @can('manage.circulation.checkouts')
               <li class="nav-item">
                   <a href="{{ url('/admin/check-out-in') }}" class="nav-link">
-                  <i class="link-icon" data-feather="clock"></i>
+                  <i class="link-icon" data-feather="repeat"></i>
                   <span class="link-title">Check-Out/Check-In</span>
                 </a>
               </li>
@@ -186,7 +167,7 @@ License: For each use you must have a valid license purchased only from above li
             @can('access.circulation.transaction')
               <li class="nav-item">
                 <a href="{{ url('/admin/borrowed') }}" class="nav-link">
-                  <i class="link-icon" data-feather="book"></i>
+                  <i class="link-icon" data-feather="activity"></i>
                   <span class="link-title">Transaction</span>
                 </a>
               </li>
@@ -196,7 +177,7 @@ License: For each use you must have a valid license purchased only from above li
             <li class="nav-item nav-category">Inventory</li>
             <li class="nav-item">
               <a href="{{ url('/admin/inventory') }}" class="nav-link">
-                <i class="link-icon" data-feather="layers"></i>
+                <i class="link-icon" data-feather="package"></i>
                 <span class="link-title">Physical Count</span>
               </a>
             </li>
@@ -219,7 +200,7 @@ License: For each use you must have a valid license purchased only from above li
             @hasanyrole('super_admin|developer')
               <li class="nav-item">
                 <a href="{{ route('administrators') }}" class="nav-link">
-                  <i class="link-icon" data-feather="user"></i>
+                  <i class="link-icon" data-feather="shield"></i>
                   <span class="link-title">Administrators</span>
                 </a>
               </li>
@@ -238,11 +219,11 @@ License: For each use you must have a valid license purchased only from above li
             </li>
           @endcan
           @can('access.configuration')
-            <li class="nav-item nav-category">Setup</li>
+            <li class="nav-item nav-category">Administration</li>
 
             <li class="nav-item">
               <a href="{{ url('/admin/settings') }}" class="nav-link">
-                <i class="link-icon" data-feather="sliders"></i>
+                <i class="link-icon" data-feather="settings"></i>
                 <span class="link-title">Settings</span>
               </a>
             </li>
@@ -250,7 +231,7 @@ License: For each use you must have a valid license purchased only from above li
             @can('view.config.template')
               <li class="nav-item">
                 <a href="{{ url('/admin/marc-templates') }}" class="nav-link">
-                  <i class="link-icon" data-feather="settings"></i>
+                  <i class="link-icon" data-feather="layout"></i>
                   <span class="link-title">MARC Templates</span>
                 </a>
               </li>
@@ -258,13 +239,13 @@ License: For each use you must have a valid license purchased only from above li
             @hasanyrole('super_admin|developer')
             <li class="nav-item">
               <a href="{{ route('admin.list_roles') }}" class="nav-link">
-                <i class="link-icon" data-feather="user"></i>
+                <i class="link-icon" data-feather="user-check"></i>
                 <span class="link-title">Roles</span>
               </a>
             </li>
             <li class="nav-item">
               <a href="{{ route('admin.list_permissions') }}" class="nav-link">
-                <i class="link-icon" data-feather="user-check"></i>
+                <i class="link-icon" data-feather="key"></i>
                 <span class="link-title">Permissions</span>
               </a>
             </li>
