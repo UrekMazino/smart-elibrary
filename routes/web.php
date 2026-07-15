@@ -26,6 +26,9 @@ require __DIR__.'/annarose.php';
 use App\Http\Controllers\ResultController;
 Route::get('/results', [ResultController::class, 'index']);
 Route::get('/search/suggest', [ResultController::class, 'suggest']);   // instant-search JSON (OPAC overlay)
+// AI mode answer (OPAC "Ask the Library"). Throttled: each real request will be a full
+// generation on one GPU, so the edge has to shed load (RAG_INTEGRATION_PLAN.md §10.5).
+Route::get('/search/ai-answer', [ResultController::class, 'aiAnswer'])->middleware('throttle:10,1');
 
 
 

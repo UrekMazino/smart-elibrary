@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App;
 use Auth;
+use App\Services\AiSearchService;
 
 class ResultController extends Controller
 {
@@ -13,6 +14,17 @@ class ResultController extends Controller
         if(Auth::check() && Auth::user()->usertype == 'Administrator')
         {
             return redirect('/admin/dashboard');
+        }
+
+        // AI mode: same search box, different engine. The page renders immediately with a
+        // skeleton and pulls the answer from /search/ai-answer, so a slow generation never
+        // holds up the response (§10.5/§10.7) — and it's the shape SSE streaming will drop into.
+        if($request->input('mode') === 'ai' && trim((string) $request->input('query')) !== '')
+        {
+            return view('opac.search-result-ai', [
+                'query' => trim((string) $request->input('query')),
+                'ai'    => app(AiSearchService::class),
+            ]);
         }
 
         // The OPAC search form may omit any of these keys — guard them all so a
@@ -123,6 +135,58 @@ class ResultController extends Controller
             'query' => $q,
             'total' => $page->total(),
             'hits'  => $hits,
+        ]);
+    }
+
+    /**
+     * AI mode answer (JSON). The browser talks only to this route — never to Hermes
+     * directly (§10.3: the gateway is localhost-only and the token never reaches the client).
+     *
+     * Returns the §10.2 contract plus hydrated `sources` for rendering. When streaming
+     * lands this becomes an SSE endpoint whose terminal event carries the same payload.
+     */
+    public function aiAnswer(Request $request, AiSearchService $ai)
+    {
+        $q = trim((string) $request->input('q', ''));
+
+        if($q === '')
+        {
+            return response()->json(['ok' => false, 'reason' => 'empty', 'message' => 'Ask a question to get an answer.'], 422);
+        }
+
+        // Degrade calmly instead of hanging or erroring; keyword search stays usable (§10.7).
+        if(! $ai->isAvailable())
+        {
+            return response()->json([
+                'ok'     => false,
+                'reason' => 'unavailable',
+                'message' => 'AI mode is temporarily unavailable. Keyword search is still available.',
+            ], 503);
+        }
+
+        try
+        {
+            $res = $ai->answer($q, ['user_ref' => Auth::check() ? 'patron:'.Auth::id() : 'guest']);
+        }
+        catch (\Throwable $e)
+        {
+            report($e);
+
+            return response()->json([
+                'ok'      => false,
+                'reason'  => 'error',
+                'message' => 'Something went wrong generating an answer. Please try again.',
+            ], 500);
+        }
+
+        return response()->json([
+            'ok'        => true,
+            'query'     => $q,
+            'answer'    => $res['answer'],
+            'abstained' => $res['abstained'],
+            'stub'      => $res['stub'] ?? false,
+            'sources'   => $ai->hydrateSources($res['sources']),
+            'took_ms'   => $res['usage']['took_ms'] ?? null,
         ]);
     }
 

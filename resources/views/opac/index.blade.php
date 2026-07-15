@@ -2,6 +2,29 @@
 
 @section('css')
 <style>
+/* ---- Search-engine toggle: Classic (Meilisearch) <-> AI mode (Hermes/RAG) ---- */
+.mode-toggle {
+	display: inline-flex; gap: 3px; margin: 0 auto 14px; padding: 3px;
+	background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.28);
+	border-radius: 30px; backdrop-filter: blur(3px);
+}
+.mode-btn {
+	border: 0; background: transparent; color: #fff; cursor: pointer;
+	font-size: 13.5px; font-weight: 600; letter-spacing: .2px;
+	padding: 7px 18px; border-radius: 30px; line-height: 1;
+	display: inline-flex; align-items: center; gap: 6px;
+	transition: background .16s ease, color .16s ease;
+}
+.mode-btn:hover { background: rgba(255,255,255,.14); }
+.mode-btn.active { background: #fff; color: #00796b; box-shadow: 0 1px 4px rgba(0,0,0,.16); }
+.mode-btn .mode-ico { font-size: 14px; line-height: 1; }
+#ai-note {
+	margin-top: 14px; font-size: 13.5px; color: rgba(255,255,255,.92);
+	text-shadow: 0 1px 2px rgba(0,0,0,.25); max-width: 520px; margin-left: auto; margin-right: auto;
+}
+/* AI mode restyles the submit button so the mode is unmistakable */
+#custom-search-input.is-ai .btn_search { background-color: #00796b; }
+
 .instant-wrap { position: relative; }
 .instant-results {
 	/* moved to <body> and positioned via JS, so no ancestor overflow/stacking/transform can clip it */
@@ -69,7 +92,20 @@
 					<input type="hidden" name="page" value="1">
 					<input type="hidden" name="series_statement_id" value="0">
 					<input type="hidden" name="layout" value="grid">
+					{{-- Empty = classic Meilisearch; "ai" = route to the assistant. Set by the toggle. --}}
+					<input type="hidden" name="mode" id="search-mode" value="">
 					<div id="custom-search-input">
+
+						{{-- Engine toggle: Classic (Meilisearch) <-> AI mode (Hermes/RAG) --}}
+						<div class="mode-toggle" role="tablist" aria-label="Search mode">
+							<button type="button" class="mode-btn active" data-mode="" role="tab" aria-selected="true">
+								<span class="mode-ico">&#128269;</span> Search
+							</button>
+							<button type="button" class="mode-btn" data-mode="ai" role="tab" aria-selected="false">
+								<span class="mode-ico">&#10022;</span> AI mode
+							</button>
+						</div>
+
 						<div class="instant-wrap">
 						<div class="input-group">
 							<input type="text" class="search-query" name="query" placeholder="Search a Material..." autocomplete="off">
@@ -80,6 +116,9 @@
 							<a href="#" class="instant-seeall"></a>
 						</div>
 						</div>
+
+						{{-- Material-type filters only apply to keyword search; hidden in AI mode. --}}
+						<div id="type-filters">
 						<br/>
 						<div class="form-check form-check-inline">
 							<input class="form-check-input" type="checkbox" value="0" id="checkAll" name="seachtype[]" checked>
@@ -96,7 +135,13 @@
 	  						</label>
   						</div>
   						@endforeach
+						</div>
 
+						{{-- Replaces the type filters when AI mode is on. --}}
+						<div id="ai-note" style="display:none;">
+							Ask a question in your own words &mdash; answers come from the library&rsquo;s
+							collection, with sources.
+						</div>
 
 					</div>
 				</form>
@@ -363,6 +408,9 @@
 	}
 
 	$input.on('input', function () {
+		// AI mode asks a question rather than matching titles, so the keyword
+		// type-ahead has nothing useful to offer — stay out of the way.
+		if (window.aiModeActive) { clearTimeout(timer); close(); return; }
 		var q = $.trim($(this).val());
 		if (q === lastQ) return;
 		lastQ = q;
@@ -395,6 +443,7 @@
 	});
 
 	$input.on('focus', function () {
+		if (window.aiModeActive) return;
 		if (lastQ && lastQ.length >= 2 && $list.children().length) open();
 	});
 
@@ -405,6 +454,60 @@
 
 	// Keep the (fixed) dropdown aligned to the search bar
 	$(window).on('scroll resize', function () { if ($box.is(':visible')) position(); });
+
+	// Let the mode toggle dismiss the dropdown when switching to AI mode.
+	window.instantSearchClose = close;
+})();
+</script>
+
+<script type="text/javascript">
+// Search-engine toggle: Classic (Meilisearch) <-> AI mode (Hermes/RAG).
+// Only swaps which engine the form targets — the search box itself is shared.
+(function () {
+	var STORAGE_KEY = 'elib_search_mode';
+	var $form   = $('#frm');
+	var $input  = $form.find('.search-query');
+	var $wrap   = $('#custom-search-input');
+	var $mode   = $('#search-mode');
+	var $submit = $form.find('.btn_search');
+
+	var COPY = {
+		'':   { placeholder: 'Search a Material...',                     submit: 'Search' },
+		'ai': { placeholder: 'Ask a question about the collection...',   submit: 'Ask' }
+	};
+
+	function apply(mode, focus) {
+		var c = COPY[mode] || COPY[''];
+
+		window.aiModeActive = (mode === 'ai');
+		$mode.val(mode);
+		$input.attr('placeholder', c.placeholder);
+		$submit.val(c.submit);
+		$wrap.toggleClass('is-ai', mode === 'ai');
+
+		$('.mode-btn').each(function () {
+			var on = ($(this).data('mode') || '') === mode;
+			$(this).toggleClass('active', on).attr('aria-selected', on ? 'true' : 'false');
+		});
+
+		// Material-type filters are a keyword-search concept; AI mode explains itself instead.
+		$('#type-filters').toggle(mode !== 'ai');
+		$('#ai-note').toggle(mode === 'ai');
+
+		if (mode === 'ai' && window.instantSearchClose) window.instantSearchClose();
+		if (focus) $input.trigger('focus');
+	}
+
+	$('.mode-btn').on('click', function () {
+		var mode = $(this).data('mode') || '';
+		try { localStorage.setItem(STORAGE_KEY, mode); } catch (e) {}
+		apply(mode, true);
+	});
+
+	// Remember the choice across visits (localStorage may throw in private mode).
+	var saved = '';
+	try { saved = localStorage.getItem(STORAGE_KEY) || ''; } catch (e) {}
+	apply(saved === 'ai' ? 'ai' : '', false);
 })();
 </script>
 
