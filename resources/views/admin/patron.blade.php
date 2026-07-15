@@ -80,9 +80,11 @@ $('#tbl').DataTable({
               return '<div class="btn-group" role="group"><button id="btnGroupDrop1" type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button><div class="dropdown-menu" aria-labelledby="btnGroupDrop1">' +
                   '<a class="dropdown-item" href="#" onclick="generateLibraryCode('+row.id+')">Generate Library Code</a>' +
                   '<a class="dropdown-item" href="#" onclick="sendFrm(\'frm\',\'reset\','+row.id+')">Reset Password</a>' +
-                  '<div class="dropdown-divider"></div>' +
-                  '<a class="dropdown-item text-warning" href="#" onclick="toggleUserFlag('+row.id+',\'blocked\')">'+blockLabel+'</a>' +
-                  '<a class="dropdown-item text-danger" href="#" onclick="toggleUserFlag('+row.id+',\'banned\')">'+banLabel+'</a>' +
+                  (@json(auth()->user()->can('manage.patron.status')) ? (
+                    '<div class="dropdown-divider"></div>' +
+                    '<a class="dropdown-item text-warning" href="#" onclick="toggleUserFlag('+row.id+',\'blocked\')">'+blockLabel+'</a>' +
+                    '<a class="dropdown-item text-danger" href="#" onclick="toggleUserFlag('+row.id+',\'banned\')">'+banLabel+'</a>'
+                  ) : '') +
                   '<div class="dropdown-divider"></div>' +
                   '<a class="dropdown-item text-danger" href="#" onclick="sendFrm(\'frm\',\'delete\','+row.id+')">Delete</a>' +
                   '</div></div>';

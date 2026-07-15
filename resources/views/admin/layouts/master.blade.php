@@ -75,13 +75,15 @@ License: For each use you must have a valid license purchased only from above li
       <div class="sidebar-body">
         <ul class="nav">
             <li class="nav-item nav-category">Menu</li>
+            @can('access.dashboard')
             <li class="nav-item">
               <a href="{{ url('/admin/dashboard') }}" class="nav-link">
                 <i class="link-icon" data-feather="box"></i>
                 <span class="link-title">Dashboard</span>
               </a>
             </li>
-            @can('access.inquiry') 
+            @endcan
+            @can('access.inquiry')
               <li class="nav-item">
                 <a href="{{ url('/admin/inquiry') }}" class="nav-link">
                   <i class="link-icon" data-feather="info"></i>
@@ -290,6 +292,7 @@ License: For each use you must have a valid license purchased only from above li
 					<ul class="navbar-nav">
 
 						
+						@can('access.notifications')
 						<li class="nav-item dropdown">
 							@php $nfyCount = notifications()['count']; @endphp
 							<a class="nav-link dropdown-toggle position-relative" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -300,6 +303,7 @@ License: For each use you must have a valid license purchased only from above li
 								@include('partials.notifications')
 							</div>
 						</li>
+						@endcan
 						<li class="nav-item dropdown">
 							<a class="nav-link dropdown-toggle" href="#" id="profileDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 								<img class="wd-30 ht-30 rounded-circle" src="{{ asset('admintemplate/nobleui/template/assets/images/profile.jpg') }}" alt="profile">

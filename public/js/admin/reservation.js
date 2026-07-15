@@ -28,13 +28,13 @@ $('#tbl').DataTable({
           "data": function (row, type, val, meta) {
               // Approve / Decline (or Check-out / Revert) stay as their own button group.
               var actions = '';
-              if (row.status == 'For Approval') {
+              if (canManageReservation && row.status == 'For Approval') {
                   actions =
                       '<div class="btn-group" role="group">' +
                         '<button type="button" class="btn btn-info btn-xs approve-reservations" aria-haspopup="true" aria-expanded="false" id="approve-reservation-' + row.id + '" disabled onclick="submitConfirmation(1, \'' + row.reservation_code + '\')">Approve</button>' +
                         '<button type="button" class="btn btn-danger btn-xs" aria-haspopup="true" aria-expanded="false" onclick="submitConfirmation(2,\'' + row.reservation_code + '\')">Decline</button>' +
                       '</div> ';
-              } else if (row.status == 'Approved') {
+              } else if (canManageReservation && row.status == 'Approved') {
                   actions =
                       '<div class="btn-group" role="group">' +
                         '<button type="button" class="btn btn-primary btn-xs" aria-haspopup="true" aria-expanded="false" onclick="submitConfirmation(3,\'' + row.reservation_code + '\', \'' + row.circulation_number + '\')">Check-out</button>' +
@@ -45,7 +45,7 @@ $('#tbl').DataTable({
               // One combined split button: Reply (open chat) as the primary action, with a
               // caret that opens Manage account (block / ban).
               var manageCaret = '';
-              if (row.user_id) {
+              if (row.user_id && canManagePatronStatus) {
                   var blockLabel = row.is_blocked == 1 ? 'Unblock account' : 'Block account';
                   var banLabel = row.is_banned == 1 ? 'Unban account' : 'Ban account';
                   manageCaret =

@@ -24,9 +24,9 @@ use App\Http\Controllers\ConfigurationController;
 
 //ADMIN
 Route::controller(AdminController::class, 'admin')->group(function () {
-    Route::get('/admin/count-dynamicdates/json', 'countdynamicdates');
-    Route::get('/admin/per-date-chart/json', 'perDateChartJson');
-    Route::get('/admin/views-traffic/json', 'viewsTrafficJson');
+    Route::get('/admin/count-dynamicdates/json', 'countdynamicdates')->middleware('can:access.dashboard');
+    Route::get('/admin/per-date-chart/json', 'perDateChartJson')->middleware('can:access.dashboard');
+    Route::get('/admin/views-traffic/json', 'viewsTrafficJson')->middleware('can:access.dashboard');
     Route::get('/admin/register', 'registerPatron')->name('register_patron');
     Route::get('/admin/profile/validate-email/', 'validateEmail');
     Route::get('/admin/update-librarycode', 'updatePatronLibraryCode');
@@ -132,7 +132,7 @@ Route::controller(CatalogingController::class, 'admin')->group(function () {
 Route::controller(ReservationController::class)->group(function () {
     Route::get('/admin/reservations', 'reservations')->name('reservations');
     Route::get('/admin/reservations/json', 'reservation_json');
-    Route::post('/admin/reservation/action', 'reservation_action');
+    Route::post('/admin/reservation/action', 'reservation_action')->middleware('can:manage.circulation.reservation');
     Route::get('/admin/reservation/material-json', 'viewMaterial');
     Route::get('/admin/reservation/patron-json', 'viewPatron');
     Route::get('/admin/reservation/transaction-json', 'viewTransaction');

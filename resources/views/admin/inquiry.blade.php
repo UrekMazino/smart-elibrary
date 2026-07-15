@@ -83,7 +83,7 @@
 										<td class="text-center">
 											<div class="btn-group">
 												<button class="btn btn-primary btn-sm position-relative" data-subject="{{ $lists->subject }}" data-message="{{ $lists->message }}" onclick="replyInquiry(this,{{ $lists->id }},{{ Auth::user()->id }})">@if(isset($unread[$lists->id]))<span class="reply-dot" title="Unseen message"></span>@endif<i data-feather="corner-up-left" class="icon-sm me-1"></i>Reply</button>
-												@if($lists->user_id)
+												@if($lists->user_id && auth()->user()->can('manage.patron.status'))
 													<button type="button" class="btn btn-primary btn-sm dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false"><span class="visually-hidden">Manage</span></button>
 													<div class="dropdown-menu dropdown-menu-end">
 														<h6 class="dropdown-header">Manage account</h6>

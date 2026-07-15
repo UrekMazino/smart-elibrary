@@ -91,7 +91,7 @@ Route::controller(ReviewController::class)->group(function () {
 //ADMIN
 use App\Http\Controllers\AdminController;
 Route::controller(AdminController::class)->group(function () {
-    Route::get('/admin/dashboard', 'dashboard');
+    Route::get('/admin/dashboard', 'dashboard')->middleware('can:access.dashboard');
 
     Route::get('/admin/borrowed', 'borrowed');
     Route::get('/admin/visits', 'visit');
@@ -100,7 +100,7 @@ Route::controller(AdminController::class)->group(function () {
     Route::get('/admin/inquiry/json', 'inquiryjson');
     
     Route::get('/admin/patron', 'patron')->name('patrons');
-    Route::post('/admin/user/toggle-flag', 'toggleUserFlag');
+    Route::post('/admin/user/toggle-flag', 'toggleUserFlag')->middleware('can:manage.patron.status');
 
     Route::get('/admin/report', 'report');
 

@@ -241,5 +241,41 @@
         "description": "Allow admin to publish or hold catalog/record from the list",
         "created_at": "2024-01-31 15:48:31",
         "updated_at": "2024-01-31 15:59:52"
+    },
+    {
+        "id": 33,
+        "name": "access.dashboard",
+        "guard_name": "web",
+        "display_name": "Dashboard Access",
+        "description": "Allows access to the admin dashboard and its analytics",
+        "created_at": "2026-07-15 11:03:21",
+        "updated_at": "2026-07-15 11:03:21"
+    },
+    {
+        "id": 34,
+        "name": "access.notifications",
+        "guard_name": "web",
+        "display_name": "Notifications",
+        "description": "Shows the in-app notification bell",
+        "created_at": "2026-07-15 11:03:22",
+        "updated_at": "2026-07-15 11:03:22"
+    },
+    {
+        "id": 35,
+        "name": "manage.patron.status",
+        "guard_name": "web",
+        "display_name": "Ban / Block Patrons",
+        "description": "Allows banning or blocking patron accounts",
+        "created_at": "2026-07-15 11:03:22",
+        "updated_at": "2026-07-15 11:03:22"
+    },
+    {
+        "id": 36,
+        "name": "manage.circulation.reservation",
+        "guard_name": "web",
+        "display_name": "Manage Reservations",
+        "description": "Allows approving or declining reservation requests",
+        "created_at": "2026-07-15 11:03:22",
+        "updated_at": "2026-07-15 11:03:22"
     }
 ]

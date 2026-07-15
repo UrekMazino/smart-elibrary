@@ -98,6 +98,9 @@
   let toggleFlagUrl = '{{ url("/admin/user/toggle-flag") }}';
   let csrfToken = '{{ csrf_token() }}';
   let adminUserId = {{ Auth::id() }};
+  // Permission flags — hide actions the current admin can't perform (route also enforces).
+  let canManageReservation = @json(auth()->user()->can('manage.circulation.reservation'));
+  let canManagePatronStatus = @json(auth()->user()->can('manage.patron.status'));
 </script>
 <script src="{{ asset('js/admin/reservation.js') }}"></script>
 <script src="{{ asset('js/admin/view-modals.js') }}"></script>
