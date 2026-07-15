@@ -1,191 +1,127 @@
 @extends("admin.layouts.master")
 
 @section('css')
-    <link rel="stylesheet" href="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net-bs5/dataTables.bootstrap5.css') }}">
     <style>
-      table td {
-        word-break: break-word;
-        vertical-align: top;
-        white-space: normal !important;
-      }
+      .ac-head { display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:10px; margin-bottom:18px; }
+      .ac-head h4 { font-weight:700; color:#22283b; margin:0; }
+      .ac-head p  { color:#8a94a6; margin:2px 0 0; font-size:13px; }
+      .page-content .card { border:1px solid #eef0f4; border-radius:12px; box-shadow:0 1px 2px rgba(20,30,60,.04); }
+      .mono { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:11px; color:#a3adc2; }
+      .pill { display:inline-block; min-width:24px; text-align:center; background:#eef1f8; color:#4a5a78; border-radius:20px; padding:2px 9px; font-size:12px; font-weight:600; }
 
-      .pull-right {
-          float: right!important;
-      }
-
-      .pull-left {
-          float: left!important;
-      }
-
-      .clearfix::after {
-          content: "";
-          clear: both;
-          display: table;
-      }
+      .perm-mod-head { display:flex; align-items:center; gap:10px; margin-bottom:6px; }
+      .perm-mod-head h6 { font-size:12px; text-transform:uppercase; letter-spacing:.6px; color:#00a496; font-weight:700; }
+      .perm-mod-head .count { font-size:11px; color:#9aa4b8; }
+      table.perm-tbl { font-size:13px; width:100%; }
+      table.perm-tbl thead th { font-size:11px; text-transform:uppercase; letter-spacing:.4px; color:#7987a1; padding:8px 10px; border-bottom:2px solid #eef0f2; white-space:nowrap; }
+      table.perm-tbl tbody td { padding:8px 10px; vertical-align:middle; border-bottom:1px solid #f2f4f8; }
+      table.perm-tbl tbody tr:hover td { background:#f9fbfe; }
+      .perm-name { font-weight:600; color:#22283b; }
     </style>
 @endsection
 
 @section('content')
 <div class="page-content">
 
-    <nav class="page-breadcrumb">
-        <ol class="breadcrumb">
-            Admin / Permission
-        </ol>
-    </nav>
-
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-body">
-                    <div class="clearfix mb-3">
-                        <div class="pull-left">
-                            <h6 class="card-title">Permissions</h6>
-                        </div>
-                        <div class="pull-right">
-                            @hasrole('developer') <a href="#" class="btn btn-info" style="color:white;" onclick="viewCreatePermissionModal()">+ Permission</a> @endhasrole
-                          </div>      
-                    </div>
-                    <div class="table-responsive">
-                        <table id="tbl" class="table">
-                          <thead>
-                            <tr>
-                              <th>Id</th>
-                              <th>Name</th>
-                              <th>Display Name</th>
-                              <th>Description</th>
-                              <th>Action</th>
-                            </tr>
-                          </thead>
-                          @foreach($permissions as $index => $permission)
-                            <tr>
-                                <td>{{ $index+1 }}</td>
-                                <td id="td-name-{{ $permission->id }}">{{ $permission->name }}</td>
-                                <td id="td-display-name-{{ $permission->id }}">{{ $permission->display_name }}</td>
-                                <td id="td-description-{{ $permission->id }}">{{ $permission->description }}</td>
-                                <th>
-                                    <div class="btn-group" role="group">
-                                        <button id="btnGroupDrop1" type="button" class="btn btn-info dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
-                                        <div class="dropdown-menu" aria-labelledby="btnGroupDrop1">
-                                            <a class="dropdown-item" href="#" onclick="editPermission({{$permission->id}})">Edit</a>
-                                            @hasrole('developer') <a class="dropdown-item" href="#" onclick="deletePermission({{$permission->id}})">Delete</a> @endhasrole
-                                        </div>
-                                    </div>
-                                </th>
-                            </tr>
-                          @endforeach
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <div class="ac-head">
+      <div>
+        <h4>Permissions</h4>
+        <p>The individual capabilities you assign to roles, grouped by module. Manage who gets them in <a href="{{ route('admin.list_roles') }}">Roles &amp; Access</a>.</p>
+      </div>
+      @hasrole('developer')
+        <button class="btn btn-primary btn-sm" onclick="viewCreatePermissionModal()"><i data-feather="plus" class="icon-sm me-1"></i>New permission</button>
+      @endhasrole
     </div>
+
+    @foreach($modules as $module => $perms)
+      <div class="card mb-3">
+        <div class="card-body">
+          <div class="perm-mod-head">
+            <h6 class="mb-0">{{ $module }}</h6>
+            <span class="count">{{ count($perms) }} permission{{ count($perms) == 1 ? '' : 's' }}</span>
+          </div>
+          <div class="table-responsive">
+            <table class="perm-tbl">
+              <thead>
+                <tr>
+                  <th>Permission</th>
+                  <th>Description</th>
+                  <th class="text-center" style="width:80px">Roles</th>
+                  <th class="text-center" style="width:90px">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                @foreach($perms as $perm)
+                  <tr>
+                    <td><span class="perm-name">{{ $perm->display_name ?: $perm->name }}</span><br><span class="mono">{{ $perm->name }}</span></td>
+                    <td class="text-muted">{{ $perm->description ?: '—' }}</td>
+                    <td class="text-center"><span class="pill">{{ $roleCounts[$perm->id] ?? 0 }}</span></td>
+                    <td class="text-center">
+                      <div class="btn-group btn-group-sm">
+                        <button type="button" class="btn btn-outline-info btn-sm edit-perm-btn"
+                          data-id="{{ $perm->id }}" data-name="{{ $perm->name }}"
+                          data-display="{{ $perm->display_name }}" data-desc="{{ $perm->description }}">Edit</button>
+                        @hasrole('developer')
+                          <button type="button" class="btn btn-outline-danger btn-sm delete-perm-btn"
+                            data-id="{{ $perm->id }}" data-name="{{ $perm->display_name ?: $perm->name }}">Delete</button>
+                        @endhasrole
+                      </div>
+                    </td>
+                  </tr>
+                @endforeach
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    @endforeach
 </div>
+
 @include('admin.modals.add-permission-modal')
 @include('admin.modals.edit-permission-modal')
 <form method="post" action="" id="frm_delete">
-	@csrf
-  @method('DELETE')
+    @csrf
+    @method('DELETE')
 </form>
-
 @endsection
 
 @section('js')
-<script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net/jquery.dataTables.js') }}"></script>
-<script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net-bs5/dataTables.bootstrap5.js') }}"></script>
 <script>
-  
+$(function () {
+    if (window.feather) feather.replace();
 
-    $(function() {
-        'use strict';
-
-        $(function() {
-            $('#tbl').DataTable();
-        });
-
-    }); 
-
-    function viewCreatePermissionModal()
-    {
-        $('#addPermissionModal').modal('show');
-        $('#addPermissionModal').fadeIn();
-    }
-
-    function editPermission(id)
-    {
-        let name = $('#td-name-'+id).text();
-        let displayName = $('#td-display-name-'+id).text();
-        let description = $('#td-description-'+id).text();
-        
-        $('#editNameInput').val(name);
-        $('#editDisplayNameInput').val(displayName);
-        $('#editDescriptionInput').val(description);
-        $('#permissionIdInput').val(id);
-        
+    $(document).on('click', '.edit-perm-btn', function () {
+        var d = $(this).data();
+        $('#permissionIdInput').val(d.id);
+        $('#editNameInput').val(d.name);
+        $('#editDisplayNameInput').val(d.display || '');
+        $('#editDescriptionInput').val(d.desc || '');
         $('#editPermissionModal').modal('show');
-        $('#editPermissionModal').fadeIn();
-    }
+    });
 
-    function deletePermission(id)
-    {
-        let permissionName = $('#td-permission-name-'+id).text();
-
+    $(document).on('click', '.delete-perm-btn', function () {
+        var id = $(this).data('id'), name = $(this).data('name');
         Swal.fire({
-            title: 'Delete ' + permissionName + ' permission?',
-            text: "All users associated with this permission will be detached.",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonClass: 'me-2',
-            confirmButtonText: 'Yes',
-            cancelButtonText: 'No',
-            reverseButtons: true
-            }).then((result) => {
-            if (result.value) {
-                $("#modalSaving").modal("toggle");
+            title: 'Delete "' + name + '" permission?',
+            text: 'It will be removed from every role that has it.',
+            icon: 'warning', showCancelButton: true,
+            confirmButtonText: 'Yes, delete', cancelButtonText: 'No', reverseButtons: true
+        }).then(function (result) {
+            if (!result.value) return;
+            var act = "{{ route('admin.delete_permission', ['id' => ':id']) }}".replace(':id', id);
+            $('#frm_delete').prop('action', act).submit();
+        });
+    });
+});
 
-                let act = "{{ route('admin.delete_permission', ['id' => ':id']) }}".replace(':id', id);
+function viewCreatePermissionModal() {
+    $('#addPermissionModal').modal('show');
+}
 
-                $("#frm_delete").prop('action',act);
-                $("#frm_delete").submit();
-
-            } else if (
-                // Read more about handling dismissals
-                result.dismiss === Swal.DismissReason.cancel
-            ) {
-                Swal.fire(
-                'Cancelled',
-                'Your data is safe!',
-                'error'
-                )
-            }
-        })
-
-    }
-
-    function showSwal(type, message, icon) {
-        if (type === 'custom-position') {
-            Swal.fire({
-            position: 'top-center',
-            icon: icon,
-            title: message,
-            showConfirmButton: false,
-            timer: 1500
-            })
-        } 
-    }
+function showSwal(type, message, icon) {
+    Swal.fire({ position: 'top-end', toast: true, icon: icon, title: message, showConfirmButton: false, timer: 2000 });
+}
 </script>
-@if (session('error'))
-    <script>
-        $(document).ready(function(){
-            showSwal("custom-position", "{{ session('error') }}", "error");
-        });
-    </script>
-@endif
-@if (session('success'))
-    <script>
-        $(document).ready(function(){
-            showSwal("custom-position", "{{ session('success') }}", "success");
-        });
-    </script>
-@endif
+@if (session('error'))   <script>$(function(){ showSwal('t', "{{ session('error') }}", 'error'); });</script> @endif
+@if (session('success')) <script>$(function(){ showSwal('t', "{{ session('success') }}", 'success'); });</script> @endif
 @endsection

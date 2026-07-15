@@ -56,6 +56,8 @@ Route::controller(RolePermissionController::class, 'admin')->group(function () {
     Route::get('/admin/role-permissions/add', 'addPermissionToRole')->name('admin.role_add_permissions');
 
     Route::get('/admin/role-permissions/remove', 'removePermissionFromRole')->name('admin.role_remove_permission');
+    // Access matrix: grant/revoke one (role, permission) via POST (CSRF-protected).
+    Route::post('/admin/role-permissions/toggle', 'toggleRolePermission')->name('admin.role_toggle_permission');
 
     Route::post('/admin/permissions/store', 'storePermission')->name('admin.store_permission');
     Route::post('/admin/permissions/update', 'updatePermission')->name('admin.update_permission');
@@ -66,13 +68,13 @@ Route::controller(InventoryController::class)->group(function () {
     Route::get('/admin/inventory-list-json', 'physicalInventoryListJson');
 });
 Route::controller(ConfigurationController::class, 'admin')->group(function () {
-    Route::get('/admin/marc-templates', 'marcTemplates')->name('marc-templates-index');
-    Route::get('/admin/marc-templates/json', 'marcTemplatesJson')->name('marc-templates-json');
-    Route::get('/admin/marc-templates/create', 'createMarcTemplate')->name('create-marc-template');
-    Route::get('/admin/marc-templates/edit', 'editMarcTemplate');
-    Route::post('/admin/marc-templates/store', 'storeMarcTemplate');
-    Route::post('/admin/marc-templates/update', 'updateMarcTemplate');
-    Route::delete('admin/marc-templates/delete/{id}', 'destroyMarcTemplate')->name('delete-marc-template');
+    Route::get('/admin/marc-templates', 'marcTemplates')->name('marc-templates-index')->middleware('can:view.config.template');
+    Route::get('/admin/marc-templates/json', 'marcTemplatesJson')->name('marc-templates-json')->middleware('can:view.config.template');
+    Route::get('/admin/marc-templates/create', 'createMarcTemplate')->name('create-marc-template')->middleware('can:create.config.template');
+    Route::get('/admin/marc-templates/edit', 'editMarcTemplate')->middleware('can:edit.config.template');
+    Route::post('/admin/marc-templates/store', 'storeMarcTemplate')->middleware('can:create.config.template');
+    Route::post('/admin/marc-templates/update', 'updateMarcTemplate')->middleware('can:edit.config.template');
+    Route::delete('admin/marc-templates/delete/{id}', 'destroyMarcTemplate')->name('delete-marc-template')->middleware('can:delete.config.template');
 
     Route::get('/admin/marc-tags-list/json', 'marcTagsJson');
     Route::get('/admin/get-marc-tag-details', 'getMarctagDetails');

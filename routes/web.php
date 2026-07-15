@@ -102,10 +102,10 @@ Route::controller(AdminController::class)->group(function () {
     Route::get('/admin/patron', 'patron')->name('patrons');
     Route::post('/admin/user/toggle-flag', 'toggleUserFlag')->middleware('can:manage.patron.status');
 
-    Route::get('/admin/report', 'report');
+    Route::get('/admin/report', 'report')->middleware('can:access.reports');
 
-    Route::post('/admin/print-report', 'reportprint');
-    Route::post('/admin/report-preview', 'reportPreview');
+    Route::post('/admin/print-report', 'reportprint')->middleware('can:access.reports');
+    Route::post('/admin/report-preview', 'reportPreview')->middleware('can:access.reports');
 
     Route::post('/admin/patron-borrow', 'assignMaterialToPatron');
 

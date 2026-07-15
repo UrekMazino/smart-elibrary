@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App;
 use Auth;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 
@@ -12,16 +13,79 @@ class RolePermissionController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth','admin']);
+        // Access-control administration is restricted to the top roles (matches the
+        // sidebar @hasanyrole gate — now enforced at the route too).
+        $this->middleware(['auth','admin','role:super_admin|developer']);
     }
-    
+
+    /** Human module label for a permission name (drives the grouped UI + matrix). */
+    private function moduleOf(string $name): string
+    {
+        $map = [
+            'access.dashboard' => 'Dashboard', 'access.notifications' => 'Dashboard',
+            'access.cataloging' => 'Cataloging', 'view.catalog.list' => 'Cataloging', 'view.catalog.importlist' => 'Cataloging',
+            'create.catalog' => 'Cataloging', 'edit.catalog' => 'Cataloging', 'delete.catalog' => 'Cataloging',
+            'create.catalog.import' => 'Cataloging', 'edit.catalog.import' => 'Cataloging', 'delete.catalog.import' => 'Cataloging', 'publish-hold.catalog' => 'Cataloging',
+            'access.circulation' => 'Circulation', 'access.circulation.transaction' => 'Circulation', 'circulation.reservation.view' => 'Circulation', 'manage.circulation.reservation' => 'Circulation', 'manage.circulation.checkouts' => 'Circulation',
+            'access.accounts' => 'Accounts & Patrons', 'create.patron' => 'Accounts & Patrons', 'edit.patron' => 'Accounts & Patrons', 'delete.patron' => 'Accounts & Patrons', 'manage.patron.status' => 'Accounts & Patrons',
+            'access.configuration' => 'Configuration', 'view.config.template' => 'Configuration', 'create.config.template' => 'Configuration', 'edit.config.template' => 'Configuration', 'delete.config.template' => 'Configuration',
+            'access.inquiry' => 'Inquiry', 'access.inventory' => 'Inventory', 'access.news' => 'News', 'access.reports' => 'Reports',
+        ];
+        return $map[$name] ?? 'Other';
+    }
+
+    /** All permissions grouped by module, in a sensible display order. */
+    private function groupedPermissions(): array
+    {
+        $order = ['Dashboard','Cataloging','Circulation','Accounts & Patrons','Configuration','Inquiry','Inventory','News','Reports','Other'];
+        $grouped = [];
+        foreach (Permission::orderBy('display_name')->get() as $p) {
+            $grouped[$this->moduleOf($p->name)][] = $p;
+        }
+        $ordered = [];
+        foreach ($order as $m) { if (isset($grouped[$m])) $ordered[$m] = $grouped[$m]; }
+        foreach ($grouped as $m => $ps) { if (!isset($ordered[$m])) $ordered[$m] = $ps; }
+        return $ordered;
+    }
+
     public function rolesIndex()
     {
-        $roles = Role::orderBy('id', 'desc')->where('name', '!=', 'developer')->get();
-        
-        $permissions = Permission::orderBy('id', 'desc')->get();
+        // developer (superuser) is excluded — it always has everything and must stay uneditable.
+        $roles = Role::with('permissions')->where('name', '!=', 'developer')->orderBy('id')->get();
+        $modules = $this->groupedPermissions();
 
-        return view('admin.roles', compact('roles', 'permissions'));
+        $rolePerms = [];  // role_id => [permission_id,...] -> ticked matrix cells
+        $userCounts = []; // role_id => number of users
+        foreach ($roles as $r) {
+            $rolePerms[$r->id] = $r->permissions->pluck('id')->all();
+            $userCounts[$r->id] = $r->users()->count();
+        }
+
+        return view('admin.roles', compact('roles', 'modules', 'rolePerms', 'userCounts'));
+    }
+
+    /** Grant or revoke a single (role, permission) pair — powers the access matrix. */
+    public function toggleRolePermission(Request $request)
+    {
+        $data = $request->validate([
+            'role_id' => 'required|integer',
+            'permission_id' => 'required|integer',
+        ]);
+
+        $role = Role::find($data['role_id']);
+        $permission = Permission::find($data['permission_id']);
+        abort_if(!$role || !$permission, 404);
+        abort_if($role->name === 'developer', 403); // superuser row is never editable (avoids lockout)
+
+        if ($role->hasPermissionTo($permission)) {
+            $role->revokePermissionTo($permission);
+            $granted = false;
+        } else {
+            $role->givePermissionTo($permission);
+            $granted = true;
+        }
+
+        return response()->json(['granted' => $granted, 'permCount' => $role->permissions()->count()]);
     }
 
     public function rolePermissions(Request $request)
@@ -188,11 +252,13 @@ class RolePermissionController extends Controller
 
     public function permissionsIndex()
     {
-        $roles = Role::orderBy('id', 'desc')->get();
+        $modules = $this->groupedPermissions();
+        // permission_id => number of roles that have it (usage shown as a chip)
+        $roleCounts = DB::table('role_has_permissions')
+            ->select('permission_id', DB::raw('count(*) as c'))
+            ->groupBy('permission_id')->pluck('c', 'permission_id');
 
-        $permissions = Permission::orderBy('display_name', 'asc')->get();
-
-        return view('admin.permissions', compact('roles', 'permissions'));
+        return view('admin.permissions', compact('modules', 'roleCounts'));
     }
 
 
