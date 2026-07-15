@@ -590,71 +590,74 @@ class AdminController extends Controller
         return response()->json($response);
     }
 
+    /**
+     * `developer` is the superuser role: it implicitly has everything, and
+     * RolePermissionController refuses to edit its permissions so nobody can lock
+     * themselves out. Handing that role out from here would route straight around
+     * that guard, so only a developer may assign it.
+     */
+    private function assignableRoles()
+    {
+        return Role::query()
+            ->unless(auth()->user()->hasRole('developer'), fn ($q) => $q->where('name', '!=', 'developer'))
+            ->orderBy('display_name')
+            ->get();
+    }
+
     public function createAdministrator(Request $request)
     {
-        // dd("CREATE ADMIN");
-        $roles = Role::all();
-
-        // dd($roles);
-        
-        return view('admin.create-admin', ['roles' => $roles]);
-        
+        return view('admin.create-admin', ['roles' => $this->assignableRoles()]);
     }
 
     public function storeAdministrator(Request $request)
     {
-        // $barcode = new DNS1D();
-
-        $libraryCode = generateLibraryCode();
-
-        // $qrCodeImage = $barcode->getBarcodePNG($libraryCode, 'C39+');
-
-        // $qrCodePath = public_path('qrcodes/' . $libraryCode . '.png');
-        
-        // file_put_contents($qrCodePath, $qrCodeImage);
-
-        // $password = generateRandomPassword();
-
-        $password = 'admin';
-
-        $request->validate([
-            'fullName' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+        // Previously: username and role went unvalidated, and every administrator was
+        // created with the hardcoded password 'admin'.
+        $data = $request->validate([
+            'userName'      => ['required', 'string', 'max:255', 'unique:users,username'],
+            'fullName'      => ['required', 'string', 'max:255'],
+            'email'         => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'contactNumber' => ['required', 'string', 'max:255'],
+            'role'          => ['required', 'string', 'exists:roles,name'],
         ]);
 
-        // $mailable = new RegistrationMail(['library_code' => $libraryCode, 'fullname' => $request->fullName, 'password' => $password, 'type' => 'admin']);
+        // exists:roles,name still allows any role name that exists — including the
+        // superuser one — so re-check against what this user is actually allowed to grant.
+        abort_if(! $this->assignableRoles()->contains('name', $data['role']), 403);
 
-        // Register the FailedSendingListener
-        // Mail::getSwiftMailer()->registerPlugin(new FailedSendingListener);
+        $libraryCode = generateLibraryCode();
+        $password    = generateRandomPassword();
 
-        // $emailSent = Mail::to($request->email)->send($mailable);
+        $user = User::create([
+            'username'     => $data['userName'],
+            'name'         => $data['fullName'],
+            'email'        => $data['email'],
+            'contactnum'   => $data['contactNumber'],
+            'password'     => Hash::make($password),
+            'library_code' => $libraryCode,
+        ]);
 
-        // if(is_null($emailSent)) {
-        
-            $user = User::create([
-                'username' => $request->userName,
-                'name' => $request->fullName,
-                'email' => $request->email,
-                'contactnum' => $request->contactNumber,
-                'password' => Hash::make($password),
-                'library_code' => $libraryCode,
-            ]);
+        // usertype is not mass-assignable (privilege-sensitive) — set it explicitly.
+        $user->usertype = 'Administrator';
+        $user->save();
 
-            // usertype is not mass-assignable (privilege-sensitive) — set it explicitly.
-            $user->usertype = 'Administrator';
-            $user->save();
+        $user->assignRole($data['role']);
 
-            $user->assignRole($request->role);
+        event(new Registered($user));
 
-            event(new Registered($user));
-        // } else {
-        //     return redirect()->route('admin.create')->with(['error' => 'Error! Registration failed.']);     
-        // }
-
-        return redirect()->route('administrators')->with([
-            'success' => 'Saved! Your account password was sent to your email.',
-            'user_library_code' => $libraryCode]);
+        // Mail is switched off, so the credentials can't be emailed. Flash them once for
+        // the creator to hand over — flash (not a permanent store), so they survive exactly
+        // this redirect and are gone on the next request.
+        //
+        // Redirect back to the create page, not to the administrators list: the credentials
+        // modal lives here. (It always has — but this used to redirect to the list, which
+        // has no modal, so the library code was silently never shown to anyone.)
+        return redirect()->route('admin.create')->with([
+            'success'            => 'Administrator account created.',
+            'new_admin_name'     => $user->name,
+            'new_admin_password' => $password,
+            'user_library_code'  => $libraryCode,
+        ]);
     }
 
     public function countdynamicdates(Request $request)
