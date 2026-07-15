@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Auth\Events\Registered;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules;
 use Carbon\Carbon;
 use MeiliSearch\Client;
@@ -65,63 +66,58 @@ class AdminController extends Controller
 
     public function updateProfile(Request $request)
     {
+        $user = Auth::user();
 
-        $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255'],
-            'contactnum' => ['required', 'string', 'max:255'],
-            'birthdate' => ['required', 'string', 'max:100']
+        // Email uniqueness was only ever checked by the /validate-email AJAX call the page
+        // makes before submitting — i.e. not at all for anything that posts directly.
+        $data = $request->validate([
+            'name'           => ['required', 'string', 'max:255'],
+            'email'          => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+            'contactnum'     => ['required', 'string', 'max:255'],
+            'birthdate'      => ['required', 'string', 'max:50'],
+            'affiliation'    => ['nullable', 'string', 'max:255'],
+            'sex'            => ['nullable', Rule::in(['Male', 'Female'])],   // column is an enum
+            'patron_type_id' => ['required', 'exists:patrontypes,id'],        // NOT NULL column
+            'region_id'      => ['nullable', 'string', 'max:10', 'exists:regions,regCode'],
+            'address'        => ['nullable', 'string', 'max:1000'],
         ]);
-        
-        $userId = User::where('id',Auth::user()->id)
-            ->update([
-                'name' => $request->name,
-                'contactnum' => $request->contactnum,
-                'affiliation' => $request->affiliation,
-                'sex' => $request->sex,
-                'birthdate' => $request->birthdate,
-                'patrontypes_id' => $request->patron_type_id,
-                'region_id' => $request->region_id,
-                'email' => $request->email,
-                'location' => $request->address
-            ]);
 
-        $user = User::where('id', $userId)->first();
+        // Was: $userId = User::where(...)->update([...]), then User::where('id', $userId).
+        // update() returns the number of affected rows, not an id — so this looked up user
+        // #1 (or #0 when nothing changed), handed the wrong/NULL user to the view, and the
+        // page died on $user->sex. Update the authenticated model directly instead.
+        $user->update([
+            'name'           => $data['name'],
+            'contactnum'     => $data['contactnum'],
+            'affiliation'    => $data['affiliation'] ?? null,
+            'sex'            => $data['sex'] ?? null,
+            'birthdate'      => $data['birthdate'],
+            'patrontypes_id' => $data['patron_type_id'],
+            'region_id'      => $data['region_id'] ?? null,
+            'email'          => $data['email'],
+            'location'       => $data['address'] ?? null,
+        ]);
 
-        return view('admin.profile', ['user' => $user, 'success' => 'Profile Updated!']);
+        // Redirect rather than render: a refresh used to re-submit the form.
+        return redirect('/admin/profile')->with('success', 'Profile updated.');
     }
 
     public function updatePassword(Request $request)
     {
+        // Named bag so the page can tell a failed password change apart from a failed
+        // profile save and re-open the modal with the right messages.
+        $request->validateWithBag('updatePassword', [
+            // 'current_password' checks against the signed-in user's hash for us; this used
+            // to be a hand-rolled Hash::check that returned a view mid-flight.
+            'current_password' => ['required', 'current_password'],
+            'password'         => ['required', 'confirmed', Rules\Password::defaults()],
+        ]);
+
         $user = Auth::user();
+        $user->password = Hash::make($request->password);
+        $user->save();
 
-     
-        try {
-         
-            // Validate the request data
-            $request->validate([
-                'current_password' => 'required',
-                'password' => 'min:6|required_with:password_confirmation|same:password_confirmation',
-                'password_confirmation' => 'min:6'
-            ]);
-         
-             // Check if the entered current password matches the user's current password
-            if (!Hash::check($request->current_password, $user->password)) {
-                // Not match
-                $userUpdated = User::where('id', $user->id)->first();
-                return view('admin.profile', ['user' => $userUpdated, 'error' => 'The current password is incorrect!']);
-            }
-
-            // If the current password is correct and the new password and confirm password match, update the password
-            $user->password = Hash::make($request->input('password'));
-            $user->save();
-            // dd('yow');
-        } catch (Exception $e) {
-            return view('admin.profile', ['user' => $userUpdated, 'error' => $e->getMessage()]);
-        }
-
-        $userUpdated = User::where('id', $user->id)->first();
-        return view('admin.profile', ['user' => $userUpdated, 'success' => 'Password was changed!']);
+        return redirect('/admin/profile')->with('success', 'Password changed.');
     }
 
     public function dashboard()
