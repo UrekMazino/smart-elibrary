@@ -119,6 +119,11 @@ class ImportCorpusCatalog extends Command
             }
             $n++;
 
+            // Mark this stem as seen NOW, before importing — so a second line with the
+            // same stem later in the SAME run is skipped. Without this, $existing only
+            // reflects the pre-run DB, and duplicate lines in the JSONL each get imported.
+            $existing->put($rec['stem'], true);
+
             try {
                 $this->importOne($rec, $materials, $stats, $dry);
             } catch (\Throwable $e) {
@@ -158,8 +163,10 @@ class ImportCorpusCatalog extends Command
         $flags = $rec['flags'] ?? [];
         $hold  = $flags && ! $this->option('publish-all');
 
-        $title = $rec['title'] ?: '[Untitled] ' . $rec['stem'];
-        $year  = $rec['year'] ?: null;
+        // ?? not ?: — a record whose extraction failed has no 'title'/'year' key at all
+        // (only stem/pdf/flags/error), and ?: on a missing key throws "Undefined array key".
+        $title = ($rec['title'] ?? null) ?: '[Untitled] ' . $rec['stem'];
+        $year  = ($rec['year'] ?? null) ?: null;
         $type  = $rec['type'] ?? 'Books';
         $typeId = $materials[$type] ?? $materials['Books'] ?? 1;
 
