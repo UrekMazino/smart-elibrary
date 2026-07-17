@@ -185,13 +185,15 @@ class ResultController extends Controller
             ], 500);
         }
 
+        // answer() already resolved sources -> catalogue records and renumbered the
+        // answer's [n] citations to match, so nothing more to hydrate here.
         return response()->json([
             'ok'        => true,
             'query'     => $q,
             'answer'    => $res['answer'],
             'abstained' => $res['abstained'],
             'stub'      => $res['stub'] ?? false,
-            'sources'   => $ai->hydrateSources($res['sources']),
+            'sources'   => $res['sources'],
             'took_ms'   => $res['usage']['took_ms'] ?? null,
         ]);
     }

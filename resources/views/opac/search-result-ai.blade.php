@@ -115,18 +115,6 @@
 <div class="ai-page">
 	<h1 class="ai-question">{{ $query }}</h1>
 
-	{{-- Only while the service reports stub:true; disappears on its own once Hermes is wired. --}}
-	@if($ai->isStub())
-		<div class="ai-preview">
-			<span>&#9888;</span>
-			<div>
-				<b>Preview &mdash; not a real answer.</b> AI mode isn&rsquo;t connected to the
-				library&rsquo;s assistant yet, so the text below is placeholder wording used to design
-				this page. The sources, however, are real materials from the collection.
-			</div>
-		</div>
-	@endif
-
 	<div id="ai-result"></div>
 
 	<div class="ai-followup">

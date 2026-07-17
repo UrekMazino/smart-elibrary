@@ -3,94 +3,91 @@
 namespace App\Services;
 
 use App\Models\ViewCatalog;
+use Illuminate\Support\Facades\Http;
 
 /**
- * AI mode ("Ask the Library") — the single seam between the OPAC and Hermes.
+ * AI mode ("Ask the Library") — the single seam between the OPAC and the local RAG gateway.
  *
- * ============================ NOT CONNECTED YET =============================
- * Hermes is NOT wired up. answer() currently returns PLACEHOLDER prose built from
- * real catalog hits so the UI can be designed and reviewed. Every response carries
- * 'stub' => true, and the page renders a "Preview" banner off that flag — so nobody
- * can mistake this for a real answer. Deleting the stub is a one-method change.
+ * Laravel ships a question to the gateway (rag_api.py, 127.0.0.1, shared token) and renders
+ * the reply. The gateway owns retrieval (hybrid dense+FTS + rerank — the same stack Hermes'
+ * search_docs uses) and grounded synthesis; it returns passages keyed by the document
+ * "stem". This class maps each stem -> catalog_id (view_catalogs.accession_number) so the
+ * answer cites real, openable catalogue records (§10.8 citation bridge).
  *
- * When Hermes lands, answer() becomes a server-side POST to the Hermes gateway
- * (127.0.0.1, shared token) per RAG_INTEGRATION_PLAN.md §10.2, and the return shape
- * below is exactly that contract, so nothing above this class changes:
- *
- *   { answer, sources[{catalog_id, page, score, snippet}], abstained, usage{took_ms}, conversation_id }
- *
- * Deliberately NOT in here (§10): the agent loop, prompt/guardrails, and retrieval.
- * Hermes owns those. Laravel ships a question in and renders the reply out.
- * ============================================================================
+ * Gateway contract (RAG_INTEGRATION_PLAN.md §10.2), POST {url}/agent/answer:
+ *   { answer, sources:[{stem, page, score, snippet}], abstained, took_ms }
  */
 class AiSearchService
 {
-    /** Placeholder answers only; no Hermes call is made. Flips to false when wired. */
-    public function isStub(): bool
-    {
-        return true;
-    }
-
     /**
      * The admin kill switch (Admin > Settings > AI mode). Off by default: AI mode has to
      * be turned on deliberately, so a fresh install never exposes it.
      *
      * This is the ONE source of truth for "is AI mode on" — the OPAC toggle, the routes
-     * and the middleware all read it, so switching off genuinely removes the feature
-     * rather than just hiding the button.
+     * and the middleware all read it, so switching off genuinely removes the feature.
      */
     public function isEnabled(): bool
     {
         return settingEnabled('ai_mode_enabled', false);
     }
 
-    /** Where the agent lives (§10.3: from .env, never the database). */
+    /** Where the agent gateway lives (§10.3: from .env, never the database). */
     public function endpoint(): string
     {
-        return (string) config('services.hermes.url');
+        return rtrim((string) config('services.hermes.url'), '/');
     }
 
     /**
-     * Is the AI backend usable right now? (§10.7: re-index running / GPU busy / gateway
-     * down -> the page degrades to a calm notice and keyword search stays fully usable.)
+     * Is the AI backend usable right now? (§10.7: gateway down / models loading / GPU busy
+     * -> the page degrades to a calm notice and keyword search stays fully usable.)
      */
     public function isAvailable(): bool
     {
-        if (! $this->isEnabled()) {
-            return false;
-        }
-
-        // While stubbed there's nothing to reach, so "available" just means switched on.
-        if ($this->isStub()) {
-            return true;
-        }
-
-        return $this->health()['ok'];   // real: cached GET /healthz
+        return $this->isEnabled() && $this->health()['ok'];
     }
 
     /**
      * Liveness of the agent gateway, for the Settings status line / Test connection.
+     * Cached briefly so the Settings card and every AI request don't each hit /healthz.
      *
      * @return array{ok:bool, status:string, detail:string}
      */
     public function health(): array
     {
-        if ($this->isStub()) {
-            return [
-                'ok'     => false,
-                'status' => 'not_configured',
-                'detail' => 'Not connected yet — AI mode is running on placeholder answers.',
-            ];
-        }
+        return cache()->remember('ai_gateway_health', 15, function () {
+            if (! config('services.hermes.token')) {
+                return ['ok' => false, 'status' => 'not_configured',
+                        'detail' => 'No gateway token set (HERMES_GATEWAY_TOKEN in .env).'];
+            }
 
-        // Real implementation (later):
-        //   $r = Http::withToken(config('services.hermes.token'))->timeout(5)->get($this->endpoint().'/healthz');
-        //   return ['ok' => $r->successful(), 'status' => ..., 'detail' => ...];
-        return ['ok' => false, 'status' => 'unreachable', 'detail' => 'No agent gateway configured.'];
+            try {
+                $r = Http::timeout(5)->get($this->endpoint() . '/healthz');
+            } catch (\Throwable $e) {
+                return ['ok' => false, 'status' => 'unreachable',
+                        'detail' => 'The AI gateway is not responding. Is rag_api.py running?'];
+            }
+
+            if (! $r->successful()) {
+                return ['ok' => false, 'status' => 'error',
+                        'detail' => 'The AI gateway returned an error (HTTP ' . $r->status() . ').'];
+            }
+
+            $body = $r->json();
+            if (! ($body['ok'] ?? false)) {
+                return ['ok' => false, 'status' => 'loading',
+                        'detail' => 'The AI gateway is still loading its models.'];
+            }
+
+            return ['ok' => true, 'status' => 'connected',
+                    'detail' => 'Connected — ' . number_format($body['docs'] ?? 0) . ' passages indexed.'];
+        });
     }
 
     /**
      * Answer a question from the collection.
+     *
+     * Returns the answer with its sources already resolved to catalogue records and its
+     * inline [n] citations renumbered to match (see resolveSources()).
      *
      * @return array{answer:string, sources:array, abstained:bool, usage:array, conversation_id:?string, stub:bool}
      */
@@ -98,78 +95,91 @@ class AiSearchService
     {
         $started = microtime(true);
 
-        // ---- STUB ---------------------------------------------------------------
-        // Real implementation (later):
-        //   $res = Http::withToken(config('services.hermes.token'))
-        //              ->timeout(config('services.hermes.timeout'))
-        //              ->post(config('services.hermes.url').'/agent/chat', [
-        //                  'conversation_id' => $options['conversation_id'] ?? (string) Str::uuid(),
-        //                  'message'         => $query,
-        //                  'history'         => $options['history'] ?? [],
-        //                  'profile'         => 'elibrary-rag',
-        //                  'user_ref'        => $options['user_ref'] ?? 'guest',
-        //                  'stream'          => false,
-        //              ])->throw()->json();
-        $sources = $this->stubSources($query);
+        $res = Http::withToken(config('services.hermes.token'))
+            ->timeout((int) config('services.hermes.timeout', 60))
+            ->post($this->endpoint() . '/agent/answer', [
+                'query'    => $query,
+                'k'        => $options['k'] ?? null,
+                'user_ref' => $options['user_ref'] ?? 'guest',
+            ])
+            ->throw()
+            ->json();
 
-        // No catalog hits -> exercise the abstain path (§10.2 'abstained'), which is what
-        // the hardened agent does when the corpus can't support an answer.
+        $tookMs = $res['took_ms'] ?? (int) ((microtime(true) - $started) * 1000);
+
+        if (($res['abstained'] ?? false) || empty($res['sources'])) {
+            return [
+                'answer'          => '',
+                'sources'         => [],
+                'abstained'       => true,
+                'usage'           => ['took_ms' => $tookMs],
+                'conversation_id' => null,
+                'stub'            => false,
+            ];
+        }
+
+        // Map stems -> catalogue records and renumber the answer's citations to match.
+        [$answer, $sources] = $this->resolveSources($res['answer'] ?? '', $res['sources']);
+
+        // Every source was an unpublished/unknown record -> treat as an abstain rather than
+        // show an answer whose citations all point nowhere.
         if (empty($sources)) {
             return [
                 'answer'          => '',
                 'sources'         => [],
                 'abstained'       => true,
-                'usage'           => ['took_ms' => (int) ((microtime(true) - $started) * 1000)],
+                'usage'           => ['took_ms' => $tookMs],
                 'conversation_id' => null,
-                'stub'            => true,
+                'stub'            => false,
             ];
         }
 
         return [
-            'answer'          => $this->stubAnswer($query, $sources),
+            'answer'          => $answer,
             'sources'         => $sources,
             'abstained'       => false,
-            'usage'           => ['took_ms' => (int) ((microtime(true) - $started) * 1000)],
+            'usage'           => ['took_ms' => $tookMs],
             'conversation_id' => null,
-            'stub'            => true,
+            'stub'            => false,
         ];
-        // ---- /STUB --------------------------------------------------------------
     }
 
     /**
-     * Hydrate sources into what the UI needs (§10.8 citation bridge).
+     * The citation bridge (§10.8). The gateway numbers passages [1..N] and the answer text
+     * cites those numbers. We can only cite passages that resolve to a live, published
+     * catalogue record, so:
+     *   - resolve each source's stem -> catalog_id (published, not deleted),
+     *   - drop the ones that don't resolve,
+     *   - renumber the survivors 1..M AND rewrite the answer's [old] -> [new],
+     *     dropping citations to dropped sources.
+     * This keeps the [n] chips and the source list aligned and contiguous.
      *
-     * catalog_id is the join key and is mandatory: a source without one can't be cited
-     * (never cite a bare filename), so it's dropped here rather than rendered.
+     * @return array{0:string, 1:array}  [rewritten answer, hydrated sources]
      */
-    public function hydrateSources(array $sources): array
+    private function resolveSources(string $answer, array $rawSources): array
     {
-        $ids = collect($sources)->pluck('catalog_id')->filter()->unique()->values();
+        $stems = collect($rawSources)->pluck('stem')->filter()->unique()->values();
 
-        if ($ids->isEmpty()) {
-            return [];
-        }
-
-        $catalogs = ViewCatalog::whereIn('catalog_id', $ids)
+        $catalogs = $stems->isEmpty() ? collect() : ViewCatalog::whereIn('accession_number', $stems)
             ->where('is_published', 1)
             ->whereNull('deleted_at')
             ->get()
-            ->keyBy('catalog_id');
+            ->keyBy('accession_number');
 
-        $out = [];
-        $n   = 0;
+        $sources = [];
+        $remap   = [];   // old 1-based index => new 1-based index
+        $newN    = 0;
 
-        foreach ($sources as $s) {
-            $c = $catalogs->get($s['catalog_id'] ?? null);
-
-            // Unknown / unpublished / deleted catalog_id -> not citable, so skip it
-            // rather than show a dead citation.
+        foreach ($rawSources as $i => $s) {
+            $oldN = $i + 1;
+            $c    = $catalogs->get($s['stem'] ?? null);
             if (! $c) {
-                continue;
+                continue;   // not a citable record -> drop, and its [oldN] will be removed
             }
 
-            $out[] = [
-                'n'          => ++$n,
+            $remap[$oldN] = ++$newN;
+            $sources[] = [
+                'n'          => $newN,
                 'catalog_id' => $c->catalog_id,
                 'title'      => $c->title_statement,
                 'author'     => $c->joint_authors,
@@ -183,52 +193,28 @@ class AiSearchService
             ];
         }
 
-        return $out;
+        return [$this->remapCitations($answer, $remap), $sources];
     }
 
-    // ===================== stub-only helpers (delete with the stub) =====================
-
-    /** Real catalog hits, so the citation bridge and the layout are exercised for real. */
-    private function stubSources(string $query): array
+    /**
+     * Rewrite [n] citations in the answer using the old->new map. A citation whose source
+     * was dropped (not in the map) is removed. Handles grouped forms like [2][3] and [2, 3].
+     */
+    private function remapCitations(string $answer, array $remap): string
     {
-        $hits = ViewCatalog::search($query)
-            ->where('is_published', 1)
-            ->where('deleted_at', null)
-            ->paginate(3);
+        $answer = preg_replace_callback('/\[([\d,\s]+)\]/', function ($m) use ($remap) {
+            $nums = preg_split('/[,\s]+/', trim($m[1]), -1, PREG_SPLIT_NO_EMPTY);
+            $kept = [];
+            foreach ($nums as $num) {
+                $n = (int) $num;
+                if (isset($remap[$n])) {
+                    $kept[] = $remap[$n];
+                }
+            }
+            return $kept ? '[' . implode('][', $kept) . ']' : '';
+        }, $answer);
 
-        $scores = [0.82, 0.64, 0.51];
-
-        return collect($hits->items())->values()->map(fn ($m, $i) => [
-            'catalog_id' => $m->catalog_id,
-            'page'       => ($i + 1) * 7,
-            'score'      => $scores[$i] ?? 0.4,
-            'snippet'    => $this->stubSnippet($m),
-        ])->all();
-    }
-
-    private function stubSnippet($m): string
-    {
-        $text = trim((string) ($m->summary ?: $m->general_note ?: ''));
-
-        if ($text === '') {
-            return 'Placeholder passage — the real snippet will be the retrieved chunk of this document.';
-        }
-
-        return \Illuminate\Support\Str::limit(preg_replace('/\s+/', ' ', $text), 220);
-    }
-
-    /** Obviously-placeholder prose. The UI also shows a Preview banner (see 'stub'). */
-    private function stubAnswer(string $query, array $sources): string
-    {
-        $n = count($sources);
-
-        return "This is placeholder text standing in for a generated answer, so the layout of AI "
-             . "mode can be reviewed before Hermes is connected. A real reply would answer "
-             . "\u{201C}{$query}\u{201D} in a few grounded sentences, citing the passages it drew on "
-             . "inline like this [1]"
-             . ($n > 1 ? ", and combining several documents where they agree [2]" : '')
-             . ($n > 2 ? " or noting where they differ [3]" : '')
-             . ". Every claim would trace back to a source below — and when the collection can't "
-             . "support an answer, the assistant says so instead of guessing.";
+        // Tidy any double spaces left where a citation was removed.
+        return trim(preg_replace('/ {2,}/', ' ', $answer));
     }
 }

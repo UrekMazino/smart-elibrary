@@ -63,7 +63,6 @@ class SettingController extends Controller
 
         return response()->json([
             'enabled'  => $ai->isEnabled(),
-            'stub'     => $ai->isStub(),
             'endpoint' => $ai->endpoint(),
             'ok'       => $health['ok'],
             'status'   => $health['status'],

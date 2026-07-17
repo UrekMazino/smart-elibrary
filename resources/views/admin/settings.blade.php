@@ -171,10 +171,11 @@ function runDriftScan(silent) {
 // AI agent connection status. The endpoint and token live in .env (never the database,
 // never sent to the browser) — this only reports whether the agent answers.
 function renderAiStatus(r) {
-    var tone  = r.ok ? 'ok' : (r.stub ? 'pending' : 'down'),
-        color = r.ok ? '#1c7c54' : (r.stub ? '#a06e14' : '#c92a4b'),
-        bg    = r.ok ? '#e8f6ef' : (r.stub ? '#fff5e0' : '#ffe9ee'),
-        label = r.ok ? 'Connected' : (r.stub ? 'Not connected yet' : 'Unreachable');
+    // 'loading' (models still warming up) is an amber in-between, not a hard failure.
+    var warming = !r.ok && r.status === 'loading',
+        color = r.ok ? '#1c7c54' : (warming ? '#a06e14' : '#c92a4b'),
+        bg    = r.ok ? '#e8f6ef' : (warming ? '#fff5e0' : '#ffe9ee'),
+        label = r.ok ? 'Connected' : (warming ? 'Starting up' : 'Unreachable');
 
     $('#aiStatusBox').html(
         '<div style="border:1px solid ' + bg + ';background:' + bg + ';border-radius:6px;padding:10px 12px;font-size:12.5px;">' +
