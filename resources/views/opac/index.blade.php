@@ -505,16 +505,43 @@
 		if (focus) $input.trigger('focus');
 	}
 
+	// AI mode is members-only. A guest clicking it is prompted to sign in; the mode
+	// does not switch (and the endpoint/page enforce it too).
+	var isGuest = !@json(auth()->check());
+
+	function promptLogin() {
+		if (window.Swal) {
+			Swal.fire({
+				icon: 'info',
+				title: 'Sign in to use AI mode',
+				text: 'Asking the library’s AI is available to registered members. Log in or create a free account to continue.',
+				showDenyButton: true,
+				showCancelButton: true,
+				confirmButtonText: 'Log in',
+				denyButtonText: 'Register',
+				cancelButtonText: 'Not now',
+				reverseButtons: true
+			}).then(function (r) {
+				if (r.isConfirmed) window.location = "{{ url('/login') }}";
+				else if (r.isDenied) window.location = "{{ url('/register') }}";
+			});
+		} else {
+			window.location = "{{ url('/login') }}";
+		}
+	}
+
 	$('.mode-btn').on('click', function () {
 		var mode = $(this).data('mode') || '';
+		if (mode === 'ai' && isGuest) { promptLogin(); return; }   // don't switch
 		try { localStorage.setItem(STORAGE_KEY, mode); } catch (e) {}
 		apply(mode, true);
 	});
 
 	// Remember the choice across visits (localStorage may throw in private mode).
+	// A guest is never restored into AI mode even if a prior session saved it.
 	var saved = '';
 	try { saved = localStorage.getItem(STORAGE_KEY) || ''; } catch (e) {}
-	apply(saved === 'ai' ? 'ai' : '', false);
+	apply((saved === 'ai' && !isGuest) ? 'ai' : '', false);
 })();
 </script>
 @endif

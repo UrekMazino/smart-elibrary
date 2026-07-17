@@ -141,11 +141,31 @@
 @section('js')
 <script>
 (function () {
-	var endpoint = "{{ url('/search/ai-answer') }}";
-	var query    = @json($query);
-	var $out     = $('#ai-result');
+	var endpoint  = "{{ url('/search/ai-answer') }}";
+	var query     = @json($query);
+	var authed    = @json($authed ?? false);
+	var loginUrl  = "{{ url('/login') }}";
+	var regUrl    = "{{ url('/register') }}";
+	var $out      = $('#ai-result');
 
 	function esc(s) { return $('<div>').text(s == null ? '' : String(s)).html(); }
+
+	// Members-only feature: prompt guests to sign in instead of answering.
+	function loginNotice() {
+		$('.ai-followup').hide();
+		$out.html(
+			'<div class="ai-notice">' +
+			  '<span class="icn">&#128274;</span>' +
+			  '<h4>Sign in to use AI mode</h4>' +
+			  '<p>Asking the library&rsquo;s AI is available to registered members. ' +
+			     'Please log in or create a free account to continue.</p>' +
+			  '<div style="margin-top:16px; display:flex; gap:10px; justify-content:center;">' +
+			    '<a href="' + esc(loginUrl) + '" class="btn_1">Log in</a>' +
+			    '<a href="' + esc(regUrl) + '" class="btn_1 outline">Register</a>' +
+			  '</div>' +
+			'</div>'
+		);
+	}
 
 	function skeleton() {
 		return '<div class="ai-card">' +
@@ -234,7 +254,9 @@
 
 	function fail(xhr) {
 		var r = (xhr.responseJSON || {});
-		if (r.reason === 'unavailable') {
+		if (r.reason === 'auth') {          // session expired mid-use, or a direct call
+			loginNotice();
+		} else if (r.reason === 'unavailable') {
 			$out.html(notice('&#9200;', 'AI mode is temporarily unavailable',
 				r.message || 'The assistant is busy or offline. Keyword search is still available.', 'warn'));
 		} else {
@@ -243,8 +265,13 @@
 		}
 	}
 
-	$out.html(skeleton());
-	$.getJSON(endpoint, { q: query }).done(render).fail(fail);
+	// Guests never reach the gateway: show the sign-in prompt up front.
+	if (!authed) {
+		loginNotice();
+	} else {
+		$out.html(skeleton());
+		$.getJSON(endpoint, { q: query }).done(render).fail(fail);
+	}
 
 	// Citation chip -> highlight the source it points at.
 	$out.on('click', '.ai-cite', function (e) {

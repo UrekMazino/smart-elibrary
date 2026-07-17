@@ -27,9 +27,13 @@ class ResultController extends Controller
 
         if($ai->isEnabled() && $request->input('mode') === 'ai' && trim((string) $request->input('query')) !== '')
         {
+            // Members-only. A guest reaching this page directly (typed URL / stale bookmark)
+            // sees a login-required state instead of the answer; the page reads $authed and
+            // shows the prompt rather than calling the endpoint (which would 401 anyway).
             return view('opac.search-result-ai', [
-                'query' => trim((string) $request->input('query')),
-                'ai'    => $ai,
+                'query'  => trim((string) $request->input('query')),
+                'ai'     => $ai,
+                'authed' => Auth::check(),
             ]);
         }
 
@@ -153,6 +157,18 @@ class ResultController extends Controller
      */
     public function aiAnswer(Request $request, AiSearchService $ai)
     {
+        // AI mode is a members-only feature (each answer is a full GPU generation, so it's
+        // gated behind an account). Guests get a clear reason the page turns into a
+        // login/register prompt — not a redirect, since this is an AJAX call.
+        if(! Auth::check())
+        {
+            return response()->json([
+                'ok'      => false,
+                'reason'  => 'auth',
+                'message' => 'Please log in or register to use AI mode.',
+            ], 401);
+        }
+
         $q = trim((string) $request->input('q', ''));
 
         if($q === '')
