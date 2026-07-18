@@ -279,7 +279,11 @@ class ImportCorpusCatalog extends Command
             if ($subfields) {
                 $fields[] = [
                     'marctag'  => ['index' => ++$i, 'id' => (string) $tagId, 'code' => $code, 'description' => $desc],
-                    'subfield' => $subfields,
+                    // Two blank indicators ("N" = undefined), matching how the record editor
+                    // builds field_data (CatalogingController). The view/edit record JS maps
+                    // over `indicator`, so it must be present, not omitted.
+                    'indicator' => [['indicator' => 'N'], ['indicator' => 'N']],
+                    'subfield'  => $subfields,
                 ];
             }
         };

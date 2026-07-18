@@ -62,10 +62,13 @@ $(document).ready(function(){
 
         let col2Div = $('<div class="p-2 col-lg-1 col-md-1 col-sm-12 text-left"></div>');
 
-        let indicatorValues = entry.indicator.map(function(i) {
+        // Guard against fields with no indicator array (e.g. records imported without one):
+        // a missing `indicator` used to throw here, which aborted the whole ready() handler
+        // and left the MARC, Record History and Copies tabs blank.
+        let indicatorValues = (entry.indicator || []).map(function(i) {
             let value = i.indicator;
             // console.log(value);
-            
+
             return value == 'None' || value == '# - Undefined'  ? "N" : value;
         }).join('');
 
@@ -74,7 +77,7 @@ $(document).ready(function(){
 
         let col3Div = $('<div class="p-2 col-lg-10 col-md-10 col-sm-12 text-left"></div>');
         col3Div.css('background-color', '#b0f0f0');
-        let subfieldValues = entry.subfield.map(function(subfield) {
+        let subfieldValues = (entry.subfield || []).map(function(subfield) {
             let code = subfield.code;
             return code.substr(code.length - 2) + subfield.value;
         }).join(' ');
