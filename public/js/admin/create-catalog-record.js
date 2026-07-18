@@ -410,9 +410,52 @@ var MarcEditor = (function () {
                 .text(s.code || ''));
         }
 
+        // The value is DISABLED for direct typing — it's edited through the plain-text
+        // editor (button below), which keeps values markup-free for the OPAC + search.
         $r.append($('<input>').addClass('form-control in-b width25 mr5 mfe-value')
-            .attr({ type: 'text', placeholder: 'Enter value' }).val(s.value || ''));
+            .attr({ type: 'text', placeholder: '(empty)', disabled: 'disabled', title: s.value || '' })
+            .val(s.value || ''));
+
+        // Editor toggle button (becomes Save while the editor is open).
+        $r.append($('<button>').attr({ type: 'button', title: 'Edit value' })
+            .addClass('btn btn-sm btn-outline-secondary in-b mr5 mfe-edit-btn')
+            .html('<i data-feather="edit-2" class="icon-sm"></i>'));
+
+        // The editor itself, in the row's vacant right area — hidden until Edit is clicked.
+        $r.append($('<div>').addClass('mfe-editor').append(
+            $('<textarea>').addClass('form-control mfe-editor-ta').attr({ rows: 2, placeholder: 'Type the value…' })
+        ));
+
         return $r;
+    }
+
+    // ---- value editor (open / save / close) --------------------------------
+    function openEditor($row, $btn) {
+        var $ta = $row.find('.mfe-editor-ta');
+        $ta.val($row.find('.mfe-value').val());
+        $row.find('.mfe-editor').addClass('open');
+        $row.addClass('mfe-editing');
+        $btn.html('<i data-feather="check" class="icon-sm"></i>').attr('title', 'Save value')
+            .removeClass('btn-outline-secondary').addClass('btn-success');
+        if (window.feather) feather.replace();
+        $ta.trigger('focus');
+    }
+
+    function saveEditor($row, $btn) {
+        var v = $row.find('.mfe-editor-ta').val();
+        var f = field($row.closest('[data-key]').data('key'));
+        var s = subOf(f, $row.data('sub'));
+        if (s) s.value = v;
+        $row.find('.mfe-value').val(v).attr('title', v);
+        closeEditor($row, $btn);
+    }
+
+    function closeEditor($row, $btn) {
+        $row.find('.mfe-editor').removeClass('open');
+        $row.removeClass('mfe-editing');
+        $btn.html('<i data-feather="edit-2" class="icon-sm"></i>').attr('title', 'Edit value')
+            .removeClass('btn-success').addClass('btn-outline-secondary');
+        if (window.feather) feather.replace();
     }
 
     // ---- delegated events (bound once, survive re-render) ------------------
@@ -447,6 +490,19 @@ var MarcEditor = (function () {
         });
         $host.on('click', '.mfe-remove-sub', function () {
             removeSubfield($(this).closest('[data-key]').data('key'), $(this).closest('[data-sub]').data('sub'));
+        });
+
+        // Value editor: Edit opens the plain-text editor in the row and turns into Save;
+        // Save writes the value back to state + the (disabled) display input.
+        $host.on('click', '.mfe-edit-btn', function () {
+            var $btn = $(this), $row = $btn.closest('[data-sub]');
+            $row.hasClass('mfe-editing') ? saveEditor($row, $btn) : openEditor($row, $btn);
+        });
+        // Ctrl+Enter saves, Escape cancels (restores the stored value).
+        $host.on('keydown', '.mfe-editor-ta', function (e) {
+            var $row = $(this).closest('[data-sub]');
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveEditor($row, $row.find('.mfe-edit-btn')); }
+            else if (e.key === 'Escape') { e.preventDefault(); closeEditor($row, $row.find('.mfe-edit-btn')); }
         });
 
         // Fixed-field panel inputs (LDR/008) — outside #host, update by field key + code.

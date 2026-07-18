@@ -114,6 +114,14 @@
         #template-div .additional-subfield { margin-bottom: 0 !important; }
         #template-div .sm-font { width: 15px !important; height: 15px !important; }
 
+        /* Value editor: the value input is disabled (edited via the plain-text editor). */
+        #template-div .mfe-value:disabled { background: #eef2f6; color: #33415c; cursor: default; -webkit-text-fill-color: #33415c; }
+        #template-div .mfe-edit-btn { height: 28px; padding: 1px 7px; line-height: 1; vertical-align: top; }
+        #template-div .mfe-editor { display: none; vertical-align: top; width: 40%; min-width: 200px; margin-left: 4px; }
+        #template-div .mfe-editor.open { display: inline-block; }
+        #template-div .mfe-editor-ta { font-size: 12px; padding: 4px 8px; height: auto; min-height: 48px; resize: vertical; }
+        #template-div .subfield-row.mfe-editing { align-items: flex-start; }
+
         /* Empty state: shown only when no fields have been added yet (CSS :empty). */
         .cr-empty {
             display: none; text-align: center; padding: 34px 20px; border: 1px dashed #d7dded;
