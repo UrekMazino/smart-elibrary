@@ -230,17 +230,18 @@
 @section('js')
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net/jquery.dataTables.js') }}"></script>
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net-bs5/dataTables.bootstrap5.js') }}"></script>
-<script src="{{ asset('js/admin/create-catalog-record.js') }}"></script>
-<script src="{{ asset('js/admin/import/single-import.js') }}"></script>
-@if(session('success'))            
-<script>
-    showSwal('custom-position');
-</script>
-@endif
+{{-- Config before the scripts that consume it. --}}
 <script>
   let getTemplateDetailsUrl = '{{ url("/admin/get-marc-template-details") }}';
   let getMarcDetailsUrl     = '{{ url("/admin/get-marc-tag-details") }}';
 </script>
+<script src="{{ asset('js/admin/create-catalog-record.js') }}"></script>
+<script src="{{ asset('js/admin/import/single-import.js') }}"></script>
+@if(session('success'))
+<script>
+    showSwal('custom-position');
+</script>
+@endif
 <script>
     // "ADD" in the Add Tag modal -> append that MARC field to the record.
     $(document).on('click', '.add-field-link', function(event) {
