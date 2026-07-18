@@ -175,20 +175,33 @@ class CatalogingController extends Controller
 
     public function viewRecord(Request $request)
     {
-     
+        // POST entry used by the record/on-hold/batch lists (title comes from the clicked row).
+        return $this->renderRecordView($request->catalog_id, $request->title);
+    }
+
+    public function showRecord($id)
+    {
+        // GET entry (e.g. the redirect right after creating a record). No POSTed title here,
+        // so derive it from the catalog's ViewCatalog row (its 245 title_statement).
+        $title = optional(ViewCatalog::where('catalog_id', $id)->first())->title_statement;
+        return $this->renderRecordView($id, $title);
+    }
+
+    private function renderRecordView($catalogId, $title)
+    {
         $record = Catalog::select('catalogs.*')
-            ->where('catalogs.id',$request->catalog_id)
-            ->first(); 
+            ->where('catalogs.id', $catalogId)
+            ->first();
 
-        $totalCopies = Holdingcopy::where('catalog_id', $request->catalog_id)->count();
+        $totalCopies = Holdingcopy::where('catalog_id', $catalogId)->count();
 
-        $coverPage = Frontpage::where('catalog_id',$request->catalog_id)->whereNull('deleted_at')->first();
-     
-        $fullText = Multimedia::where('catalog_id',$request->catalog_id)->whereNull('deleted_at')->first();
+        $coverPage = Frontpage::where('catalog_id', $catalogId)->whereNull('deleted_at')->first();
 
-        $citations = buildCitations(\App\Models\ViewCatalog::where('catalog_id',$request->catalog_id)->first());
+        $fullText = Multimedia::where('catalog_id', $catalogId)->whereNull('deleted_at')->first();
 
-       return view('admin.catalog-view-record', ['record' => $record, 'fullText' => $fullText, 'coverPage' => $coverPage, 'title' => $request->title, 'totalCopies' => $totalCopies, 'citations' => $citations]);
+        $citations = buildCitations(ViewCatalog::where('catalog_id', $catalogId)->first());
+
+        return view('admin.catalog-view-record', ['record' => $record, 'fullText' => $fullText, 'coverPage' => $coverPage, 'title' => $title, 'totalCopies' => $totalCopies, 'citations' => $citations]);
     }
 
     public function viewBatch(Request $request)
@@ -1650,13 +1663,11 @@ class CatalogingController extends Controller
             ensurePlaceholderCover($catalog->id);
         }
 
-
-        $marcTemplates = MarcTemplate::get();
-
-        $materials = Material::get();
-
         clearHomeCache();
-        return view('admin.create-catalog-record', ['marcTemplates' => $marcTemplates, 'materials' => $materials]);
+
+        // Post/Redirect/Get: land on the new record's view page (a redirect, so a refresh
+        // won't re-submit the form and create a duplicate).
+        return redirect()->route('show-record', ['id' => $catalog->id]);
     }
 
     public function destroyRecord(Request $request)
@@ -1962,18 +1973,10 @@ class CatalogingController extends Controller
                 ]);
             }
 
-        $record = Catalog::where('id', $id)->first();
-
-        $fieldData = $record->field_data;
-
-        $marcTemplates = MarcTemplate::get();
-
-        $materials = Material::get();
-
         clearHomeCache();
-        return view('admin.catalog-edit-record', ['marcTemplates' => $marcTemplates, 'materials' => $materials, 'record' => $record, 'fieldData' => $fieldData,  'message' => 'Record Updated!']);
 
-
+        // Post/Redirect/Get: land on the record's view page after saving (same as create).
+        return redirect()->route('show-record', ['id' => $id]);
     }
 
     public function recordList(Request $request)

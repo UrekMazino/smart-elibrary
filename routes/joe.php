@@ -92,6 +92,8 @@ Route::controller(ConfigurationController::class, 'admin')->group(function () {
 Route::controller(CatalogingController::class, 'admin')->middleware('can:access.cataloging')->group(function () {
     Route::get('/admin/create-record', 'createRecord');
     Route::post('/admin/view-record', 'viewRecord');
+    // GET landing for a single record (used by the post-create redirect / PRG).
+    Route::get('/admin/view-record/{id}', 'showRecord')->name('show-record');
     Route::post('/admin/view-batch', 'viewBatch');
     Route::get('/admin/batch-records/{id}', 'viewBatchRecords');
     Route::get('/admin/batch-records-json/{id}', 'viewBatchRecordsJson');
