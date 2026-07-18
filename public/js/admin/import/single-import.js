@@ -18,6 +18,9 @@ $(document).ready(function () {
     $('#accessionNumber').removeAttr('required');
 
     MarcEditor.loadFromSource(parsed.fields);
+    // Add a leader / 008 only if the parsed record didn't already carry them
+    // (no material name -> create-if-missing, don't overwrite parsed values).
+    MarcEditor.ensureFixed();
 });
 
 function showImportModal(action) {

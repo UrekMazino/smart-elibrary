@@ -113,6 +113,18 @@
         .cr-empty h6 { color: #55606b; font-size: 14px; font-weight: 700; margin-bottom: 4px; }
         .cr-empty p { font-size: 12.5px; margin: 0; }
 
+        /* Fixed Fields (LDR / 008) guided panel */
+        .ff-group { border: 1px solid #eef0f2; border-radius: 8px; background: #fbfcfd; padding: 12px 14px; margin-bottom: 12px; }
+        .ff-group-title { font-size: 12.5px; font-weight: 700; color: #22283b; margin-bottom: 10px; }
+        .ff-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px 14px; }
+        .ff-cell { display: flex; flex-direction: column; }
+        .ff-label { font-size: 11px; font-weight: 600; color: #55606b; margin-bottom: 3px; }
+        .ff-auto {
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; color: #33415c;
+            background: #eef1f6; border-radius: 5px; padding: 6px 9px; letter-spacing: .5px;
+        }
+        .ff-hint { font-size: 10.5px; color: #a3adc2; margin-top: 3px; }
+
         .cr-actions { display: flex; gap: 8px; flex-wrap: wrap; }
         .cr-footer {
             position: sticky; bottom: 0; background: #fff; border-top: 1px solid #eef0f2;
@@ -195,6 +207,17 @@
                                         </label>
                                     </div>
                                 </div>
+                            </div>
+
+                            {{-- Guided LDR/008 fixed-field editor. Hidden until a leader/008 exists. --}}
+                            <div id="fixed-fields-card" style="display:none;">
+                                <div class="cr-section-title mt-4">Fixed Fields (LDR / 008)</div>
+                                <p class="text-muted mb-2" style="font-size: 12px;">
+                                    Structural positions are set automatically (marked <em>auto</em>). Verify the
+                                    coded positions below &mdash; type of record and bibliographic level follow the
+                                    material type; encoding level, dates, country and language are yours to confirm.
+                                </p>
+                                <div id="fixed-fields-body"></div>
                             </div>
 
                             <div class="cr-section-title mt-4">MARC Fields</div>

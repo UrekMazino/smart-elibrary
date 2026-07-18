@@ -36,6 +36,107 @@ var MarcEditor = (function () {
 
     function field(key)     { return fields.find(function (f) { return f._key == key; }); }
     function subOf(f, sk)   { return f ? f.subfield.find(function (s) { return s._key == sk; }) : null; }
+    function subByCode(f, c){ return f ? f.subfield.find(function (s) { return s.code === c; }) : null; }
+    function fieldByCode(c) { return fields.find(function (f) { return f.marctag.code === c; }); }
+
+    /* ---- MARC 21 fixed fields (LDR / 008) ------------------------------------
+     * Some byte positions are system-generated, others must be set by the cataloger.
+     * We AUTO-fill the structural/system positions and expose the manual ones through a
+     * guided panel. Enumerated positions use short MARC value lists (dropdowns); the big
+     * coded lists (country/language) are free-text with a hint. Each position is stored as
+     * its own subfield (LDR$06, 008$15-17, ...) — the shape marctag_subfields_loc and
+     * storeRecord already use (storeRecord reads LDR$06 for the record type).
+     */
+    var LDR06 = { a: 'Language material', c: 'Notated music', d: 'Manuscript notated music',
+        e: 'Cartographic material', f: 'Manuscript cartographic', g: 'Projected medium',
+        i: 'Nonmusical sound recording', j: 'Musical sound recording',
+        k: 'Two-dimensional nonprojectable graphic', m: 'Computer file', o: 'Kit',
+        p: 'Mixed materials', r: 'Three-dimensional artifact', t: 'Manuscript language material' };
+    var LDR07 = { a: 'Monographic component part', b: 'Serial component part', c: 'Collection',
+        d: 'Subunit', i: 'Integrating resource', m: 'Monograph / Item', s: 'Serial' };
+    var LDR17 = { ' ': 'Full level', '1': 'Full, not examined', '2': 'Less-than-full',
+        '3': 'Abbreviated', '4': 'Core', '5': 'Preliminary', '7': 'Minimal',
+        '8': 'Prepublication', 'u': 'Unknown', 'z': 'Not applicable' };
+    var LDR18 = { i: 'ISBD', a: 'AACR 2', c: 'ISBD (punctuation omitted)',
+        n: 'Non-ISBD (punctuation omitted)', ' ': 'Non-ISBD', u: 'Unknown' };
+    var DATE_TYPE = { s: 'Single known date', m: 'Multiple dates', r: 'Reprint / reissue',
+        t: 'Publication + copyright', c: 'Continuing, currently published',
+        d: 'Continuing, ceased', e: 'Detailed date', i: 'Inclusive dates',
+        k: 'Range of collection years', n: 'Dates unknown', q: 'Questionable date',
+        u: 'Continuing, status unknown' };
+    var CAT_SRC = { ' ': 'National bibliographic agency', c: 'Cooperative program',
+        d: 'Other', u: 'Unknown' };
+
+    // panel layout: {code, label, auto?, type:'select'|'text', options?, size?, hint?}
+    var LDR_POS = [
+        { code: 'LDR$05', label: 'Record status', auto: true },
+        { code: 'LDR$06', label: 'Type of record', type: 'select', options: LDR06 },
+        { code: 'LDR$07', label: 'Bibliographic level', type: 'select', options: LDR07 },
+        { code: 'LDR$17', label: 'Encoding level', type: 'select', options: LDR17 },
+        { code: 'LDR$18', label: 'Descriptive cataloging form', type: 'select', options: LDR18 }
+    ];
+    var F008_POS = [
+        { code: '008$00-05', label: 'Date entered', auto: true },
+        { code: '008$06', label: 'Type of date', type: 'select', options: DATE_TYPE },
+        { code: '008$07-10', label: 'Date 1', type: 'text', size: 4, hint: 'e.g. 2021' },
+        { code: '008$11-14', label: 'Date 2', type: 'text', size: 4, hint: 'blank if single date' },
+        { code: '008$15-17', label: 'Country', type: 'text', size: 3, hint: 'MARC code, e.g. ph' },
+        { code: '008$35-37', label: 'Language', type: 'text', size: 3, hint: 'MARC code, e.g. eng' },
+        { code: '008$39', label: 'Cataloging source', type: 'select', options: CAT_SRC }
+    ];
+
+    // A material's Type-of-record + bibliographic level. Defaults suit the PCAARRD corpus
+    // (mostly textual monographs); serials get bib level 's'.
+    function marcTypeFor(materialName) {
+        var n = String(materialName || '').toLowerCase();
+        if (n.indexOf('serial') >= 0 || n.indexOf('continuing') >= 0) return { type: 'a', bib: 's' };
+        return { type: 'a', bib: 'm' };
+    }
+
+    function yymmdd() {
+        var d = new Date();
+        return String(d.getFullYear()).slice(2) + ('0' + (d.getMonth() + 1)).slice(-2) + ('0' + d.getDate()).slice(-2);
+    }
+
+    function sub(code, description, value) {
+        return { _key: nextSubKey(), id: null, code: code, description: description, value: value };
+    }
+
+    function makeLeader(materialName) {
+        var t = marcTypeFor(materialName);
+        return {
+            _key: nextKey(), fixed: true,
+            marctag: { id: 2501, code: 'LDR', description: 'Leader' },
+            indicator: [{ id: null, indicator: 'None' }, { id: null, indicator: 'None' }],
+            subfield: [
+                sub('LDR$05', 'Record status', 'n'),               // new record (auto)
+                sub('LDR$06', 'Type of record', t.type),
+                sub('LDR$07', 'Bibliographic level', t.bib),
+                sub('LDR$09', 'Character coding scheme', 'a'),      // Unicode (auto)
+                sub('LDR$17', 'Encoding level', ' '),
+                sub('LDR$18', 'Descriptive cataloging form', 'i')
+            ]
+        };
+    }
+
+    function make008(pubYear) {
+        var y = String(pubYear || '').replace(/[^0-9]/g, '').slice(0, 4);
+        return {
+            _key: nextKey(), fixed: true,
+            marctag: { id: 6, code: '008', description: 'Fixed-Length Data Elements' },
+            indicator: [{ id: null, indicator: 'None' }, { id: null, indicator: 'None' }],
+            subfield: [
+                sub('008$00-05', 'Date entered on file', yymmdd()),  // auto
+                sub('008$06', 'Type of date/Publication status', 's'),
+                sub('008$07-10', 'Date 1', y || '    '),
+                sub('008$11-14', 'Date 2', '    '),
+                sub('008$15-17', 'Place of publication', 'ph '),
+                sub('008$35-37', 'Language', 'eng'),
+                sub('008$38', 'Modified record', ' '),              // auto
+                sub('008$39', 'Cataloging source', 'd')
+            ]
+        };
+    }
 
     // ---- ingest ------------------------------------------------------------
     // "N - description" / "None" -> the value stored for a MARC indicator is the
@@ -51,10 +152,12 @@ var MarcEditor = (function () {
     }
 
     function fromSource(sf) {
+        var code = sf.tag.code;
         return {
             _key: nextKey(),
             editable: false,                                  // fixed structure (template / parsed)
-            marctag: { id: sf.tag.id, code: sf.tag.code, description: sf.tag.description },
+            fixed: (code === 'LDR' || code === '008'),        // -> guided fixed-field panel, not a generic card
+            marctag: { id: sf.tag.id, code: code, description: sf.tag.description },
             indicator: normIndicators(sf.indicators),
             subfield: (sf.subfields || []).map(function (s) {
                 return {
@@ -134,11 +237,80 @@ var MarcEditor = (function () {
         $host.find('[data-key="' + key + '"]').remove();
     }
 
+    // ---- fixed fields (LDR / 008) -----------------------------------------
+    // Ensure a leader + 008 exist. Called on template load / material select; creates them
+    // once, and keeps the material-driven positions (type, bib level) in sync with the
+    // Material Type dropdown without clobbering the cataloger's other edits.
+    function ensureFixed(materialName, pubYear) {
+        var t = marcTypeFor(materialName);
+
+        var ldr = fieldByCode('LDR');
+        if (!ldr) { ldr = makeLeader(materialName); fields.push(ldr); }
+        else if (materialName) {
+            var s6 = subByCode(ldr, 'LDR$06'); if (s6) s6.value = t.type;
+            var s7 = subByCode(ldr, 'LDR$07'); if (s7) s7.value = t.bib;
+        }
+
+        var f008 = fieldByCode('008');
+        if (!f008) { f008 = make008(pubYear); fields.push(f008); }
+
+        sortFields();
+        render();
+    }
+
     // ---- render ------------------------------------------------------------
     function render() {
         $host.empty();
-        fields.forEach(function (f) { $host.append(buildField(f)); });
+        // Fixed fields (LDR/008) render in their own guided panel, not as generic cards.
+        fields.forEach(function (f) { if (!f.fixed) $host.append(buildField(f)); });
+        renderFixed();
         if (window.feather) feather.replace();
+    }
+
+    function renderFixed() {
+        var $body = $('#fixed-fields-body');
+        if (!$body.length) return;
+        $body.empty();
+
+        var ldr = fieldByCode('LDR');
+        var f008 = fieldByCode('008');
+        $('#fixed-fields-card').toggle(!!(ldr || f008));
+
+        if (ldr)  $body.append(buildFixedGroup('LDR (Leader)', ldr, LDR_POS));
+        if (f008) $body.append(buildFixedGroup('008 (Fixed-Length Data Elements)', f008, F008_POS));
+    }
+
+    function buildFixedGroup(title, f, positions) {
+        var $wrap = $('<div>').addClass('ff-group').attr('data-key', f._key);
+        $wrap.append($('<div>').addClass('ff-group-title').text(title));
+        var $grid = $('<div>').addClass('ff-grid');
+
+        positions.forEach(function (p) {
+            var s = subByCode(f, p.code);
+            var val = s ? s.value : '';
+            var $cell = $('<div>').addClass('ff-cell');
+            $cell.append($('<label>').addClass('ff-label').text(p.label));
+
+            if (p.auto) {
+                $cell.append($('<div>').addClass('ff-auto').text((val && val.trim()) ? val : '—'));
+                $cell.append($('<span>').addClass('ff-hint').text('auto'));
+            } else if (p.type === 'select') {
+                var $sel = $('<select>').addClass('form-select form-select-sm mfe-fixed').attr('data-code', p.code);
+                Object.keys(p.options).forEach(function (k) {
+                    var opt = $('<option>').val(k).text((k === ' ' ? '(blank)' : k) + ' — ' + p.options[k]);
+                    if (val === k) opt.attr('selected', 'selected');
+                    $sel.append(opt);
+                });
+                $cell.append($sel);
+            } else {
+                $cell.append($('<input>').addClass('form-control form-control-sm mfe-fixed')
+                    .attr({ type: 'text', maxlength: p.size || 8, 'data-code': p.code }).val(val));
+                if (p.hint) $cell.append($('<span>').addClass('ff-hint').text(p.hint));
+            }
+            $grid.append($cell);
+        });
+
+        return $wrap.append($grid);
     }
 
     // Rebuild a single field's card in place (used after add/remove subfield).
@@ -265,6 +437,14 @@ var MarcEditor = (function () {
         $host.on('click', '.mfe-remove-sub', function () {
             removeSubfield($(this).closest('[data-key]').data('key'), $(this).closest('[data-sub]').data('sub'));
         });
+
+        // Fixed-field panel inputs (LDR/008) — outside #host, update by field key + code.
+        $(document).on('change input', '.mfe-fixed', function () {
+            var f = field($(this).closest('[data-key]').data('key'));
+            if (!f) return;
+            var s = subByCode(f, $(this).data('code'));
+            if (s) s.value = $(this).val();
+        });
     }
 
     // ---- serialize (on submit) --------------------------------------------
@@ -292,6 +472,7 @@ var MarcEditor = (function () {
         init: init,
         loadFromSource: loadFromSource,
         addTag: addTag,
+        ensureFixed: ensureFixed,
         serialize: serialize,
         commit: commit,
         _fields: function () { return fields; }   // for tests/inspection
@@ -310,12 +491,24 @@ $(document).ready(function () {
     });
 });
 
-// MARC template selected -> load its fields.
+// MARC template selected -> load its fields, then ensure a leader + 008 exist.
 $(document).on('change', '#marcTemplateSelect', function () {
     $.getJSON(getTemplateDetailsUrl, { template_id: $(this).val() })
-        .done(function (res) { MarcEditor.loadFromSource(res.fields || []); })
+        .done(function (res) {
+            MarcEditor.loadFromSource(res.fields || []);
+            MarcEditor.ensureFixed(selectedMaterialName());
+        })
         .fail(function () { console.log("Couldn't load the template."); });
 });
+
+// Material Type selected -> generate / sync the fixed fields (type of record, bib level).
+$(document).on('change', '#materialTypeSelect', function () {
+    MarcEditor.ensureFixed(selectedMaterialName());
+});
+
+function selectedMaterialName() {
+    return $('#materialTypeSelect option:selected').text().trim();
+}
 
 function showAddFieldModal() {
     $('#viewAddFieldModal').modal('show');
