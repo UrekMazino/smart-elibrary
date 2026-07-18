@@ -32,12 +32,64 @@ class CatalogingController extends Controller
     }
 
     public function createRecord()
-    { 
+    {
         $marcTemplates = MarcTemplate::get();
 
         $materials = Material::get();
 
-        return view('admin.create-catalog-record', ['marcTemplates' => $marcTemplates, 'materials' => $materials]);
+        return view('admin.create-catalog-record', [
+            'marcTemplates' => $marcTemplates,
+            'materials'     => $materials,
+            // Core bibliographic tags pre-loaded on a fresh form (LDR/008 are generated
+            // client-side). See defaultCreateFields().
+            'defaultFields' => $this->defaultCreateFields(),
+        ]);
+    }
+
+    /**
+     * The MARC tags whose subfields map to view_catalogs columns (the ones storeRecord
+     * parses: 245->title, 100->joint_authors, 260->publisher/pub_year, 520->summary,
+     * 500->general_note, 050->call_number, 020->isbn, 022->issn). Returned in the
+     * source shape the create page's MarcEditor.loadFromSource() consumes, so the form
+     * opens with these fields ready to fill instead of blank. LDR/008 are NOT here —
+     * MarcEditor.ensureFixed() generates those (with LDR/06='a', books, by default).
+     */
+    private function defaultCreateFields(): array
+    {
+        $map = [
+            '020' => ['020$a'],           // ISBN
+            '022' => ['022$a'],           // ISSN
+            '050' => ['050$a'],           // Call number
+            '100' => ['100$a'],           // Author -> joint_authors
+            '245' => ['245$a', '245$c'],  // Title (+ statement of responsibility)
+            '260' => ['260$b', '260$c'],  // Publisher, date -> publisher / pub_year
+            '500' => ['500$a'],           // General note
+            '520' => ['520$a'],           // Summary
+        ];
+
+        $fields = [];
+        foreach ($map as $tagCode => $subCodes) {
+            $tag = DB::table('marctags_loc')->where('code', $tagCode)->first();
+            if (! $tag) {
+                continue;
+            }
+
+            $subfields = [];
+            foreach ($subCodes as $sc) {
+                $s = DB::table('marctag_subfields_loc')->where('marctags_loc_id', $tag->id)->where('code', $sc)->first();
+                if ($s) {
+                    $subfields[] = ['id' => $s->id, 'code' => $s->code, 'description' => $s->description, 'default' => 'Enter value'];
+                }
+            }
+
+            $fields[] = [
+                'tag'        => ['id' => $tag->id, 'code' => $tag->code, 'description' => $tag->description, 'isRequired' => $tagCode === '245' ? 1 : 0],
+                'subfields'  => $subfields,
+                'indicators' => [['id' => 0, 'indicator' => 'None'], ['id' => 0, 'indicator' => 'None']],
+            ];
+        }
+
+        return $fields;
     }
 
     public function viewRecord(Request $request)

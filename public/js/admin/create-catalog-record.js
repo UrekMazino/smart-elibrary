@@ -485,6 +485,14 @@ var MarcEditor = (function () {
 $(document).ready(function () {
     MarcEditor.init('#template-div');
 
+    // Fresh form (not a parse, not a validation repopulate): pre-load the core
+    // bibliographic tags and generate the LDR + 008 so the cataloguer starts with a
+    // ready-to-fill record. single-import.js owns the importFlag == 1 (parse) case.
+    if ($('#importFlag').val() != 1 && typeof defaultMarcFields !== 'undefined' && defaultMarcFields.length) {
+        MarcEditor.loadFromSource(defaultMarcFields);
+        MarcEditor.ensureFixed(selectedMaterialName());   // LDR/06 = 'a' (books) by default
+    }
+
     // Serialize the in-memory state into #fieldData once, at submit time.
     $('#createRecordFrm').on('submit', function () {
         MarcEditor.commit($('#fieldData'));
