@@ -311,19 +311,23 @@ $(document).ready(function(){
             data: function (d) { d.exclude_control = 1; }
         },
         columns: [
-            { data: 'code'},
+            { data: 'code',
+                render: function (data) {
+                    return '<span class="mtag-code">' + data + '</span>';
+                }
+            },
             { data: 'description',
-                render: function(data, type, row) {
-                    return '<a href="#" class="add-field-link" data-row-id="' + row.id + '" data-first-array=\'' + row.first_indictors + '\' data-second-array=\'' + row.second_indicators + '\'>' + data + '</a>';
-
+                render: function (data, type, row) {
+                    return '<a href="#" class="mtag-desc add-field-link" data-row-id="' + row.id + '">' + data + '</a>';
                 }
             },
-            { data: 'id',
-                render: function(data, type, row) {
-                    return '<a href="#" class="add-field-link btn btn-info" data-row-id="' + row.id + '" data-first-array=\'' + row.first_indictors + '\' data-second-array=\'' + row.second_indicators + '\'>ADD</a>';
+            { data: 'id', className: 'text-end',
+                render: function (data, type, row) {
+                    return '<button type="button" class="btn btn-sm btn-primary add-field-link" data-row-id="' + row.id + '">+ Add</button>';
                 }
             },
-        ]
+        ],
+        language: { search: '', searchPlaceholder: 'Search tag number or name…', lengthMenu: 'Show _MENU_' }
     });
 
 
