@@ -104,8 +104,9 @@
                         </div>
                         <div class="pull-right">
                             <a href="{{ url('/admin/create-record') }}" class="btn btn-secondary">Clear</a>
+                            <button class="btn btn-primary" type="button" onclick="showAddFieldModal()">+ Add Tag</button>
                             <button class="btn btn-info" type="button" onclick="showImportModal('create')">Parse a Record</button>
-                        </div>      
+                        </div>
                     </div>
                     <!-- <a href="{{ url('/admin/get-marc-template-details?template_id=15') }}">Test</a> -->
                     <form method="post" action="{{ url('/admin/create-record/store') }}" id="createRecordFrm" enctype="multipart/form-data">
@@ -183,19 +184,15 @@
     showSwal('custom-position');
 </script>
 @endif
-<script> 
+<script>
   let getTemplateDetailsUrl = '{{ url("/admin/get-marc-template-details") }}';
+  let getMarcDetailsUrl     = '{{ url("/admin/get-marc-tag-details") }}';
 </script>
 <script>
+    // "ADD" in the Add Tag modal -> append that MARC field to the record.
     $(document).on('click', '.add-field-link', function(event) {
         event.preventDefault();
-
-        let rowId = $(this).data('row-id');
-        let firstArray = $(this).data('first-array');
-        let secondArray = $(this).data('second-array');
-        
-        // Call your addTag function with the retrieved data
-        addField(rowId, firstArray, secondArray);
+        addTag($(this).data('row-id'));
     });
 </script>
 <script>

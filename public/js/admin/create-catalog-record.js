@@ -206,3 +206,177 @@ function showAddFieldModal() {
     $('#viewAddFieldModal').modal('show');
     $('#viewAddFieldModal').fadeIn();
 }
+
+/* =====================================================================
+ * Add Tag — add an arbitrary MARC field to the record (mirrors the edit
+ * page's feature). Added fields use the SAME field_data shape the template
+ * loader produces:
+ *   { marctag:{index,id,code,description},
+ *     indicator:[{id,indicator},{id,indicator}],
+ *     subfield:[{'sub-index',id,code,description,value}] }
+ * Fields are matched by marctag.index (unique per field), so the same tag
+ * can appear more than once (e.g. several 650 subjects).
+ * ===================================================================== */
+
+function fdLoad()  { try { return JSON.parse($('#fieldData').val() || '[]'); } catch (e) { return []; } }
+function fdSave(a) { $('#fieldData').val(JSON.stringify(a)); }
+function fdFind(a, index) { return a.find(function (f) { return f.marctag.index == index; }); }
+
+// LDR first, then alphabetical by tag code — matches the edit page's ordering.
+function fdSort(a) {
+    return a.sort(function (x, y) {
+        if (x.marctag.code === 'LDR') return -1;
+        if (y.marctag.code === 'LDR') return 1;
+        return String(x.marctag.code).toUpperCase().localeCompare(String(y.marctag.code).toUpperCase());
+    });
+}
+
+function addTag(id) {
+    $('#viewAddFieldModal').modal('hide');
+
+    $.ajax({
+        type: 'GET', url: getMarcDetailsUrl, data: { marctag_id: id }, dataType: 'json',
+        success: function (res) {
+            let arr = fdLoad();
+            let nextIndex = arr.length
+                ? Math.max.apply(null, arr.map(function (f) { return f.marctag.index; })) + 1
+                : 1;
+
+            arr.push({
+                marctag:   { index: nextIndex, id: res.id, code: res.code, description: res.description },
+                indicator: [ { id: null, indicator: 'None' }, { id: null, indicator: 'None' } ],
+                subfield:  [ { 'sub-index': 1, id: null, code: null, description: null, value: null } ]
+            });
+            fdSave(fdSort(arr));
+
+            renderAddedTag(res, nextIndex);
+        },
+        error: function () { console.log("Couldn't load the tag details."); }
+    });
+}
+
+function renderAddedTag(res, index) {
+    let mainRow = $('<div>').addClass('row mb-3').attr('data-index', index);
+    let parent  = $('<div>').addClass('col col-lg-12 subfield-parent');
+
+    let label = $('<label>').addClass('form-label in-b mr strong').text(res.code + ' - ' + res.description);
+    let removeTagIcon = $('<i>').addClass('sm-font danger-clr in-b').attr({
+        'data-bs-toggle': 'tooltip', 'data-bs-placement': 'top', 'title': 'Remove Tag',
+        'data-feather': 'minus-square', 'onclick': 'removeTag(this,' + index + ')'
+    });
+    parent.append(label, ' ', removeTagIcon);
+
+    let indBlock = $('<div>').addClass('block mb-2');
+    let indLabel = $('<label>').addClass('form-label in-b mr strong').text('Indicator');
+    let addSubIcon = $('<i>').addClass('sm-font success-clr in-b').attr({
+        'data-bs-toggle': 'tooltip', 'data-bs-placement': 'top', 'title': 'Add Subfield',
+        'data-feather': 'plus-square', 'onclick': 'addSubfield(this,' + index + ')'
+    });
+    indBlock.append(indLabel,
+        buildIndicatorSelect(index, 0, res.first_indictors),
+        buildIndicatorSelect(index, 1, res.second_indicators),
+        addSubIcon);
+
+    // The first subfield is not removable — a field must keep at least one.
+    let subWrap = $('<div>').addClass('mb-2 additional-subfield-wrap');
+    subWrap.append(buildSubfieldRow(index, 1, res.subfields, false));
+
+    parent.append(indBlock, subWrap);
+    mainRow.append(parent);
+    $('#template-div').prepend(mainRow);   // added tags sit at the top
+    feather.replace();
+}
+
+function buildIndicatorSelect(index, pos, indicators) {
+    let sel = $('<select>').addClass('form-select in-b width25 mr5');
+    sel.append($('<option>').attr('selected', 'selected').val('').text('None'));
+    if (Array.isArray(indicators)) {
+        indicators.forEach(function (ind) {
+            if (ind && ind.id != null) sel.append($('<option>').val(ind.id).text(ind.indicator));
+        });
+    }
+    sel.on('change', function () {
+        let arr = fdLoad(), f = fdFind(arr, index);
+        if (!f) return;
+        f.indicator[pos] = { id: $(this).val() || null, indicator: $(this).find('option:selected').text() };
+        fdSave(arr);
+    });
+    return sel;
+}
+
+function buildSubfieldRow(index, subIndex, subfields, removable) {
+    let row = $('<div>').addClass('subfield-row mb-1').attr('data-sub-index', subIndex);
+
+    let removeIcon = $('<i>').addClass('sm-font mr in-b ' + (removable ? 'danger-clr' : 'dull-clr')).attr({
+        'data-bs-toggle': 'tooltip', 'data-bs-placement': 'top', 'title': 'Remove Subfield',
+        'data-feather': 'minus-square'
+    });
+    if (removable) removeIcon.attr('onclick', 'removeSubfield(this,' + index + ',' + subIndex + ')');
+
+    let sel = $('<select>').addClass('form-select in-b width25 mr5');
+    sel.append($('<option>').attr({ selected: 'selected', disabled: 'disabled' }).text('Select Subfield'));
+    (subfields || []).forEach(function (sf) {
+        sel.append($('<option>').val(sf.id).text(sf.code + ' - ' + sf.description));
+    });
+    sel.on('change', function () {
+        let arr = fdLoad(), f = fdFind(arr, index);
+        if (!f) return;
+        let sf = f.subfield.find(function (s) { return s['sub-index'] == subIndex; });
+        if (!sf) return;
+        let text = $(this).find('option:selected').text();
+        sf.id = parseInt($(this).val(), 10);
+        sf.code = text.split(' - ')[0];
+        sf.description = text.split(' - ').slice(1).join(' - ');
+        fdSave(arr);
+    });
+
+    let input = $('<input>').addClass('form-control in-b width25 mr5')
+        .attr({ type: 'text', placeholder: 'Enter value' });
+    input.on('keyup', function () {
+        let arr = fdLoad(), f = fdFind(arr, index);
+        if (!f) return;
+        let sf = f.subfield.find(function (s) { return s['sub-index'] == subIndex; });
+        if (!sf) return;
+        sf.value = $(this).val();
+        fdSave(arr);
+    });
+
+    row.append(removeIcon, sel, input);
+    return row;
+}
+
+function addSubfield(iconElement, index) {
+    let cur = fdFind(fdLoad(), index);
+    if (!cur) return;
+
+    $.ajax({
+        type: 'GET', url: getMarcDetailsUrl, data: { marctag_id: cur.marctag.id }, dataType: 'json',
+        success: function (res) {
+            let arr = fdLoad(), f = fdFind(arr, index);
+            if (!f) return;
+            let last = f.subfield.length ? f.subfield[f.subfield.length - 1]['sub-index'] : 0;
+            let newSub = last + 1;
+            f.subfield.push({ 'sub-index': newSub, id: null, code: null, description: null, value: null });
+            fdSave(arr);
+
+            $(iconElement).closest('.subfield-parent').find('.additional-subfield-wrap')
+                .append(buildSubfieldRow(index, newSub, res.subfields, true));
+            feather.replace();
+        },
+        error: function () { console.log("Couldn't load the tag details."); }
+    });
+}
+
+function removeTag(iconElement, index) {
+    fdSave(fdLoad().filter(function (f) { return f.marctag.index != index; }));
+    $(iconElement).closest('.row.mb-3').fadeOut(200, function () { $(this).remove(); });
+}
+
+function removeSubfield(iconElement, index, subIndex) {
+    let arr = fdLoad(), f = fdFind(arr, index);
+    if (f) {
+        f.subfield = f.subfield.filter(function (s) { return s['sub-index'] != subIndex; });
+        fdSave(arr);
+    }
+    $(iconElement).closest('.subfield-row').fadeOut(200, function () { $(this).remove(); });
+}
