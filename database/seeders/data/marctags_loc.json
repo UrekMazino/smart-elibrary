@@ -1173,7 +1173,7 @@
         "id": 1035,
         "code": "388",
         "description": "Time Period of Creation",
-        "first_indictors": "[16,184.185]",
+        "first_indictors": "[16,184,185]",
         "second_indicators": "[1]",
         "Repeatable": 1,
         "created_at": null,
@@ -2181,7 +2181,7 @@
     },
     {
         "id": 2360,
-        "code": "842 ",
+        "code": "842",
         "description": "Textual Physical Form Designator",
         "first_indictors": "[]",
         "second_indicators": "[]",

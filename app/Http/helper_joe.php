@@ -291,12 +291,26 @@ function getMaterialDataCUsingCode($code)
 
 	return $material;
 }
+/**
+ * Map a MARC indicator character as read from a record to the leading character used in the
+ * marctag_indicators_loc labels. File_MARC returns a space ' ' for a blank indicator, but the
+ * reference table writes blank as '#' (LoC's documentation convention), so a blank in a parsed
+ * record must be canonicalised to '#' to resolve to the "# - ..." row instead of falling through
+ * to the default. Mirrors the editor-side normaliser (marcIndicatorChar), which stores blank as
+ * a space; here the match target is the table's '#'.
+ */
+function marcFileIndToTableChar($ch)
+{
+	$ch = (string) $ch;
+	return ($ch === '' || $ch === ' ' || $ch === '\\') ? '#' : substr($ch, 0, 1);
+}
+
 function getFirstIndicatorId($tagId, $indCode = null, $col = null){
-	
+
 		$marcTag = DB::table('marctags_loc')->select('first_indictors')->where('id', $tagId)->first();
-		
+
 		$ind1 = json_decode($marcTag->first_indictors);
-		
+
 		if(count($ind1) > 0) {
 			$ind1Collection = DB::table('marctag_indicators_loc')->whereIn('id', $ind1)->get();
 
@@ -308,7 +322,7 @@ function getFirstIndicatorId($tagId, $indCode = null, $col = null){
 					// Get the first element (index 0) from the array
 					$code = $parts[0];
 
-					if($code == $indCode) {
+					if($code == marcFileIndToTableChar($indCode)) {
 						if($col->id != null) {
 							return $col == "indicator" ? $col->indicator : $col->id;
 						}
@@ -316,7 +330,7 @@ function getFirstIndicatorId($tagId, $indCode = null, $col = null){
 				}
 			}
 
-			
+
 		}
 
 		return $col == "indicator" ? "# - Undefined" : 1;
@@ -340,7 +354,7 @@ function getSecondIndicatorId($tagId, $indCode = null)
 				// Get the first element (index 0) from the array
 				$code = $parts[0];
 
-				if($code == $indCode) {
+				if($code == marcFileIndToTableChar($indCode)) {
 					if($col->id != null) {
 						return $col->id;
 					}

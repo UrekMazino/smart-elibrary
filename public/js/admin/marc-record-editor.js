@@ -164,14 +164,36 @@ var MarcEditor = (function () {
     }
 
     // ---- ingest ------------------------------------------------------------
-    // "N - description" / "None" -> the value stored for a MARC indicator is the
-    // leading token; keep the id so it round-trips.
+    // A MARC 21 indicator is exactly ONE character: a digit (0-9), a lowercase letter, or a
+    // blank. Reduce any incoming form to that single, export-valid character:
+    //   - reference label "<char> - <description>"  -> the leading <char>
+    //   - LoC's blank conventions '#' and '\'        -> ' ' (an actual space, 0x20)
+    //   - legacy placeholders 'None' / 'N' / empty   -> ' ' (blank)
+    // The catalog's indicators are only '#' or 0-9 (no letters), so mapping a bare 'N'/'None'
+    // to blank can't collide with a real indicator. This is the single source of truth used on
+    // load, on change, and at serialize, so field_data never holds a description or placeholder.
+    function marcIndicatorChar(raw) {
+        var t = String(raw == null ? '' : raw).trim();
+        if (t === '') return ' ';
+        if (/[\s-]/.test(t)) {                                   // "<char> - <description>"
+            var ch = t.split(/[\s-]+/)[0].charAt(0);
+            return (ch === '#' || ch === '\\') ? ' ' : ch;
+        }
+        if (t.length === 1) {                                    // already a bare single char
+            if (t === '#' || t === '\\') return ' ';
+            return /[0-9a-z]/.test(t) ? t : ' ';                 // valid MARC char, else blank
+        }
+        return ' ';                                              // bare word ('None', ...) -> blank
+    }
+    // Human-facing label for a stored indicator char (blank shows as '#', LoC's convention).
+    function indicatorLabel(ch) { return ch === ' ' ? '#' : ch; }
+
+    // Normalise a field's two indicators to {id, indicator:<MARC char>}; blank by default.
     function normIndicators(indicators) {
-        var out = [{ id: null, indicator: 'None' }, { id: null, indicator: 'None' }];
+        var out = [{ id: null, indicator: ' ' }, { id: null, indicator: ' ' }];
         (indicators || []).forEach(function (ind, i) {
             if (i > 1 || !ind) return;
-            var token = String(ind.indicator || '').split('-')[0].trim() || 'None';
-            out[i] = { id: ind.id != null ? ind.id : null, indicator: token };
+            out[i] = { id: ind.id != null ? ind.id : null, indicator: marcIndicatorChar(ind.indicator) };
         });
         return out;
     }
@@ -233,7 +255,7 @@ var MarcEditor = (function () {
             _key: nextKey(),
             editable: true,                                  // user can pick subfield codes, add/remove
             marctag: { id: details.id, code: details.code, description: details.description },
-            indicator: [{ id: null, indicator: 'None' }, { id: null, indicator: 'None' }],
+            indicator: [{ id: null, indicator: ' ' }, { id: null, indicator: ' ' }],   // blank by default
             subfield: [{ _key: nextSubKey(), id: null, code: null, description: null, value: '' }],
             options: {
                 subfields: details.subfields || [],
@@ -411,10 +433,10 @@ var MarcEditor = (function () {
 
     function buildIndicator(f, pos) {
         var $sel = $('<select>').addClass('form-select in-b width25 mr5 mfe-ind').attr('data-pos', pos);
-        var cur = f.indicator[pos] || { id: null, indicator: 'None' };
+        var cur = f.indicator[pos] || { id: null, indicator: ' ' };
 
         if (f.editable && f.options) {
-            $sel.append($('<option>').val('').text('None'));
+            $sel.append($('<option>').val('').text('# (blank)'));   // blank -> stored as a space
             (f.options.ind[pos] || []).forEach(function (ind) {
                 if (ind && ind.id != null) {
                     var opt = $('<option>').val(ind.id).text(ind.indicator);
@@ -423,8 +445,8 @@ var MarcEditor = (function () {
                 }
             });
         } else {
-            // Fixed: show the parsed/template indicator as the only option.
-            $sel.append($('<option>').attr('selected', 'selected').val(cur.id == null ? '' : cur.id).text(cur.indicator));
+            // Fixed: show the parsed/template indicator as the only option (blank shows as '#').
+            $sel.append($('<option>').attr('selected', 'selected').val(cur.id == null ? '' : cur.id).text(indicatorLabel(cur.indicator)));
         }
         return $sel;
     }
@@ -521,9 +543,11 @@ var MarcEditor = (function () {
         });
         $host.on('change', '.mfe-ind', function () {
             var f = field($(this).closest('[data-key]').data('key'));
+            // Store the single MARC indicator character (blank = space), never the label text,
+            // so the value is consistent whether or not the cataloger touched the dropdown.
             if (f) f.indicator[$(this).data('pos')] = {
                 id: $(this).val() || null,
-                indicator: $(this).find('option:selected').text()
+                indicator: marcIndicatorChar($(this).find('option:selected').text())
             };
         });
         $host.on('click', '.mfe-remove-tag', function () {
@@ -565,7 +589,8 @@ var MarcEditor = (function () {
         return fields.map(function (f, i) {
             return {
                 marctag: { index: i + 1, id: f.marctag.id, code: f.marctag.code, description: f.marctag.description },
-                indicator: f.indicator.map(function (ind) { return { id: ind.id, indicator: ind.indicator }; }),
+                // Indicators are always emitted as a single MARC character (blank = space).
+                indicator: f.indicator.map(function (ind) { return { id: ind.id, indicator: marcIndicatorChar(ind.indicator) }; }),
                 subfield: f.subfield.map(function (s, j) {
                     return { 'sub-index': j + 1, id: s.id, code: s.code, description: s.description, value: s.value };
                 })
