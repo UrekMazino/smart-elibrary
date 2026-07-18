@@ -93,15 +93,26 @@
         .cr-req { color: #c92a4b; }
         .cr-hint { color: #a3adc2; font-size: 11.5px; margin-top: 4px; display: block; }
 
-        /* Each MARC field the template loader / Add Tag renders sits in its own card. */
+        /* Each MARC field the template loader / Add Tag renders sits in its own compact card. */
         #template-div > .row {
-            border: 1px solid #eef0f2; border-radius: 8px; background: #fbfcfd;
-            padding: 12px 14px; margin: 0 0 12px !important;
+            border: 1px solid #eef0f2; border-radius: 6px; background: #fbfcfd;
+            padding: 6px 10px; margin: 0 0 6px !important;
         }
         #template-div .subfield-parent > label.strong {
-            font-size: 13.5px; color: #22283b; font-weight: 700;
+            font-size: 12px; color: #22283b; font-weight: 700; margin-bottom: 3px;
         }
-        #template-div .subfield-row { margin-bottom: 6px; }
+        /* Indicator + subfield rows: tight, small controls, single line where possible. */
+        #template-div .block.mb-2 { margin-bottom: 3px !important; }
+        #template-div .subfield-row { margin-bottom: 3px; }
+        #template-div .form-control,
+        #template-div .form-select {
+            font-size: 12px; padding: 2px 8px; height: 28px; line-height: 1.4;
+        }
+        /* Narrower controls so the subfield code + value sit side by side, not stacked. */
+        #template-div .width25 { width: 260px !important; max-width: 46%; }
+        #template-div label.strong[for="fieldName"] { font-size: 11px; }   /* the "Indicator" label */
+        #template-div .additional-subfield { margin-bottom: 0 !important; }
+        #template-div .sm-font { width: 15px !important; height: 15px !important; }
 
         /* Empty state: shown only when no fields have been added yet (CSS :empty). */
         .cr-empty {
@@ -113,17 +124,22 @@
         .cr-empty h6 { color: #55606b; font-size: 14px; font-weight: 700; margin-bottom: 4px; }
         .cr-empty p { font-size: 12.5px; margin: 0; }
 
-        /* Fixed Fields (LDR / 008) guided panel */
-        .ff-group { border: 1px solid #eef0f2; border-radius: 8px; background: #fbfcfd; padding: 12px 14px; margin-bottom: 12px; }
-        .ff-group-title { font-size: 12.5px; font-weight: 700; color: #22283b; margin-bottom: 10px; }
-        .ff-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px 14px; }
+        /* Fixed Fields (LDR / 008) guided panel — compact grid */
+        .ff-group { border: 1px solid #eef0f2; border-radius: 6px; background: #fbfcfd; padding: 8px 10px; margin-bottom: 6px; }
+        .ff-group-title { font-size: 12px; font-weight: 700; color: #22283b; margin-bottom: 7px; }
+        .ff-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px 10px; }
         .ff-cell { display: flex; flex-direction: column; }
-        .ff-label { font-size: 11px; font-weight: 600; color: #55606b; margin-bottom: 3px; }
+        .ff-label { font-size: 10.5px; font-weight: 600; color: #55606b; margin-bottom: 2px; }
+        .ff-group .form-control, .ff-group .form-select { font-size: 12px; padding: 2px 8px; height: 28px; }
         .ff-auto {
-            font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; color: #33415c;
-            background: #eef1f6; border-radius: 5px; padding: 6px 9px; letter-spacing: .5px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: #33415c;
+            background: #eef1f6; border-radius: 5px; padding: 4px 8px; letter-spacing: .5px;
         }
-        .ff-hint { font-size: 10.5px; color: #a3adc2; margin-top: 3px; }
+        .ff-hint { font-size: 10px; color: #a3adc2; margin-top: 2px; }
+
+        /* Tighter section rhythm so more tags are visible at once. */
+        .cr-section-title { margin: 0 0 8px; padding-bottom: 5px; }
+        .cr-section-title.mt-4 { margin-top: 14px !important; }
 
         .cr-actions { display: flex; gap: 8px; flex-wrap: wrap; }
         .cr-footer {
