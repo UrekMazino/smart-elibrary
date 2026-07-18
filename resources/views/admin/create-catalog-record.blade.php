@@ -81,7 +81,42 @@
         }
 
         .btn-info {
-            color: #fff !important; 
+            color: #fff !important;
+        }
+
+        /* ---- Redesign ---- */
+        .cr-section-title {
+            font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: #7987a1;
+            font-weight: 700; margin: 0 0 14px; padding-bottom: 7px; border-bottom: 1px solid #eef0f2;
+        }
+        .cr-label { font-size: 12.5px; font-weight: 600; color: #33415c; margin-bottom: 4px; }
+        .cr-req { color: #c92a4b; }
+        .cr-hint { color: #a3adc2; font-size: 11.5px; margin-top: 4px; display: block; }
+
+        /* Each MARC field the template loader / Add Tag renders sits in its own card. */
+        #template-div > .row {
+            border: 1px solid #eef0f2; border-radius: 8px; background: #fbfcfd;
+            padding: 12px 14px; margin: 0 0 12px !important;
+        }
+        #template-div .subfield-parent > label.strong {
+            font-size: 13.5px; color: #22283b; font-weight: 700;
+        }
+        #template-div .subfield-row { margin-bottom: 6px; }
+
+        /* Empty state: shown only when no fields have been added yet (CSS :empty). */
+        .cr-empty {
+            display: none; text-align: center; padding: 34px 20px; border: 1px dashed #d7dded;
+            border-radius: 10px; background: #fafbfd; color: #8a94a6;
+        }
+        #template-div:empty ~ .cr-empty { display: block; }
+        .cr-empty .icn { font-size: 26px; display: block; margin-bottom: 8px; }
+        .cr-empty h6 { color: #55606b; font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+        .cr-empty p { font-size: 12.5px; margin: 0; }
+
+        .cr-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        .cr-footer {
+            position: sticky; bottom: 0; background: #fff; border-top: 1px solid #eef0f2;
+            padding: 14px 0 2px; margin-top: 6px;
         }
     </style>
 @endsection
@@ -98,69 +133,87 @@
 		<div class="col-lg-12 grid-margin stretch-card">
 			<div class="card">
 				<div class="card-body">
-                    <div class="clearfix">
-                        <div class="pull-left">
-                            <h6 class="card-title">Create Record</h6>
-                        </div>
-                        <div class="pull-right">
-                            <a href="{{ url('/admin/create-record') }}" class="btn btn-secondary">Clear</a>
-                            <button class="btn btn-primary" type="button" onclick="showAddFieldModal()">+ Add Tag</button>
-                            <button class="btn btn-info" type="button" onclick="showImportModal('create')">Parse a Record</button>
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-1">
+                        <h6 class="card-title mb-0">Create Record</h6>
+                        <div class="cr-actions">
+                            <button class="btn btn-outline-primary btn-sm" type="button" onclick="showAddFieldModal()">
+                                <i data-feather="plus" class="icon-sm me-1"></i>Add Tag
+                            </button>
+                            <button class="btn btn-outline-info btn-sm" type="button" onclick="showImportModal('create')">
+                                <i data-feather="file-text" class="icon-sm me-1"></i>Parse a Record
+                            </button>
+                            <a href="{{ url('/admin/create-record') }}" class="btn btn-outline-secondary btn-sm">
+                                <i data-feather="rotate-ccw" class="icon-sm me-1"></i>Clear
+                            </a>
                         </div>
                     </div>
-                    <!-- <a href="{{ url('/admin/get-marc-template-details?template_id=15') }}">Test</a> -->
+                    <p class="text-muted mb-4" style="font-size: 12.5px;">
+                        Pick a MARC template to load its standard fields, then fill in the values.
+                        Use <strong>Add Tag</strong> for any extra MARC field, or <strong>Parse a
+                        Record</strong> to import from a pasted MARC record.
+                    </p>
+
                     <form method="post" action="{{ url('/admin/create-record/store') }}" id="createRecordFrm" enctype="multipart/form-data">
                         @csrf
-                        <div class="container" id="main-el">
+                        <div id="main-el">
                             @error('marcFile')
-                            <div class="mb-3">
-                                <span class="text-danger">{{ $message }}</span>
-                            </div>
+                                <div class="alert alert-danger py-2" style="font-size: 13px;">{{ $message }}</div>
                             @enderror
-                            <div class="mb-3">
-                                <label for="marcTemplateSelect" class="form-label"><strong>MARC Template</strong></label>
-                                <select class="form-select" name="marc_template" id="marcTemplateSelect">
-                                    <option selected disabled>Select a Template</option>
-                                    @foreach($marcTemplates as $index => $template)
-                                        <option value="{{$template->id}}">{{ $template->name }}</option>
-                                    @endforeach
-                                </select>
+
+                            <div class="cr-section-title">Record details</div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="marcTemplateSelect" class="cr-label">MARC Template <span class="cr-req">*</span></label>
+                                    <select class="form-select" name="marc_template" id="marcTemplateSelect">
+                                        <option selected disabled>Select a Template</option>
+                                        @foreach($marcTemplates as $index => $template)
+                                            <option value="{{$template->id}}">{{ $template->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <span class="cr-hint">Loads the standard MARC fields for this material.</span>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="materialTypeSelect" class="cr-label">Material Type <span class="cr-req">*</span></label>
+                                    <select class="form-select" name="material_type" id="materialTypeSelect">
+                                        <option selected disabled>Select Material Type</option>
+                                        @foreach($materials as $material)
+                                            <option value="{{$material->id}}" class="{{ $material->code }}">{{ $material->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
                             </div>
-                            <div class="mb-3">
-                                <label for="materialTypeSelect" class="form-label"><strong>Material Type</strong></label>
-                                <select class="form-select" name="material_type" id="materialTypeSelect">
-                                    <option selected disabled>Select Material Type</option>
-                                    @foreach($materials as $material)
-                                        <option value="{{$material->id}}" class="{{ $material->code }}">{{ $material->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="mb-3">
-                                <label for="accessionNumber" class="form-label"><strong>Accession Number</strong></label>
-                                <input type="text" class="form-control" id="accessionNumber" name="accession_number" autocomplete="off" placeholder="Enter accession number..." required>
-                            </div>
-                            <div class="mb-5">
-                                <div class="container-fluid">
-                                    <div class="row">
-                                        <div class="col col-lg-3">
-                                            <div class="form-check mb-2">
-                                                <input type="checkbox" class="form-check-input" id="isAANR" name="is_aanr">
-                                                <label class="form-check-label" for="isAANR">
-                                                    <strong>AANR?</strong> (Check if yes)
-                                                </label>
-                                            </div>
-                                        </div>
+                            <div class="row align-items-end">
+                                <div class="col-md-6 mb-3">
+                                    <label for="accessionNumber" class="cr-label">Accession Number <span class="cr-req">*</span></label>
+                                    <input type="text" class="form-control" id="accessionNumber" name="accession_number" autocomplete="off" placeholder="Enter accession number…" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" id="isAANR" name="is_aanr">
+                                        <label class="form-check-label" for="isAANR">
+                                            <strong>AANR</strong> &mdash; part of the AANR collection
+                                        </label>
                                     </div>
                                 </div>
                             </div>
-                            <div class="mb-3" id="template-div">
 
+                            <div class="cr-section-title mt-4">MARC Fields</div>
+                            <div id="template-div"></div>
+                            <div class="cr-empty">
+                                <span class="icn">&#128218;</span>
+                                <h6>No fields yet</h6>
+                                <p>Select a MARC template above to load its fields, or use <strong>Add Tag</strong>.</p>
                             </div>
+
                             <input type="hidden" id="importFlag" value="{{ isset($fieldData) ? 1 : 0; }}">
                             <input id="fieldData" class="form-control" name="field_data" type="hidden" value="{{ isset($fieldData) ? $fieldData : '[]'; }}">
                         </div>
-                        <button class="btn btn-info" type="submit">Create</button>
-                        <!-- <button class="btn btn-primary" onclick="showSwal('custom-position')">Click here!</button> -->
+
+                        <div class="cr-footer">
+                            <button class="btn btn-primary" type="submit">
+                                <i data-feather="save" class="icon-sm me-1"></i>Create Record
+                            </button>
+                        </div>
                     </form>
 				</div>
 			</div>
