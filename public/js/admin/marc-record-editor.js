@@ -1,5 +1,11 @@
 /* =====================================================================
- * MARC field editor for the Create Record page.
+ * Shared MARC field editor for the Create Record AND Edit Record pages.
+ *
+ * The module (MarcEditor) is page-agnostic; the wiring at the bottom is
+ * config-driven via two page globals:
+ *   marcEditorMode    'create' | 'edit'   -> LDR$05 record status (n new / c revised)
+ *   marcInitialFields source-shape array  -> fields to pre-load (create: core bib tags;
+ *                                            edit: the record being edited)
  *
  * State management (the point of this file):
  *   - ONE in-memory array `fields` is the single source of truth.
@@ -29,7 +35,9 @@ var MarcEditor = (function () {
     var keySeq  = 0;
     var subSeq  = 0;
     var $host;             // #template-div
+    var _mode   = 'create';// 'create' | 'edit' — drives LDR$05 record status (n vs c)
 
+    function setMode(m)   { _mode = (m === 'edit') ? 'edit' : 'create'; }
     function nextKey()    { return ++keySeq; }
     function nextSubKey() { return ++subSeq; }
     function esc(s)       { return $('<div>').text(s == null ? '' : String(s)).html(); }
@@ -102,40 +110,57 @@ var MarcEditor = (function () {
         return { _key: nextSubKey(), id: null, code: code, description: description, value: value };
     }
 
-    function makeLeader(materialName) {
-        var t = marcTypeFor(materialName);
+    // Canonical position lists, so building and *completing* a fixed field share one
+    // source of truth. Record status ('n' new / 'c' corrected) is filled in per-mode.
+    function leaderPositions(status, mat) {
+        var t = marcTypeFor(mat);
+        return [
+            ['LDR$05', 'Record status', status],
+            ['LDR$06', 'Type of record', t.type],
+            ['LDR$07', 'Bibliographic level', t.bib],
+            ['LDR$09', 'Character coding scheme', 'a'],   // Unicode (auto)
+            ['LDR$17', 'Encoding level', ' '],
+            ['LDR$18', 'Descriptive cataloging form', 'i']
+        ];
+    }
+    function f008Positions(pubYear) {
+        var y = String(pubYear || '').replace(/[^0-9]/g, '').slice(0, 4);
+        return [
+            ['008$00-05', 'Date entered on file', yymmdd()],   // auto
+            ['008$06', 'Type of date/Publication status', 's'],
+            ['008$07-10', 'Date 1', y || '    '],
+            ['008$11-14', 'Date 2', '    '],
+            ['008$15-17', 'Place of publication', 'ph '],
+            ['008$35-37', 'Language', 'eng'],
+            ['008$38', 'Modified record', ' '],                // auto
+            ['008$39', 'Cataloging source', 'd']
+        ];
+    }
+
+    function makeLeader(materialName, status) {
         return {
             _key: nextKey(), fixed: true,
             marctag: { id: 2501, code: 'LDR', description: 'Leader' },
             indicator: [{ id: null, indicator: 'None' }, { id: null, indicator: 'None' }],
-            subfield: [
-                sub('LDR$05', 'Record status', 'n'),               // new record (auto)
-                sub('LDR$06', 'Type of record', t.type),
-                sub('LDR$07', 'Bibliographic level', t.bib),
-                sub('LDR$09', 'Character coding scheme', 'a'),      // Unicode (auto)
-                sub('LDR$17', 'Encoding level', ' '),
-                sub('LDR$18', 'Descriptive cataloging form', 'i')
-            ]
+            subfield: leaderPositions(status, materialName).map(function (p) { return sub(p[0], p[1], p[2]); })
         };
     }
 
     function make008(pubYear) {
-        var y = String(pubYear || '').replace(/[^0-9]/g, '').slice(0, 4);
         return {
             _key: nextKey(), fixed: true,
             marctag: { id: 6, code: '008', description: 'Fixed-Length Data Elements' },
             indicator: [{ id: null, indicator: 'None' }, { id: null, indicator: 'None' }],
-            subfield: [
-                sub('008$00-05', 'Date entered on file', yymmdd()),  // auto
-                sub('008$06', 'Type of date/Publication status', 's'),
-                sub('008$07-10', 'Date 1', y || '    '),
-                sub('008$11-14', 'Date 2', '    '),
-                sub('008$15-17', 'Place of publication', 'ph '),
-                sub('008$35-37', 'Language', 'eng'),
-                sub('008$38', 'Modified record', ' '),              // auto
-                sub('008$39', 'Cataloging source', 'd')
-            ]
+            subfield: f008Positions(pubYear).map(function (p) { return sub(p[0], p[1], p[2]); })
         };
+    }
+
+    // Add any position the field is missing (a partial LDR/008 from an old/imported record),
+    // WITHOUT overwriting values the record already has.
+    function completeField(f, positions) {
+        positions.forEach(function (p) {
+            if (!subByCode(f, p[0])) f.subfield.push(sub(p[0], p[1], p[2]));
+        });
     }
 
     // ---- ingest ------------------------------------------------------------
@@ -184,7 +209,13 @@ var MarcEditor = (function () {
 
     // If a control field carries LDR$06 (type of record), preselect the Material Type
     // dropdown from it — preserves the behaviour the old parse renderer had.
+    // BUT never override a real selection already made: the Edit page server-preselects the
+    // record's own material (a numeric id), which is authoritative. Some materials share the
+    // single-char MARC type codes (a/c/t/...) as their class, so without this guard opening
+    // Edit would silently switch the dropdown from the record's material to the type-code one.
     function autoSelectMaterial() {
+        var cur = $('#materialTypeSelect').val();
+        if (cur && /^\d+$/.test(cur)) return;   // a real material id is already selected -> keep it
         fields.forEach(function (f) {
             f.subfield.forEach(function (s) {
                 if (s.code === 'LDR$06' && s.value) {
@@ -244,21 +275,34 @@ var MarcEditor = (function () {
     }
 
     // ---- fixed fields (LDR / 008) -----------------------------------------
-    // Ensure a leader + 008 exist. Called on template load / material select; creates them
-    // once, and keeps the material-driven positions (type, bib level) in sync with the
-    // Material Type dropdown without clobbering the cataloger's other edits.
+    // Ensure a leader + 008 exist and are complete. Creates them if missing; if a record
+    // has a partial LDR/008 (e.g. an import with only LDR$06), fills in the rest WITHOUT
+    // clobbering existing values. Keeps the material-driven positions (type, bib level) in
+    // sync with the Material Type dropdown.
+    //
+    // Record status (LDR$05): 'n' new on create, 'c' corrected/revised on edit — an
+    // existing record being edited is, by definition, a revision. Only bumped from
+    // new/blank -> corrected, so a deliberate status ('d' deleted, etc.) is preserved.
     function ensureFixed(materialName, pubYear) {
         var t = marcTypeFor(materialName);
+        var newStatus = _mode === 'edit' ? 'c' : 'n';
 
         var ldr = fieldByCode('LDR');
-        if (!ldr) { ldr = makeLeader(materialName); fields.push(ldr); }
-        else if (materialName) {
-            var s6 = subByCode(ldr, 'LDR$06'); if (s6) s6.value = t.type;
-            var s7 = subByCode(ldr, 'LDR$07'); if (s7) s7.value = t.bib;
+        if (!ldr) {
+            fields.push(makeLeader(materialName, newStatus));
+        } else {
+            completeField(ldr, leaderPositions(newStatus, materialName));
+            if (materialName) {   // material drives type + bib level
+                subByCode(ldr, 'LDR$06').value = t.type;
+                subByCode(ldr, 'LDR$07').value = t.bib;
+            }
+            var st = subByCode(ldr, 'LDR$05');
+            if (_mode === 'edit' && st && (st.value === 'n' || !String(st.value).trim())) st.value = 'c';
         }
 
         var f008 = fieldByCode('008');
-        if (!f008) { f008 = make008(pubYear); fields.push(f008); }
+        if (!f008) fields.push(make008(pubYear));
+        else completeField(f008, f008Positions(pubYear));
 
         sortFields();
         render();
@@ -537,6 +581,7 @@ var MarcEditor = (function () {
 
     return {
         init: init,
+        setMode: setMode,
         loadFromSource: loadFromSource,
         addTag: addTag,
         ensureFixed: ensureFixed,
@@ -548,21 +593,25 @@ var MarcEditor = (function () {
 })();
 
 
-/* ---- Wiring -------------------------------------------------------------- */
+/* ---- Wiring (shared by Create + Edit; config-driven) -------------------- */
 
 $(document).ready(function () {
+    // marcEditorMode / marcInitialFields are set per-page before this script loads.
+    var mode = (typeof marcEditorMode !== 'undefined') ? marcEditorMode : 'create';
+    MarcEditor.setMode(mode);   // 'edit' => LDR$05 record status becomes 'c' (revised)
     MarcEditor.init('#template-div');
 
-    // Fresh form (not a parse, not a validation repopulate): pre-load the core
-    // bibliographic tags and generate the LDR + 008 so the cataloguer starts with a
-    // ready-to-fill record. single-import.js owns the importFlag == 1 (parse) case.
-    if ($('#importFlag').val() != 1 && typeof defaultMarcFields !== 'undefined' && defaultMarcFields.length) {
-        MarcEditor.loadFromSource(defaultMarcFields);
+    // Normal load (not a parse round-trip): pre-load the initial fields — create: the core
+    // bibliographic tags; edit: the record being edited — and ensure/complete the LDR + 008.
+    // single-import.js owns the importFlag == 1 (Parse a Record) case on both pages.
+    if ($('#importFlag').val() != 1) {
+        var initial = (typeof marcInitialFields !== 'undefined') ? marcInitialFields : [];
+        if (initial && initial.length) MarcEditor.loadFromSource(initial);
         MarcEditor.ensureFixed(selectedMaterialName());   // LDR/06 = 'a' (books) by default
     }
 
-    // Serialize the in-memory state into #fieldData once, at submit time.
-    $('#createRecordFrm').on('submit', function () {
+    // Serialize the in-memory state into #fieldData once, at submit time (either form).
+    $('#createRecordFrm, #updateRecordFrm').on('submit', function () {
         MarcEditor.commit($('#fieldData'));
     });
 });

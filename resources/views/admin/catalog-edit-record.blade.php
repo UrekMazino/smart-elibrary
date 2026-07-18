@@ -109,6 +109,27 @@
         #template-div .additional-subfield { margin-bottom: 0 !important; }
         #template-div .sm-font { width: 15px !important; height: 15px !important; }
 
+        /* Value editor: the value input is disabled (edited via the plain-text editor). */
+        #template-div .mfe-value:disabled { background: #eef2f6; color: #33415c; cursor: default; -webkit-text-fill-color: #33415c; }
+        #template-div .mfe-edit-btn { height: 28px; padding: 1px 7px; line-height: 1; vertical-align: top; }
+        #template-div .mfe-editor { display: none; vertical-align: top; width: 40%; min-width: 200px; margin-left: 4px; }
+        #template-div .mfe-editor.open { display: inline-block; }
+        #template-div .mfe-editor-ta { font-size: 12px; padding: 4px 8px; height: auto; min-height: 48px; resize: vertical; }
+        #template-div .subfield-row.mfe-editing { align-items: flex-start; }
+
+        /* Fixed Fields (LDR / 008) guided panel — compact grid */
+        .ff-group { border: 1px solid #eef0f2; border-radius: 6px; background: #fbfcfd; padding: 8px 10px; margin-bottom: 6px; }
+        .ff-group-title { font-size: 12px; font-weight: 700; color: #22283b; margin-bottom: 7px; }
+        .ff-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px 10px; }
+        .ff-cell { display: flex; flex-direction: column; }
+        .ff-label { font-size: 10.5px; font-weight: 600; color: #55606b; margin-bottom: 2px; }
+        .ff-group .form-control, .ff-group .form-select { font-size: 12px; padding: 2px 8px; height: 28px; }
+        .ff-auto {
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: #33415c;
+            background: #eef1f6; border-radius: 5px; padding: 4px 8px; letter-spacing: .5px;
+        }
+        .ff-hint { font-size: 10px; color: #a3adc2; margin-top: 2px; }
+
         .cr-actions { display: flex; gap: 8px; flex-wrap: wrap; }
         .cr-footer {
             position: sticky; bottom: 0; background: #fff; border-top: 1px solid #eef0f2;
@@ -132,7 +153,7 @@
                     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-1">
                         <h6 class="card-title mb-0">Edit Record</h6>
                         <div class="cr-actions">
-                            <button class="btn btn-outline-primary btn-sm" type="button" onclick="showAddTagModal()">
+                            <button class="btn btn-outline-primary btn-sm" type="button" onclick="showAddFieldModal()">
                                 <i data-feather="plus" class="icon-sm me-1"></i>Add Tag
                             </button>
                             <button class="btn btn-outline-info btn-sm" type="button" onclick="showImportModal('edit')">
@@ -192,6 +213,18 @@
                                 </div>
                             </div>
 
+                            {{-- Guided LDR/008 fixed-field editor. Hidden until a leader/008 exists. --}}
+                            <div id="fixed-fields-card" style="display:none;">
+                                <div class="cr-section-title mt-4">Fixed Fields (LDR / 008)</div>
+                                <p class="text-muted mb-2" style="font-size: 12px;">
+                                    Structural positions are set automatically (marked <em>auto</em>). On edit the
+                                    record status becomes <strong>c &mdash; corrected/revised</strong>. Verify the coded
+                                    positions below &mdash; type of record and bibliographic level follow the material
+                                    type; encoding level, dates, country and language are yours to confirm.
+                                </p>
+                                <div id="fixed-fields-body"></div>
+                            </div>
+
                             <div class="cr-section-title mt-4">MARC Fields</div>
                             <div id="template-div"></div>
 
@@ -221,37 +254,39 @@
 @section('js')
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net/jquery.dataTables.js') }}"></script>
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net-bs5/dataTables.bootstrap5.js') }}"></script>
-<script src="{{ asset('js/admin/edit-catalog-record.js') }}"></script>
-<script> 
-    let getMarcDetailsUrl = '{{ url("/admin/get-marc-tag-details") }}';
+{{-- Config before the scripts that consume it. Edit uses the SAME shared MarcEditor as create. --}}
+<script>
+  let getTemplateDetailsUrl = '{{ url("/admin/get-marc-template-details") }}';
+  let getMarcDetailsUrl     = '{{ url("/admin/get-marc-tag-details") }}';
+  let marcEditorMode        = 'edit';   // -> LDR$05 record status becomes 'c' (corrected/revised)
+  // The record being edited, in source shape. On a Parse-a-Record round-trip ($fieldData set)
+  // this is empty and single-import.js repopulates the editor from the parsed record instead.
+  let marcInitialFields     = @json(isset($fieldData) ? [] : ($recordMarcFields ?? []));
 </script>
-@if(session('success'))            
+<script src="{{ asset('js/admin/marc-record-editor.js') }}"></script>
+<script src="{{ asset('js/admin/import/single-import.js') }}"></script>
+@if(session('success'))
 <script>
     showSwal('custom-position');
 </script>
 @endif
-<script> 
-  let getTemplateDetailsUrl = '{{ url("/admin/get-marc-template-details") }}';
-</script>
 <script>
-    $(document).on('click', '.add-tag-link', function(event) {
+    // "ADD" in the Add Tag modal -> append that MARC field to the record.
+    $(document).on('click', '.add-field-link', function(event) {
         event.preventDefault();
-
-        let rowId = $(this).data('row-id');
-        let firstArray = $(this).data('first-array');
-        let secondArray = $(this).data('second-array');
-        
-        // Call your addTag function with the retrieved data
-        addTag(rowId, firstArray, secondArray);
+        addTag($(this).data('row-id'));
     });
 </script>
 <script>
-    
 $(document).ready(function(){
     $('#marc-table').DataTable({
         processing: true,
         serverSide: true,
-        ajax: '{{ url("/admin/marc-tags-list/json") }}',
+        ajax: {
+            url: '{{ url("/admin/marc-tags-list/json") }}',
+            // Hide LDR/008 — they're generated + edited in the Fixed Fields panel, not added by hand.
+            data: function (d) { d.exclude_control = 1; }
+        },
         columns: [
             { data: 'code',
                 render: function (data) {
@@ -260,35 +295,17 @@ $(document).ready(function(){
             },
             { data: 'description',
                 render: function (data, type, row) {
-                    return '<a href="#" class="mtag-desc add-tag-link" data-row-id="' + row.id + '" data-first-array=\'' + row.first_indictors + '\' data-second-array=\'' + row.second_indicators + '\'>' + data + '</a>';
+                    return '<a href="#" class="mtag-desc add-field-link" data-row-id="' + row.id + '">' + data + '</a>';
                 }
             },
             { data: 'id', className: 'text-end',
                 render: function (data, type, row) {
-                    return '<button type="button" class="btn btn-sm btn-primary add-tag-link" data-row-id="' + row.id + '" data-first-array=\'' + row.first_indictors + '\' data-second-array=\'' + row.second_indicators + '\'>+ Add</button>';
+                    return '<button type="button" class="btn btn-sm btn-primary add-field-link" data-row-id="' + row.id + '">+ Add</button>';
                 }
             },
         ],
         language: { search: '', searchPlaceholder: 'Search tag number or name…', lengthMenu: 'Show _MENU_' }
     });
-
-
-    // $(function() {
-    //     showSwal = function(type) {
-    //         if (type === 'custom-position') {
-    //             Swal.fire({
-    //             position: 'top-end',
-    //             icon: 'success',
-    //             title: 'Your work has been saved',
-    //             showConfirmButton: false,
-    //             timer: 1500
-    //             })
-    //         } 
-    //     }
-
-    // });
-
-
 });
 </script>
 @endsection

@@ -102,6 +102,77 @@ class CatalogingController extends Controller
         return $fields;
     }
 
+    /**
+     * Convert a stored record's field_data (FINAL shape — what MarcEditor.serialize() emits
+     * and updateRecord parses) into the SOURCE shape MarcEditor.loadFromSource() consumes, so
+     * the edit page renders through the same shared editor the create page uses.
+     *
+     * The stored subfield 'value' becomes the pre-filled 'default'. Non-control tags are marked
+     * editable (add/remove subfield + delete tag) and carry their full subfield picker; 245 is
+     * flagged required (can't be deleted). LDR/008 stay non-editable — they render in the guided
+     * Fixed Fields panel and are completed/normalised client-side by MarcEditor.ensureFixed().
+     */
+    private function recordSourceFields($fieldDataJson): array
+    {
+        $fieldData = is_array($fieldDataJson) ? $fieldDataJson : json_decode($fieldDataJson ?: '[]', true);
+        if (! is_array($fieldData)) {
+            return [];
+        }
+
+        $fields = [];
+        foreach ($fieldData as $item) {
+            if (! isset($item['marctag']['code'])) {
+                continue;
+            }
+            $tag     = $item['marctag'];
+            $code    = (string) $tag['code'];
+            $isFixed = ($code === 'LDR' || $code === '008');
+
+            // Subfield rows, carrying the stored value across as the pre-filled 'default'.
+            $subfields = [];
+            foreach ($item['subfield'] ?? [] as $s) {
+                $subfields[] = [
+                    'id'          => $s['id'] ?? null,
+                    'code'        => $s['code'] ?? null,
+                    'description' => $s['description'] ?? null,
+                    'default'     => $s['value'] ?? '',
+                ];
+            }
+
+            // Every subfield this tag allows — powers the row picker + Add Subfield. Skipped for
+            // the fixed control fields (edited through the guided panel, not the generic card UI).
+            $allSubfields = [];
+            if (! $isFixed && isset($tag['id'])) {
+                $allSubfields = DB::table('marctag_subfields_loc')->where('marctags_loc_id', $tag['id'])
+                    ->orderBy('code')->get()
+                    ->map(fn ($s) => ['id' => $s->id, 'code' => $s->code, 'description' => $s->description])->all();
+            }
+
+            $indicators = [];
+            foreach ($item['indicator'] ?? [] as $ind) {
+                $indicators[] = ['id' => $ind['id'] ?? 0, 'indicator' => $ind['indicator'] ?? 'None'];
+            }
+            if (count($indicators) < 2) {
+                $indicators = [['id' => 0, 'indicator' => 'None'], ['id' => 0, 'indicator' => 'None']];
+            }
+
+            $fields[] = [
+                'tag'          => [
+                    'id'          => $tag['id'] ?? null,
+                    'code'        => $code,
+                    'description' => $tag['description'] ?? $code,
+                    'isRequired'  => $code === '245' ? 1 : 0,   // 245 can't be deleted
+                ],
+                'subfields'    => $subfields,
+                'allSubfields' => $allSubfields,
+                'editable'     => ! $isFixed,   // LDR/008 -> guided fixed-field panel
+                'indicators'   => $indicators,
+            ];
+        }
+
+        return $fields;
+    }
+
     public function viewRecord(Request $request)
     {
      
@@ -1615,14 +1686,21 @@ class CatalogingController extends Controller
     public function editRecord($id)
     {
         $record = Catalog::where('id', $id)->first();
-        
-        $fieldData = $record->field_data;
-        
+
         $marcTemplates = MarcTemplate::get();
 
         $materials = Material::get();
-        // dd($fieldData);
-        return view('admin.catalog-edit-record', ['marcTemplates' => $marcTemplates, 'materials' => $materials, 'record' => $record, 'fieldData' => $fieldData]);
+
+        return view('admin.catalog-edit-record', [
+            'marcTemplates'    => $marcTemplates,
+            'materials'        => $materials,
+            'record'           => $record,
+            // The record in SOURCE shape for the shared MarcEditor (create + edit share one
+            // module). No 'fieldData' key here — that is set ONLY on a Parse-a-Record round-trip
+            // (singleImportMarcFile action=edit), which flips the page's import flag so
+            // single-import.js repopulates the editor instead of this initial record load.
+            'recordMarcFields' => $this->recordSourceFields($record->field_data),
+        ]);
     }
 
     public function updateRecord(Request $request, $id)

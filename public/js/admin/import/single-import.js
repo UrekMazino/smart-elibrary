@@ -1,11 +1,14 @@
-/* Parse a Record (single MARC import) for the Create Record page.
+/* Parse a Record (single MARC import) for the Create AND Edit Record pages.
  *
- * The parse is a server round-trip: uploading a MARC file re-renders this page with
+ * The parse is a server round-trip: uploading a MARC file re-renders the page with
  * #fieldData pre-filled with the parsed record in SOURCE shape ({fields:[...]}) and
  * #importFlag = 1. Here we hand those fields to the shared MarcEditor, which owns all
  * rendering and state — the same module the template loader and Add Tag use. (Previously
  * this file was a ~300-line second copy of the renderer with duplicate ids and
  * per-keystroke JSON rebuilds.)
+ *
+ * marc-record-editor.js loads before this file, so its $(document).ready has already run
+ * MarcEditor.setMode(...) by the time the parse handler below calls ensureFixed().
  */
 $(document).ready(function () {
     if ($('#importFlag').val() != 1) return;

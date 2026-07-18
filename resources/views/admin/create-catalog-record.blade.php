@@ -281,11 +281,12 @@
 <script>
   let getTemplateDetailsUrl = '{{ url("/admin/get-marc-template-details") }}';
   let getMarcDetailsUrl     = '{{ url("/admin/get-marc-tag-details") }}';
+  let marcEditorMode        = 'create';
   // Core bibliographic tags pre-loaded on a fresh form (source shape). Empty on a
   // parse/repopulate ($fieldData set), where the parsed record takes over instead.
-  let defaultMarcFields     = @json(isset($fieldData) ? [] : ($defaultFields ?? []));
+  let marcInitialFields     = @json(isset($fieldData) ? [] : ($defaultFields ?? []));
 </script>
-<script src="{{ asset('js/admin/create-catalog-record.js') }}"></script>
+<script src="{{ asset('js/admin/marc-record-editor.js') }}"></script>
 <script src="{{ asset('js/admin/import/single-import.js') }}"></script>
 @if(session('success'))
 <script>
