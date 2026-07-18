@@ -133,18 +133,29 @@ class ConfigurationController extends Controller
         $columnSortOrder = $order_arr[0]['dir']; // asc or desc
         $searchValue = $search_arr['value']; // Search value
 
-        // Total records
-        $totalRecords = MarctagsLoc::count();
+        // The create form asks to hide the control fields that can't be added by hand
+        // (LDR and 008 are auto-generated and edited in the Fixed Fields panel). Sent only
+        // from that page, so the edit page's Add Tag list is unchanged.
+        $excludeControl = $request->boolean('exclude_control');
 
-        $totalRecordswithFilter = MarctagsLoc::select(DB::raw('count(*) as allcount'))
-            ->where('code', 'like', '%' . $searchValue . '%')
-            ->orWhere('description', 'like', '%' .$searchValue . '%')
+        // Search grouped in a closure so the exclusion below is a real AND, not defeated
+        // by the code/description OR.
+        $search = function ($q) use ($searchValue) {
+            $q->where('code', 'like', '%' . $searchValue . '%')
+              ->orWhere('description', 'like', '%' . $searchValue . '%');
+        };
+
+        // Total records
+        $totalRecords = MarctagsLoc::when($excludeControl, fn ($q) => $q->whereNotIn('code', ['LDR', '008']))->count();
+
+        $totalRecordswithFilter = MarctagsLoc::where($search)
+            ->when($excludeControl, fn ($q) => $q->whereNotIn('code', ['LDR', '008']))
             ->count();
 
         // Fetch records
-        $records = MarctagsLoc::orderBy($columnName, $columnSortOrder)
-            ->where('code', 'like', '%' . $searchValue . '%')
-            ->orWhere('description', 'like', '%' .$searchValue . '%')
+        $records = MarctagsLoc::where($search)
+            ->when($excludeControl, fn ($q) => $q->whereNotIn('code', ['LDR', '008']))
+            ->orderBy($columnName, $columnSortOrder)
             ->skip($start)
             ->take($rowPerPage)
             ->get();

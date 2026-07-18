@@ -35,7 +35,7 @@
         .sm-font {
             width: 18px !important;
             height: 18px !important;
-        
+
         }
 
         .danger-clr {
@@ -95,7 +95,7 @@
 
         /* Each MARC field the template loader / Add Tag renders sits in its own compact card. */
         #template-div > .row {
-            border: 1px solid #eef0f2; border-radius: 6px; background: #fbfcfd;
+            border: 1px solid #e4eff1; border-radius: 6px; background: #e4eff1;
             padding: 6px 10px; margin: 0 0 6px !important;
         }
         #template-div .subfield-parent > label.strong {
@@ -171,7 +171,7 @@
                                 <i data-feather="file-text" class="icon-sm me-1"></i>Parse a Record
                             </button>
                             <a href="{{ url('/admin/create-record') }}" class="btn btn-outline-secondary btn-sm">
-                                <i data-feather="rotate-ccw" class="icon-sm me-1"></i>Clear
+                                <i data-feather="rotate-ccw" class="icon-sm me-1"></i>Reset Form
                             </a>
                         </div>
                     </div>
@@ -292,12 +292,16 @@
     });
 </script>
 <script>
-    
+
 $(document).ready(function(){
     $('#marc-table').DataTable({
         processing: true,
         serverSide: true,
-        ajax: '{{ url("/admin/marc-tags-list/json") }}',
+        ajax: {
+            url: '{{ url("/admin/marc-tags-list/json") }}',
+            // Hide LDR/008 — they're generated + edited in the Fixed Fields panel, not added by hand.
+            data: function (d) { d.exclude_control = 1; }
+        },
         columns: [
             { data: 'code'},
             { data: 'description',
@@ -309,7 +313,7 @@ $(document).ready(function(){
             { data: 'id',
                 render: function(data, type, row) {
                     return '<a href="#" class="add-field-link btn btn-info" data-row-id="' + row.id + '" data-first-array=\'' + row.first_indictors + '\' data-second-array=\'' + row.second_indicators + '\'>ADD</a>';
-                } 
+                }
             },
         ]
     });
@@ -325,7 +329,7 @@ $(document).ready(function(){
     //             showConfirmButton: false,
     //             timer: 1500
     //             })
-    //         } 
+    //         }
     //     }
 
     // });

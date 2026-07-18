@@ -74,6 +74,7 @@ class CatalogingController extends Controller
                 continue;
             }
 
+            // The subfields actually pre-loaded as rows (with their values to fill).
             $subfields = [];
             foreach ($subCodes as $sc) {
                 $s = DB::table('marctag_subfields_loc')->where('marctags_loc_id', $tag->id)->where('code', $sc)->first();
@@ -82,10 +83,19 @@ class CatalogingController extends Controller
                 }
             }
 
+            // Every subfield this tag allows — the picker for existing rows and Add Subfield.
+            $allSubfields = DB::table('marctag_subfields_loc')->where('marctags_loc_id', $tag->id)
+                ->orderBy('code')->get()
+                ->map(fn ($s) => ['id' => $s->id, 'code' => $s->code, 'description' => $s->description])->all();
+
             $fields[] = [
-                'tag'        => ['id' => $tag->id, 'code' => $tag->code, 'description' => $tag->description, 'isRequired' => $tagCode === '245' ? 1 : 0],
-                'subfields'  => $subfields,
-                'indicators' => [['id' => 0, 'indicator' => 'None'], ['id' => 0, 'indicator' => 'None']],
+                // Note: PHP casts numeric array keys to int, so compare the DB code string,
+                // not $tagCode (which is int 245 here, and 245 === '245' is false).
+                'tag'          => ['id' => $tag->id, 'code' => $tag->code, 'description' => $tag->description, 'isRequired' => $tag->code === '245' ? 1 : 0],
+                'subfields'    => $subfields,
+                'allSubfields' => $allSubfields,   // -> select options (shows "245$a - Title")
+                'editable'     => true,            // pre-loaded tags get add/remove subfield + delete tag
+                'indicators'   => [['id' => 0, 'indicator' => 'None'], ['id' => 0, 'indicator' => 'None']],
             ];
         }
 

@@ -153,9 +153,13 @@ var MarcEditor = (function () {
 
     function fromSource(sf) {
         var code = sf.tag.code;
+        // Pre-loaded default tags come with editable:true + allSubfields (they get add/
+        // remove subfield + delete tag). Template/parsed fields stay fixed-structure.
+        var editable = !!sf.editable;
         return {
             _key: nextKey(),
-            editable: false,                                  // fixed structure (template / parsed)
+            editable: editable,
+            required: !!(sf.tag && sf.tag.isRequired),        // required tags (245) can't be deleted
             fixed: (code === 'LDR' || code === '008'),        // -> guided fixed-field panel, not a generic card
             marctag: { id: sf.tag.id, code: code, description: sf.tag.description },
             indicator: normIndicators(sf.indicators),
@@ -166,7 +170,7 @@ var MarcEditor = (function () {
                     value: (s.default && s.default !== 'Enter value') ? s.default : ''
                 };
             }),
-            options: null
+            options: editable ? { subfields: sf.allSubfields || [], ind: [[], []] } : null
         };
     }
 
@@ -233,6 +237,8 @@ var MarcEditor = (function () {
         renderField(f);
     }
     function removeField(key) {
+        var f = field(key);
+        if (f && f.required) return;   // required tags can't be removed (defensive; icon is hidden too)
         fields = fields.filter(function (f) { return f._key != key; });
         $host.find('[data-key="' + key + '"]').remove();
     }
@@ -329,10 +335,15 @@ var MarcEditor = (function () {
             .text(f.marctag.code + ' - ' + f.marctag.description);
         $parent.append($label);
 
-        if (f.editable) {
+        // Delete-tag control — but not for a required tag (e.g. 245 Title Statement).
+        if (f.editable && !f.required) {
             $parent.append(' ', $('<i>').addClass('sm-font danger-clr in-b mfe-remove-tag').attr({
                 'data-bs-toggle': 'tooltip', 'title': 'Remove Tag', 'data-feather': 'minus-square'
             }));
+        }
+        if (f.required) {
+            $parent.append(' ', $('<span>').addClass('badge bg-light text-muted')
+                .css({ 'font-size': '9.5px', 'font-weight': 600 }).text('required'));
         }
 
         // Indicators
@@ -473,6 +484,7 @@ var MarcEditor = (function () {
         loadFromSource: loadFromSource,
         addTag: addTag,
         ensureFixed: ensureFixed,
+        removeField: removeField,
         serialize: serialize,
         commit: commit,
         _fields: function () { return fields; }   // for tests/inspection
