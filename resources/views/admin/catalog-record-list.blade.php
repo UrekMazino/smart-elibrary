@@ -63,6 +63,16 @@
                     <h6 class="card-title mb-0">CATALOG LIST</h6>
                     <div class="btn-group btn-group-sm me-2">
                       <button class="btn btn-outline-warning btn-sm" onclick="holdAllPublished()">Hold All</button>
+                      <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">Export MARC</button>
+                      <ul class="dropdown-menu" aria-labelledby="exportDropdown">
+                          <li><h6 class="dropdown-header">Published list</h6></li>
+                          <li><a class="dropdown-item" href="{{ route('export-records', ['format' => 'mrc', 'status' => 'published']) }}">MARC21 binary (.mrc)</a></li>
+                          <li><a class="dropdown-item" href="{{ route('export-records', ['format' => 'xml', 'status' => 'published']) }}">MARCXML (.xml)</a></li>
+                          <li><hr class="dropdown-divider"></li>
+                          <li><h6 class="dropdown-header">Entire catalog</h6></li>
+                          <li><a class="dropdown-item" href="{{ route('export-records', ['format' => 'mrc']) }}">MARC21 binary (.mrc)</a></li>
+                          <li><a class="dropdown-item" href="{{ route('export-records', ['format' => 'xml']) }}">MARCXML (.xml)</a></li>
+                      </ul>
                       <button class="btn btn-outline-info btn-sm dropdown-toggle" type="button" id="filterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                          Resource Filter
                       </button>

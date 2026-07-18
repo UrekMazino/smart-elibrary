@@ -94,6 +94,9 @@ Route::controller(CatalogingController::class, 'admin')->middleware('can:access.
     Route::post('/admin/view-record', 'viewRecord');
     // GET landing for a single record (used by the post-create redirect / PRG).
     Route::get('/admin/view-record/{id}', 'showRecord')->name('show-record');
+    // MARC export: single record + batch, each as MARC21 binary (.mrc) or MARCXML (.xml).
+    Route::get('/admin/export-record/{id}/{format}', 'exportRecord')->name('export-record')->where('format', 'mrc|xml');
+    Route::get('/admin/export-records/{format}', 'exportRecords')->name('export-records')->where('format', 'mrc|xml');
     Route::post('/admin/view-batch', 'viewBatch');
     Route::get('/admin/batch-records/{id}', 'viewBatchRecords');
     Route::get('/admin/batch-records-json/{id}', 'viewBatchRecordsJson');

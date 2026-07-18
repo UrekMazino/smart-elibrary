@@ -17,6 +17,7 @@ use App\Models\MarcTemplate;
 use App\Models\Material;
 use App\Models\Multimedia;
 use App\Models\ViewCatalog;
+use App\Services\MarcExportService;
 use Illuminate\Support\Facades\DB;
 use Scriptotek\Marc\Collection;
 use Scriptotek\Marc\Record;
@@ -202,6 +203,79 @@ class CatalogingController extends Controller
         $citations = buildCitations(ViewCatalog::where('catalog_id', $catalogId)->first());
 
         return view('admin.catalog-view-record', ['record' => $record, 'fullText' => $fullText, 'coverPage' => $coverPage, 'title' => $title, 'totalCopies' => $totalCopies, 'citations' => $citations]);
+    }
+
+    /**
+     * Export one record as MARC21 binary (.mrc) or MARCXML (.xml). Indicators are normalised at
+     * export time by MarcExportService (blank -> space) — see [[elibrary-marc-indicators]].
+     */
+    public function exportRecord($id, $format, MarcExportService $marc)
+    {
+        // File_MARC (the underlying lib) emits PHP 8.x deprecation notices; keep them out of the
+        // binary/XML body so the downloaded file isn't corrupted.
+        error_reporting(error_reporting() & ~E_DEPRECATED);
+
+        $catalog = Catalog::whereNull('deleted_at')->findOrFail($id);
+        $record  = $marc->buildRecord($catalog);
+
+        return $format === 'xml'
+            ? response($marc->toXml([$record]), 200, [
+                'Content-Type'        => 'application/xml; charset=UTF-8',
+                'Content-Disposition' => 'attachment; filename="record-' . $catalog->id . '.xml"',
+            ])
+            : response($marc->toBinary([$record]), 200, [
+                'Content-Type'        => 'application/marc',
+                'Content-Disposition' => 'attachment; filename="record-' . $catalog->id . '.mrc"',
+            ]);
+    }
+
+    /**
+     * Batch-export the catalog as one .mrc or .xml file, streamed + chunked so a large catalog
+     * doesn't exhaust memory. Optional ?status=published|onhold scopes it to one list.
+     */
+    public function exportRecords(Request $request, $format, MarcExportService $marc)
+    {
+        error_reporting(error_reporting() & ~E_DEPRECATED);
+
+        $status = $request->query('status');
+        $build  = fn () => Catalog::whereNull('deleted_at')
+            ->when($status === 'published', fn ($q) => $q->where('is_published', 1))
+            ->when($status === 'onhold', fn ($q) => $q->where('is_published', 0))
+            ->orderBy('id');
+
+        $name = 'catalog' . ($status ? '-' . $status : '') . '-' . now()->format('Ymd-His');
+
+        if ($format === 'xml') {
+            return response()->stream(function () use ($build, $marc) {
+                $w = new \XMLWriter();
+                $w->openUri('php://output');
+                $w->setIndent(true);
+                $marc->xmlCollectionStart($w);
+                $build()->chunk(200, function ($chunk) use ($w, $marc) {
+                    foreach ($chunk as $catalog) {
+                        $marc->writeRecordXml($w, $marc->buildRecord($catalog));
+                    }
+                    $w->flush();
+                });
+                $marc->xmlCollectionEnd($w);
+                $w->flush();
+            }, 200, [
+                'Content-Type'        => 'application/xml; charset=UTF-8',
+                'Content-Disposition' => 'attachment; filename="' . $name . '.xml"',
+            ]);
+        }
+
+        return response()->stream(function () use ($build, $marc) {
+            $build()->chunk(200, function ($chunk) use ($marc) {
+                foreach ($chunk as $catalog) {
+                    echo $marc->toBinary([$marc->buildRecord($catalog)]);
+                }
+                flush();
+            });
+        }, 200, [
+            'Content-Type'        => 'application/marc',
+            'Content-Disposition' => 'attachment; filename="' . $name . '.mrc"',
+        ]);
     }
 
     public function viewBatch(Request $request)

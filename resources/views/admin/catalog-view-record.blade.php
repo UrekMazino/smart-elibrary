@@ -68,9 +68,20 @@
                 <li class="breadcrumb-item active" aria-current="page">{{ $title }}</li>
             </ol>
         </nav>
-        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="goBack()">
-            <i data-feather="arrow-left" class="icon-sm"></i> Back
-        </button>
+        <div class="d-flex gap-2">
+            <div class="dropdown">
+                <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i data-feather="download" class="icon-sm"></i> Export MARC
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="{{ route('export-record', ['id' => $record->id, 'format' => 'mrc']) }}">MARC21 binary (.mrc)</a></li>
+                    <li><a class="dropdown-item" href="{{ route('export-record', ['id' => $record->id, 'format' => 'xml']) }}">MARCXML (.xml)</a></li>
+                </ul>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="goBack()">
+                <i data-feather="arrow-left" class="icon-sm"></i> Back
+            </button>
+        </div>
     </div>
 
     <div class="row">
