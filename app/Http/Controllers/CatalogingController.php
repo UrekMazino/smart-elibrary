@@ -18,6 +18,7 @@ use App\Models\Material;
 use App\Models\Multimedia;
 use App\Models\ViewCatalog;
 use App\Services\MarcExportService;
+use App\Services\RagSync;
 use Illuminate\Support\Facades\DB;
 use Scriptotek\Marc\Collection;
 use Scriptotek\Marc\Record;
@@ -1074,6 +1075,15 @@ class CatalogingController extends Controller
         // CatalogImportProgress::truncate();
 
         clearHomeCache();
+
+        // Queue the imported batch for RAG sync (records start on-hold; the worker gates on
+        // is_published, so nothing is indexed until the batch is published).
+        RagSync::enqueueMany(
+            Catalog::where('catalog_import_id', $catalogImport->id)->pluck('id'),
+            RagSync::UPSERT,
+            'imported'
+        );
+
         return view('admin.batch-list', ['message' => 'Successfully saved!']);
 
     }
@@ -1093,6 +1103,10 @@ class CatalogingController extends Controller
     public function destroyBatch(Request $request)
     {
         $user = Auth::user();
+
+        // Capture the batch's catalog ids before the soft-delete so we can drop them from RAG.
+        $batchIds = Catalog::where('catalog_import_id', $request->id)->pluck('id');
+
         CatalogImport::where('id',$request->id)
             ->update([
                     'deleted_at' => now(),
@@ -1114,6 +1128,9 @@ class CatalogingController extends Controller
         // Same as destroyRecord: the query-builder update bypasses Scout, so remove the
         // whole batch from the search index (else the docs linger with deleted_at = null).
         ViewCatalog::where('catalog_import_id', $request->id)->get()->unsearchable();
+
+        // Queue the whole batch for RAG sync removal.
+        RagSync::enqueueMany($batchIds, RagSync::DELETE, 'deleted');
 
         // Deleting a batch changes the collection -> bust the home caches (destroyRecord
         // already does this; batch delete was missing it and left a stale homepage).
@@ -1739,6 +1756,9 @@ class CatalogingController extends Controller
 
         clearHomeCache();
 
+        // Queue for RAG sync (new records default to on-hold; the worker gates on is_published).
+        RagSync::enqueue($catalog->id, RagSync::UPSERT, 'created');
+
         // Post/Redirect/Get: land on the new record's view page (a redirect, so a refresh
         // won't re-submit the form and create a duplicate).
         return redirect()->route('show-record', ['id' => $catalog->id]);
@@ -1763,6 +1783,9 @@ class CatalogingController extends Controller
         // Otherwise its Meilisearch doc keeps deleted_at = null, still matches the OPAC's
         // "deleted_at IS NULL" filter, and inflates the result count vs what's shown.
         optional(ViewCatalog::where('catalog_id', $request->id)->first())->unsearchable();
+
+        // Queue for RAG sync — remove this record's chunks from the index.
+        RagSync::enqueue((int) $request->id, RagSync::DELETE, 'deleted');
 
         clearHomeCache();
         return redirect()->back();
@@ -2048,6 +2071,9 @@ class CatalogingController extends Controller
             }
 
         clearHomeCache();
+
+        // Queue for RAG sync — metadata and/or full text may have changed.
+        RagSync::enqueue((int) $id, RagSync::UPSERT, 'updated');
 
         // Post/Redirect/Get: land on the record's view page after saving (same as create).
         return redirect()->route('show-record', ['id' => $id]);
@@ -2374,6 +2400,10 @@ class CatalogingController extends Controller
     public function holdAllPublished()
     {
         $user = Auth::user();
+
+        // Capture the affected ids BEFORE the flip (they won't match is_published=1 after).
+        $affected = Catalog::where('is_published', 1)->pluck('id');
+
         Catalog::where('is_published', 1)
         ->update([
             'is_published' => 0,
@@ -2391,12 +2421,19 @@ class CatalogingController extends Controller
         // Bulk change -> re-index so Meilisearch reflects the new is_published values.
         ViewCatalog::makeAllSearchable();
 
+        // All held -> queue for RAG sync to remove them from the index.
+        RagSync::enqueueMany($affected, RagSync::DELETE, 'unpublished');
+
         return response()->json(['success' => true]);
     }
 
     public function publishAllOnhold(Request $request)
     {
         $user = Auth::user();
+
+        // Capture the affected ids BEFORE the flip (they won't match is_published=0 after).
+        $affected = Catalog::where('is_published', 0)->pluck('id');
+
         Catalog::where('is_published', 0)
         ->update([
             'is_published' => 1,
@@ -2413,6 +2450,9 @@ class CatalogingController extends Controller
 
         // Bulk change -> re-index so Meilisearch reflects the new is_published values.
         ViewCatalog::makeAllSearchable();
+
+        // All published -> queue for RAG sync to index them.
+        RagSync::enqueueMany($affected, RagSync::UPSERT, 'published');
 
         return response()->json(['success' => true]);
     }
@@ -2438,6 +2478,9 @@ class CatalogingController extends Controller
         // Meilisearch keeps the stale is_published and the OPAC search filter hides it.
         optional(ViewCatalog::where('catalog_id', $request->catalog_id)->first())->searchable();
 
+        // Now published -> queue for RAG sync (worker will index it).
+        RagSync::enqueue((int) $request->catalog_id, RagSync::UPSERT, 'published');
+
         return response()->json(['success' => true]);
     }
 
@@ -2461,6 +2504,9 @@ class CatalogingController extends Controller
         // Re-index so Meilisearch reflects is_published=0 (record hidden from OPAC search).
         optional(ViewCatalog::where('catalog_id', $request->catalog_id)->first())->searchable();
 
+        // Held -> queue for RAG sync (worker removes it from the index).
+        RagSync::enqueue((int) $request->catalog_id, RagSync::DELETE, 'unpublished');
+
         return response()->json(['success' => true]);
     }
 
@@ -2483,6 +2529,14 @@ class CatalogingController extends Controller
 
         // Re-index the batch so Meilisearch reflects the new is_published values.
         ViewCatalog::where('catalog_import_id', $request->catalog_import_id)->get()->each(fn($m) => $m->searchable());
+
+        // Queue the whole batch for RAG sync — publish -> index, hold -> remove.
+        $batchIds = Catalog::where('catalog_import_id', $request->catalog_import_id)->pluck('id');
+        RagSync::enqueueMany(
+            $batchIds,
+            $request->action == 1 ? RagSync::UPSERT : RagSync::DELETE,
+            $request->action == 1 ? 'published' : 'unpublished'
+        );
 
         return view('admin.batch-list');
     }
@@ -2617,9 +2671,13 @@ class CatalogingController extends Controller
                         'updated_at' => now(),
                     ]);
             }
+
+            // Full-text PDF changed -> queue for RAG sync (worker re-OCRs + re-embeds).
+            RagSync::enqueue((int) $request->catalog_id, RagSync::UPSERT, 'updated');
+
             $record = Catalog::select('catalogs.*')
                 ->where('catalogs.id',$request->catalog_id)
-                ->first(); 
+                ->first();
 
             $fullText = Multimedia::where('catalog_id',$request->catalog_id)->whereNull('deleted_at')->first();
             $coverPage = Frontpage::where('catalog_id',$request->catalog_id)->whereNull('deleted_at')->first();
@@ -2644,6 +2702,9 @@ class CatalogingController extends Controller
             ->update([
             'deleted_at' => now()
         ]);
+
+        // Full text removed -> queue for RAG sync (record reverts to metadata-only).
+        RagSync::enqueue((int) $request->catalog_id, RagSync::UPSERT, 'updated');
         $coverPage = Frontpage::where('catalog_id',$request->catalog_id)->whereNull('deleted_at')->first();
         $fullText = Multimedia::where('catalog_id',$request->catalog_id)->whereNull('deleted_at')->first();
         $record = Catalog::select('catalogs.*')
