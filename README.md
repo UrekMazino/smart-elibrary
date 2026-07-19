@@ -1,3 +1,13 @@
+# smart-eLibrary
+
+FPRDI/DOST agri-forestry catalog / OPAC (Laravel), built RAG-ready for the **Project Y** local AI stack.
+
+**📖 Documentation**
+- **Full-stack rebuild** (this app + Hermes + RAG): [`DEPLOYMENT_RUNBOOK.md`](https://github.com/UrekMazino/hermes-with-rag/blob/main/DEPLOYMENT_RUNBOOK.md) in the `hermes-with-rag` repo — the single ordered entry point.
+- **This repo's docs:** [`LARAVEL_UPGRADE_RUNBOOK.md`](LARAVEL_UPGRADE_RUNBOOK.md) · [`MEILISEARCH_SETUP.md`](MEILISEARCH_SETUP.md) · [`RAG_INTEGRATION_PLAN.md`](RAG_INTEGRATION_PLAN.md) · [`RAG_CATALOG_SYNC_PLAN.md`](RAG_CATALOG_SYNC_PLAN.md) · [`Z3950_SRU_INTEGRATION_PLAN.md`](Z3950_SRU_INTEGRATION_PLAN.md)
+
+---
+
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400"></a></p>
 
 <p align="center">

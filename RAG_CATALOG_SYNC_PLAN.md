@@ -149,6 +149,9 @@ Subtle for catalogers, richer for the Project Y admin.
 - Hard-delete chunks vs. a query-time `is_published` / `deleted` filter in LanceDB.
 
 ## 9. References / related
+- **Operational side (the worker) lives in the `hermes-with-rag` repo:** run/schedule it via
+  `CATALOG_SYNC_RUNBOOK.md`, and the whole stack rebuild via `DEPLOYMENT_RUNBOOK.md` (the single
+  ordered entry point + doc index across both repos).
 - `RAG_INTEGRATION_PLAN.md` — the corpus build (OCR → chunk → embed → LanceDB, `search_docs` MCP).
 - eLibrary RAG-readiness: `catalog_id` join key, `public/` storage, `buildCitations()`.
 - Scout/Meilisearch drift lesson (bulk ops bypass model events) — the reason reconciliation + explicit
