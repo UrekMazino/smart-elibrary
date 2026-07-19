@@ -22,6 +22,37 @@ class RagSync
     public const UPSERT = 'upsert';
     public const DELETE = 'delete';
 
+    /** Must match MAX_ATTEMPTS in rag/rag_sync_worker.py (a row is "failed" once it hits this). */
+    public const MAX_ATTEMPTS = 5;
+
+    /**
+     * Best-effort AI-index status for a record, from is_published + the outbox state (the Laravel
+     * side can't query LanceDB directly). Returns ['label' => ..., 'class' => <bootstrap bg-*>].
+     */
+    public static function statusFor(int $catalogId, $isPublished): array
+    {
+        if (! $isPublished) {
+            return ['label' => 'Hidden from AI', 'class' => 'bg-secondary'];
+        }
+
+        $pending = RagSyncItem::whereNull('processed_at')->where('catalog_id', $catalogId)->first();
+        if ($pending) {
+            return $pending->attempts >= self::MAX_ATTEMPTS
+                ? ['label' => 'AI index failed', 'class' => 'bg-danger']
+                : ['label' => 'Queued for AI', 'class' => 'bg-info'];
+        }
+
+        $last = RagSyncItem::whereNotNull('processed_at')->where('catalog_id', $catalogId)
+            ->orderByDesc('processed_at')->first();
+        if (! $last) {
+            return ['label' => 'Not queued', 'class' => 'bg-light text-dark'];
+        }
+
+        return $last->action === self::DELETE
+            ? ['label' => 'Removed from AI', 'class' => 'bg-secondary']
+            : ['label' => 'AI-indexed', 'class' => 'bg-success'];
+    }
+
     /** Enqueue one catalog_id. If an unprocessed row already exists for it, update in place (latest wins). */
     public static function enqueue(int $catalogId, string $action, string $reason): void
     {

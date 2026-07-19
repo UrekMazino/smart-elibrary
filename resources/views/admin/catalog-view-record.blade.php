@@ -103,6 +103,10 @@
             <div class="card">
                 <div class="card-header">
                     <span class="card-title">Details for:</span><h3> {!! $title !!} </h3>
+                    @php $ragStatus = \App\Services\RagSync::statusFor($record->id, $record->is_published); @endphp
+                    <span class="badge {{ $ragStatus['class'] }}" style="font-size: 11px;" title="AI (RAG) search index status">
+                        <i data-feather="cpu" class="icon-sm" style="width:13px;height:13px;"></i> {{ $ragStatus['label'] }}
+                    </span>
                 </div>
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-baseline mb-4 mb-md-3">

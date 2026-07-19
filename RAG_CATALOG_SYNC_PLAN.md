@@ -1,9 +1,10 @@
 # RAG ↔ Catalog Sync — Plan (feeding live catalog changes to Hermes)
 
-**Status:** In progress. **Producer (Laravel) + worker scaffold (Python) + manual re-index UI are
-built and verified end-to-end (dry-run).** Remaining: the real embedding/LanceDB write (needs the
-`catalog_id`-column prereq below + GPU batch window), the nightly reconciliation sweep, and the
-per-record status badge.
+**Status:** Functional end-to-end. Producer (Laravel) + worker (Python) + manual re-index UI +
+**real LanceDB write/delete** + **reconciliation sweep** + **status badge** are all built and
+verified against the live DB/index. Remaining is operational: scheduling the worker + nightly
+reconcile, an optional processed-row purge policy, running the full initial backfill, and (later)
+content-hash re-sync + a list-column badge.
 **Last updated:** 2026-07-19
 
 ### Implemented so far
@@ -18,10 +19,18 @@ per-record status badge.
   catalog_id, marks done/error with bounded retries; `--once` / `--loop` / `--catalog-id` / `--stats`
   / `--dry-run`. Reuses the eLibrary `.env` for DB creds and the corpus BGE-M3 embedder. Verified in
   `--dry-run` against the live DB (enqueue → drain → done).
-- **INTEGRATION PREREQ for real writes:** the existing LanceDB `research` table was indexed
-  file-keyed (no `catalog_id` column). Rows written by the worker carry `catalog_id`; a one-time
-  re-index/backfill adds it to legacy corpus rows. Until then the worker runs `--dry-run`. New deps:
-  `pymysql` (added to the rag venv).
+- **Real LanceDB write/delete (DONE):** `rag/lance_add_catalog_id.py` added a nullable `catalog_id`
+  column to the 353,604-row `research` table (corpus rows → NULL; idempotent). Worker verified with a
+  real BGE-M3 write + delete round-trip for one record (`--cpu` to coexist with llama-server) — rows
+  land keyed by catalog_id and delete-by-catalog_id removes them, corpus intact. New deps: `pymysql`
+  (uv-managed venv — `uv pip install pymysql`).
+- **Reconciliation sweep (DONE):** `rag_sync_worker.py --reconcile` diffs published catalog_ids (DB)
+  vs indexed (LanceDB, native filtered scan) and enqueues the drift (`reason=reconcile`); run a drain
+  to apply. Presence-based; content-hash re-sync is a later refinement. Nightly = `--reconcile` then
+  a drain, in the GPU window.
+- **Status badge (DONE):** `App\Services\RagSync::statusFor()` (is_published + outbox state) →
+  Hidden from AI / Queued / AI-indexed / AI index failed / Removed / Not queued; shown on the record
+  View page. (A per-row list badge would need a recordListJson join — later.)
 
 **Scope:** how newly **created / edited / deleted / imported / (un)published** catalog materials
 reach the Project Y RAG index so the **Hermes agent** (`search_docs` MCP) can answer over them.
