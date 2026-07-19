@@ -78,11 +78,25 @@
                     <li><a class="dropdown-item" href="{{ route('export-record', ['id' => $record->id, 'format' => 'xml']) }}">MARCXML (.xml)</a></li>
                 </ul>
             </div>
+            <form method="POST" action="{{ route('reindex-record', ['id' => $record->id]) }}" class="d-inline">
+                @csrf
+                <button type="submit" class="btn btn-sm btn-outline-info" title="Queue this record for AI (RAG) re-indexing">
+                    <i data-feather="refresh-cw" class="icon-sm"></i> Re-index for AI
+                </button>
+            </form>
             <button type="button" class="btn btn-sm btn-outline-secondary" onclick="goBack()">
                 <i data-feather="arrow-left" class="icon-sm"></i> Back
             </button>
         </div>
     </div>
+
+    @if(session('rag_reindexed'))
+        <div class="alert alert-success alert-dismissible py-2 mb-3" style="font-size: 13px;" role="alert">
+            <i data-feather="check-circle" class="icon-sm me-1"></i>
+            Queued for AI re-indexing &mdash; it will be picked up on the next indexing run.
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
 
     <div class="row">
         <div class="col-md-12">

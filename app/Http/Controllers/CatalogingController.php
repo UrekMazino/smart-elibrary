@@ -279,6 +279,30 @@ class CatalogingController extends Controller
         ]);
     }
 
+    /**
+     * Manually queue one record for RAG re-indexing (the human override for drift — e.g. after
+     * fixing OCR). Just enqueues; the worker gates on is_published as usual.
+     */
+    public function reindexRecord($id)
+    {
+        RagSync::enqueue((int) $id, RagSync::UPSERT, 'manual');
+        return back()->with('rag_reindexed', 1);
+    }
+
+    /** Bulk manual re-index — all non-deleted records, optionally scoped by ?status=published|onhold. */
+    public function reindexRecords(Request $request)
+    {
+        $status = $request->input('status', $request->query('status'));
+        $ids = Catalog::whereNull('deleted_at')
+            ->when($status === 'published', fn ($q) => $q->where('is_published', 1))
+            ->when($status === 'onhold', fn ($q) => $q->where('is_published', 0))
+            ->pluck('id');
+
+        RagSync::enqueueMany($ids, RagSync::UPSERT, 'manual');
+
+        return response()->json(['success' => true, 'queued' => $ids->count()]);
+    }
+
     public function viewBatch(Request $request)
     {
         $batch = CatalogImport::select('*', 'catalog_imports.id as batch_id')

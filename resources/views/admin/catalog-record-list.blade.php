@@ -73,6 +73,7 @@
                           <li><a class="dropdown-item" href="{{ route('export-records', ['format' => 'mrc']) }}">MARC21 binary (.mrc)</a></li>
                           <li><a class="dropdown-item" href="{{ route('export-records', ['format' => 'xml']) }}">MARCXML (.xml)</a></li>
                       </ul>
+                      <button class="btn btn-outline-info btn-sm" type="button" onclick="reindexAllForAi()" title="Queue all published records for AI (RAG) re-indexing">Re-index AI</button>
                       <button class="btn btn-outline-info btn-sm dropdown-toggle" type="button" id="filterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                          Resource Filter
                       </button>
@@ -270,6 +271,38 @@ function refreshPage() {
 function refreshAjax() {
     let table = $('#tbl').DataTable();
     table.ajax.reload(null, false); // Reload the table data without resetting the pagination
+}
+
+function reindexAllForAi() {
+  Swal.fire({
+      title: 'Re-index for AI?',
+      text: "All published records will be queued for AI (RAG) re-indexing.",
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, queue them',
+      cancelButtonText: 'Cancel',
+      reverseButtons: true
+    }).then((result) => {
+      if (result.value) {
+        $.ajax({
+          url: "{{ route('reindex-records') }}",
+          method: "POST",
+          data: { _token: "{{ csrf_token() }}", status: "published" },
+          success: function (response) {
+            Swal.fire({
+                title: 'Queued',
+                text: (response.queued || 0) + ' record(s) queued for AI re-indexing.',
+                icon: 'success',
+                timer: 1500,
+                showConfirmButton: false
+            });
+          },
+          error: function () {
+              Swal.fire('Error', 'Could not queue records for re-indexing.', 'error');
+          }
+        });
+      }
+    });
 }
 
 function holdAllPublished()

@@ -1,8 +1,27 @@
 # RAG ↔ Catalog Sync — Plan (feeding live catalog changes to Hermes)
 
-**Status:** Not started — planning / reference only. Captured from a design discussion so it can be
-revisited before implementation. No code written for this yet.
+**Status:** In progress. **Producer (Laravel) + worker scaffold (Python) + manual re-index UI are
+built and verified end-to-end (dry-run).** Remaining: the real embedding/LanceDB write (needs the
+`catalog_id`-column prereq below + GPU batch window), the nightly reconciliation sweep, and the
+per-record status badge.
 **Last updated:** 2026-07-19
+
+### Implemented so far
+- **Producer (eLibrary, committed):** `rag_sync_queue` table (migration), `RagSyncItem` model,
+  `App\Services\RagSync` (`enqueue` deduped / `enqueueMany` bulk, both never-throw). Enqueue wired
+  into every catalog mutation (create/update/delete, publish/hold single+bulk+batch-toggle, import,
+  batch-delete, full-text upload/remove).
+- **Manual re-index UI (eLibrary):** `reindexRecord` / `reindexRecords` endpoints; a "Re-index for
+  AI" button on the record view + a "Re-index AI" bulk action on the record list.
+- **Worker scaffold (Project Y):** `rag/rag_sync_worker.py` — drains `rag_sync_queue`, is_published
+  gate, resolves metadata (`view_catalogs`) + PDF (`multimedia` → `public/`), upsert/delete by
+  catalog_id, marks done/error with bounded retries; `--once` / `--loop` / `--catalog-id` / `--stats`
+  / `--dry-run`. Reuses the eLibrary `.env` for DB creds and the corpus BGE-M3 embedder. Verified in
+  `--dry-run` against the live DB (enqueue → drain → done).
+- **INTEGRATION PREREQ for real writes:** the existing LanceDB `research` table was indexed
+  file-keyed (no `catalog_id` column). Rows written by the worker carry `catalog_id`; a one-time
+  re-index/backfill adds it to legacy corpus rows. Until then the worker runs `--dry-run`. New deps:
+  `pymysql` (added to the rag venv).
 
 **Scope:** how newly **created / edited / deleted / imported / (un)published** catalog materials
 reach the Project Y RAG index so the **Hermes agent** (`search_docs` MCP) can answer over them.

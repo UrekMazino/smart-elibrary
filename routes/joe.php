@@ -97,6 +97,9 @@ Route::controller(CatalogingController::class, 'admin')->middleware('can:access.
     // MARC export: single record + batch, each as MARC21 binary (.mrc) or MARCXML (.xml).
     Route::get('/admin/export-record/{id}/{format}', 'exportRecord')->name('export-record')->where('format', 'mrc|xml');
     Route::get('/admin/export-records/{format}', 'exportRecords')->name('export-records')->where('format', 'mrc|xml');
+    // Manual RAG re-index (human override for drift): single record + bulk.
+    Route::post('/admin/reindex-record/{id}', 'reindexRecord')->name('reindex-record');
+    Route::post('/admin/reindex-records', 'reindexRecords')->name('reindex-records');
     Route::post('/admin/view-batch', 'viewBatch');
     Route::get('/admin/batch-records/{id}', 'viewBatchRecords');
     Route::get('/admin/batch-records-json/{id}', 'viewBatchRecordsJson');
