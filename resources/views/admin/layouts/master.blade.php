@@ -236,6 +236,17 @@ License: For each use you must have a valid license purchased only from above li
                 </a>
               </li>
             @endcan
+
+            {{-- Shown under Administration, but needs cataloging access: it re-syncs catalog data
+                 via the access.cataloging reindex routes. --}}
+            @can('access.cataloging')
+              <li class="nav-item">
+                <a href="{{ url('/admin/ai-sync-monitor') }}" class="nav-link">
+                  <i class="link-icon" data-feather="cpu"></i>
+                  <span class="link-title">AI Sync Monitor</span>
+                </a>
+              </li>
+            @endcan
             @hasanyrole('super_admin|developer')
             <li class="nav-item">
               <a href="{{ route('admin.list_roles') }}" class="nav-link">

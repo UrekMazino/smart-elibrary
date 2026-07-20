@@ -303,6 +303,95 @@ class CatalogingController extends Controller
         return response()->json(['success' => true, 'queued' => $ids->count()]);
     }
 
+    /**
+     * AI Sync Monitor — an audit trail over the rag_sync_queue outbox: which catalogs changed
+     * (added / PDF changed / edited / removed / (un)published) and whether the AI index is in sync,
+     * so an admin can decide what to re-sync. See RAG_CATALOG_SYNC_PLAN.md.
+     */
+    public function aiSyncMonitor()
+    {
+        $counts = [
+            'pending' => DB::table('rag_sync_queue')->whereNull('processed_at')->where('attempts', '<', RagSync::MAX_ATTEMPTS)->count(),
+            'failed'  => DB::table('rag_sync_queue')->whereNull('processed_at')->where('attempts', '>=', RagSync::MAX_ATTEMPTS)->count(),
+            'synced'  => DB::table('rag_sync_queue')->whereNotNull('processed_at')->count(),
+        ];
+
+        return view('admin.rag-sync-monitor', compact('counts'));
+    }
+
+    /** Server-side data for the monitor table (DataTables shape). */
+    public function aiSyncMonitorJson(Request $request)
+    {
+        $draw   = (int) $request->get('draw');
+        $start  = (int) $request->get('start', 0);
+        $length = (int) $request->get('length', 25);
+        $search = trim((string) $request->input('search.value', ''));
+        $change = $request->get('change');       // reason group filter
+        $status = $request->get('sync_status');  // pending|failed|synced|removed
+
+        $q = DB::table('rag_sync_queue as q')
+            ->leftJoin('view_catalogs as vc', 'vc.catalog_id', '=', 'q.catalog_id')
+            ->select('q.id', 'q.catalog_id', 'q.action', 'q.reason', 'q.attempts', 'q.error',
+                'q.created_at', 'q.processed_at', 'vc.title_statement');
+
+        // Change-type filter (grouped for convenience).
+        if ($change === 'pdf') {
+            $q->whereIn('q.reason', ['fulltext_added', 'fulltext_updated', 'fulltext_removed']);
+        } elseif ($change === 'added') {
+            $q->whereIn('q.reason', ['created', 'imported']);
+        } elseif ($change) {
+            $q->where('q.reason', $change);
+        }
+
+        // Sync-status filter (derived from processed_at + attempts + action).
+        if ($status === 'pending') {
+            $q->whereNull('q.processed_at')->where('q.attempts', '<', RagSync::MAX_ATTEMPTS);
+        } elseif ($status === 'failed') {
+            $q->whereNull('q.processed_at')->where('q.attempts', '>=', RagSync::MAX_ATTEMPTS);
+        } elseif ($status === 'synced') {
+            $q->whereNotNull('q.processed_at')->where('q.action', RagSync::UPSERT);
+        } elseif ($status === 'removed') {
+            $q->whereNotNull('q.processed_at')->where('q.action', RagSync::DELETE);
+        }
+
+        if ($search !== '') {
+            $q->where(function ($w) use ($search) {
+                $w->where('vc.title_statement', 'like', "%{$search}%")
+                    ->orWhere('q.catalog_id', 'like', "%{$search}%");
+            });
+        }
+
+        $total = (clone $q)->count();
+
+        $rows = $q->orderByDesc('q.created_at')->orderByDesc('q.id')
+            ->skip($start)->take($length)->get();
+
+        $data = [];
+        foreach ($rows as $r) {
+            $changeLbl = RagSync::changeLabel($r->reason);
+            $stat      = RagSync::rowStatusLabel($r->processed_at, (int) $r->attempts, $r->action);
+            $errIcon = $r->error
+                ? ' <i data-feather="alert-triangle" class="text-danger icon-sm" title="' . htmlspecialchars($r->error, ENT_QUOTES, 'UTF-8') . '"></i>'
+                : '';
+            $data[] = [
+                'catalog_id' => $r->catalog_id,
+                'title'      => htmlspecialchars($r->title_statement ?? '(deleted / unknown)', ENT_QUOTES, 'UTF-8'),
+                'change'     => '<span class="badge ' . $changeLbl['class'] . '">' . $changeLbl['label'] . '</span>',
+                'when'       => $r->created_at,
+                'synced'     => $r->processed_at ?? '<span class="text-muted">—</span>',
+                'status'     => '<span class="badge ' . $stat['class'] . '">' . $stat['label'] . '</span>' . $errIcon,
+                'resync'     => $r->catalog_id,
+            ];
+        }
+
+        return response()->json([
+            'draw'                 => $draw,
+            'iTotalRecords'        => $total,
+            'iTotalDisplayRecords' => $total,
+            'aaData'               => $data,
+        ]);
+    }
+
     public function viewBatch(Request $request)
     {
         $batch = CatalogImport::select('*', 'catalog_imports.id as batch_id')
@@ -2696,8 +2785,9 @@ class CatalogingController extends Controller
                     ]);
             }
 
-            // Full-text PDF changed -> queue for RAG sync (worker re-OCRs + re-embeds).
-            RagSync::enqueue((int) $request->catalog_id, RagSync::UPSERT, 'updated');
+            // Full-text PDF added/replaced -> queue for RAG sync (worker re-OCRs + re-embeds).
+            // Distinct reason so the AI Sync Monitor can flag PDF changes (heavy) vs metadata edits.
+            RagSync::enqueue((int) $request->catalog_id, RagSync::UPSERT, is_null($coverPage) ? 'fulltext_added' : 'fulltext_updated');
 
             $record = Catalog::select('catalogs.*')
                 ->where('catalogs.id',$request->catalog_id)
@@ -2728,7 +2818,7 @@ class CatalogingController extends Controller
         ]);
 
         // Full text removed -> queue for RAG sync (record reverts to metadata-only).
-        RagSync::enqueue((int) $request->catalog_id, RagSync::UPSERT, 'updated');
+        RagSync::enqueue((int) $request->catalog_id, RagSync::UPSERT, 'fulltext_removed');
         $coverPage = Frontpage::where('catalog_id',$request->catalog_id)->whereNull('deleted_at')->first();
         $fullText = Multimedia::where('catalog_id',$request->catalog_id)->whereNull('deleted_at')->first();
         $record = Catalog::select('catalogs.*')

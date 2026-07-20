@@ -31,6 +31,13 @@ content-hash re-sync + a list-column badge.
 - **Status badge (DONE):** `App\Services\RagSync::statusFor()` (is_published + outbox state) →
   Hidden from AI / Queued / AI-indexed / AI index failed / Removed / Not queued; shown on the record
   View page. (A per-row list badge would need a recordListJson join — later.)
+- **AI Sync Monitor (DONE):** an admin audit-trail page over the outbox (`/admin/ai-sync-monitor`,
+  in the Cataloging nav) — lists catalog changes (Added / PDF changed / Edited / Removed /
+  Published / Held) with per-row sync status (Pending / Failed / Synced / Removed), filters by
+  change-type + status, pending/failed/synced counts, and a per-row **Re-sync** action. Backed by
+  `aiSyncMonitorJson` + `RagSync::changeLabel()` / `rowStatusLabel()`. Needed finer producer reasons:
+  full-text ops now enqueue `fulltext_added` / `fulltext_updated` / `fulltext_removed` (was `updated`)
+  so a PDF change is distinguishable from a metadata edit.
 
 **Scope:** how newly **created / edited / deleted / imported / (un)published** catalog materials
 reach the Project Y RAG index so the **Hermes agent** (`search_docs` MCP) can answer over them.

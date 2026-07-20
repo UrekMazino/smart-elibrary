@@ -26,6 +26,43 @@ class RagSync
     public const MAX_ATTEMPTS = 5;
 
     /**
+     * Human change-type for a queue row's reason (drives the AI Sync Monitor's "Change" column).
+     * Returns ['label' => ..., 'class' => <bootstrap bg-*>].
+     */
+    public static function changeLabel(string $reason): array
+    {
+        return [
+            'created'          => ['label' => 'Added',            'class' => 'bg-success'],
+            'imported'         => ['label' => 'Added (import)',   'class' => 'bg-success'],
+            'updated'          => ['label' => 'Edited (metadata)','class' => 'bg-info'],
+            'fulltext_added'   => ['label' => 'PDF added',        'class' => 'bg-primary'],
+            'fulltext_updated' => ['label' => 'PDF changed',      'class' => 'bg-primary'],
+            'fulltext_removed' => ['label' => 'PDF removed',      'class' => 'bg-warning text-dark'],
+            'deleted'          => ['label' => 'Removed',          'class' => 'bg-danger'],
+            'published'        => ['label' => 'Published',        'class' => 'bg-success'],
+            'unpublished'      => ['label' => 'Held',             'class' => 'bg-secondary'],
+            'manual'           => ['label' => 'Manual re-index',  'class' => 'bg-light text-dark'],
+            'reconcile'        => ['label' => 'Reconcile',        'class' => 'bg-light text-dark'],
+        ][$reason] ?? ['label' => $reason, 'class' => 'bg-light text-dark'];
+    }
+
+    /**
+     * Sync status of one outbox ROW (as opposed to statusFor(), which is per-record). Derived from
+     * the row itself so it's cheap in a list. Returns ['label' => ..., 'class' => <bootstrap bg-*>].
+     */
+    public static function rowStatusLabel($processedAt, int $attempts, string $action): array
+    {
+        if ($processedAt === null) {
+            return $attempts >= self::MAX_ATTEMPTS
+                ? ['label' => 'Failed',  'class' => 'bg-danger']
+                : ['label' => 'Pending', 'class' => 'bg-info'];
+        }
+        return $action === self::DELETE
+            ? ['label' => 'Removed', 'class' => 'bg-secondary']
+            : ['label' => 'Synced',  'class' => 'bg-success'];
+    }
+
+    /**
      * Best-effort AI-index status for a record, from is_published + the outbox state (the Laravel
      * side can't query LanceDB directly). Returns ['label' => ..., 'class' => <bootstrap bg-*>].
      */

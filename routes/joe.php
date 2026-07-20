@@ -100,6 +100,9 @@ Route::controller(CatalogingController::class, 'admin')->middleware('can:access.
     // Manual RAG re-index (human override for drift): single record + bulk.
     Route::post('/admin/reindex-record/{id}', 'reindexRecord')->name('reindex-record');
     Route::post('/admin/reindex-records', 'reindexRecords')->name('reindex-records');
+    // AI Sync Monitor — audit trail of catalog changes + AI-index sync state.
+    Route::get('/admin/ai-sync-monitor', 'aiSyncMonitor')->name('ai-sync-monitor');
+    Route::get('/admin/ai-sync-monitor/json', 'aiSyncMonitorJson')->name('ai-sync-monitor-json');
     Route::post('/admin/view-batch', 'viewBatch');
     Route::get('/admin/batch-records/{id}', 'viewBatchRecords');
     Route::get('/admin/batch-records-json/{id}', 'viewBatchRecordsJson');
