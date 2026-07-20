@@ -103,6 +103,7 @@ Route::controller(CatalogingController::class, 'admin')->middleware('can:access.
     // AI Sync Monitor — audit trail of catalog changes + AI-index sync state.
     Route::get('/admin/ai-sync-monitor', 'aiSyncMonitor')->name('ai-sync-monitor');
     Route::get('/admin/ai-sync-monitor/json', 'aiSyncMonitorJson')->name('ai-sync-monitor-json');
+    Route::post('/admin/ai-sync-monitor/run', 'runSyncNow')->name('ai-sync-monitor-run');
     Route::post('/admin/view-batch', 'viewBatch');
     Route::get('/admin/batch-records/{id}', 'viewBatchRecords');
     Route::get('/admin/batch-records-json/{id}', 'viewBatchRecordsJson');

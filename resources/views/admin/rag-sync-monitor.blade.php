@@ -38,9 +38,13 @@
                             <p class="text-muted mb-0" style="font-size: 12.5px;">
                                 Catalog changes and whether the AI (RAG) search index is in sync. Re-sync anything
                                 that needs re-indexing — a <strong>PDF change</strong> is heavy (re-OCR); a metadata
-                                edit is light. The worker applies queued items; this is the decision surface.
+                                edit is light. <strong>Run sync now</strong> applies queued items immediately.
                             </p>
                         </div>
+                        <button type="button" class="btn btn-sm btn-primary" id="runSyncBtn"
+                                title="Ask the AI gateway to index everything currently queued">
+                            <i data-feather="play" class="icon-sm"></i> Run sync now
+                        </button>
                     </div>
 
                     <div class="sync-stat">
@@ -129,6 +133,50 @@ $(document).ready(function () {
     });
 
     $('#fChange, #fStatus').on('change', function () { table.ajax.reload(); });
+
+    // "Run sync now": ask the gateway to index what's queued. Each call is bounded (the gateway
+    // shares one embedding model with search), so we keep going while items remain.
+    $('#runSyncBtn').on('click', function () {
+        var btn = $(this), done = 0, failed = 0, rounds = 0, MAX_ROUNDS = 40;
+        btn.prop('disabled', true);
+        Swal.fire({
+            title: 'Indexing…', text: 'Applying queued changes.',
+            allowOutsideClick: false, didOpen: function () { Swal.showLoading(); }
+        });
+
+        function round() {
+            rounds++;
+            $.ajax({
+                url: '{{ route("ai-sync-monitor-run") }}',
+                method: 'POST',
+                data: { _token: '{{ csrf_token() }}', limit: 25 },
+                success: function (res) {
+                    done   += (res.processed || 0);
+                    failed += (res.failed || 0);
+                    var left = res.remaining || 0;
+                    if (left > 0 && rounds < MAX_ROUNDS) {
+                        Swal.update({ text: 'Indexed ' + done + '… ' + left + ' remaining.' });
+                        return round();
+                    }
+                    btn.prop('disabled', false);
+                    Swal.fire({
+                        icon: failed ? 'warning' : 'success',
+                        title: 'Sync complete',
+                        text: 'Indexed ' + done + ' record(s)'
+                              + (failed ? ', ' + failed + ' failed' : '')
+                              + (left > 0 ? '. ' + left + ' still queued — click again.' : '.')
+                    }).then(function () { location.reload(); });
+                },
+                error: function (xhr) {
+                    btn.prop('disabled', false);
+                    var d = (xhr.responseJSON && xhr.responseJSON.detail)
+                            || 'The AI gateway did not respond. Is rag_api.py running?';
+                    Swal.fire('Sync failed', d, 'error');
+                }
+            });
+        }
+        round();
+    });
 
     // Per-row re-sync: enqueue this catalog for AI re-indexing, then refresh the table.
     $('#syncTbl').on('click', '.resync-btn', function () {

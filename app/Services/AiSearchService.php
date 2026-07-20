@@ -38,6 +38,49 @@ class AiSearchService
     }
 
     /**
+     * Apply pending catalog-sync items ("Run sync now" on the AI Sync Monitor).
+     *
+     * The gateway does the indexing rather than Laravel shelling out to Python: that process
+     * already holds BGE-M3 + LanceDB, so a drain costs no model load and needs no exec() surface.
+     * It is BOUNDED (embedding shares one model instance with search), so repeat while
+     * `remaining > 0`.
+     *
+     * @return array{ok:bool, processed:int, failed:int, remaining:int, detail:string}
+     */
+    public function drainSyncQueue(int $limit = 25): array
+    {
+        $fail = fn (string $detail) => [
+            'ok' => false, 'processed' => 0, 'failed' => 0, 'remaining' => 0, 'detail' => $detail,
+        ];
+
+        if (! config('services.hermes.token')) {
+            return $fail('No gateway token set (HERMES_GATEWAY_TOKEN in .env).');
+        }
+
+        try {
+            $r = Http::withToken(config('services.hermes.token'))
+                ->timeout((int) config('services.hermes.timeout', 60))
+                ->post($this->endpoint() . '/sync/drain', ['limit' => $limit]);
+        } catch (\Throwable $e) {
+            return $fail('The AI gateway is not responding. Is rag_api.py running?');
+        }
+
+        if (! $r->successful()) {
+            return $fail('The AI gateway returned an error (HTTP ' . $r->status() . ').');
+        }
+
+        $b = $r->json();
+
+        return [
+            'ok'        => true,
+            'processed' => (int) ($b['processed'] ?? 0),
+            'failed'    => (int) ($b['failed'] ?? 0),
+            'remaining' => (int) ($b['remaining'] ?? 0),
+            'detail'    => '',
+        ];
+    }
+
+    /**
      * Is the AI backend usable right now? (§10.7: gateway down / models loading / GPU busy
      * -> the page degrades to a calm notice and keyword search stays fully usable.)
      */

@@ -17,6 +17,7 @@ use App\Models\MarcTemplate;
 use App\Models\Material;
 use App\Models\Multimedia;
 use App\Models\ViewCatalog;
+use App\Services\AiSearchService;
 use App\Services\MarcExportService;
 use App\Services\RagSync;
 use Illuminate\Support\Facades\DB;
@@ -317,6 +318,18 @@ class CatalogingController extends Controller
         ];
 
         return view('admin.rag-sync-monitor', compact('counts'));
+    }
+
+    /**
+     * "Run sync now" — ask the RAG gateway to apply pending queue items, so an admin can index
+     * from the app instead of running the worker by hand. Bounded per call (see drainSyncQueue),
+     * so the UI repeats while `remaining > 0`.
+     */
+    public function runSyncNow(Request $request, AiSearchService $ai)
+    {
+        $res = $ai->drainSyncQueue((int) $request->input('limit', 25));
+
+        return response()->json($res, $res['ok'] ? 200 : 503);
     }
 
     /** Server-side data for the monitor table (DataTables shape). */
