@@ -1,11 +1,11 @@
 # RAG ↔ Catalog Sync — Plan (feeding live catalog changes to Hermes)
 
-**Status:** Functional end-to-end. Producer (Laravel) + worker (Python) + manual re-index UI +
-**real LanceDB write/delete** + **reconciliation sweep** + **status badge** are all built and
-verified against the live DB/index. Remaining is operational: scheduling the worker + nightly
-reconcile, an optional processed-row purge policy, running the full initial backfill, and (later)
-content-hash re-sync + a list-column badge.
-**Last updated:** 2026-07-19
+**Status:** Functional end-to-end and driveable from the app. Producer (Laravel) + worker (Python) +
+manual re-index UI + **real LanceDB write/delete** + **reconciliation sweep** + **status badge** +
+**AI Sync Monitor** + **"Run sync now"** are all built and verified against the live DB/index.
+Remaining: register the logon tasks (elevated, one-time), an optional processed-row purge policy,
+the full initial backfill, and (later) content-hash re-sync + a list-column badge.
+**Last updated:** 2026-07-20
 
 ### Implemented so far
 - **Producer (eLibrary, committed):** `rag_sync_queue` table (migration), `RagSyncItem` model,
@@ -31,6 +31,18 @@ content-hash re-sync + a list-column badge.
 - **Status badge (DONE):** `App\Services\RagSync::statusFor()` (is_published + outbox state) →
   Hidden from AI / Queued / AI-indexed / AI index failed / Removed / Not queued; shown on the record
   View page. (A per-row list badge would need a recordListJson join — later.)
+- **"Run sync now" (DONE):** indexing is driveable from the app — `AiSearchService::drainSyncQueue()`
+  calls the gateway's `POST /sync/drain` server-side (shared token, same seam as `/agent/answer`).
+  The gateway does the work because it already holds BGE-M3 + LanceDB: no model load, no `exec()`
+  from PHP. Bounded per call (25, max 200) since embedding shares one model instance with search, so
+  the button loops while `remaining > 0`. Admins never need PowerShell for a routine re-index.
+- **Freshness fix (DONE):** a LanceDB table handle is a snapshot of one dataset version, so the
+  long-running gateway couldn't see rows the worker wrote — a record showed **Synced** yet AI mode
+  answered *"No answer from the collection"* until a restart. `rag_mcp_server._search_sync()` now
+  calls `_refresh_tbl()` (`checkout_latest()`, 15 s TTL); a drain also clears that TTL immediately.
+- **Scheduling (script ready, NOT yet registered):** `register-projecty-tasks.ps1` registers logon
+  tasks for llama-server / rag-api / the sync worker (`--loop --interval 30 --cpu`). Must be run
+  **elevated**. Until then nothing auto-starts after a reboot.
 - **AI Sync Monitor (DONE):** an admin audit-trail page over the outbox (`/admin/ai-sync-monitor`,
   in the Cataloging nav) — lists catalog changes (Added / PDF changed / Edited / Removed /
   Published / Held) with per-row sync status (Pending / Failed / Synced / Removed), filters by
