@@ -85,6 +85,7 @@
                           <li><button class="dropdown-item filter-btn" id="without-fulltext" type="button">w/o Fulltext</button></li>
                           <li><button class="dropdown-item filter-btn" id="without-coverphoto" type="button">w/o Coverphoto</button></li>
                           <li><button class="dropdown-item filter-btn" id="without-both" type="button">w/o Fulltext & Coverphoto</button></li>
+                          <li><button class="dropdown-item filter-btn" id="without-summary" type="button">w/o Summary</button></li>
                       </ul>
                   </div>
 

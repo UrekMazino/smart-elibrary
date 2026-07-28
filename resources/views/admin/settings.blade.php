@@ -58,6 +58,38 @@
                         <div id="aiStatusBox" class="mb-3"></div>
                         @endcan
 
+                        <hr class="my-4">
+
+                        <h6 class="card-title mb-1">Search engine visibility</h6>
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" role="switch"
+                                   id="seo_discourage_indexing" name="seo_discourage_indexing" value="1"
+                                   {{ ($settings['seo_discourage_indexing'] ?? '0') == '1' ? 'checked' : '' }}>
+                            <label class="form-check-label" for="seo_discourage_indexing">
+                                Discourage search engines from indexing this site
+                            </label>
+                        </div>
+                        <p class="text-muted mb-3" style="font-size: 13px;">
+                            Turn this <strong>on</strong> while the site is a staging or pre-launch copy: every
+                            public page is served as <code>noindex, nofollow</code> so nothing is added to Google.
+                            <strong class="text-danger">Turn it off before launch</strong> &mdash; left on, the
+                            catalogue will never appear in search results. Note this is a request search engines
+                            honour, not access control.
+                        </p>
+
+                        <label for="seo_verification_google" class="form-label" style="font-size: 13px;">
+                            Google Search Console verification code
+                        </label>
+                        <input type="text" class="form-control mb-1" id="seo_verification_google"
+                               name="seo_verification_google" autocomplete="off"
+                               placeholder="e.g. AbCdEf123..."
+                               value="{{ $settings['seo_verification_google'] ?? '' }}">
+                        <p class="text-muted mb-3" style="font-size: 13px;">
+                            The <em>content</em> value from Search Console&rsquo;s HTML-tag verification method
+                            (the code only, not the whole tag). Added to every public page. Leave blank if you
+                            verified by another method.
+                        </p>
+
                         <button type="submit" class="btn btn-primary">Save Settings</button>
                     </form>
                 </div>
@@ -88,6 +120,53 @@
                     </div>
 
                     <div id="driftResult" class="mt-3" style="display:none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8 grid-margin stretch-card">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title mb-1">Sitemap</h6>
+                    <p class="text-muted mb-3" style="font-size: 13px;">
+                        Tells search engines which catalogue records exist &mdash; without it, deep record
+                        pages may never be crawled. Rebuilt automatically every night; regenerate here after
+                        publishing a batch, or after the site&rsquo;s address changes.
+                    </p>
+
+                    @if($sitemap['exists'])
+                        <p class="mb-2" style="font-size: 13px;">
+                            <span class="badge bg-success">Generated</span>
+                            <span class="text-muted ms-1">
+                                {{ number_format($sitemap['urls']) }} URLs &middot; last built {{ $sitemap['generated_at'] }}
+                            </span>
+                        </p>
+                        @unless($sitemap['host_ok'])
+                            <div class="alert alert-warning py-2" style="font-size: 13px;">
+                                <strong>Wrong address.</strong> The sitemap lists URLs on a different domain than
+                                this site is served from &mdash; it was probably generated before
+                                <code>APP_URL</code> was updated. Regenerate it.
+                            </div>
+                        @endunless
+                    @else
+                        <p class="mb-2" style="font-size: 13px;">
+                            <span class="badge bg-secondary">Not generated yet</span>
+                        </p>
+                    @endif
+
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <button type="button" id="sitemapBtn" class="btn btn-outline-primary">
+                            <i data-feather="map" class="icon-sm me-1"></i>Regenerate sitemap
+                        </button>
+                        @if($sitemap['exists'])
+                            <a href="{{ url('/sitemap.xml') }}" target="_blank" class="btn btn-outline-secondary">
+                                <i data-feather="external-link" class="icon-sm me-1"></i>View
+                            </a>
+                        @endif
+                        <span id="sitemapStatus" style="font-size: 13px;"></span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -204,6 +283,29 @@ function loadAiStatus() {
 
 $(function () {
     if (window.feather) feather.replace();
+
+    // Regenerate sitemap.xml + robots.txt without shell access.
+    $('#sitemapBtn').on('click', function () {
+        var $btn = $(this), $status = $('#sitemapStatus');
+        $btn.prop('disabled', true);
+        $status.removeClass('text-danger text-success').addClass('text-muted').text('Generating…');
+
+        $.ajax({
+            url: "{{ url('/admin/settings/generate-sitemap') }}",
+            method: 'POST',
+            data: { _token: "{{ csrf_token() }}" },
+            success: function (r) {
+                $status.removeClass('text-muted').addClass('text-success')
+                       .text('Done — ' + (r.urls || 0).toLocaleString() + ' URLs written.');
+                setTimeout(function () { location.reload(); }, 1200);
+            },
+            error: function () {
+                $btn.prop('disabled', false);
+                $status.removeClass('text-muted').addClass('text-danger')
+                       .text('Could not generate the sitemap.');
+            }
+        });
+    });
 
     @can('manage.ai.mode')
         loadAiStatus();

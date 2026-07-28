@@ -83,6 +83,8 @@ Route::controller(SettingController::class)->middleware('can:access.configuratio
     Route::get('/admin/settings/ai-status', 'aiStatus')->middleware(['can:manage.ai.mode', 'throttle:20,1']);
     // Clear cached data + compiled views (not sessions, not the search index).
     Route::post('/admin/settings/clear-cache', 'clearCache')->middleware('throttle:10,1');
+
+    Route::post('/admin/settings/generate-sitemap', 'generateSitemap')->middleware('throttle:5,1');
 });
 
 //INQUIRY

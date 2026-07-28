@@ -347,6 +347,25 @@ License: For each use you must have a valid license purchased only from above li
 			</nav>
 			<!-- partial -->
 
+			{{-- A forgotten "discourage search engines" switch silently keeps the whole catalogue out
+			     of Google, and nothing else on screen would ever reveal it. Warn on every admin page
+			     until it is turned off. --}}
+			@if(settingEnabled('seo_discourage_indexing', false))
+				<div class="px-4 pt-3">
+					<div class="alert alert-warning d-flex align-items-center justify-content-between flex-wrap gap-2 mb-0" role="alert">
+						<span>
+							<i data-feather="eye-off" class="icon-sm me-1"></i>
+							<strong>Search engines are being discouraged.</strong>
+							Every public page is served as <code>noindex</code>, so this catalogue will not
+							appear in Google. Intended for staging &mdash; turn it off before launch.
+						</span>
+						@can('access.configuration')
+							<a href="{{ url('/admin/settings') }}" class="btn btn-sm btn-outline-dark">Settings</a>
+						@endcan
+					</div>
+				</div>
+			@endif
+
 			@yield('content')
 
 			<!-- partial:partials/_footer.html -->

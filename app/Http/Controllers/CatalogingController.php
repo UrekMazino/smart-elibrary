@@ -2300,6 +2300,13 @@ class CatalogingController extends Controller
                         ->whereNull('frontpages.deleted_at');
                 });
                 break;
+            // Records with no 520 summary: these fall back to a generated meta description,
+            // which reads worse in search results. A worklist for cataloguers (OPAC_SEO_PLAN.md).
+            case "without-summary":
+                $query->where(function ($q) {
+                    $q->whereNull('view_catalogs.summary')->orWhere('view_catalogs.summary', '');
+                });
+                break;
             case "without-both":
                 $query->whereNotExists(function ($query) {
                     $query->select(DB::raw(1))

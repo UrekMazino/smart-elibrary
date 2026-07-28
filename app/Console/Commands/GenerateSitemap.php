@@ -45,7 +45,8 @@ class GenerateSitemap extends Command
 
         // --- static pages (only genuinely indexable ones; /results is noindex) ---
         $files[] = $this->writeUrlset("$public/sitemap-pages.xml", [
-            ['loc' => url('/'), 'lastmod' => null],
+            // '/' 302s to '/home', and a sitemap must list final URLs, not redirects.
+            ['loc' => url('/home'), 'lastmod' => null],
         ]);
 
         // --- record pages ---

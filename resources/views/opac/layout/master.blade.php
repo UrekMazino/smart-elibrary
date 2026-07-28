@@ -11,7 +11,16 @@
 	     the defaults below are what every page used to emit unconditionally. --}}
 	<title>@yield('meta_title', 'DOST-PCAARRD eLibrary')</title>
 	<meta name="description" content="@yield('meta_description', 'Search the DOST-PCAARRD eLibrary for agriculture, aquatic and natural resources (AANR) research materials.')">
-	<meta name="robots" content="@yield('robots', 'index, follow')">
+	{{-- The admin "discourage search engines" switch OVERRIDES the page's own value: while it is on,
+	     nothing is indexable, whatever an individual page asks for. --}}
+	@if(settingEnabled('seo_discourage_indexing', false))
+		<meta name="robots" content="noindex, nofollow">
+	@else
+		<meta name="robots" content="@yield('robots', 'index, follow')">
+	@endif
+	@if(setting('seo_verification_google'))
+		<meta name="google-site-verification" content="{{ setting('seo_verification_google') }}">
+	@endif
 	@hasSection('canonical')
 		<link rel="canonical" href="@yield('canonical')">
 	@endif

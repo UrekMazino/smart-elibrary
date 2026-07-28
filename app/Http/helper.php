@@ -1187,7 +1187,7 @@ function seoRecordJsonLd($record): string
         '@context'        => 'https://schema.org',
         '@type'           => 'BreadcrumbList',
         'itemListElement' => [
-            ['@type' => 'ListItem', 'position' => 1, 'name' => 'Home', 'item' => url('/')],
+            ['@type' => 'ListItem', 'position' => 1, 'name' => 'Home', 'item' => url('/home')],
             ['@type' => 'ListItem', 'position' => 2, 'name' => seoTitle($record->title_statement ?? '', 65), 'item' => $url],
         ],
     ];
@@ -1201,7 +1201,7 @@ function seoRecordJsonLd($record): string
  */
 function seoSiteJsonLd(): string
 {
-    $home = url('/');
+    $home = url('/home');   // '/' redirects here; use the URL that actually renders
 
     return seoJsonLdEncode([
         [

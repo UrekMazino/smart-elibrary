@@ -20,13 +20,63 @@ class SettingController extends Controller
         return view('admin.settings', [
             'settings' => Setting::pluck('value', 'key'),
             'ai'       => app(AiSearchService::class),
+            'sitemap'  => $this->sitemapStatus(),
+        ]);
+    }
+
+    /**
+     * What the generated sitemap currently looks like on disk, for the Settings card. Includes a
+     * host check: a sitemap built under a different APP_URL (e.g. generated in dev, then deployed)
+     * advertises URLs on the wrong domain, which is easy to miss and breaks discovery.
+     */
+    private function sitemapStatus(): array
+    {
+        $index = public_path('sitemap.xml');
+
+        if (! is_file($index)) {
+            return ['exists' => false, 'urls' => 0, 'generated_at' => null, 'host_ok' => true];
+        }
+
+        $urls = 0;
+        foreach (glob(public_path('sitemap-*.xml')) ?: [] as $file) {
+            $urls += substr_count((string) file_get_contents($file), '<url>');
+        }
+
+        return [
+            'exists'       => true,
+            'urls'         => $urls,
+            'generated_at' => date('d M Y, H:i', (int) filemtime($index)),
+            'host_ok'      => str_contains((string) file_get_contents($index), rtrim(url('/'), '/')),
+        ];
+    }
+
+    /** Rebuild sitemap.xml + robots.txt on demand (mirrors the Search index card's re-sync). */
+    public function generateSitemap()
+    {
+        \Illuminate\Support\Facades\Artisan::call('sitemap:generate');
+
+        $status = $this->sitemapStatus();
+
+        return response()->json([
+            'success' => true,
+            'urls'    => $status['urls'],
+            'when'    => $status['generated_at'],
+            'host_ok' => $status['host_ok'],
         ]);
     }
 
     public function update(Request $request)
     {
+        // SEO text settings (empty string clears them).
+        foreach (['seo_verification_google'] as $key) {
+            Setting::updateOrCreate(
+                ['key' => $key],
+                ['value' => trim((string) $request->input($key, ''))]
+            );
+        }
+
         // Toggles: present in the POST (checkbox) => '1', absent => '0'
-        foreach (['enable_placeholder_covers'] as $key) {
+        foreach (['enable_placeholder_covers', 'seo_discourage_indexing'] as $key) {
             Setting::updateOrCreate(
                 ['key' => $key],
                 ['value' => $request->boolean($key) ? '1' : '0']

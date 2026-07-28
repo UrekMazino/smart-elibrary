@@ -1,9 +1,23 @@
 # OPAC Public-Launch SEO — Plan
 
 **Status:** **All four workstreams are DONE** — A (metadata), B (JSON-LD), C (sitemap + robots),
-D (URL slugs). Remaining work is the pre-launch environment checklist in §4 and
-`DEPLOYMENT_CHECKLIST.md`.
+D (URL slugs) — plus an admin **SEO settings card**. Remaining work is the pre-launch environment
+checklist in §4 and `DEPLOYMENT_CHECKLIST.md`.
 **Last updated:** 2026-07-28
+
+> **Admin controls (added after D):** Settings gains a *Search engine visibility* switch
+> (`seo_discourage_indexing`) that forces `noindex, nofollow` on every public page and **overrides**
+> any page-level value — for staging/pre-launch. A forgotten switch would silently keep the whole
+> catalogue out of Google, so every admin page shows a warning banner while it is on. Also a Google
+> Search Console verification field (`seo_verification_google`) and a **Sitemap card** showing URL
+> count / last build with a *Regenerate* button (no shell access needed) — including a warning when
+> the sitemap's URLs don't match the current host, which happens if it was built before `APP_URL`
+> was updated. The record list's Resource Filter gains **w/o Summary** (4,937 records today): those
+> fall back to a generated meta description, so this is the editorial worklist for improving snippets.
+>
+> **Bug found while testing this:** `/` **302-redirects to `/home`**, but workstreams A and C had
+> pointed the homepage canonical, the sitemap entry and the JSON-LD `WebSite.url` at `/`. A sitemap
+> must list final URLs and a canonical must name the URL that actually renders — all now use `/home`.
 
 > **D — implemented:** record URLs are now the ID-prefixed hybrid
 > `/full-description/10435-fruit-color-as-an-indicator-…`. The leading integer is the lookup key
