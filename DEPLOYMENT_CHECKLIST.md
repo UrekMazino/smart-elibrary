@@ -175,5 +175,12 @@ curl http://127.0.0.1:8090/healthz           # AI gateway alive
   discovery path. Converting result items to real anchors would strengthen internal linking.
 - ~~**`saveView()` counts crawler hits**~~ — **fixed**: `isCrawler()` guards `saveView()` and
   `views.user_agent` is now recorded (migration `2026_07_28_000000_add_user_agent_to_views_table`).
-- **Scanned PDFs index as metadata-only** — full text needs the Stage-3 OCR batch (`ocr_run.py`).
+- **Full-text coverage is effectively complete — no OCR backlog.** Measured 2026-07-28: **7,479 of
+  7,641 published records (97.9%)** already have OCR'd full text in the index, via the Stage-3
+  corpus, which resolves to catalogue records through `accession_number` ↔ corpus `stem`
+  (`AiSearchService::resolveSources()`). Only **2** records have a PDF with no coverage; 160 have no
+  PDF at all, so nothing to OCR.
+  > The sync worker's `[metadata-only]` log line means *this sync wrote metadata chunks* — **not**
+  > that the record lacks full text. The index has two complementary layers: OCR'd page text
+  > (corpus, keyed by `stem`) and clean bibliographic metadata (keyed by `catalog_id`).
 - **Z39.50 / SRU copy cataloguing** — planned only (`Z3950_SRU_INTEGRATION_PLAN.md`).
