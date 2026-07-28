@@ -159,7 +159,44 @@ curl http://127.0.0.1:8090/healthz           # AI gateway alive
 - Admin → **AI Sync Monitor**: pending trends to 0; a record's badge reads **AI-indexed**.
 - OPAC → **AI mode**: ask something answerable only from a catalogue record; expect a cited answer.
 - Confirm an **on-hold** record 404s publicly and is absent from `sitemap-records-*.xml`.
-- Submit `https://<domain>/sitemap.xml` in **Google Search Console**.
+- Verify the site in **Google Search Console** and submit the sitemap — see §6.1.
+
+### 6.1 Google Search Console verification (launch step)
+
+Search Console is where you confirm the SEO work actually landed: index coverage across the ~7,600
+records, which queries bring people in, whether the JSON-LD is read as rich results, and crawl
+errors. **You cannot submit the sitemap until the site is verified.**
+
+Verification is a **proof of ownership**. Google will not show a site's data to just anyone, so it
+asks you to place a code it generated on the site — only someone with access could do that.
+
+> **The code comes from Google. Do not invent one.** An arbitrary string simply fails verification
+> (nothing breaks, it just never verifies). It is also **not a secret** — it is public in the page
+> source by design, so it is safe to commit and share.
+
+1. Sign in to <https://search.google.com/search-console> with an **institutional** Google account,
+   not a personal one — the account that adds the property owns it, and you want that to survive
+   staff changes. Add colleagues as users afterwards.
+2. **Add property → URL prefix**, and enter the real public address
+   (`https://<domain>`, not `elibrary.test`).
+3. Choose the **HTML tag** method. Google shows a full tag:
+   ```html
+   <meta name="google-site-verification" content="ZxY9_aBc123dEfGhIjK4LmNoPqRsTuVwXyZ0" />
+   ```
+4. Copy **only the value inside `content="…"`** — not the whole tag.
+5. Paste it into **Admin → Settings → Google Search Console verification code**, then Save. It is
+   rendered into every public page's `<head>` (`opac/layout/master.blade.php`; blank = tag omitted).
+6. Back in Search Console, click **Verify**.
+7. Then **Sitemaps → submit** `https://<domain>/sitemap.xml`.
+
+**Timing:** steps 1–5 can be done any time, but **step 6 only works once the OPAC is publicly
+reachable at that domain** — Google verifies by fetching the homepage, and it cannot reach a local
+host. Leave the code in place permanently: Google re-checks periodically and un-verifies if it
+disappears.
+
+> Alternative: a **DNS TXT record** verifies the whole domain including subdomains and does not
+> depend on the app. Use that instead if you control DNS and would rather not tie verification to
+> a Settings field.
 
 ---
 
