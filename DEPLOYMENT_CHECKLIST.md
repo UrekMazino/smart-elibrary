@@ -169,7 +169,7 @@ curl http://127.0.0.1:8090/healthz           # AI gateway alive
   `register-projecty-tasks.ps1`. Until then AI mode is down after every reboot.
 - **SEO workstream D (URL slugs)** is planned, not built — see `OPAC_SEO_PLAN.md`. If wanted, do it
   **before** public launch; retrofitting after indexing means 301 chains and re-crawling.
-- **`saveView()` counts crawler hits** — will inflate per-record view counts once public
-  (`OPAC_SEO_PLAN.md` §3).
+- ~~**`saveView()` counts crawler hits**~~ — **fixed**: `isCrawler()` guards `saveView()` and
+  `views.user_agent` is now recorded (migration `2026_07_28_000000_add_user_agent_to_views_table`).
 - **Scanned PDFs index as metadata-only** — full text needs the Stage-3 OCR batch (`ocr_run.py`).
 - **Z39.50 / SRU copy cataloguing** — planned only (`Z3950_SRU_INTEGRATION_PLAN.md`).

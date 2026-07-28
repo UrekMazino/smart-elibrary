@@ -195,10 +195,49 @@ function starRatingBar($total,$val,$catalog_id)
 	
 }
 
+/**
+ * Is this request an automated client (search crawler, link-preview fetcher, scraper, monitor)?
+ *
+ * Used to keep bots out of the view counter. Once the OPAC is public, a single Googlebot pass over
+ * the sitemap would otherwise add one view per catalogue record — thousands of rows in one sweep —
+ * which would swamp real usage and turn the homepage "Most Viewed" carousel into "most recently
+ * crawled". A missing user agent counts as automated: every real browser sends one.
+ *
+ * False positives (a human not counted) are cheap; false negatives (a bot counted) silently corrupt
+ * the data, so this errs towards excluding.
+ */
+function isCrawler($agent = null): bool
+{
+	$agent = trim((string) ($agent ?? request()->userAgent()));
+
+	if ($agent === '') {
+		return true;
+	}
+
+	return (bool) preg_match(
+		'~(bot|crawl|spider|scrap|slurp|curl|wget|python-requests|go-http-client|okhttp|java/|'
+		. 'headless|phantomjs|puppeteer|playwright|lighthouse|'
+		. 'facebookexternalhit|embedly|quora link preview|whatsapp|telegram|skypeuripreview|'
+		. 'pinterest|vkshare|yandex|baidu|sogou|ia_archiver|archive\.org|'
+		. 'semrush|ahrefs|mj12|petal|chatgpt|anthropic|perplexity|bytespider|'
+		. 'pingdom|uptimerobot|w3c_validator|feedburner)~i',
+		$agent
+	);
+}
+
+/**
+ * Record a view of a material. Crawler hits are deliberately NOT recorded — see isCrawler().
+ * The agent is stored so a mis-classification can be audited later.
+ */
 function saveView($id)
 {
+	if (isCrawler()) {
+		return;
+	}
+
 	$view = new App\Models\View;
 	$view->ip_view = request()->ip();
+	$view->user_agent = substr((string) request()->userAgent(), 0, 512);
 
     if(Auth::check())
     {

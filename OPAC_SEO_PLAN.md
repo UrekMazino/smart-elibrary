@@ -165,7 +165,7 @@ Implementation notes:
 
 | Issue | Why it matters | Fix |
 |---|---|---|
-| **`saveView()` on every detail hit** | Googlebot and every other crawler will inflate per-record view counts; analytics becomes fiction | Skip counting for known bot user-agents, or only count authenticated/interactive sessions |
+| ~~**`saveView()` on every detail hit**~~ **FIXED** | Googlebot would have added one view per record per crawl (~7,641 rows/sweep vs 70 rows of real data), swamping the homepage "Most Viewed" carousel and every per-record counter — and unrecoverably, since bot and human rows were indistinguishable | `isCrawler()` guard in `saveView()` (`app/Http/helper.php`); `views.user_agent` is now stored so any mis-classification stays auditable |
 | **`/full-description` reachable 3 ways** (`POST`, `GET` no-id, `GET /{id}`) | Duplicate-content + wasted crawl budget | Canonical tag on the record page; the no-id GET already redirects to `/home` |
 | **`/results` is faceted** (query, material type, year range, sort) | Faceted search = near-infinite URL space, thin/duplicate pages | `noindex, follow` on results pages (keep them crawlable for link discovery, out of the index) |
 | **`/search/suggest`, `/search/ai-answer`** | JSON endpoints; the AI one is throttled and costs GPU | `Disallow` in robots.txt |
