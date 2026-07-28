@@ -15,7 +15,9 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // $schedule->command('inspire')->hourly();
+        // Keep the OPAC sitemap current as records are published/held/edited. Static files, so
+        // this costs nothing at request time. See OPAC_SEO_PLAN.md workstream C.
+        $schedule->command('sitemap:generate')->dailyAt('03:30')->withoutOverlapping();
     }
 
     /**

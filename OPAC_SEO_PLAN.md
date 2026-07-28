@@ -1,8 +1,23 @@
 # OPAC Public-Launch SEO — Plan
 
-**Status:** **Workstreams A (per-page metadata) and B (JSON-LD structured data) are DONE.**
-C (sitemap + robots) and D (URL slugs) are still planning-only.
+**Status:** **Workstreams A (metadata), B (JSON-LD) and C (sitemap + robots) are DONE.**
+Only D (URL slugs) remains planning-only.
 **Last updated:** 2026-07-28
+
+> **C — implemented:** `php artisan sitemap:generate` (in `app/Console/Commands/GenerateSitemap.php`)
+> writes `public/sitemap.xml` (a sitemap **index**), `sitemap-pages.xml` and chunked
+> `sitemap-records-N.xml` (25k URLs/file, spec max 50k) covering every published, non-deleted record
+> with `<lastmod>` from `updated_at` — currently **7,641 URLs in one chunk**. It also regenerates
+> `robots.txt` so the absolute `Sitemap:` line always matches `APP_URL` (which differs dev vs prod).
+> Scheduled daily at 03:30 in `app/Console/Kernel.php`. Sitemap XML is gitignored (derived, ~1 MB,
+> daily churn); `robots.txt` stays tracked so a fresh deploy has crawl rules before the first run.
+>
+> **Landmine avoided:** robots.txt matches by **prefix**, so a `Disallow: /full-description` rule
+> would have blocked every record page and hidden the whole catalogue. The generator documents this
+> and the verification asserts that no sitemap URL is blocked by any Disallow rule.
+>
+> **Deploy step:** run `php artisan sitemap:generate` after deploying (and after `APP_URL` is set to
+> the real https domain), then submit `https://<domain>/sitemap.xml` in Google Search Console.
 
 > **B — implemented:** every record page emits a JSON-LD array (the work + a `BreadcrumbList`), and
 > the homepage emits `WebSite` (with a `SearchAction` → `/results?query={search_term_string}`) plus
