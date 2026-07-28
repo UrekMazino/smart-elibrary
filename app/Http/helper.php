@@ -1057,3 +1057,131 @@ function seoRecordDescription($record): string
 
     return seoDescription(implode('. ', $bits));
 }
+
+/* ---- Structured data (schema.org JSON-LD) — OPAC_SEO_PLAN.md workstream B ---------------- */
+
+/**
+ * Map a catalogue material type to a schema.org type. Values come from `materials.name`
+ * (Books, Thesis/Dissertations, Serials, Technical Reports, Analytics, Vertical Files,
+ * Non-Prints, Investigatory Projects, Language material).
+ */
+function seoSchemaType($materialType): string
+{
+    $t = strtolower(trim((string) $materialType));
+
+    return match (true) {
+        str_contains($t, 'thesis'), str_contains($t, 'dissertation') => 'Thesis',
+        str_contains($t, 'serial')                                   => 'Periodical',
+        str_contains($t, 'technical report'), $t === 'report'        => 'Report',
+        str_contains($t, 'analytic'), str_contains($t, 'investigatory') => 'ScholarlyArticle',
+        str_contains($t, 'book'), str_contains($t, 'language material') => 'Book',
+        default                                                      => 'CreativeWork',
+    };
+}
+
+/** joint_authors ("Cruz, J. /Santos, M.") -> schema.org Person list. */
+function seoAuthorList($jointAuthors): array
+{
+    $raw = seoTrimIsbd($jointAuthors);
+    if ($raw === '') {
+        return [];
+    }
+
+    $out = [];
+    foreach (preg_split('#\s*/\s*#u', $raw, -1, PREG_SPLIT_NO_EMPTY) as $name) {
+        $name = seoTrimIsbd($name);
+        if ($name !== '') {
+            $out[] = ['@type' => 'Person', 'name' => $name];
+        }
+    }
+
+    return $out;
+}
+
+/** Encode JSON-LD safely for inlining in a <script> tag (JSON_HEX_TAG blocks a </script> breakout). */
+function seoJsonLdEncode(array $data): string
+{
+    return (string) json_encode(
+        $data,
+        JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP
+    );
+}
+
+/**
+ * Per-record structured data: the record itself plus a breadcrumb trail. Emitted as a JSON array
+ * (valid JSON-LD) so one <script> covers both. Only fields the record actually has are included —
+ * an empty or invented property is worse than an absent one.
+ */
+function seoRecordJsonLd($record): string
+{
+    $url  = url('/full-description/' . $record->catalog_id);
+    $type = seoSchemaType($record->material_type ?? null);
+
+    // pub_year is free text in MARC ("c2010", "2010."); schema.org wants a bare year.
+    $year = preg_match('/\d{4}/', (string) ($record->pub_year ?? ''), $m) ? $m[0] : null;
+
+    $publisher = seoTrimIsbd($record->publisher ?? null);
+    $series    = seoTrimIsbd($record->series_description ?? null);
+    $edition   = seoTrimIsbd($record->edition ?? null);
+    $pubUrl    = trim((string) ($record->pub_url ?? ''));
+
+    $work = array_filter([
+        '@context'      => 'https://schema.org',
+        '@type'         => $type,
+        '@id'           => $url,
+        'url'           => $url,
+        'name'          => seoTrimIsbd($record->title_statement ?? null),
+        'description'   => seoRecordDescription($record),
+        'author'        => seoAuthorList($record->joint_authors ?? null),
+        'publisher'     => $publisher !== '' ? ['@type' => 'Organization', 'name' => $publisher] : null,
+        'datePublished' => $year,
+        'isbn'          => seoTrimIsbd($record->isbn ?? null) ?: null,
+        'issn'          => seoTrimIsbd($record->issn ?? null) ?: null,
+        'bookEdition'   => ($type === 'Book' && $edition !== '') ? $edition : null,
+        'isPartOf'      => $series !== '' ? ['@type' => 'CreativeWork', 'name' => $series] : null,
+        'image'         => getFrontpageLink($record->catalog_id),
+        'identifier'    => seoTrimIsbd($record->accession_number ?? null) ?: null,
+        'sameAs'        => filter_var($pubUrl, FILTER_VALIDATE_URL) ? $pubUrl : null,
+    ], fn ($v) => $v !== null && $v !== '' && $v !== []);
+
+    $breadcrumb = [
+        '@context'        => 'https://schema.org',
+        '@type'           => 'BreadcrumbList',
+        'itemListElement' => [
+            ['@type' => 'ListItem', 'position' => 1, 'name' => 'Home', 'item' => url('/')],
+            ['@type' => 'ListItem', 'position' => 2, 'name' => seoTitle($record->title_statement ?? '', 65), 'item' => $url],
+        ],
+    ];
+
+    return seoJsonLdEncode([$work, $breadcrumb]);
+}
+
+/**
+ * Site-level structured data for the homepage: the WebSite (with a search action, which is what
+ * makes a sitelinks search box possible) and the publishing Organization.
+ */
+function seoSiteJsonLd(): string
+{
+    $home = url('/');
+
+    return seoJsonLdEncode([
+        [
+            '@context'        => 'https://schema.org',
+            '@type'           => 'WebSite',
+            'name'            => 'DOST-PCAARRD eLibrary',
+            'url'             => $home,
+            'potentialAction' => [
+                '@type'       => 'SearchAction',
+                'target'      => ['@type' => 'EntryPoint', 'urlTemplate' => url('/results') . '?query={search_term_string}'],
+                'query-input' => 'required name=search_term_string',
+            ],
+        ],
+        [
+            '@context' => 'https://schema.org',
+            '@type'    => 'Organization',
+            'name'     => 'DOST-PCAARRD eLibrary',
+            'url'      => $home,
+            'logo'     => asset('assets/images/elibrary-02.png'),
+        ],
+    ]);
+}

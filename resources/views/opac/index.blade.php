@@ -1,5 +1,9 @@
 @extends('opac.layout.master')
 
+@push('json_ld')
+<script type="application/ld+json">{!! seoSiteJsonLd() !!}</script>
+@endpush
+
 @section('meta_title', 'DOST-PCAARRD eLibrary — AANR research collection')
 @section('meta_description', 'Search the DOST-PCAARRD eLibrary: books, theses, technical reports and other agriculture, aquatic and natural resources (AANR) research materials.')
 @section('canonical', url('/'))

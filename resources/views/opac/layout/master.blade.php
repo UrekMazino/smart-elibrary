@@ -29,6 +29,10 @@
 		<meta name="twitter:card" content="summary">
 	@endif
 
+	{{-- schema.org structured data (workstream B). Pushed as raw <script> blocks — @yield would
+	     HTML-escape the JSON. Safe to emit raw: seoJsonLdEncode() uses JSON_HEX_TAG. --}}
+	@stack('json_ld')
+
 	<!-- Favicons-->
 	<link rel="shortcut icon" href="{{ asset('assets/images/elibrary-02.png') }}">
 	<link rel="apple-touch-icon" type="image/x-icon" href="{{ asset('opac/img/apple-touch-icon-57x57-precomposed.png') }}">

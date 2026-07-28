@@ -1,8 +1,21 @@
 # OPAC Public-Launch SEO — Plan
 
-**Status:** **Workstream A (per-page metadata) is DONE.** B (JSON-LD), C (sitemap + robots) and
-D (URL slugs) are still planning-only.
+**Status:** **Workstreams A (per-page metadata) and B (JSON-LD structured data) are DONE.**
+C (sitemap + robots) and D (URL slugs) are still planning-only.
 **Last updated:** 2026-07-28
+
+> **B — implemented:** every record page emits a JSON-LD array (the work + a `BreadcrumbList`), and
+> the homepage emits `WebSite` (with a `SearchAction` → `/results?query={search_term_string}`) plus
+> `Organization`. Helpers: `seoSchemaType()`, `seoAuthorList()`, `seoJsonLdEncode()`,
+> `seoRecordJsonLd()`, `seoSiteJsonLd()`.
+> Type map (verified against the 9 material types actually in the catalogue): Books / Language
+> material → `Book` · Thesis/Dissertations → `Thesis` · Serials → `Periodical` · Technical Reports →
+> `Report` · Analytics / Investigatory Projects → `ScholarlyArticle` · Vertical Files / Non-Prints →
+> `CreativeWork`. Only populated fields are emitted (no empty or invented properties); `pub_year`
+> free text ("c2010.") is reduced to a bare year.
+> **Blade gotcha found here:** `@yield` HTML-escapes section values, so JSON-LD is emitted through
+> `@push`/`@stack` with `{!! !!}` (safe — `seoJsonLdEncode()` uses `JSON_HEX_TAG`), and the
+> workstream-A meta sections must NOT wrap values in `e()` or they double-escape (`&amp;amp;`).
 
 > **A — implemented:** `master.blade.php` now yields `meta_title` / `meta_description` / `robots` /
 > `canonical` / OG + Twitter, with the old hardcoded strings as fallbacks. `full-description.blade.php`

@@ -2,11 +2,19 @@
 
 {{-- Per-record SEO. Every record page used to share one site-wide title/description, which left
      Google nothing to tell ~7,600 records apart. See OPAC_SEO_PLAN.md workstream A. --}}
-@section('meta_title', e(seoPageTitle($result->title_statement)))
-@section('meta_description', e(seoRecordDescription($result)))
+{{-- No e() here: Blade's @yield already escapes section values, so e() would double-escape
+     ("&" -> "&amp;amp;") in titles and descriptions. --}}
+@section('meta_title', seoPageTitle($result->title_statement))
+@section('meta_description', seoRecordDescription($result))
 @section('canonical', url('/full-description/' . $result->catalog_id))
 @section('og_type', 'article')
 @section('og_image', getFrontpageLink($result->catalog_id))
+
+{{-- JSON-LD must be emitted RAW (it is already JSON_HEX_TAG-encoded), so it goes through a
+     stack rather than @yield, which would HTML-escape the quotes and break the JSON. --}}
+@push('json_ld')
+<script type="application/ld+json">{!! seoRecordJsonLd($result) !!}</script>
+@endpush
 
 @section('css')
     <!-- SPECIFIC CSS -->
