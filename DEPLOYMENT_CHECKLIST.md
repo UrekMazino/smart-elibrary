@@ -170,9 +170,11 @@ curl http://127.0.0.1:8090/healthz           # AI gateway alive
 - ~~**SEO workstream D (URL slugs)**~~ — **done**: record URLs are now
   `/full-description/{id}-{title-slug}`, with bare-id and stale-slug URLs 301ing to the canonical
   form. **Re-run `php artisan sitemap:generate` after deploying** so the sitemap carries slug URLs.
-- **Search results link to records by POST, not `<a href>`** (`submitFrm()` in the result views), so
-  crawlers cannot reach record pages by following links — the sitemap is currently the only
-  discovery path. Converting result items to real anchors would strengthen internal linking.
+- ~~**Search results link to records by POST, not `<a href>`**~~ — **fixed**: result items (grid and
+  list) are now real `<a href>` links to the canonical slug URL, so crawlers can reach record pages
+  by following links instead of relying on the sitemap alone. The dead `submitFrm()`/`sendFrm()`
+  helpers and their POST forms were removed. `POST /full-description` is kept as a graceful
+  fallback — it redirects to the canonical URL.
 - ~~**`saveView()` counts crawler hits**~~ — **fixed**: `isCrawler()` guards `saveView()` and
   `views.user_agent` is now recorded (migration `2026_07_28_000000_add_user_agent_to_views_table`).
 - **Full-text coverage is effectively complete — no OCR backlog.** Measured 2026-07-28: **7,479 of

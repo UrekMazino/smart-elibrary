@@ -277,10 +277,6 @@
 		</div>{{-- /#sec-misc --}}
 			<!-- /app_section -->
 		<!-- /Hero -->
-<form method="post" action="{{ url('/full-description') }}" id="frm1">
-	@csrf
-	<input type="hidden" name="catalog_id" id="catalog_id">
-</form>
 <!-- Modal -->
 {{-- <div class="modal fade" id="csfModal" tabindex="-1" role="dialog" aria-labelledby="csfModalTitle" aria-hidden="true">
 	<div class="modal-dialog modal-dialog-centered" role="document">
@@ -342,12 +338,6 @@
 	$(".form-check-input").click(function () {
         $('#checkAll').not(this).prop('checked', false);
       });
-
-	function sendFrm(val)
-	{
-		$("#catalog_id").val(val);
-		$("#frm1").submit();
-	}
 
 </script>
 @if(!checkCSF() && Auth::user())

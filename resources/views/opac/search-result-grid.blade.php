@@ -114,7 +114,7 @@
 				<div class="ol-grid">
 					@foreach($result AS $results)
 					<div class="ol-card">
-						<a href="#0" class="ol-cover" onclick="submitFrm('{{ $results->catalog_id }}')" title="{{ $results->title_statement }}">
+						<a href="{{ recordUrl($results) }}" class="ol-cover" title="{{ $results->title_statement }}">
 							{!! getThumbnailResult($results->catalog_id) !!}
 							<span class="ol-hover-info">
 								<span class="ol-hover-title">{{ $results->title_statement }}</span>
@@ -129,12 +129,12 @@
 									<a href="#0" class="ol-icon-btn" title="Download PDF (login required)" onclick="downloadPdf('{{ $results->catalog_id }}'); return false;"><i class="icon-download"></i></a>
 								@endif
 								@if($canBorrow)
-									<a href="#0" class="ol-icon-btn" title="Available to borrow — view details" onclick="submitFrm('{{ $results->catalog_id }}'); return false;"><i class="icon-library"></i></a>
+									<a href="{{ recordUrl($results) }}" class="ol-icon-btn" title="Available to borrow — view details"><i class="icon-library"></i></a>
 								@else
 									<span class="ol-icon-btn disabled" title="No physical copy available for borrowing"><i class="icon-library"></i></span>
 								@endif
 							</div>
-							<a href="#0" class="btn_1 ol-full-desc" onclick="submitFrm('{{ $results->catalog_id }}'); return false;">Full description</a>
+							<a href="{{ recordUrl($results) }}" class="btn_1 ol-full-desc">Full description</a>
 						</div>
 					</div>
 					@endforeach
@@ -215,11 +215,6 @@
 		</div>
 		<!-- /row -->
 	</div>
-<form method="POST" action="{{ url('/full-description') }}" id="frm2">
-	@csrf
-	<input type="hidden" name="catalog_id" id="catalog_id">
-</form>
-
 {{-- Download (login enforced by DownloadController auth+patron middleware; increments Downloads) --}}
 <form method="post" action="{{ url('/download') }}" id="frm_download_grid" @auth target="_blank" @endauth>
 	@csrf
@@ -276,12 +271,6 @@
 	$.each(arrType, function(index, value) {
 		$("input[name='seachtype[]'][value='"+value+"']").prop("checked", true);
 	});
-
-	function submitFrm(id)
-	{
-		$("#catalog_id").val(id);
-		$("#frm2").submit();
-	}
 
 	function downloadPdf(id)
 	{
