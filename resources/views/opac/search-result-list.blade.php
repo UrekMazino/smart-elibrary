@@ -1,5 +1,9 @@
 @extends('opac.layout.master')
 
+@section('meta_title', 'Search results — DOST-PCAARRD eLibrary')
+@section('robots', 'noindex, follow')
+
+
 @section('css')
     <!-- SPECIFIC CSS -->
     <link href="{{ asset('opac/css/date_picker.css') }}" rel="stylesheet">

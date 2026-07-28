@@ -973,3 +973,87 @@ function getShelves($limit = 45)
     });
 }
 
+
+/* ==========================================================================
+ * SEO helpers (OPAC public pages) — see OPAC_SEO_PLAN.md workstream A.
+ * The OPAC layout used to emit one hardcoded <title> + description for every
+ * page; these build per-page values so each record is distinguishable.
+ * ========================================================================== */
+
+/**
+ * Squash whitespace and drop trailing ISBD punctuation ("Title /", "Author :", "Publisher ;").
+ * MARC fields carry these marks as field separators; they read as typos outside a catalogue card.
+ * Trailing periods are deliberately kept — they are often meaningful ("Jatropha curcas L.").
+ */
+function seoTrimIsbd($text): string
+{
+    $t = preg_replace('/\s+/u', ' ', trim(strip_tags((string) $text)));
+    $t = preg_replace('/\s*[\/:;,=]+\s*$/u', '', (string) $t);
+
+    return trim((string) $t);
+}
+
+/**
+ * A clean page title from a MARC 245 title statement.
+ *
+ * Casing is deliberately NOT changed: titles in this catalogue are often ALL CAPS, but title-casing
+ * would mangle acronyms (DOST, PCAARRD) and botanical authorities ("Jatropha curcas L.") — wrong
+ * data is worse than shouty data.
+ */
+function seoTitle($title, int $max = 65): string
+{
+    $t = seoTrimIsbd($title);
+
+    return $t === '' ? '' : \Illuminate\Support\Str::limit($t, $max, '…');
+}
+
+/**
+ * Record title for <title>. The site name is appended only when there is room for it: Google shows
+ * roughly 60 characters, and for a long MARC title the words matter more than the branding.
+ */
+function seoPageTitle($title, string $site = 'DOST-PCAARRD eLibrary'): string
+{
+    $t = seoTitle($title, 65);
+    if ($t === '') {
+        return $site;
+    }
+
+    return mb_strlen($t) <= 36 ? $t . ' — ' . $site : $t;
+}
+
+/** Squash any text into a meta-description-sized, tag-free single line. */
+function seoDescription($text, int $max = 155): string
+{
+    $t = preg_replace('/\s+/u', ' ', trim(strip_tags((string) $text)));
+    $t = trim((string) $t);
+
+    return $t === '' ? '' : \Illuminate\Support\Str::limit($t, $max, '…');
+}
+
+/**
+ * Per-record meta description: the 520 summary when there is one, else the general note, else a
+ * factual one-liner built from the record itself. The fallback matters — plenty of records have an
+ * empty summary, and without it they would all inherit the site-wide description again.
+ */
+function seoRecordDescription($record): string
+{
+    foreach ([$record->summary ?? null, $record->general_note ?? null] as $candidate) {
+        $d = seoDescription($candidate);
+        if ($d !== '') {
+            return $d;
+        }
+    }
+
+    // Each part is ISBD-trimmed too, or MARC separators ("Author /") leak into the snippet.
+    // joint_authors separates names with "/" ("Cruz, J. /Santos, M."); read better as a list.
+    $authors = preg_replace('#\s*/\s*#u', '; ', seoTrimIsbd($record->joint_authors ?? null));
+    $imprint = seoTrimIsbd(implode(' ', array_filter([$record->publisher ?? null, $record->pub_year ?? null])));
+    $bits = array_filter([
+        seoTitle($record->title_statement ?? '', 90),
+        trim((string) $authors, '; '),
+        $imprint,
+        seoTrimIsbd($record->material_type ?? null),
+    ]);
+
+    return seoDescription(implode('. ', $bits));
+}

@@ -1,5 +1,8 @@
 @extends('opac.layout.master')
 
+@section('robots', 'noindex, follow')
+
+
 @section('content')
 <div id="error_page">
 			<div class="container">

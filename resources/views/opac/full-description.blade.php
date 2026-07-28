@@ -1,5 +1,13 @@
 @extends('opac.layout.master')
 
+{{-- Per-record SEO. Every record page used to share one site-wide title/description, which left
+     Google nothing to tell ~7,600 records apart. See OPAC_SEO_PLAN.md workstream A. --}}
+@section('meta_title', e(seoPageTitle($result->title_statement)))
+@section('meta_description', e(seoRecordDescription($result)))
+@section('canonical', url('/full-description/' . $result->catalog_id))
+@section('og_type', 'article')
+@section('og_image', getFrontpageLink($result->catalog_id))
+
 @section('css')
     <!-- SPECIFIC CSS -->
     <link href="{{ asset('opac/css/date_picker.css') }}" rel="stylesheet">

@@ -1,5 +1,8 @@
 @extends('opac.layout.master')
 
+@section('robots', 'noindex, nofollow')
+
+
 @section('content')
 <form method="POST" action="{{ url('/review/submit') }}" id="frm_review">
 @csrf

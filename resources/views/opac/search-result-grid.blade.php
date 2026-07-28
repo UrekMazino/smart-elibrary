@@ -1,4 +1,8 @@
 @extends('opac.layout.master')
+
+@section('meta_title', 'Search results — DOST-PCAARRD eLibrary')
+@section('robots', 'noindex, follow')
+
 <?php
 	if(isset($_GET['year1']))
 		$yr1 = $_GET['year1'];

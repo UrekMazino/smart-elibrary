@@ -1,5 +1,8 @@
 @extends('opac.layout.master')
 
+@section('robots', 'noindex, nofollow')
+
+
 @section('css')
 <style>
 	/* Profile — minimalist, uniform with Transactions / Inquiries / To Review */

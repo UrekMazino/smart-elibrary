@@ -1,5 +1,9 @@
 @extends('opac.layout.master')
 
+@section('meta_title', 'AI search — DOST-PCAARRD eLibrary')
+@section('robots', 'noindex, follow')
+
+
 @section('css')
 <style>
 	/* ---- AI mode results — answer first, sources below ---- */

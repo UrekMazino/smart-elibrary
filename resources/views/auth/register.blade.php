@@ -1,5 +1,8 @@
 @extends('opac.layout.master')
 
+@section('robots', 'noindex, nofollow')
+
+
 @section('content')
         <div class="bg_color_2">
             <div class="container margin_60_35">

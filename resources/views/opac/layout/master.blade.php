@@ -4,11 +4,30 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<meta name="description" content="Find ANNR materials online">
 	<meta name="author" content="FPRDI">
 	<meta name="csrf_token" content="{{ csrf_token() }}">
 
-	<title>DOST-PCAARRD eLibrary</title>
+	{{-- Per-page SEO (OPAC_SEO_PLAN.md workstream A). Pages override these via @section;
+	     the defaults below are what every page used to emit unconditionally. --}}
+	<title>@yield('meta_title', 'DOST-PCAARRD eLibrary')</title>
+	<meta name="description" content="@yield('meta_description', 'Search the DOST-PCAARRD eLibrary for agriculture, aquatic and natural resources (AANR) research materials.')">
+	<meta name="robots" content="@yield('robots', 'index, follow')">
+	@hasSection('canonical')
+		<link rel="canonical" href="@yield('canonical')">
+	@endif
+
+	{{-- Link previews (social/chat). og:image only when the page supplies one. --}}
+	<meta property="og:site_name" content="DOST-PCAARRD eLibrary">
+	<meta property="og:type" content="@yield('og_type', 'website')">
+	<meta property="og:title" content="@yield('meta_title', 'DOST-PCAARRD eLibrary')">
+	<meta property="og:description" content="@yield('meta_description', 'Search the DOST-PCAARRD eLibrary for agriculture, aquatic and natural resources (AANR) research materials.')">
+	<meta property="og:url" content="@yield('canonical', url()->current())">
+	@hasSection('og_image')
+		<meta property="og:image" content="@yield('og_image')">
+		<meta name="twitter:card" content="summary_large_image">
+	@else
+		<meta name="twitter:card" content="summary">
+	@endif
 
 	<!-- Favicons-->
 	<link rel="shortcut icon" href="{{ asset('assets/images/elibrary-02.png') }}">

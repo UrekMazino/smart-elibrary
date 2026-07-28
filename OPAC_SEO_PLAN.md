@@ -1,7 +1,17 @@
 # OPAC Public-Launch SEO — Plan
 
-**Status:** Not started — planning / reference only. No code written for this yet.
-**Last updated:** 2026-07-20
+**Status:** **Workstream A (per-page metadata) is DONE.** B (JSON-LD), C (sitemap + robots) and
+D (URL slugs) are still planning-only.
+**Last updated:** 2026-07-28
+
+> **A — implemented:** `master.blade.php` now yields `meta_title` / `meta_description` / `robots` /
+> `canonical` / OG + Twitter, with the old hardcoded strings as fallbacks. `full-description.blade.php`
+> supplies a unique title, description, canonical and `og:image` per record; home and results pages
+> get real titles (results are `noindex, follow`); private/auth pages are `noindex, nofollow`.
+> Helpers in `app/Http/helper.php`: `seoTrimIsbd()`, `seoTitle()`, `seoPageTitle()`,
+> `seoDescription()`, `seoRecordDescription()` (summary → general note → factual fallback, so records
+> with an empty 520 still get a unique description). Verified: two records render distinct
+> title+description; ISBD punctuation and `/`-separated author lists are cleaned.
 
 **Goal:** when the OPAC goes public, make the ~7,600 published catalogue records **discoverable in
 Google** — each record page a landing page for searches like *"jatropha curcas seed germination"*.

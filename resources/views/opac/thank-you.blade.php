@@ -1,5 +1,8 @@
 @extends('opac.layout.master')
 
+@section('robots', 'noindex, nofollow')
+
+
 @section('content')
 <div class="container margin_120">
 			<div class="row justify-content-center">

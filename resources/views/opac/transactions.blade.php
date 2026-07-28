@@ -1,4 +1,7 @@
 @extends('opac.layout.master')
+
+@section('robots', 'noindex, nofollow')
+
 @section('content')
 
 	<style>

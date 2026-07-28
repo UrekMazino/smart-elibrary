@@ -1,4 +1,7 @@
 @extends('opac.layout.master')
+
+@section('robots', 'noindex, nofollow')
+
 @section('css')
 <style>
 	/* Inquiries — compact, minimalist cards (uniform with Transactions / To Review) */
