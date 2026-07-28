@@ -24,21 +24,26 @@ class HoldingController extends Controller
 
         abort_if(!$result, 404);
 
-        //SAVE VIEW
-        saveView($result->catalog_id);
-
-        return view('opac.full-description')->with('result',$result);
+        // The search results navigate here by POSTing a catalog_id, which would render the record
+        // at the id-less URL /full-description — not shareable, and a second URL for the same
+        // content. Send the browser to the canonical slug URL instead (Post/Redirect/Get).
+        return redirect(recordUrl($result));
     }
 
-    public function index2($catalog_id = null)
+    public function index2($segment = null)
     {
-       
+
         if(Auth::check() && Auth::user()->usertype == 'Administrator')
-        {  
+        {
             return redirect('/admin/dashboard');
         }
 
-        if($catalog_id){
+        if($segment){
+
+            // URLs are "{catalog_id}-{title-slug}"; the leading integer is the lookup key and the
+            // slug is decorative, so a retitled record never breaks an existing link.
+            $catalog_id = (int) $segment;
+            abort_if($catalog_id <= 0, 404);
 
             // Only serve public records (published + not deleted); unpublished/deleted/
             // unknown ids must 404 rather than leak or crash on a null $result.
@@ -48,6 +53,14 @@ class HoldingController extends Controller
                 ->first();
 
             abort_if(!$result, 404);
+
+            // One canonical URL per record: a bare id (old links, shared URLs) or a stale slug
+            // (title since edited) redirects permanently to the current form. Done BEFORE
+            // saveView so a redirect hop is not counted as a second view.
+            $canonical = seoRecordSegment($result);
+            if ((string) $segment !== $canonical) {
+                return redirect()->to(url('/full-description/' . $canonical), 301);
+            }
 
             //SAVE VIEW
             saveView($result->catalog_id);

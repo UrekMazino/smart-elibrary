@@ -58,11 +58,11 @@ class GenerateSitemap extends Command
         $written = 0;
 
         // chunkById keeps memory flat as the catalogue grows.
-        $query->select('catalog_id', 'updated_at')->orderBy('catalog_id')
+        $query->select('catalog_id', 'title_statement', 'updated_at')->orderBy('catalog_id')
             ->chunkById($chunkSize, function ($rows) use (&$part, &$buffer, &$files, &$written, $public, $chunkSize) {
                 foreach ($rows as $r) {
                     $buffer[] = [
-                        'loc'     => url('/full-description/' . $r->catalog_id),
+                        'loc'     => recordUrl($r),
                         'lastmod' => $r->updated_at ? $r->updated_at->toAtomString() : null,
                     ];
                     if (count($buffer) >= $chunkSize) {

@@ -232,7 +232,7 @@ class AiSearchService
                 'score'      => isset($s['score']) ? round((float) $s['score'], 2) : null,
                 'snippet'    => $s['snippet'] ?? null,
                 'thumb'      => getThumbnailLink($c->catalog_id),
-                'url'        => url('/full-description/' . $c->catalog_id),
+                'url'        => recordUrl($c),
             ];
         }
 

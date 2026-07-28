@@ -33,7 +33,7 @@ class ReviewController extends Controller
        //both the download and the read of that material.
 
        //Back to the reviewed material
-       return redirect('/full-description/'.request()->catalog_id)
+       return redirect(recordUrl(App\Models\ViewCatalog::where('catalog_id', request()->catalog_id)->first()))
               ->with('success', 'Thanks for your review!');
     }
 

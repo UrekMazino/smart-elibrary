@@ -1,8 +1,22 @@
 # OPAC Public-Launch SEO — Plan
 
-**Status:** **Workstreams A (metadata), B (JSON-LD) and C (sitemap + robots) are DONE.**
-Only D (URL slugs) remains planning-only.
+**Status:** **All four workstreams are DONE** — A (metadata), B (JSON-LD), C (sitemap + robots),
+D (URL slugs). Remaining work is the pre-launch environment checklist in §4 and
+`DEPLOYMENT_CHECKLIST.md`.
 **Last updated:** 2026-07-28
+
+> **D — implemented:** record URLs are now the ID-prefixed hybrid
+> `/full-description/10435-fruit-color-as-an-indicator-…`. The leading integer is the lookup key
+> (so `catalog_id` stays the RAG join key and a retitled record never breaks a link); the slug is
+> decorative, capped at 80 chars and cut back to a whole word.
+> `seoRecordSegment()` / `recordUrl()` in `app/Http/helper.php` are the single source of truth, used
+> by every link, the canonical tag, the JSON-LD and the sitemap.
+> **Canonicalisation:** a bare id (old/shared links) or a stale slug **301s** to the current URL —
+> done before `saveView()`, so a redirect hop isn't counted as a view. The search results' POST to
+> `/full-description` now redirects to the canonical URL instead of rendering at an id-less address,
+> removing a duplicate-content path and giving users a shareable URL.
+> Verified: 200 on the canonical URL, 301 from bare id and from a stale slug, 404 for unknown ids,
+> non-numeric segments and unpublished records; canonical tag, JSON-LD `url` and sitemap all agree.
 
 > **C — implemented:** `php artisan sitemap:generate` (in `app/Console/Commands/GenerateSitemap.php`)
 > writes `public/sitemap.xml` (a sitemap **index**), `sitemap-pages.xml` and chunked

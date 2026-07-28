@@ -167,8 +167,12 @@ curl http://127.0.0.1:8090/healthz           # AI gateway alive
 
 - **Logon scheduled tasks are not registered** — needs one elevated run of
   `register-projecty-tasks.ps1`. Until then AI mode is down after every reboot.
-- **SEO workstream D (URL slugs)** is planned, not built — see `OPAC_SEO_PLAN.md`. If wanted, do it
-  **before** public launch; retrofitting after indexing means 301 chains and re-crawling.
+- ~~**SEO workstream D (URL slugs)**~~ — **done**: record URLs are now
+  `/full-description/{id}-{title-slug}`, with bare-id and stale-slug URLs 301ing to the canonical
+  form. **Re-run `php artisan sitemap:generate` after deploying** so the sitemap carries slug URLs.
+- **Search results link to records by POST, not `<a href>`** (`submitFrm()` in the result views), so
+  crawlers cannot reach record pages by following links — the sitemap is currently the only
+  discovery path. Converting result items to real anchors would strengthen internal linking.
 - ~~**`saveView()` counts crawler hits**~~ — **fixed**: `isCrawler()` guards `saveView()` and
   `views.user_agent` is now recorded (migration `2026_07_28_000000_add_user_agent_to_views_table`).
 - **Scanned PDFs index as metadata-only** — full text needs the Stage-3 OCR batch (`ocr_run.py`).

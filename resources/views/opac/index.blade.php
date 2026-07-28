@@ -169,7 +169,7 @@
 				<div id="most-downloaded" class="owl-carousel owl-theme">
 					@foreach(mostDownloaded() AS $values)
 						<div class="item">
-							<a href="{{ url('/full-description/'.$values->catalog_id) }}">
+							<a href="{{ recordUrl($values) }}">
 								<div class="views"><i class="icon-download-5"></i>{{ $values->total}}</div>
 								<div class="title">
 								</div>{!! getFrontpage($values->catalog_id) !!}
@@ -222,10 +222,10 @@
 				<div class="cc-track">
 					@foreach(getLatestMaterial() as $results)
 						<div class="cc-item">
-							<a class="cc-cover" href="{{ url('/full-description/'.$results->catalog_id) }}">
+							<a class="cc-cover" href="{{ recordUrl($results) }}">
 								<img loading="lazy" src="{{ getThumbnailLink($results->catalog_id) }}" alt="{{ $results->title_statement }}">
 							</a>
-							<a class="cc-cap" href="{{ url('/full-description/'.$results->catalog_id) }}" title="{{ $results->title_statement }}">{{ $results->title_statement }}</a>
+							<a class="cc-cap" href="{{ recordUrl($results) }}" title="{{ $results->title_statement }}">{{ $results->title_statement }}</a>
 						</div>
 					@endforeach
 				</div>

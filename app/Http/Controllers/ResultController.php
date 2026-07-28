@@ -137,7 +137,7 @@ class ResultController extends Controller
                 'year'       => $m->pub_year,
                 'type'       => $m->material_type,
                 'thumb'      => getThumbnailLink($m->catalog_id),
-                'url'        => url('/full-description/' . $m->catalog_id),
+                'url'        => recordUrl($m),
             ];
         })->values();
 

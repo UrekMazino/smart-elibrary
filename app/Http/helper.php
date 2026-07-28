@@ -911,7 +911,7 @@ function rankItemsMap($rows, callable $detailFn)
 			'catalog_id' => $r->catalog_id,
 			'title'      => $r->title_statement,
 			'thumb'      => getThumbnailLink($r->catalog_id),
-			'url'        => url('/full-description/' . $r->catalog_id),
+			'url'        => recordUrl($r),
 			'detail'     => $detailFn($r),
 		];
 	})->all();
@@ -991,7 +991,7 @@ function getShelves($limit = 45)
         $items = $rows->map(function ($r) {
             return [
                 'thumb' => getThumbnailLink($r->catalog_id),
-                'url'   => url('/full-description/' . $r->catalog_id),
+                'url'   => recordUrl($r),
                 'title' => $r->title_statement,
             ];
         })->all();
@@ -1153,7 +1153,7 @@ function seoJsonLdEncode(array $data): string
  */
 function seoRecordJsonLd($record): string
 {
-    $url  = url('/full-description/' . $record->catalog_id);
+    $url  = recordUrl($record);
     $type = seoSchemaType($record->material_type ?? null);
 
     // pub_year is free text in MARC ("c2010", "2010."); schema.org wants a bare year.
@@ -1223,4 +1223,49 @@ function seoSiteJsonLd(): string
             'logo'     => asset('assets/images/elibrary-02.png'),
         ],
     ]);
+}
+
+/* ---- Record URLs (ID-prefixed slugs) — OPAC_SEO_PLAN.md workstream D ---------------------- */
+
+/**
+ * The URL segment for a record: "10435-fruit-color-as-an-indicator-of-seed-germination".
+ *
+ * The numeric catalog_id stays the lookup key and the slug is decorative. That matters here:
+ *  - MARC 245 titles get edited, and an ID prefix means a corrected typo never breaks a link;
+ *  - library catalogues legitimately hold duplicate titles, so pure slugs would need collision
+ *    handling;
+ *  - catalog_id remains the join key the RAG stack depends on (see RAG_CATALOG_SYNC_PLAN.md).
+ *
+ * Accepts a record object/array, or an id plus a title.
+ */
+function seoRecordSegment($record, $title = null): string
+{
+	if (is_object($record) || is_array($record)) {
+		$r = (object) $record;
+		$id = (int) ($r->catalog_id ?? 0);
+		$title = $title ?? ($r->title_statement ?? '');
+	} else {
+		$id = (int) $record;
+	}
+
+	$slug = \Illuminate\Support\Str::slug(seoTrimIsbd($title));
+
+	// Keep URLs a sane length, cutting back to the last whole word so a long MARC title
+	// doesn't end mid-syllable ("...performance-of-jatr").
+	if (strlen($slug) > 80) {
+		$slug = substr($slug, 0, 80);
+		$lastWord = strrpos($slug, '-');
+		if ($lastWord !== false && $lastWord > 20) {
+			$slug = substr($slug, 0, $lastWord);
+		}
+	}
+	$slug = trim($slug, '-');
+
+	return $slug === '' ? (string) $id : $id . '-' . $slug;
+}
+
+/** Absolute canonical URL for a record page. */
+function recordUrl($record, $title = null): string
+{
+	return url('/full-description/' . seoRecordSegment($record, $title));
 }

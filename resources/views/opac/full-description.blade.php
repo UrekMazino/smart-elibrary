@@ -6,7 +6,7 @@
      ("&" -> "&amp;amp;") in titles and descriptions. --}}
 @section('meta_title', seoPageTitle($result->title_statement))
 @section('meta_description', seoRecordDescription($result))
-@section('canonical', url('/full-description/' . $result->catalog_id))
+@section('canonical', recordUrl($result))
 @section('og_type', 'article')
 @section('og_image', getFrontpageLink($result->catalog_id))
 
@@ -183,7 +183,7 @@
 									<button type="button" class="btn_1 fd-btn" disabled title="No file available to download"><i class="icon-download"></i> Download</button>
 								@endif
 								<button type="button" class="btn_1 fd-btn" onclick="inquire('{{ $result->catalog_id }}')"><i class="icon-info-3"></i> Inquire</button>
-								<button type="button" class="btn_1 fd-btn" data-share-url="{{ url('/full-description/'.$result->catalog_id) }}" data-share-title="{{ $result->title_statement }}" onclick="shareRecord(this)" title="Copy link to this record"><i class="pe-7s-link"></i> Share</button>
+								<button type="button" class="btn_1 fd-btn" data-share-url="{{ recordUrl($result) }}" data-share-title="{{ $result->title_statement }}" onclick="shareRecord(this)" title="Copy link to this record"><i class="pe-7s-link"></i> Share</button>
 							</div>
 						</div>
 
