@@ -4,6 +4,7 @@ FPRDI/DOST agri-forestry catalog / OPAC (Laravel), built RAG-ready for the **Pro
 
 **📖 Documentation**
 - **Full-stack rebuild** (this app + Hermes + RAG): [`DEPLOYMENT_RUNBOOK.md`](https://github.com/UrekMazino/hermes-with-rag/blob/main/DEPLOYMENT_RUNBOOK.md) in the `hermes-with-rag` repo — the single ordered entry point.
+- **Deploying this app:** [`DEPLOYMENT_CHECKLIST.md`](DEPLOYMENT_CHECKLIST.md) — ordered deploy steps, required `.env`, out-of-git state, and the cross-repo change record.
 - **This repo's docs:** [`LARAVEL_UPGRADE_RUNBOOK.md`](LARAVEL_UPGRADE_RUNBOOK.md) · [`MEILISEARCH_SETUP.md`](MEILISEARCH_SETUP.md) · [`RAG_INTEGRATION_PLAN.md`](RAG_INTEGRATION_PLAN.md) · [`RAG_CATALOG_SYNC_PLAN.md`](RAG_CATALOG_SYNC_PLAN.md) · [`OPAC_SEO_PLAN.md`](OPAC_SEO_PLAN.md) · [`Z3950_SRU_INTEGRATION_PLAN.md`](Z3950_SRU_INTEGRATION_PLAN.md)
 
 ---
