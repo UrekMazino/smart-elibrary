@@ -55,6 +55,10 @@
 $(document).ready(function () {
     if (window.feather) feather.replace();
 
+    @if(session('success'))
+    toast('success', @json(session('success')));
+    @endif
+
     var table = $('#tbl').DataTable({
         processing: true,
         serverSide: true,

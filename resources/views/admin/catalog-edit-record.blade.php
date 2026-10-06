@@ -186,7 +186,7 @@
                                             <option value="{{$template->id}}">{{ $template->name }}</option>
                                         @endforeach
                                     </select>
-                                    <span class="cr-hint">Loading a template replaces the fields below.</span>
+                                    <span class="cr-hint">Loading a template replaces the MARC fields below (you'll be asked first; LDR / 008 are kept).</span>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label for="materialTypeSelect" class="cr-label">Material Type <span class="cr-req">*</span></label>

@@ -1,11 +1,15 @@
 /* =====================================================================
- * Shared MARC field editor for the Create Record AND Edit Record pages.
+ * Shared MARC field editor for the Create Record, Edit Record AND the MARC Template
+ * create/edit pages.
  *
  * The module (MarcEditor) is page-agnostic; the wiring at the bottom is
  * config-driven via two page globals:
- *   marcEditorMode    'create' | 'edit'   -> LDR$05 record status (n new / c revised)
+ *   marcEditorMode    'create' | 'edit' | 'template'
+ *                       create/edit -> LDR$05 record status (n new / c revised)
+ *                       template    -> no LDR/008 panel, per-tag "Required" toggle, values
+ *                                      are template defaults, serialized by serializeTemplate()
  *   marcInitialFields source-shape array  -> fields to pre-load (create: core bib tags;
- *                                            edit: the record being edited)
+ *                                            edit: the record being edited; template: its tags)
  *
  * State management (the point of this file):
  *   - ONE in-memory array `fields` is the single source of truth.
@@ -23,7 +27,8 @@
  *   3. Add Tag                     -> addTag(res)                  (editable field)
  *
  * Shapes:
- *   source field  : {tag:{id,code,description,isRequired}, subfields:[{id,code,description,default}], indicators:[{id,indicator}]}
+ *   source field  : {tag:{id,code,description,isRequired}, subfields:[{id,code,description,default}], indicators:[{id,indicator}],
+ *                    editable?, allSubfields?:[{id,code,description}], allIndicators?:[[{id,indicator}],[...]]}
  *   add-tag detail: {id,code,description, subfields:[{id,code,description}], first_indictors:[{id,indicator}], second_indicators:[...]}
  *   field_data out: {marctag:{index,id,code,description}, indicator:[{id,indicator},{id,indicator}], subfield:[{'sub-index',id,code,description,value}]}
  * ===================================================================== */
@@ -35,9 +40,11 @@ var MarcEditor = (function () {
     var keySeq  = 0;
     var subSeq  = 0;
     var $host;             // #template-div
-    var _mode   = 'create';// 'create' | 'edit' — drives LDR$05 record status (n vs c)
+    var _mode   = 'create';// 'create' | 'edit' | 'template' — see the header
 
-    function setMode(m)   { _mode = (m === 'edit') ? 'edit' : 'create'; }
+    function setMode(m)   { _mode = (m === 'edit' || m === 'template') ? m : 'create'; }
+    function isTemplate() { return _mode === 'template'; }
+    function blankSub()   { return { _key: nextSubKey(), id: null, code: null, description: null, value: '' }; }
     function nextKey()    { return ++keySeq; }
     function nextSubKey() { return ++subSeq; }
     function esc(s)       { return $('<div>').text(s == null ? '' : String(s)).html(); }
@@ -203,21 +210,25 @@ var MarcEditor = (function () {
         // Pre-loaded default tags come with editable:true + allSubfields (they get add/
         // remove subfield + delete tag). Template/parsed fields stay fixed-structure.
         var editable = !!sf.editable;
+        var subs = (sf.subfields || []).map(function (s) {
+            return {
+                _key: nextSubKey(),
+                id: s.id, code: s.code, description: s.description,
+                value: (s.default && s.default !== 'Enter value') ? s.default : ''
+            };
+        });
+        if (editable && !subs.length) subs.push(blankSub());   // always one row to pick a code into
         return {
             _key: nextKey(),
             editable: editable,
-            required: !!(sf.tag && sf.tag.isRequired),        // required tags (245) can't be deleted
+            // Records: required tags (245, or ones a template marks required) can't be deleted.
+            // Templates: 'required' is just the flag being edited, so 245 isn't forced there.
+            required: !!(sf.tag && sf.tag.isRequired) || (!isTemplate() && code === '245'),
             fixed: (code === 'LDR' || code === '008'),        // -> guided fixed-field panel, not a generic card
             marctag: { id: sf.tag.id, code: code, description: sf.tag.description },
             indicator: normIndicators(sf.indicators),
-            subfield: (sf.subfields || []).map(function (s) {
-                return {
-                    _key: nextSubKey(),
-                    id: s.id, code: s.code, description: s.description,
-                    value: (s.default && s.default !== 'Enter value') ? s.default : ''
-                };
-            }),
-            options: editable ? { subfields: sf.allSubfields || [], ind: [[], []] } : null
+            subfield: subs,
+            options: editable ? { subfields: sf.allSubfields || [], ind: sf.allIndicators || [[], []] } : null
         };
     }
 
@@ -249,6 +260,23 @@ var MarcEditor = (function () {
         });
     }
 
+    // ---- public: load a MARC template ---------------------------------------
+    // Replaces the data fields with the template's, but KEEPS the current LDR/008: templates
+    // never carry them, and the cataloger may already have set dates/country/language there.
+    function loadTemplate(sourceFields) {
+        var kept = fields.filter(function (f) { return f.fixed; });
+        fields = kept.concat((sourceFields || []).map(fromSource));
+        sortFields();
+        render();
+    }
+
+    // True when any data field already holds a value (used to warn before replacing).
+    function hasValues() {
+        return fields.some(function (f) {
+            return !f.fixed && f.subfield.some(function (s) { return String(s.value || '').trim() !== ''; });
+        });
+    }
+
     // ---- public: add one editable tag (Add Tag) ----------------------------
     function addTag(details) {
         fields.push({
@@ -256,7 +284,7 @@ var MarcEditor = (function () {
             editable: true,                                  // user can pick subfield codes, add/remove
             marctag: { id: details.id, code: details.code, description: details.description },
             indicator: [{ id: null, indicator: ' ' }, { id: null, indicator: ' ' }],   // blank by default
-            subfield: [{ _key: nextSubKey(), id: null, code: null, description: null, value: '' }],
+            subfield: [blankSub()],
             options: {
                 subfields: details.subfields || [],
                 ind: [details.first_indictors || [], details.second_indicators || []]
@@ -279,19 +307,19 @@ var MarcEditor = (function () {
     function addSubfield(key) {
         var f = field(key);
         if (!f) return;
-        f.subfield.push({ _key: nextSubKey(), id: null, code: null, description: null, value: '' });
+        f.subfield.push(blankSub());
         renderField(f);   // re-render just this field's card
     }
     function removeSubfield(key, sk) {
         var f = field(key);
         if (!f) return;
         f.subfield = f.subfield.filter(function (s) { return s._key != sk; });
-        if (!f.subfield.length) f.subfield.push({ _key: nextSubKey(), id: null, code: null, description: null, value: '' });
+        if (!f.subfield.length) f.subfield.push(blankSub());
         renderField(f);
     }
     function removeField(key) {
         var f = field(key);
-        if (f && f.required) return;   // required tags can't be removed (defensive; icon is hidden too)
+        if (f && f.required && !isTemplate()) return;   // required tags can't be removed from a record (icon is hidden too)
         fields = fields.filter(function (f) { return f._key != key; });
         $host.find('[data-key="' + key + '"]').remove();
     }
@@ -401,13 +429,20 @@ var MarcEditor = (function () {
             .text(f.marctag.code + ' - ' + f.marctag.description);
         $parent.append($label);
 
-        // Delete-tag control — but not for a required tag (e.g. 245 Title Statement).
-        if (f.editable && !f.required) {
+        // Delete-tag control — but not for a required tag on a record (e.g. 245 Title Statement).
+        if (f.editable && (!f.required || isTemplate())) {
             $parent.append(' ', $('<i>').addClass('sm-font danger-clr in-b mfe-remove-tag').attr({
                 'data-bs-toggle': 'tooltip', 'title': 'Remove Tag', 'data-feather': 'minus-square'
             }));
         }
-        if (f.required) {
+        if (isTemplate()) {
+            // Template: toggle whether records made from it must keep this tag.
+            var id = 'mfe-req-' + f._key;
+            $parent.append(' ', $('<span>').addClass('form-check form-check-inline ms-2 mb-0').append(
+                $('<input>').addClass('form-check-input mfe-required').attr({ type: 'checkbox', id: id }).prop('checked', !!f.required),
+                $('<label>').addClass('form-check-label').attr('for', id).css('font-size', '11.5px').text('Required')
+            ));
+        } else if (f.required) {
             $parent.append(' ', $('<span>').addClass('badge bg-light text-muted')
                 .css({ 'font-size': '9.5px', 'font-weight': 600 }).text('required'));
         }
@@ -437,13 +472,19 @@ var MarcEditor = (function () {
 
         if (f.editable && f.options) {
             $sel.append($('<option>').val('').text('# (blank)'));   // blank -> stored as a space
+            var found = false;
             (f.options.ind[pos] || []).forEach(function (ind) {
                 if (ind && ind.id != null) {
                     var opt = $('<option>').val(ind.id).text(ind.indicator);
-                    if (cur.id != null && cur.id == ind.id) opt.attr('selected', 'selected');
+                    if (cur.id != null && cur.id == ind.id) { opt.attr('selected', 'selected'); found = true; }
                     $sel.append(opt);
                 }
             });
+            // A stored non-blank indicator that isn't in the tag's list (or a field loaded without
+            // a list) is still shown, so the dropdown never misrepresents the field's value.
+            if (!found && cur.indicator && cur.indicator !== ' ') {
+                $sel.append($('<option>').attr('selected', 'selected').val(cur.id || '').text(indicatorLabel(cur.indicator)));
+            }
         } else {
             // Fixed: show the parsed/template indicator as the only option (blank shows as '#').
             $sel.append($('<option>').attr('selected', 'selected').val(cur.id == null ? '' : cur.id).text(indicatorLabel(cur.indicator)));
@@ -479,7 +520,7 @@ var MarcEditor = (function () {
         // The value is DISABLED for direct typing — it's edited through the plain-text
         // editor (button below), which keeps values markup-free for the OPAC + search.
         $r.append($('<input>').addClass('form-control in-b width25 mr5 mfe-value')
-            .attr({ type: 'text', placeholder: '(empty)', disabled: 'disabled', title: s.value || '' })
+            .attr({ type: 'text', placeholder: isTemplate() ? '(no default value)' : '(empty)', disabled: 'disabled', title: s.value || '' })
             .val(s.value || ''));
 
         // Editor toggle button (becomes Save while the editor is open).
@@ -550,6 +591,10 @@ var MarcEditor = (function () {
                 indicator: marcIndicatorChar($(this).find('option:selected').text())
             };
         });
+        $host.on('change', '.mfe-required', function () {
+            var f = field($(this).closest('[data-key]').data('key'));
+            if (f) f.required = this.checked;
+        });
         $host.on('click', '.mfe-remove-tag', function () {
             removeField($(this).closest('[data-key]').data('key'));
         });
@@ -599,6 +644,22 @@ var MarcEditor = (function () {
     }
     function commit($input) { $input.val(JSON.stringify(serialize())); }
 
+    // Template editor -> the marc_templates.fields shape (ConfigurationController sanitizes it):
+    //   [{id:<tag id>, subfield:[<subfield id>], default:[<value>], indicator:[<ind id>|0, ...], required:0|1}]
+    // Subfield rows with no code picked are dropped; LDR/008 never belong in a template.
+    function serializeTemplate() {
+        return fields.filter(function (f) { return !f.fixed; }).map(function (f) {
+            var subs = f.subfield.filter(function (s) { return s.id != null; });
+            return {
+                id: f.marctag.id,
+                subfield: subs.map(function (s) { return s.id; }),
+                default: subs.map(function (s) { return s.value || ''; }),
+                indicator: f.indicator.map(function (ind) { return parseInt(ind.id, 10) || 0; }),
+                required: f.required ? 1 : 0
+            };
+        });
+    }
+
     function init(hostSelector) {
         $host = $(hostSelector);
         bind();
@@ -608,11 +669,15 @@ var MarcEditor = (function () {
         init: init,
         setMode: setMode,
         loadFromSource: loadFromSource,
+        loadTemplate: loadTemplate,
+        hasValues: hasValues,
         addTag: addTag,
         ensureFixed: ensureFixed,
         removeField: removeField,
         serialize: serialize,
         commit: commit,
+        serializeTemplate: serializeTemplate,
+        count: function () { return fields.filter(function (f) { return !f.fixed; }).length; },
         _fields: function () { return fields; }   // for tests/inspection
     };
 })();
@@ -632,23 +697,60 @@ $(document).ready(function () {
     if ($('#importFlag').val() != 1) {
         var initial = (typeof marcInitialFields !== 'undefined') ? marcInitialFields : [];
         if (initial && initial.length) MarcEditor.loadFromSource(initial);
-        MarcEditor.ensureFixed(selectedMaterialName());   // LDR/06 = 'a' (books) by default
+        // Templates hold data fields only; LDR/008 are generated on the record pages.
+        if (mode !== 'template') MarcEditor.ensureFixed(selectedMaterialName());   // LDR/06 = 'a' (books) by default
     }
 
     // Serialize the in-memory state into #fieldData once, at submit time (either form).
     $('#createRecordFrm, #updateRecordFrm').on('submit', function () {
         MarcEditor.commit($('#fieldData'));
     });
+
+    // Template form: serialize to the template shape; refuse to save an empty template.
+    $('#templateFrm').on('submit', function (e) {
+        if (!MarcEditor.count()) {
+            e.preventDefault();
+            Swal.fire({ icon: 'warning', title: 'No tags yet', text: 'Add at least one MARC tag to the template.' });
+            return;
+        }
+        $('#fieldIds').val(JSON.stringify(MarcEditor.serializeTemplate()));
+    });
+
+    $('#marcTemplateSelect').data('prev', $('#marcTemplateSelect').prop('selectedIndex'));
 });
 
-// MARC template selected -> load its fields, then ensure a leader + 008 exist.
+// MARC template selected -> load its fields (LDR/008 are kept), then ensure a leader + 008 exist.
+// Replacing wipes what's been entered, so confirm first on Edit (always) and on Create (when
+// values have been typed); cancelling puts the dropdown back.
 $(document).on('change', '#marcTemplateSelect', function () {
-    $.getJSON(getTemplateDetailsUrl, { template_id: $(this).val() })
-        .done(function (res) {
-            MarcEditor.loadFromSource(res.fields || []);
-            MarcEditor.ensureFixed(selectedMaterialName());
-        })
-        .fail(function () { console.log("Couldn't load the template."); });
+    var $sel = $(this);
+    var load = function () {
+        $.getJSON(getTemplateDetailsUrl, { template_id: $sel.val() })
+            .done(function (res) {
+                MarcEditor.loadTemplate(res.fields || []);
+                MarcEditor.ensureFixed(selectedMaterialName());
+                $sel.data('prev', $sel.prop('selectedIndex'));
+            })
+            .fail(function () { console.log("Couldn't load the template."); });
+    };
+
+    var editing = (typeof marcEditorMode !== 'undefined' && marcEditorMode === 'edit');
+    if (!editing && !MarcEditor.hasValues()) return load();
+
+    Swal.fire({
+        icon: 'warning',
+        title: 'Replace the MARC fields?',
+        html: 'Loading <strong>' + $('<div>').text($sel.find('option:selected').text()).html() + '</strong> replaces ' +
+              (editing ? 'this record\'s' : 'the') + ' MARC fields and the values entered in them.<br>' +
+              'The LDR / 008 fixed fields are kept.',
+        showCancelButton: true,
+        confirmButtonText: 'Replace fields',
+        cancelButtonText: 'Cancel',
+        reverseButtons: true
+    }).then(function (result) {
+        if (result.isConfirmed) load();
+        else $sel.prop('selectedIndex', $sel.data('prev') || 0);
+    });
 });
 
 // Material Type selected -> generate / sync the fixed fields (type of record, bib level).

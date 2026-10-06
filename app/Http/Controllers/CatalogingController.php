@@ -70,6 +70,11 @@ class CatalogingController extends Controller
             '520' => ['520$a'],           // Summary
         ];
 
+        // Indicator options per tag (first + second), so the indicator dropdowns are choosable.
+        $tagOptions = app(\App\Services\MarcTemplateFields::class)->tagOptions(
+            DB::table('marctags_loc')->whereIn('code', array_map('strval', array_keys($map)))->pluck('id')->all()
+        );
+
         $fields = [];
         foreach ($map as $tagCode => $subCodes) {
             $tag = DB::table('marctags_loc')->where('code', $tagCode)->first();
@@ -97,6 +102,7 @@ class CatalogingController extends Controller
                 'tag'          => ['id' => $tag->id, 'code' => $tag->code, 'description' => $tag->description, 'isRequired' => $tag->code === '245' ? 1 : 0],
                 'subfields'    => $subfields,
                 'allSubfields' => $allSubfields,   // -> select options (shows "245$a - Title")
+                'allIndicators' => $tagOptions[$tag->id]['indicators'] ?? [[], []],
                 'editable'     => true,            // pre-loaded tags get add/remove subfield + delete tag
                 'indicators'   => [['id' => 0, 'indicator' => 'None'], ['id' => 0, 'indicator' => 'None']],
             ];
@@ -121,6 +127,11 @@ class CatalogingController extends Controller
         if (! is_array($fieldData)) {
             return [];
         }
+
+        // Indicator options per tag, loaded once for the whole record.
+        $tagOptions = app(\App\Services\MarcTemplateFields::class)->tagOptions(
+            array_map(fn ($item) => $item['marctag']['id'] ?? null, $fieldData)
+        );
 
         $fields = [];
         foreach ($fieldData as $item) {
@@ -168,6 +179,7 @@ class CatalogingController extends Controller
                 ],
                 'subfields'    => $subfields,
                 'allSubfields' => $allSubfields,
+                'allIndicators' => $isFixed ? [[], []] : ($tagOptions[$tag['id'] ?? 0]['indicators'] ?? [[], []]),
                 'editable'     => ! $isFixed,   // LDR/008 -> guided fixed-field panel
                 'indicators'   => $indicators,
             ];

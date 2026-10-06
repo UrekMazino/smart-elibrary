@@ -7,6 +7,7 @@ use App\Models\MarctagIndicator;
 use App\Models\MarctagsLoc;
 use App\Models\MarctagSubfield;
 use App\Models\MarcTemplate;
+use App\Services\MarcTemplateFields;
 use Illuminate\Support\Facades\DB;
 
 class ConfigurationController extends Controller
@@ -70,36 +71,63 @@ class ConfigurationController extends Controller
          return response()->json($response); 
     }
 
-    public function createMarcTemplate()
+    public function createMarcTemplate(MarcTemplateFields $templateFields)
     {
-        return view('admin.create-marc-template');
+        return view('admin.marc-template-form', [
+            'template'      => null,
+            'initialFields' => $templateFields->toSource(old('field_ids', '[]')),
+        ]);
     }
 
-    public function editMarcTemplate(Request $request)
+    public function editMarcTemplate(Request $request, MarcTemplateFields $templateFields)
     {
-        $template = MarcTemplate::where('id',$request->template_id)->first();
+        $template = MarcTemplate::findOrFail($request->template_id);
 
-        return view('admin.edit-marc-template', ['template' => $template]);
+        return view('admin.marc-template-form', [
+            'template'      => $template,
+            'initialFields' => $templateFields->toSource(old('field_ids', $template->fields)),
+        ]);
     }
 
-    public function storeMarcTemplate(Request $request)
+    public function storeMarcTemplate(Request $request, MarcTemplateFields $templateFields)
     {
+        $fields = $this->validatedTemplateFields($request, $templateFields);
+
         MarcTemplate::create([
-            'name' => $request->name,
-            'fields' => $request->field_ids,
+            'name'   => trim($request->name),
+            'fields' => json_encode($fields),
         ]);
 
         return redirect()->route('marc-templates-index')->with(['success' => 'Template created!']);
     }
 
-    public function updateMarcTemplate(Request $request)
+    public function updateMarcTemplate(Request $request, MarcTemplateFields $templateFields)
     {
-        MarcTemplate::where('id', $request->template_id)
-            ->update([
-                        'name' => $request->template_name,
-                        'fields' => $request->field_ids,
-                    ]);
+        $template = MarcTemplate::findOrFail($request->template_id);
+        $fields   = $this->validatedTemplateFields($request, $templateFields, $template->id);
+
+        $template->update([
+            'name'   => trim($request->name),
+            'fields' => json_encode($fields),
+        ]);
+
         return redirect()->route('marc-templates-index')->with(['success' => 'Template updated!']);
+    }
+
+    /** Validate the template form and return its cleaned fields (stored shape). */
+    private function validatedTemplateFields(Request $request, MarcTemplateFields $templateFields, $ignoreId = null): array
+    {
+        $request->validate([
+            'name'      => ['required', 'string', 'max:255', \Illuminate\Validation\Rule::unique('marc_templates', 'name')->ignore($ignoreId)],
+            'field_ids' => ['required', 'json'],
+        ]);
+
+        $fields = $templateFields->sanitize($request->field_ids);
+        if (! $fields) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['field_ids' => 'Add at least one MARC tag to the template.']);
+        }
+
+        return $fields;
     }
 
     public function destroyMarcTemplate($id) 
@@ -265,49 +293,14 @@ class ConfigurationController extends Controller
         return response()->json($response); 
     }
 
-    public function getMarcTemplateDetails(Request $request)
+    public function getMarcTemplateDetails(Request $request, MarcTemplateFields $templateFields)
     {
-        $template = MarcTemplate::select(DB::raw('*'))->where('id', $request->template_id)->first();
-        
-        $fieldArray = json_decode($template->fields);
-        
-        $detailsArr = array();
-        
-        $indicatorArr = array();
-        
-        foreach($fieldArray as $index => $tag) {
-            
-            $tagDetail = getTagDetails($tag->id);
+        $template = MarcTemplate::findOrFail($request->template_id);
 
-            $subfieldArr = array();
-            if(count($tag->subfield) > 0) {
-                foreach($tag->subfield as $i => $id)
-                {
-                    $subFieldDetails = getSubfieldDetails($id);
-
-                    $subfieldArr[$i] = ['id' => is_null($subFieldDetails) ? 1 : $subFieldDetails->id, 'code' => is_null($subFieldDetails) ? '001-NS' : $subFieldDetails->code, 'description' => is_null($subFieldDetails) ? 'No Subfield' : $subFieldDetails->description, 'default' => count($tag->default) > 0 ? $tag->default[$i] : "Enter value" ];
-                }
-            } 
-            
-            $ind1_id = is_null(getIndicatorDetails($tag->indicator[0])) ? 0 : getIndicatorDetails($tag->indicator[0])->id;
-            $ind2_id = is_null(getIndicatorDetails($tag->indicator[1])) ? 0 : getIndicatorDetails($tag->indicator[1])->id;
-            $ind1_text = is_null(getIndicatorDetails($tag->indicator[0])) ? 'None' : getIndicatorDetails($tag->indicator[0])->indicator;
-            $ind2_text = is_null(getIndicatorDetails($tag->indicator[1])) ? 'None' : getIndicatorDetails($tag->indicator[1])->indicator;
-            $indicatorArr[0] = ['id' => $ind1_id, 'indicator' => $ind1_text];
-            $indicatorArr[1] = ['id' => $ind2_id, 'indicator' => $ind2_text];
-
-            $detailsArr[$index] = 
-                [
-                    'tag' => ['id' => $tagDetail->id, 'code' => $tagDetail->code, 'description' => $tagDetail->description, 'isRequired' => $tag->required], 
-                    'subfields' =>  $subfieldArr,
-                    'indicators' => $indicatorArr,
-                ];
-        }
-        $response = array(
-            "template_id" => $template->id,
+        return response()->json([
+            "template_id"   => $template->id,
             "template_name" => $template->name,
-            "fields" => $detailsArr,
-        );
-        return response()->json($response); 
+            "fields"        => $templateFields->toSource($template->fields),
+        ]);
     }
 }
