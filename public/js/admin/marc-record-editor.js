@@ -30,7 +30,9 @@
  *   source field  : {tag:{id,code,description,isRequired}, subfields:[{id,code,description,default}], indicators:[{id,indicator}],
  *                    editable?, allSubfields?:[{id,code,description}], allIndicators?:[[{id,indicator}],[...]]}
  *   add-tag detail: {id,code,description, subfields:[{id,code,description}], first_indictors:[{id,indicator}], second_indicators:[...]}
- *   field_data out: {marctag:{index,id,code,description}, indicator:[{id,indicator},{id,indicator}], subfield:[{'sub-index',id,code,description,value}]}
+ *   field_data out: {marctag:{index,id,code,description}, indicator:[{id,indicator},{id,indicator}], subfield:[{'sub-index',id,code,description,value,align?}]}
+ *                   align:'justify' is a display flag set by the editor's Justify button (OPAC +
+ *                   view-record honour it; MARC export ignores it). Omitted when not justified.
  * ===================================================================== */
 
 var MarcEditor = (function () {
@@ -214,7 +216,8 @@ var MarcEditor = (function () {
             return {
                 _key: nextSubKey(),
                 id: s.id, code: s.code, description: s.description,
-                value: (s.default && s.default !== 'Enter value') ? s.default : ''
+                value: (s.default && s.default !== 'Enter value') ? s.default : '',
+                align: s.align === 'justify' ? 'justify' : null
             };
         });
         if (editable && !subs.length) subs.push(blankSub());   // always one row to pick a code into
@@ -421,42 +424,47 @@ var MarcEditor = (function () {
         if (window.feather) feather.replace();
     }
 
+    // Card layout: each line is split in two (.mfe-line) — the LEFT half holds the tag's
+    // controls (indicators, subfield code), the RIGHT half holds the value.
     function buildField(f) {
         var $row    = $('<div>').addClass('row mb-3').attr('data-key', f._key);
         var $parent = $('<div>').addClass('col col-lg-12 subfield-parent');
 
-        var $label = $('<label>').addClass('form-label in-b mr strong')
-            .text(f.marctag.code + ' - ' + f.marctag.description);
-        $parent.append($label);
+        // Heading: "245 - Title Statement", remove icon, required badge / toggle.
+        var $head = $('<div>').addClass('mfe-head');
+        $head.append($('<label>').addClass('form-label strong').text(f.marctag.code + ' - ' + f.marctag.description));
 
         // Delete-tag control — but not for a required tag on a record (e.g. 245 Title Statement).
         if (f.editable && (!f.required || isTemplate())) {
-            $parent.append(' ', $('<i>').addClass('sm-font danger-clr in-b mfe-remove-tag').attr({
+            $head.append($('<i>').addClass('sm-font danger-clr mfe-remove-tag').attr({
                 'data-bs-toggle': 'tooltip', 'title': 'Remove Tag', 'data-feather': 'minus-square'
             }));
         }
         if (isTemplate()) {
             // Template: toggle whether records made from it must keep this tag.
             var id = 'mfe-req-' + f._key;
-            $parent.append(' ', $('<span>').addClass('form-check form-check-inline ms-2 mb-0').append(
+            $head.append($('<span>').addClass('form-check form-check-inline ms-2').append(
                 $('<input>').addClass('form-check-input mfe-required').attr({ type: 'checkbox', id: id }).prop('checked', !!f.required),
                 $('<label>').addClass('form-check-label').attr('for', id).css('font-size', '11.5px').text('Required')
             ));
         } else if (f.required) {
-            $parent.append(' ', $('<span>').addClass('badge bg-light text-muted')
+            $head.append($('<span>').addClass('badge bg-light text-muted')
                 .css({ 'font-size': '9.5px', 'font-weight': 600 }).text('required'));
         }
+        $parent.append($head);
 
-        // Indicators
-        var $ind = $('<div>').addClass('block mb-2');
-        $ind.append($('<label>').addClass('form-label in-b mr strong').text('Indicator'));
+        // Indicators (left) | value column caption (right).
+        var $ind = $('<div>').addClass('mfe-left mfe-ind-row');
+        $ind.append($('<label>').text('Indicator'));
         $ind.append(buildIndicator(f, 0), buildIndicator(f, 1));
         if (f.editable) {
-            $ind.append($('<i>').addClass('sm-font success-clr in-b mfe-add-sub').attr({
+            $ind.append($('<i>').addClass('sm-font success-clr mfe-add-sub').attr({
                 'data-bs-toggle': 'tooltip', 'title': 'Add Subfield', 'data-feather': 'plus-square'
             }));
         }
-        $parent.append($ind);
+        $parent.append($('<div>').addClass('mfe-line').append(
+            $ind, $('<div>').addClass('mfe-right mfe-col-label').text(isTemplate() ? 'Default value' : 'Value')
+        ));
 
         // Subfields
         var $subs = $('<div>').addClass('additional-subfield');
@@ -467,7 +475,7 @@ var MarcEditor = (function () {
     }
 
     function buildIndicator(f, pos) {
-        var $sel = $('<select>').addClass('form-select in-b width25 mr5 mfe-ind').attr('data-pos', pos);
+        var $sel = $('<select>').addClass('form-select mfe-ind').attr('data-pos', pos);
         var cur = f.indicator[pos] || { id: null, indicator: ' ' };
 
         if (f.editable && f.options) {
@@ -493,15 +501,15 @@ var MarcEditor = (function () {
     }
 
     function buildSubfield(f, s, isFirst) {
-        var $r = $('<div>').addClass('subfield-row mb-1').attr('data-sub', s._key);
+        var $r    = $('<div>').addClass('subfield-row mfe-line').attr('data-sub', s._key);
+        var $left = $('<div>').addClass('mfe-left');
 
         if (f.editable) {
-            var $rm = $('<i>').addClass('sm-font mr in-b ' + (isFirst ? 'dull-clr' : 'danger-clr mfe-remove-sub')).attr({
+            $left.append($('<i>').addClass('sm-font ' + (isFirst ? 'dull-clr' : 'danger-clr mfe-remove-sub')).attr({
                 'data-bs-toggle': 'tooltip', 'title': 'Remove Subfield', 'data-feather': 'minus-square'
-            });
-            $r.append($rm);
+            }));
 
-            var $sel = $('<select>').addClass('form-select in-b width25 mr5 mfe-subcode');
+            var $sel = $('<select>').addClass('form-select mfe-subcode');
             $sel.append($('<option>').val('').attr('disabled', 'disabled').prop('selected', s.id == null).text('Select Subfield'));
             (f.options.subfields || []).forEach(function (sf) {
                 var opt = $('<option>').val(sf.id).attr({ 'data-code': sf.code, 'data-desc': sf.description })
@@ -509,69 +517,188 @@ var MarcEditor = (function () {
                 if (s.id != null && s.id == sf.id) opt.attr('selected', 'selected');
                 $sel.append(opt);
             });
-            $r.append($sel);
+            $left.append($sel);
         } else {
             // Fixed code: a static label, not a select.
-            $r.append($('<span>').addClass('in-b mr5 badge bg-light text-dark')
-                .css({ 'min-width': '70px', 'font-weight': 600 })
-                .text(s.code || ''));
+            $left.append($('<span>').addClass('badge bg-light text-dark mfe-code-badge').text(s.code || ''));
         }
 
-        // The value is DISABLED for direct typing — it's edited through the plain-text
-        // editor (button below), which keeps values markup-free for the OPAC + search.
-        $r.append($('<input>').addClass('form-control in-b width25 mr5 mfe-value')
-            .attr({ type: 'text', placeholder: isTemplate() ? '(no default value)' : '(empty)', disabled: 'disabled', title: s.value || '' })
-            .val(s.value || ''));
-
+        // RIGHT half: the value. It isn't typed into directly — clicking it (or Edit) opens the
+        // plain-text editor in its place. Plain text keeps values markup-free for the OPAC,
+        // search and MARC export; the editor's formatting tools only insert text (line breaks,
+        // "• " bullets, "1. " numbers, leading spaces), which the OPAC shows as written.
+        var $right = $('<div>').addClass('mfe-right');
+        $right.append($('<div>').addClass('mfe-value').attr({
+            tabindex: 0, role: 'button', title: 'Click to edit',
+            'data-placeholder': isTemplate() ? '(no default value)' : '(empty)'
+        }).toggleClass('mfe-justify', s.align === 'justify').text(s.value || ''));
+        $right.append($('<div>').addClass('mfe-editor').append(buildToolbar(),
+            $('<textarea>').addClass('form-control mfe-editor-ta').attr({ rows: 3, placeholder: 'Type the value…', spellcheck: 'true' })
+        ));
         // Editor toggle button (becomes Save while the editor is open).
-        $r.append($('<button>').attr({ type: 'button', title: 'Edit value' })
-            .addClass('btn btn-sm btn-outline-secondary in-b mr5 mfe-edit-btn')
+        $right.append($('<button>').attr({ type: 'button', title: 'Edit value' })
+            .addClass('btn btn-sm btn-outline-secondary mfe-edit-btn')
             .html('<i data-feather="edit-2" class="icon-sm"></i>'));
 
-        // The editor itself, in the row's vacant right area — hidden until Edit is clicked.
-        $r.append($('<div>').addClass('mfe-editor').append(
-            $('<textarea>').addClass('form-control mfe-editor-ta').attr({ rows: 2, placeholder: 'Type the value…' })
-        ));
+        return $r.append($left, $right);
+    }
 
-        return $r;
+    function buildToolbar() {
+        var $bar = $('<div>').addClass('mfe-toolbar');
+        [['bullets', 'mdi-format-list-bulleted', 'Bulleted list'],
+         ['numbers', 'mdi-format-list-numbered', 'Numbered list'],
+         null,
+         ['outdent', 'mdi-format-indent-decrease', 'Decrease indent (Shift+Tab)'],
+         ['indent', 'mdi-format-indent-increase', 'Increase indent (Tab)'],
+         null,
+         ['clear', 'mdi-format-clear', 'Clear formatting from the selected lines'],
+         null,
+         ['justify', 'mdi-format-align-justify', 'Justify (align both edges of this value)']
+        ].forEach(function (t) {
+            if (!t) { $bar.append($('<span>').addClass('mfe-tool-sep')); return; }
+            $bar.append($('<button>').attr({ type: 'button', title: t[2], 'aria-label': t[2], 'data-tool': t[0] })
+                .addClass('mfe-tool').html('<i class="mdi ' + t[1] + '"></i>'));
+        });
+        return $bar.append($('<span>').addClass('mfe-tool-hint').text('Ctrl+Enter save · Esc cancel'));
+    }
+
+    // ---- plain-text formatting ----------------------------------------------
+    // Lists and indentation are plain characters in the value: "• " bullets, "1. " numbers and
+    // 4-space indents per line. Each tool works on every line the selection touches.
+    var INDENT  = '    ';
+    var LIST_RE = /^([ \t]*)(?:(•)[ \t]+|(\d+)[.)][ \t]+)?(.*)$/;
+
+    function parseLine(line) {
+        var m = LIST_RE.exec(line);
+        return { indent: m[1], bullet: !!m[2], num: m[3] ? parseInt(m[3], 10) : null, text: m[4] };
+    }
+
+    // True when every non-blank line already has the marker (so the tool toggles it off).
+    function allMarked(lines, test) {
+        var filled = lines.filter(function (l) { return l.trim(); });
+        return filled.length > 0 && filled.every(function (l) { return test(parseLine(l)); });
+    }
+
+    var LINE_TOOLS = {
+        bullets: function (lines) {
+            var all = allMarked(lines, function (p) { return p.bullet; });
+            return lines.map(function (l) {
+                if (!l.trim() && lines.length > 1) return l;
+                var p = parseLine(l);
+                return p.indent + (all ? '' : '• ') + p.text;
+            });
+        },
+        numbers: function (lines) {
+            var all = allMarked(lines, function (p) { return p.num != null; }), n = 0;
+            return lines.map(function (l) {
+                if (!l.trim() && lines.length > 1) return l;
+                var p = parseLine(l);
+                return p.indent + (all ? '' : (++n) + '. ') + p.text;
+            });
+        },
+        indent: function (lines) {
+            return lines.map(function (l) { return (l.trim() || lines.length === 1) ? INDENT + l : l; });
+        },
+        outdent: function (lines) {
+            return lines.map(function (l) { return l.replace(/^(\t| {1,4})/, ''); });
+        },
+        clear: function (lines) {
+            return lines.map(function (l) { return parseLine(l).text; });
+        }
+    };
+
+    // Replace [start,end) with text through the browser's editing command, so Ctrl+Z still undoes it.
+    function replaceRange(ta, start, end, text) {
+        ta.focus();
+        ta.setSelectionRange(start, end);
+        if (!(text && document.execCommand && document.execCommand('insertText', false, text))) {
+            ta.setRangeText(text, start, end, 'end');
+        }
+    }
+
+    function applyLineTool(ta, tool) {
+        var v = ta.value, s = ta.selectionStart, e = ta.selectionEnd;
+        if (e > s && v.charAt(e - 1) === '\n') e--;          // a selection ending at a line start excludes that line
+        var ls = v.lastIndexOf('\n', s - 1) + 1;
+        var le = v.indexOf('\n', e); if (le < 0) le = v.length;
+        var out = LINE_TOOLS[tool](v.slice(ls, le).split('\n')).join('\n');
+        replaceRange(ta, ls, le, out);
+        if (out.indexOf('\n') >= 0) ta.setSelectionRange(ls, ls + out.length);   // keep the block selected
+        else ta.setSelectionRange(ls + out.length, ls + out.length);
+        autoGrow(ta);
+    }
+
+    // Enter on a list line continues the list. Enter on an empty item steps it out one indent
+    // level, or ends the list when it's already at the margin.
+    function continueList(ta, e) {
+        var v = ta.value, s = ta.selectionStart;
+        if (s !== ta.selectionEnd) return;
+        var ls = v.lastIndexOf('\n', s - 1) + 1;
+        var le = v.indexOf('\n', s); if (le < 0) le = v.length;
+        var p = parseLine(v.slice(ls, le));
+        if (!p.bullet && p.num == null) return;
+        e.preventDefault();
+        if (!p.text.trim()) {
+            var marker = p.bullet ? '• ' : p.num + '. ';
+            replaceRange(ta, ls, le, p.indent ? p.indent.replace(/^(\t| {1,4})/, '') + marker : '');
+        }
+        else { replaceRange(ta, s, s, '\n' + p.indent + (p.bullet ? '• ' : (p.num + 1) + '. ')); }
+        autoGrow(ta);
+    }
+
+    function autoGrow(ta) {
+        ta.style.height = 'auto';
+        ta.style.height = Math.min(ta.scrollHeight + 2, 400) + 'px';
     }
 
     // ---- value editor (open / save / close) --------------------------------
-    function openEditor($row, $btn) {
-        var $ta = $row.find('.mfe-editor-ta');
-        $ta.val($row.find('.mfe-value').val());
-        $row.find('.mfe-editor').addClass('open');
-        $row.addClass('mfe-editing');
-        $btn.html('<i data-feather="check" class="icon-sm"></i>').attr('title', 'Save value')
-            .removeClass('btn-outline-secondary').addClass('btn-success');
-        if (window.feather) feather.replace();
-        $ta.trigger('focus');
-    }
-
-    function saveEditor($row, $btn) {
-        var v = $row.find('.mfe-editor-ta').val();
+    function openEditor($row) {
+        if ($row.hasClass('mfe-editing')) return;
         var f = field($row.closest('[data-key]').data('key'));
         var s = subOf(f, $row.data('sub'));
-        if (s) s.value = v;
-        $row.find('.mfe-value').val(v).attr('title', v);
-        closeEditor($row, $btn);
+        var $ta = $row.find('.mfe-editor-ta').val(s ? s.value || '' : '');
+        setEditorJustify($row, !!(s && s.align === 'justify'));
+        $row.addClass('mfe-editing');
+        $row.find('.mfe-edit-btn').html('<i data-feather="check" class="icon-sm"></i>').attr('title', 'Save value (Ctrl+Enter)')
+            .removeClass('btn-outline-secondary').addClass('btn-success');
+        if (window.feather) feather.replace();
+        var ta = $ta[0];
+        ta.focus();
+        ta.setSelectionRange(ta.value.length, ta.value.length);
+        autoGrow(ta);
     }
 
-    function closeEditor($row, $btn) {
-        $row.find('.mfe-editor').removeClass('open');
+    function saveEditor($row) {
+        // Normalise line endings; drop leading blank lines and trailing whitespace.
+        var v = $row.find('.mfe-editor-ta').val().replace(/\r\n?/g, '\n').replace(/^(?:[ \t]*\n)+/, '').replace(/\s+$/, '');
+        var f = field($row.closest('[data-key]').data('key'));
+        var s = subOf(f, $row.data('sub'));
+        var justify = $row.find('.mfe-editor').hasClass('mfe-justify-on');
+        if (s) { s.value = v; s.align = justify ? 'justify' : null; }
+        $row.find('.mfe-value').text(v).toggleClass('mfe-justify', justify);
+        closeEditor($row);
+    }
+
+    function closeEditor($row) {
         $row.removeClass('mfe-editing');
-        $btn.html('<i data-feather="edit-2" class="icon-sm"></i>').attr('title', 'Edit value')
+        $row.find('.mfe-edit-btn').html('<i data-feather="edit-2" class="icon-sm"></i>').attr('title', 'Edit value')
             .removeClass('btn-success').addClass('btn-outline-secondary');
         if (window.feather) feather.replace();
     }
 
+    // Justify is a per-value display flag (not text): the editor holds it until Save / Esc.
+    function setEditorJustify($row, on) {
+        $row.find('.mfe-editor').toggleClass('mfe-justify-on', on);
+        $row.find('.mfe-tool[data-tool=justify]').toggleClass('active', on).attr('aria-pressed', on ? 'true' : 'false');
+    }
+
+    // Save any editor still open (e.g. the form is submitted mid-edit) so no typing is lost.
+    function flushEditors() {
+        if ($host) $host.find('.mfe-editing').each(function () { saveEditor($(this)); });
+    }
+
     // ---- delegated events (bound once, survive re-render) ------------------
     function bind() {
-        $host.on('input', '.mfe-value', function () {
-            var f = field($(this).closest('[data-key]').data('key'));
-            var s = subOf(f, $(this).closest('[data-sub]').data('sub'));
-            if (s) s.value = $(this).val();
-        });
         $host.on('change', '.mfe-subcode', function () {
             var opt = $(this).find('option:selected');
             var f = field($(this).closest('[data-key]').data('key'));
@@ -605,17 +732,34 @@ var MarcEditor = (function () {
             removeSubfield($(this).closest('[data-key]').data('key'), $(this).closest('[data-sub]').data('sub'));
         });
 
-        // Value editor: Edit opens the plain-text editor in the row and turns into Save;
-        // Save writes the value back to state + the (disabled) display input.
+        // Value editor: clicking the value (or Edit) opens the plain-text editor in its place and
+        // Edit turns into Save; Save writes the value back to state + the value view.
         $host.on('click', '.mfe-edit-btn', function () {
-            var $btn = $(this), $row = $btn.closest('[data-sub]');
-            $row.hasClass('mfe-editing') ? saveEditor($row, $btn) : openEditor($row, $btn);
+            var $row = $(this).closest('[data-sub]');
+            $row.hasClass('mfe-editing') ? saveEditor($row) : openEditor($row);
         });
-        // Ctrl+Enter saves, Escape cancels (restores the stored value).
+        $host.on('click', '.mfe-value', function () { openEditor($(this).closest('[data-sub]')); });
+        $host.on('keydown', '.mfe-value', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openEditor($(this).closest('[data-sub]')); }
+        });
+
+        // Formatting tools. mousedown is cancelled so the textarea keeps focus + selection.
+        $host.on('mousedown', '.mfe-tool', function (e) { e.preventDefault(); });
+        $host.on('click', '.mfe-tool', function () {
+            var tool = $(this).data('tool'), $ed = $(this).closest('.mfe-editor');
+            if (tool === 'justify') setEditorJustify($(this).closest('[data-sub]'), !$ed.hasClass('mfe-justify-on'));
+            else applyLineTool($ed.find('.mfe-editor-ta')[0], tool);
+        });
+        $host.on('input', '.mfe-editor-ta', function () { autoGrow(this); });
+
+        // Ctrl+Enter saves, Escape cancels (keeps the stored value), Tab / Shift+Tab indent,
+        // Enter continues a bulleted / numbered list.
         $host.on('keydown', '.mfe-editor-ta', function (e) {
             var $row = $(this).closest('[data-sub]');
-            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveEditor($row, $row.find('.mfe-edit-btn')); }
-            else if (e.key === 'Escape') { e.preventDefault(); closeEditor($row, $row.find('.mfe-edit-btn')); }
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveEditor($row); }
+            else if (e.key === 'Escape') { e.preventDefault(); closeEditor($row); $row.find('.mfe-value').trigger('focus'); }
+            else if (e.key === 'Tab' && !e.ctrlKey && !e.altKey && !e.metaKey) { e.preventDefault(); applyLineTool(this, e.shiftKey ? 'outdent' : 'indent'); }
+            else if (e.key === 'Enter' && !e.shiftKey && !e.altKey) { continueList(this, e); }
         });
 
         // Fixed-field panel inputs (LDR/008) — outside #host, update by field key + code.
@@ -637,23 +781,27 @@ var MarcEditor = (function () {
                 // Indicators are always emitted as a single MARC character (blank = space).
                 indicator: f.indicator.map(function (ind) { return { id: ind.id, indicator: marcIndicatorChar(ind.indicator) }; }),
                 subfield: f.subfield.map(function (s, j) {
-                    return { 'sub-index': j + 1, id: s.id, code: s.code, description: s.description, value: s.value };
+                    var out = { 'sub-index': j + 1, id: s.id, code: s.code, description: s.description, value: s.value };
+                    if (s.align === 'justify') out.align = 'justify';
+                    return out;
                 })
             };
         });
     }
-    function commit($input) { $input.val(JSON.stringify(serialize())); }
+    function commit($input) { flushEditors(); $input.val(JSON.stringify(serialize())); }
 
     // Template editor -> the marc_templates.fields shape (ConfigurationController sanitizes it):
-    //   [{id:<tag id>, subfield:[<subfield id>], default:[<value>], indicator:[<ind id>|0, ...], required:0|1}]
+    //   [{id:<tag id>, subfield:[<subfield id>], default:[<value>], justify:[0|1], indicator:[<ind id>|0, ...], required:0|1}]
     // Subfield rows with no code picked are dropped; LDR/008 never belong in a template.
     function serializeTemplate() {
+        flushEditors();
         return fields.filter(function (f) { return !f.fixed; }).map(function (f) {
             var subs = f.subfield.filter(function (s) { return s.id != null; });
             return {
                 id: f.marctag.id,
                 subfield: subs.map(function (s) { return s.id; }),
                 default: subs.map(function (s) { return s.value || ''; }),
+                justify: subs.map(function (s) { return s.align === 'justify' ? 1 : 0; }),
                 indicator: f.indicator.map(function (ind) { return parseInt(ind.id, 10) || 0; }),
                 required: f.required ? 1 : 0
             };

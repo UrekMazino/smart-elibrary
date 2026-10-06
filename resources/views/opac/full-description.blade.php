@@ -99,6 +99,8 @@
 			.fd-table th { width: 180px; color: #333; font-weight: 600; background: #f7f9fa; white-space: nowrap; }
 			.fd-table td { color: #444; }
 			.fd-table td.fd-justify { text-align: justify; }
+			/* Catalogers format values as plain text (line breaks, "• " bullets, indentation): show them as written. */
+			.fd-table td.fd-val { white-space: pre-wrap; overflow-wrap: anywhere; }
 			.fd-citation { background: #f7f9fa; border: 1px solid #e6e9ec; border-radius: 4px; padding: 14px 16px; }
 			.fd-citation-style { display: inline-block; font-size: 11px; font-weight: 700; color: #fff; background: #00a496; border-radius: 3px; padding: 2px 8px; margin-bottom: 8px; }
 			.fd-citation p { margin: 0; font-size: 14px; line-height: 1.55; color: #333; }
@@ -196,7 +198,7 @@
 									<tr><th>Material Type</th><td>{{ $result->material_type }}</td></tr>
 								@endif
 								@foreach($fullRecord as $row)
-									<tr><th>{{ $row['label'] }}</th><td class="{{ in_array($row['label'], ['Summary','Contents','Note','Bibliography Note']) ? 'fd-justify' : '' }}">{!! nl2br(e($row['value'])) !!}</td></tr>
+									<tr><th>{{ $row['label'] }}</th><td class="fd-val {{ !empty($row['justify']) || in_array($row['label'], ['Summary','Contents','Note','Bibliography Note']) ? 'fd-justify' : '' }}">{{ $row['value'] }}</td></tr>
 								@endforeach
 							</table>
 							@else

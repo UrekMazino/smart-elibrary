@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
  * shape the shared MarcEditor (public/js/admin/marc-record-editor.js) loads, so the template
  * editor and the Create/Edit Record pages all render a template through the same editor.
  *
- *   stored : [{id:<tag id>, subfield:[<subfield id>...], default:[<value>...],
+ *   stored : [{id:<tag id>, subfield:[<subfield id>...], default:[<value>...], justify?:[0|1...],
  *              indicator:[<indicator id>|0, <indicator id>|0], required:0|1}, ...]
  *   source : {tag:{id,code,description,isRequired}, subfields:[{id,code,description,default}],
  *             indicators:[{id,indicator}], allSubfields:[...], allIndicators:[[...],[...]], editable:true}
@@ -42,7 +42,10 @@ class MarcTemplateFields
                 if (! $s) {
                     continue;   // a legacy null hole, or a subfield that doesn't belong to this tag
                 }
-                $subfields[] = $s + ['default' => (string) ($item['default'][$i] ?? '')];
+                $subfields[] = $s + [
+                    'default' => (string) ($item['default'][$i] ?? ''),
+                    'align'   => ! empty($item['justify'][$i]) ? 'justify' : null,
+                ];
             }
 
             $indicators = [];
@@ -86,12 +89,14 @@ class MarcTemplateFields
             $validSubIds = array_column($tag['subfields'], 'id');
             $subfield = [];
             $default  = [];
+            $justify  = [];
             foreach (array_values($item['subfield'] ?? []) as $i => $subId) {
                 if (! in_array((int) $subId, $validSubIds, true)) {
                     continue;
                 }
                 $subfield[] = (int) $subId;
-                $default[]  = trim((string) ($item['default'][$i] ?? ''));
+                $default[]  = rtrim((string) ($item['default'][$i] ?? ''));   // keep leading indentation
+                $justify[]  = ! empty($item['justify'][$i]) ? 1 : 0;
             }
 
             $indicator = [];
@@ -100,13 +105,17 @@ class MarcTemplateFields
                 $indicator[] = in_array($indId, array_column($tag['indicators'][$pos], 'id'), true) ? $indId : 0;
             }
 
-            $out[] = [
+            $row = [
                 'id'        => $tag['id'],
                 'subfield'  => $subfield,
                 'default'   => $default,
                 'indicator' => $indicator,
                 'required'  => ! empty($item['required']) ? 1 : 0,
             ];
+            if (in_array(1, $justify, true)) {
+                $row['justify'] = $justify;   // per-default-value Justify flags (only stored when used)
+            }
+            $out[] = $row;
         }
 
         return $out;

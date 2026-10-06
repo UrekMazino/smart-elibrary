@@ -514,7 +514,8 @@ function getPDFLink($catalog_id)
  * Parse a catalog's stored MARC field_data into readable "Full Record" rows for the OPAC.
  * Skips the Leader + 00X control fields (pure MARC plumbing) and the title/main-author
  * tags (already shown at the top of the page), so it lists the *other* available details.
- * Returns an array of ['label' => ..., 'value' => ...], only for fields that have a value.
+ * Returns an array of ['label' => ..., 'value' => ..., 'justify' => bool], only for fields that have
+ * a value. 'justify' is set when any subfield was saved with the editor's Justify button.
  */
 function getFullRecordFields($catalog_id)
 {
@@ -544,15 +545,19 @@ function getFullRecordFields($catalog_id)
 		if($code === '' || in_array($code, $skip, true)) continue;
 
 		$vals = [];
+		$justify = false;
 		foreach(($f['subfield'] ?? []) as $s)
 		{
 			$v = trim((string)($s['value'] ?? ''));
-			if($v !== '') $vals[] = $v;
+			if($v !== '') {
+				$vals[] = $v;
+				$justify = $justify || (($s['align'] ?? null) === 'justify');
+			}
 		}
 		if(!$vals) continue;
 
 		$label = $labels[$code] ?? ($f['marctag']['description'] ?? $code);
-		$out[] = ['label' => $label, 'value' => implode(' ', $vals)];
+		$out[] = ['label' => $label, 'value' => implode(' ', $vals), 'justify' => $justify];
 	}
 	return $out;
 }

@@ -94,29 +94,6 @@
         .cr-req { color: #c92a4b; }
         .cr-hint { color: #a3adc2; font-size: 11.5px; margin-top: 4px; display: block; }
 
-        /* Each MARC field the editor renders sits in its own compact card. */
-        #template-div > .row {
-            border: 1px solid #e4eff1; border-radius: 6px; background: #e4eff1;
-            padding: 6px 10px; margin: 0 0 6px !important;
-        }
-        #template-div .subfield-parent > label.strong { font-size: 12px; color: #22283b; font-weight: 700; margin-bottom: 3px; }
-        #template-div .block.mb-2 { margin-bottom: 3px !important; }
-        #template-div .subfield-row { margin-bottom: 3px; }
-        #template-div .form-control,
-        #template-div .form-select { font-size: 12px; padding: 2px 8px; height: 28px; line-height: 1.4; }
-        #template-div .width25 { width: 260px !important; max-width: 46%; }
-        #template-div label.strong[for="fieldName"] { font-size: 11px; }
-        #template-div .additional-subfield { margin-bottom: 0 !important; }
-        #template-div .sm-font { width: 15px !important; height: 15px !important; }
-
-        /* Value editor: the value input is disabled (edited via the plain-text editor). */
-        #template-div .mfe-value:disabled { background: #eef2f6; color: #33415c; cursor: default; -webkit-text-fill-color: #33415c; }
-        #template-div .mfe-edit-btn { height: 28px; padding: 1px 7px; line-height: 1; vertical-align: top; }
-        #template-div .mfe-editor { display: none; vertical-align: top; width: 40%; min-width: 200px; margin-left: 4px; }
-        #template-div .mfe-editor.open { display: inline-block; }
-        #template-div .mfe-editor-ta { font-size: 12px; padding: 4px 8px; height: auto; min-height: 48px; resize: vertical; }
-        #template-div .subfield-row.mfe-editing { align-items: flex-start; }
-
         /* Fixed Fields (LDR / 008) guided panel — compact grid */
         .ff-group { border: 1px solid #eef0f2; border-radius: 6px; background: #fbfcfd; padding: 8px 10px; margin-bottom: 6px; }
         .ff-group-title { font-size: 12px; font-weight: 700; color: #22283b; margin-bottom: 7px; }
@@ -136,6 +113,7 @@
             padding: 14px 0 2px; margin-top: 6px;
         }
     </style>
+    @include('admin.partials.marc-editor-styles')
 @endsection
 
 @section('content')

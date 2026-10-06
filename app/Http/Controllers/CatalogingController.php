@@ -150,6 +150,7 @@ class CatalogingController extends Controller
                     'code'        => $s['code'] ?? null,
                     'description' => $s['description'] ?? null,
                     'default'     => $s['value'] ?? '',
+                    'align'       => ($s['align'] ?? null) === 'justify' ? 'justify' : null,   // Justify button
                 ];
             }
 

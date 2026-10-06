@@ -37,7 +37,11 @@ $(document).ready(function(){
             return subfield.value;
         }).join(' ');
 
-        col2Div.text(subfieldValues);
+        col2Div.text(subfieldValues).css('white-space', 'pre-wrap');   // keep line breaks / indentation
+        // Justified when the cataloger used the editor's Justify button on any of its subfields.
+        if (entry.subfield.some(function (subfield) { return subfield.align === 'justify'; })) {
+            col2Div.css('text-align', 'justify');
+        }
         rowDiv.append(col2Div);
 
         fullRecordDiv.append(rowDiv);
