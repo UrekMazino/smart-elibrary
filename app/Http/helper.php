@@ -690,7 +690,7 @@ function generatePlaceholderCover($vc, $destPath, $w = 400, $h = 520)
 	$fontR = coverFontPath(false);
 
 	if ($fontB && $fontR) {
-		$lines = array_slice(coverWrapLines($fontB, 22, $title, $w - 60), 0, 8);
+		$lines = coverFitLines(coverWrapLines($fontB, 22, $title, $w - 60), 8, $fontB, 22, $w - 60);
 		$y = 100;
 		foreach ($lines as $ln) {
 			$bb = imagettfbbox(22, 0, $fontB, $ln);
@@ -699,8 +699,13 @@ function generatePlaceholderCover($vc, $destPath, $w = 400, $h = 520)
 		}
 		$author = trim(explode('/', (string)($vc->joint_authors ?? ''))[0]);
 		if ($author !== '') {
-			$bb = imagettfbbox(15, 0, $fontR, $author);
-			imagettftext($im, 15, 0, (int)(($w - ($bb[2]-$bb[0])) / 2), $h - 74, $muted, $fontR, $author);
+			// Up to two lines, bottom line just above the material type; long lists end in "…".
+			$aLines = coverFitLines(coverWrapLines($fontR, 15, $author, $w - 60), 2, $fontR, 15, $w - 60);
+			$ay = $h - 74 - (count($aLines) - 1) * 22;
+			foreach ($aLines as $ln) {
+				imagettftext($im, 15, 0, (int)(($w - coverTextWidth($fontR, 15, $ln)) / 2), $ay, $muted, $fontR, $ln);
+				$ay += 22;
+			}
 		}
 		$mat = strtoupper(trim((string)($vc->material_type ?? '')));
 		if ($mat !== '') {
@@ -708,7 +713,21 @@ function generatePlaceholderCover($vc, $destPath, $w = 400, $h = 520)
 			imagettftext($im, 12, 0, (int)(($w - ($bb[2]-$bb[0])) / 2), $h - 42, $muted, $fontR, $mat);
 		}
 	} else {
-		imagestring($im, 5, 20, 40, wordwrap($title, 34, "\n", true), $white);
+		// No TrueType font anywhere: GD's built-in bitmap font. It draws ONE line per call (a
+		// "\n" comes out as a stray glyph) and only Latin-2, so wrap + transliterate + draw
+		// each line, centred.
+		$font  = 5;
+		$cw    = imagefontwidth($font);
+		$lh    = imagefontheight($font) + 6;
+		$ascii = function_exists('iconv') ? (@iconv('UTF-8', 'ASCII//TRANSLIT', $title) ?: $title) : $title;
+		$wrap  = explode("\n", wordwrap($ascii, (int) floor(($w - 40) / $cw), "\n", true));
+		$lines = array_slice($wrap, 0, 10);
+		if (count($wrap) > 10) $lines[9] = rtrim(substr($lines[9], 0, max(0, strlen($lines[9]) - 3))) . '...';
+		$y = 90;
+		foreach ($lines as $ln) {
+			imagestring($im, $font, (int) (($w - strlen($ln) * $cw) / 2), $y, $ln, $white);
+			$y += $lh;
+		}
 	}
 
 	if (!ensurePublicDir(dirname($destPath))) { imagedestroy($im); return false; }
@@ -717,26 +736,62 @@ function generatePlaceholderCover($vc, $destPath, $w = 400, $h = 520)
 	return true;
 }
 
+/**
+ * TrueType font for placeholder covers. The bundled Liberation Sans (metric-compatible with
+ * Arial, SIL OFL — shipped with the PDF viewer) comes first so covers look the same on every
+ * OS; then Windows' Arial/Segoe UI and common Linux system fonts. Previously only the Windows
+ * paths were tried, so on Linux covers fell back to GD's bitmap font (one unwrapped line).
+ */
 function coverFontPath($bold)
 {
+	$bundled = public_path('pdfjs/web/standard_fonts/LiberationSans-' . ($bold ? 'Bold' : 'Regular') . '.ttf');
 	$c = $bold
-		? ['C:/Windows/Fonts/arialbd.ttf', 'C:/Windows/Fonts/segoeuib.ttf']
-		: ['C:/Windows/Fonts/arial.ttf',   'C:/Windows/Fonts/segoeui.ttf'];
+		? [$bundled, 'C:/Windows/Fonts/arialbd.ttf', 'C:/Windows/Fonts/segoeuib.ttf',
+		   '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf', '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf']
+		: [$bundled, 'C:/Windows/Fonts/arial.ttf', 'C:/Windows/Fonts/segoeui.ttf',
+		   '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf', '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'];
 	foreach ($c as $f) { if (is_file($f)) return $f; }
 	return null;
 }
 
+function coverTextWidth($font, $size, $text)
+{
+	$bb = imagettfbbox($size, 0, $font, $text);
+	return $bb[2] - $bb[0];
+}
+
+/** Word-wrap to $maxWidth; a single word too long for a line is split across lines. */
 function coverWrapLines($font, $size, $text, $maxWidth)
 {
-	$words = preg_split('/\s+/', $text);
+	$words = preg_split('/\s+/', trim($text));
 	$lines = []; $line = '';
 	foreach ($words as $wd) {
+		// Hard-break an over-long word (URLs, codes, long compounds) by characters.
+		while (coverTextWidth($font, $size, $wd) > $maxWidth && mb_strlen($wd) > 1) {
+			$cut = mb_strlen($wd) - 1;
+			while ($cut > 1 && coverTextWidth($font, $size, mb_substr($wd, 0, $cut)) > $maxWidth) $cut--;
+			if ($line !== '') { $lines[] = $line; $line = ''; }
+			$lines[] = mb_substr($wd, 0, $cut);
+			$wd = mb_substr($wd, $cut);
+		}
 		$try = $line === '' ? $wd : $line.' '.$wd;
-		$bb  = imagettfbbox($size, 0, $font, $try);
-		if (($bb[2] - $bb[0]) > $maxWidth && $line !== '') { $lines[] = $line; $line = $wd; }
+		if (coverTextWidth($font, $size, $try) > $maxWidth && $line !== '') { $lines[] = $line; $line = $wd; }
 		else { $line = $try; }
 	}
 	if ($line !== '') $lines[] = $line;
+	return $lines;
+}
+
+/** Keep at most $max lines; when the title is cut, end the last kept line with an ellipsis. */
+function coverFitLines(array $lines, $max, $font, $size, $maxWidth)
+{
+	if (count($lines) <= $max) return $lines;
+	$lines = array_slice($lines, 0, $max);
+	$last  = $lines[$max - 1];
+	while ($last !== '' && coverTextWidth($font, $size, $last . '…') > $maxWidth) {
+		$last = rtrim(mb_substr($last, 0, -1));
+	}
+	$lines[$max - 1] = $last . '…';
 	return $lines;
 }
 
