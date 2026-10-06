@@ -11,6 +11,27 @@ use Spatie\Permission\Models\Permission;
 
 class RolePermissionController extends Controller
 {
+    /** Roles the app's own checks depend on: they can't be renamed or deleted. */
+    private const SYSTEM_ROLES = ['developer', 'super_admin'];
+
+    /**
+     * Permissions defined but not checked anywhere yet — flagged in the matrix so nobody
+     * expects ticking them to change anything.
+     */
+    private const UNUSED_PERMISSIONS = ['edit.catalog.import'];
+
+    /**
+     * Module "access" permission each permission depends on. A permission only takes effect
+     * when the role also has its module's access permission (that's how the routes + sidebar
+     * gate them), so the matrix dims cells that are ticked but can't apply.
+     */
+    private const MODULE_ACCESS = [
+        'Cataloging'         => 'access.cataloging',
+        'Circulation'        => 'access.circulation',
+        'Accounts & Patrons' => 'access.accounts',
+        'Configuration'      => 'access.configuration',
+    ];
+
     public function __construct()
     {
         // Access-control administration is restricted to the top roles (matches the
@@ -61,7 +82,20 @@ class RolePermissionController extends Controller
             $userCounts[$r->id] = $r->users()->count();
         }
 
-        return view('admin.roles', compact('roles', 'modules', 'rolePerms', 'userCounts'));
+        // permission name => the module access permission it needs (or null)
+        $requires = [];
+        foreach ($modules as $module => $perms) {
+            foreach ($perms as $p) {
+                $access = self::MODULE_ACCESS[$module] ?? null;
+                $requires[$p->name] = ($access && $access !== $p->name) ? $access : null;
+            }
+        }
+        $permIdsByName = Permission::pluck('id', 'name');
+        $unused = self::UNUSED_PERMISSIONS;
+        $systemRoles = self::SYSTEM_ROLES;
+        $myRoleIds = auth()->user()->roles->pluck('id')->all();
+
+        return view('admin.roles', compact('roles', 'modules', 'rolePerms', 'userCounts', 'requires', 'permIdsByName', 'unused', 'systemRoles', 'myRoleIds'));
     }
 
     /** Grant or revoke a single (role, permission) pair — powers the access matrix. */
@@ -77,7 +111,9 @@ class RolePermissionController extends Controller
         abort_if(!$role || !$permission, 404);
         abort_if($role->name === 'developer', 403); // superuser row is never editable (avoids lockout)
 
-        if ($role->hasPermissionTo($permission)) {
+        // Decide from the stored grant (the ticked cell), never from an implied/derived check,
+        // so the checkbox always flips exactly what it shows.
+        if ($role->permissions()->whereKey($permission->getKey())->exists()) {
             $role->revokePermissionTo($permission);
             $granted = false;
         } else {
@@ -85,161 +121,71 @@ class RolePermissionController extends Controller
             $granted = true;
         }
 
-        return response()->json(['granted' => $granted, 'permCount' => $role->permissions()->count()]);
-    }
-
-    public function rolePermissions(Request $request)
-    {
-        $draw = isset($request->search_title) ? 1 : $request->get('draw');
-
-        $role = Role::where('id', $request->role_id)->first();
-
-        $totalRecords = count($role->permissions);
-    
-        $totalRecordswithFilter = count($role->permissions);
-    
-        $records = $role->permissions;
-
-            $resultArr = [];
-
-            foreach($records as $record) {
-                $resultArr[] = [
-                    'id' => $record->id,
-                    'name' => $record->name,
-                    'display_name' => $record->display_name,
-                    'description' => $record->description,
-                ];
-            }
-
-         $response = array(
-            "draw" => intval($draw),
-            "iTotalRecords" => $totalRecords,
-            "iTotalDisplayRecords" => $totalRecordswithFilter,
-            "aaData" => $resultArr,
-         );
- 
-         return response()->json($response); 
-    }
-
-
-    public function addPermissionToRole(Request $request)
-    {
-        $role = Role::where('id', $request->role_id)->first(); 
-
-        $permission = Permission::where('id', $request->permission_id)->first();
-        
-        $role->givePermissionTo($permission->id);
-
-        $totalRecords = count($role->permissions);
-    
-        $totalRecordswithFilter = count($role->permissions);
-    
-        $records = $role->permissions;
-
-            $resultArr = [];
-
-            foreach($records as $record) {
-                $resultArr[] = [
-                    'id' => $record->id,
-                    'name' => $record->name,
-                    'display_name' => $record->display_name,
-                    'description' => $record->description,
-                ];
-            }
-
-         $response = array(
-            "draw" => intval(1),
-            "iTotalRecords" => $totalRecords,
-            "iTotalDisplayRecords" => $totalRecordswithFilter,
-            "aaData" => $resultArr,
-         );
- 
-         return response()->json($response);
-    }
-
-    public function removePermissionFromRole(Request $request)
-    {
-
-
-        $role = Role::where('id', $request->role_id)->first(); 
-   
-        $role->revokePermissionTo($request->permission_name);
-
-        $totalRecords = count($role->permissions);
-    
-        $totalRecordswithFilter = count($role->permissions);
-    
-        $records = $role->permissions;
-
-            $resultArr = [];
-
-            foreach($records as $record) {
-                $resultArr[] = [
-                    'id' => $record->id,
-                    'name' => $record->name,
-                    'display_name' => $record->display_name,
-                    'description' => $record->description,
-                ];
-            }
-
-        $response = array(
-            "draw" => intval(1),
-            "iTotalRecords" => $totalRecords,
-            "iTotalDisplayRecords" => $totalRecordswithFilter,
-            "aaData" => $resultArr,
-         );
- 
-         return response()->json($response);
+        return response()->json([
+            'granted'   => $granted,
+            'permCount' => $role->permissions()->count(),
+            'message'   => ($granted ? 'Granted' : 'Revoked') . ' “' . ($permission->display_name ?: $permission->name)
+                           . '” ' . ($granted ? 'to' : 'from') . ' ' . ($role->display_name ?: $role->name) . '.',
+        ]);
     }
 
     public function storeRole(Request $request)
     {
-        Role::create([
-            'name' => $request->role_name,
-            'display_name' => $request->display_name,
-            'description' => $request->description
+        $data = $request->validate([
+            'role_name'    => ['required', 'string', 'max:100', 'regex:/^[a-z][a-z0-9_]*$/', 'unique:roles,name'],
+            'display_name' => ['required', 'string', 'max:255'],
+            'description'  => ['nullable', 'string', 'max:255'],
+        ], [
+            'role_name.regex' => 'Role key: lowercase letters, numbers and underscores, starting with a letter (e.g. circulation_staff).',
         ]);
 
-        return redirect()->route('admin.list_roles')->with('success', 'Role created successfully.');
+        Role::create([
+            'name'         => $data['role_name'],
+            'guard_name'   => 'web',
+            'display_name' => $data['display_name'],
+            'description'  => $data['description'] ?? null,
+        ]);
+
+        return redirect()->route('admin.list_roles')->with('success', 'Role created. Tick its permissions in the Access Matrix.');
     }
 
+    /** Display name + description only: the role key is what the code checks, so it never changes. */
     public function updateRole(Request $request)
     {
-        Role::where('id', $request->role_id)->update([
-            'name' => $request->role_name,
-            'display_name' => $request->display_name,
-            'description' => $request->description
+        $data = $request->validate([
+            'role_id'      => ['required', 'integer'],
+            'display_name' => ['required', 'string', 'max:255'],
+            'description'  => ['nullable', 'string', 'max:255'],
         ]);
 
-        return redirect()->route('admin.list_roles')->with('success', 'Role updated successfully.');
+        $role = Role::findOrFail($data['role_id']);
+        abort_if($role->name === 'developer', 403);
+
+        // Model update (not a query-builder update) so Spatie's permission cache is refreshed.
+        $role->update(['display_name' => $data['display_name'], 'description' => $data['description'] ?? null]);
+
+        return redirect()->route('admin.list_roles')->with('success', 'Role updated.');
     }
-    
+
     public function destroyRole($id)
-    {   
-        // Find the role by name
-        $role = Role::findById ($id);
-
-        // Alternatively, find the role by ID
-        // $role = Role::findById($roleId);
-
-        if ($role) {
-            // Delete the role
-            $role->delete();
-
-            // Optionally, you can also remove the role from all associated users
-            $role->users()->detach();
-
-            // Optionally, you can also remove all permissions associated with the role
-            $role->permissions()->detach();
-
-            // Output a success message
-            return redirect()->route('admin.list_roles')->with('success', 'Role deleted successfully.');
-        } else {
-            // Output an error message if the role is not found
+    {
+        $role = Role::find($id);
+        if (! $role) {
             return redirect()->route('admin.list_roles')->with('error', 'Role not found.');
         }
+        if (in_array($role->name, self::SYSTEM_ROLES, true)) {
+            return redirect()->route('admin.list_roles')->with('error', 'The ' . ($role->display_name ?: $role->name) . ' role is built in and can’t be deleted.');
+        }
+        $users = $role->users()->count();
+        if ($users > 0) {
+            return redirect()->route('admin.list_roles')->with('error', 'Move the ' . $users . ' user' . ($users === 1 ? '' : 's') . ' with this role to another role first (Administrators → Change Role).');
+        }
+
+        $role->permissions()->detach();
+        $role->delete();
+
+        return redirect()->route('admin.list_roles')->with('success', 'Role deleted.');
     }
-    
 
     // public function createPermission(Request $request)
     // {
@@ -258,53 +204,64 @@ class RolePermissionController extends Controller
             ->select('permission_id', DB::raw('count(*) as c'))
             ->groupBy('permission_id')->pluck('c', 'permission_id');
 
-        return view('admin.permissions', compact('modules', 'roleCounts'));
+        // Permissions the app checks (grouped into a module) can't be deleted.
+        $inUse = collect($modules)->flatten()->filter(fn ($p) => $this->moduleOf($p->name) !== 'Other')->pluck('id')->all();
+
+        return view('admin.permissions', compact('modules', 'roleCounts', 'inUse'));
     }
 
 
+    /** Developer only (route). The new name only does something once code checks it. */
     public function storePermission(Request $request)
     {
-        Permission::create([
-            'name' => $request->permission_name,
-            'display_name' => $request->display_name,
-            'description' => $request->description
+        $data = $request->validate([
+            'permission_name' => ['required', 'string', 'max:100', 'regex:/^[a-z][a-z0-9._-]*$/', 'unique:permissions,name'],
+            'display_name'    => ['required', 'string', 'max:255'],
+            'description'     => ['nullable', 'string', 'max:255'],
+        ], [
+            'permission_name.regex' => 'Permission key: lowercase letters, numbers, dots, dashes or underscores (e.g. export.catalog).',
         ]);
 
-        return redirect()->route('admin.list_permissions')->with('success', 'Permission created successfully.');
+        Permission::create([
+            'name'         => $data['permission_name'],
+            'guard_name'   => 'web',
+            'display_name' => $data['display_name'],
+            'description'  => $data['description'] ?? null,
+        ]);
+
+        return redirect()->route('admin.list_permissions')->with('success', 'Permission created.');
     }
 
+    /** Display name + description only: the permission key is referenced by the code. */
     public function updatePermission(Request $request)
     {
-        Permission::where('id', $request->permission_id)->update([
-            'name' => $request->permission_name,
-            'display_name' => $request->display_name,
-            'description' => $request->description
+        $data = $request->validate([
+            'permission_id' => ['required', 'integer'],
+            'display_name'  => ['required', 'string', 'max:255'],
+            'description'   => ['nullable', 'string', 'max:255'],
         ]);
 
-        return redirect()->route('admin.list_permissions')->with('success', 'Permission updated successfully.');
+        Permission::findOrFail($data['permission_id'])
+            ->update(['display_name' => $data['display_name'], 'description' => $data['description'] ?? null]);
+
+        return redirect()->route('admin.list_permissions')->with('success', 'Permission updated.');
     }
-    
+
+    /** Developer only (route). Permissions the app checks can't be deleted. */
     public function destroyPermission($id)
-    {   
-        // Find the permission by name
-        $permission = Permission::findById ($id);
-
-        if ($permission) {
-            // Delete the permission
-            $permission->delete();
-
-            // Optionally, you can also remove the permission from all associated users
-            $permission->users()->detach();
-
-            // Optionally, you can also remove all permissions associated with the permission
-            $permission->roles()->detach();
-
-            // Output a success message
-            return redirect()->route('admin.list_permissions')->with('success', 'Permission deleted successfully.');
-        } else {
-            // Output an error message if the permission is not found
+    {
+        $permission = Permission::find($id);
+        if (! $permission) {
             return redirect()->route('admin.list_permissions')->with('error', 'Permission not found.');
         }
-    }
+        if ($this->moduleOf($permission->name) !== 'Other') {
+            return redirect()->route('admin.list_permissions')->with('error', '“' . ($permission->display_name ?: $permission->name) . '” is used by the app and can’t be deleted.');
+        }
 
+        $permission->roles()->detach();
+        $permission->users()->detach();
+        $permission->delete();
+
+        return redirect()->route('admin.list_permissions')->with('success', 'Permission deleted.');
+    }
 }

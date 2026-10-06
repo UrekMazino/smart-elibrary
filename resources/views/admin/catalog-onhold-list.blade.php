@@ -62,7 +62,7 @@
                   <div class="d-flex justify-content-between align-items-baseline mb-3">
                     <h6 class="card-title mb-0">CATALOG ONHOLD</h6>
                     <div class="btn-group btn-group-sm me-2">
-                      <button class="btn btn-outline-info btn-sm" onclick="publishAllOnhold()">Publish All</button>
+                      @can('publish-hold.catalog')<button class="btn btn-outline-info btn-sm" onclick="publishAllOnhold()">Publish All</button>@endcan
                       <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">Export MARC</button>
                       <ul class="dropdown-menu" aria-labelledby="exportDropdown">
                           <li><h6 class="dropdown-header">On-hold list</h6></li>

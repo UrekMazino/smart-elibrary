@@ -62,8 +62,12 @@
                           data-id="{{ $perm->id }}" data-name="{{ $perm->name }}"
                           data-display="{{ $perm->display_name }}" data-desc="{{ $perm->description }}">Edit</button>
                         @hasrole('developer')
-                          <button type="button" class="btn btn-outline-danger btn-sm delete-perm-btn"
-                            data-id="{{ $perm->id }}" data-name="{{ $perm->display_name ?: $perm->name }}">Delete</button>
+                          @if(in_array($perm->id, $inUse))
+                            <button type="button" class="btn btn-outline-secondary btn-sm" disabled title="Used by the app — can't be deleted">Delete</button>
+                          @else
+                            <button type="button" class="btn btn-outline-danger btn-sm delete-perm-btn"
+                              data-id="{{ $perm->id }}" data-name="{{ $perm->display_name ?: $perm->name }}">Delete</button>
+                          @endif
                         @endhasrole
                       </div>
                     </td>
@@ -122,6 +126,7 @@ function showSwal(type, message, icon) {
     Swal.fire({ position: 'top-end', toast: true, icon: icon, title: message, showConfirmButton: false, timer: 2000 });
 }
 </script>
-@if (session('error'))   <script>$(function(){ showSwal('t', "{{ session('error') }}", 'error'); });</script> @endif
+@if (session('error'))   <script>$(function(){ Swal.fire({ icon: 'error', title: 'Not done', text: @json(session('error')) }); });</script> @endif
 @if (session('success')) <script>$(function(){ showSwal('t', "{{ session('success') }}", 'success'); });</script> @endif
+@if ($errors->any())     <script>$(function(){ Swal.fire({ icon: 'error', title: 'Not saved', text: @json($errors->first()) }); });</script> @endif
 @endsection

@@ -262,6 +262,7 @@
                                             @endif
                                         </div>
 
+                                        @can('edit.catalog')
                                         <hr class="my-3">
 
                                         <label class="res-label" for="fulltextUpload">
@@ -289,6 +290,7 @@
                                                 </button>
                                             </form>
                                         @endif
+                                        @endcan
                                     </div>
                                 </div>
                             </div>
@@ -368,6 +370,7 @@
                                             @endif
                                         </div>
 
+                                        @can('edit.catalog')
                                         <hr class="my-3">
 
                                         <label class="res-label" for="coverUpload">
@@ -395,6 +398,7 @@
                                                 </button>
                                             </form>
                                         @endif
+                                        @endcan
                                     </div>
                                 </div>
                             </div>
@@ -443,7 +447,9 @@
                                             <div class="col-md-1"></div>
                                             <div class="col-md-2 float-right text-center mb-2">
                                                 
+                                                @can('edit.catalog')
                                                 <a href="#" type="button" onclick="showAddCopyModal()" class="btn btn-sm btn-outline-primary">+ Copy/ies</a>
+                                                @endcan
                                             </div>
                                         </div>
 
@@ -609,6 +615,7 @@ $(function () {
                             { data: 'location', orderable: false },
                             { 
                                 "data": function (row, type, val, meta) {
+                                    if (!@json(auth()->user()->can('edit.catalog'))) return '<span class="text-muted small">—</span>';   // copies are part of editing the record
                                     return '<div class="btn-group" role="group"><button id="btnGroupDrop1" type="button" class="btn btn-info dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button><div class="dropdown-menu" aria-labelledby="btnGroupDrop1"><a class="dropdown-item" href="#" onclick="showEditCopyModal('+row.id+')">Edit</a><a class="dropdown-item" href="#" onclick="actionFrm('+row.id+',\'delete\')">Delete</a></div></div>';
                                 }, orderable: false
                             },
@@ -669,6 +676,7 @@ $(function () {
                             { data: 'location', orderable: false },
                             { 
                                 "data": function (row, type, val, meta) {
+                                    if (!@json(auth()->user()->can('edit.catalog'))) return '<span class="text-muted small">—</span>';   // copies are part of editing the record
                                     return '<div class="btn-group" role="group"><button id="btnGroupDrop1" type="button" class="btn btn-info dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button><div class="dropdown-menu" aria-labelledby="btnGroupDrop1"><a class="dropdown-item" href="#" onclick="showEditCopyModal('+row.id+')">Edit</a><a class="dropdown-item" href="#" onclick="actionFrm('+row.id+',\'delete\')">Delete</a></div></div>';
                                 }, orderable: false
                             },

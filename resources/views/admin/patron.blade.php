@@ -62,9 +62,11 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-1">
                         <h6 class="card-title mb-0">PATRONS</h6>
+                        @can('create.patron')
                         <a href="{{ url('/admin/register') }}" class="btn btn-primary btn-sm">
                             <i data-feather="user-plus" class="icon-sm me-1"></i>Register a Patron
                         </a>
+                        @endcan
                     </div>
                     <p class="text-muted mb-3" style="font-size: 12.5px;">
                         Registered library users. A <strong>banned</strong> account cannot log in or
@@ -99,11 +101,6 @@
     </div>
 </div>
 
-<form method="post" action="{{ url('/admin/patron-action') }}" id="frm" enctype="multipart/form-data">
-  @csrf
-  <input type="hidden" name="patron_id" id="patron_id">
-  <input type="hidden" name="action" value="">
-</form>
 @endsection
 
 @section('js')
@@ -112,6 +109,13 @@
 <script>
 
 var statusFilter = 'all';   // which chip is selected; sent with every table request
+
+// What this admin's role may do to patron accounts (the endpoints enforce the same rules).
+var CAN = {
+  editPatron:   @json(auth()->user()->can('edit.patron')),
+  deletePatron: @json(auth()->user()->can('delete.patron')),
+  patronStatus: @json(auth()->user()->can('manage.patron.status'))
+};
 
 function escapeHtml(text) {
   return (text == null ? '' : String(text))
@@ -180,18 +184,19 @@ $('#tbl').DataTable({
           } },
         { data: null, orderable: false, className: 'text-center',
           render: function (d, type, row) {
-              var banLabel = row.is_banned == 1 ? 'Unban account' : 'Ban account';
-              var blockLabel = row.is_blocked == 1 ? 'Unblock account' : 'Block account';
+              // Only the actions this admin's role allows (the endpoints enforce the same rules).
+              var groups = [];
+              if (CAN.editPatron) groups.push(
+                  '<a class="dropdown-item" href="#" data-act="library-code" data-id="'+row.id+'">Generate Library Code</a>' +
+                  '<a class="dropdown-item" href="#" data-act="reset-password" data-id="'+row.id+'">Reset Password</a>');
+              if (CAN.patronStatus) groups.push(
+                  '<a class="dropdown-item text-warning" href="#" onclick="toggleUserFlag('+row.id+',\'blocked\')">'+(row.is_blocked == 1 ? 'Unblock account' : 'Block account')+'</a>' +
+                  '<a class="dropdown-item text-danger" href="#" onclick="toggleUserFlag('+row.id+',\'banned\')">'+(row.is_banned == 1 ? 'Unban account' : 'Ban account')+'</a>');
+              if (CAN.deletePatron) groups.push(
+                  '<a class="dropdown-item text-danger" href="#" data-act="delete" data-id="'+row.id+'" data-name="'+escapeHtml(row.name)+'">Delete</a>');
+              if (!groups.length) return '<span class="text-muted small" title="Your role has no actions for patron accounts">—</span>';
               return '<div class="btn-group btn-group-sm" role="group"><button type="button" class="btn btn-info btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button><div class="dropdown-menu dropdown-menu-end">' +
-                  '<a class="dropdown-item" href="#" onclick="generateLibraryCode('+row.id+')">Generate Library Code</a>' +
-                  '<a class="dropdown-item" href="#" onclick="sendFrm(\'frm\',\'reset\','+row.id+')">Reset Password</a>' +
-                  (@json(auth()->user()->can('manage.patron.status')) ? (
-                    '<div class="dropdown-divider"></div>' +
-                    '<a class="dropdown-item text-warning" href="#" onclick="toggleUserFlag('+row.id+',\'blocked\')">'+blockLabel+'</a>' +
-                    '<a class="dropdown-item text-danger" href="#" onclick="toggleUserFlag('+row.id+',\'banned\')">'+banLabel+'</a>'
-                  ) : '') +
-                  '<div class="dropdown-divider"></div>' +
-                  '<a class="dropdown-item text-danger" href="#" onclick="sendFrm(\'frm\',\'delete\','+row.id+')">Delete</a>' +
+                  groups.join('<div class="dropdown-divider"></div>') +
                   '</div></div>';
           }
 
@@ -250,87 +255,62 @@ function toggleUserFlag(id, flag) {
     });
 }
 
-function sendFrm(frm,type,id = null)
-{
-    if(type == 'delete')
-    {
-      msg = "";
-      $('#action').val('delete');
-    }
-    else
-    {
-      msg = "Default password is : `pcaarrdelibrary`";
-      $('#action').val('reset');
-    }
+// ---- Patron account actions (Generate Library Code / Reset Password / Delete) ----
+var PATRON_ACTIONS = {
+  'library-code': {
+    title: 'Generate a new library code?',
+    text: 'The patron’s current library code will stop working.',
+    confirm: 'Generate', method: 'POST', url: function (id) { return '{{ url("/admin/patron") }}/' + id + '/library-code'; },
+    done: function (res) { showSecret(res.message, 'Library code', res.library_code); }
+  },
+  'reset-password': {
+    title: 'Reset this patron’s password?',
+    text: 'A new temporary password is created and shown once, for you to give to the patron.',
+    confirm: 'Reset password', method: 'POST', url: function (id) { return '{{ url("/admin/patron") }}/' + id + '/reset-password'; },
+    done: function (res) { showSecret(res.message, 'Temporary password', res.password); }
+  },
+  'delete': {
+    title: 'Delete this patron?',
+    text: 'Their account is removed and they can no longer log in.',
+    confirm: 'Delete', danger: true, method: 'DELETE', url: function (id) { return '{{ url("/admin/patron") }}/' + id; },
+    done: function (res) { Swal.fire({ icon: 'success', title: 'Deleted', text: res.message, timer: 2200, showConfirmButton: false }); }
+  }
+};
 
-    Swal.fire({
-      title: 'Are you sure?',
-      text: msg,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonClass: 'me-2',
-      confirmButtonText: 'Yes',
-      cancelButtonText: 'No',
-      reverseButtons: true
-    }).then((result) => {
-      if (result.value) {
-        $("#patron_id").val(id);
-        $('#'+frm).submit();
-      } else if (
-        // Read more about handling dismissals
-        result.dismiss === Swal.DismissReason.cancel
-      ) {
-        Swal.fire(
-          'Cancelled',
-          'Your data is safe :)',
-          'error'
-        )
-      }
-    })
-}
-
-function generateLibraryCode(id)
-{
+$(document).on('click', '#tbl [data-act]', function (e) {
+  e.preventDefault();
+  var act = PATRON_ACTIONS[$(this).data('act')], id = $(this).data('id'), name = $(this).data('name');
   Swal.fire({
-      title: 'Are you sure?',
-      text: 'This will generate a new library code for this user.',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonClass: 'me-2',
-      confirmButtonText: 'Yes',
-      cancelButtonText: 'No',
-      reverseButtons: true
-    }).then((result) => {
-      if (result.value) {
-
-        // Make the AJAX call to the URL
-        $.ajax({
-          type: 'GET',
-          url: '{{ url("/admin/update-librarycode") }}',
-          data: {
-              "id": id
-          },
-          dataType: 'json',
-          success: function(res) {
-            console.log(res);
-          },
-          error: function(e) {
-              // Handle the error case
-              console.log(e);
-          }
+    title: act.title,
+    html: (name ? '<strong>' + escapeHtml(name) + '</strong><br>' : '') + act.text,
+    icon: 'warning', showCancelButton: true, reverseButtons: true, focusCancel: !!act.danger,
+    confirmButtonText: act.confirm, cancelButtonText: 'Cancel',
+    confirmButtonColor: act.danger ? '#dc3545' : undefined,
+    showLoaderOnConfirm: true,
+    preConfirm: function () {
+      return $.ajax({ type: act.method, url: act.url(id), data: { _token: '{{ csrf_token() }}' }, dataType: 'json' })
+        .catch(function (xhr) {
+          Swal.showValidationMessage((xhr.responseJSON && xhr.responseJSON.message) || 'Something went wrong. Please try again.');
         });
+    },
+    allowOutsideClick: function () { return !Swal.isLoading(); }
+  }).then(function (result) {
+    if (!result.isConfirmed || !result.value) return;
+    $('#tbl').DataTable().ajax.reload(null, false);
+    act.done(result.value);
+  });
+});
 
-      } else if (
-        // Read more about handling dismissals
-        result.dismiss === Swal.DismissReason.cancel
-      ) {
-        Swal.fire(
-          'Cancelled',
-          'No library code generated.',
-          'error'
-        )
-      }
-    })
+// Show a one-time value (temporary password / library code) with a copy button.
+function showSecret(message, label, value) {
+  Swal.fire({
+    icon: 'success', title: message,
+    html: '<div class="text-muted small mb-1">' + escapeHtml(label) + '</div>' +
+          '<code style="font-size:18px;letter-spacing:1px;user-select:all;">' + escapeHtml(value) + '</code>',
+    showCancelButton: true, confirmButtonText: 'Copy', cancelButtonText: 'Close', cancelButtonColor: '#6c757d', reverseButtons: true
+  }).then(function (r) {
+    if (r.isConfirmed && navigator.clipboard) navigator.clipboard.writeText(value);
+  });
 }
 </script>
 @endsection

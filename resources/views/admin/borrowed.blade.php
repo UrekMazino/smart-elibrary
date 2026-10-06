@@ -23,7 +23,8 @@
         <div class="col-md-12">
             <div class="card">
                 <div class="card-body">
-                    <h6 class="card-title text-secondary">TRANSACTIONS</h6>
+                    <h6 class="card-title text-secondary mb-1">TRANSACTIONS</h6>
+                    <p class="text-muted mb-3" style="font-size: 12.5px;">Every check-out / check-in, newest first. Click a material, patron or code to see its details.</p>
                     <div class="table-responsive">
                         <table id="tbl" class="table">
                           <thead>
@@ -78,6 +79,7 @@
 $('#tbl').DataTable({
     processing: true,
     serverSide: true,
+    order: [[5, 'desc']],   // newest transactions first; click any header to sort by it
     ajax: '{{ url("/admin/borrowed/json") }}',
     columns: [
         { data: 'title_statement',

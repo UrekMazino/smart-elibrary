@@ -211,12 +211,14 @@ License: For each use you must have a valid license purchased only from above li
                 <span class="link-title">Patrons</span>
               </a>
             </li>
+            @can('create.patron')
             <li class="nav-item">
               <a href="{{ url('/admin/register') }}" class="nav-link">
                 <i class="link-icon" data-feather="user-plus"></i>
                 <span class="link-title">Register a Patron</span>
               </a>
             </li>
+            @endcan
           @endcan
           @can('access.configuration')
             <li class="nav-item nav-category">Administration</li>
@@ -423,7 +425,25 @@ License: For each use you must have a valid license purchased only from above li
 	<!-- End custom js for this page -->
 
   <script>
-
+  // App-wide feedback for AJAX calls the server refuses, so nothing fails silently:
+  //   403 -> the role lacks the permission (routes enforce every permission server-side)
+  //   419 -> the session / CSRF token expired
+  (function () {
+    var DEFAULT_403 = ['This action is unauthorized.', 'User does not have the right permissions.', 'User does not have the right roles.'];
+    $(document).ajaxError(function (event, xhr) {
+      if (!window.Swal || (xhr.status !== 403 && xhr.status !== 419)) return;
+      if (xhr.status === 419) {
+        Swal.fire({ icon: 'warning', title: 'Session expired', text: 'Please reload the page and try again.',
+                    confirmButtonText: 'Reload' }).then(function (r) { if (r.isConfirmed) location.reload(); });
+        return;
+      }
+      var msg = xhr.responseJSON && xhr.responseJSON.message;
+      if (!msg || DEFAULT_403.indexOf(msg) !== -1) msg = 'Your role doesn’t have permission to do that.';
+      Swal.fire({ icon: 'error', title: 'Not allowed', text: msg });
+    });
+    // DataTables: report load failures through the handler above instead of a browser alert().
+    if ($.fn.dataTable) $.fn.dataTable.ext.errMode = function (settings, techNote, message) { console.warn(message); };
+  })();
   </script>
 
 </body>

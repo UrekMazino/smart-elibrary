@@ -35,6 +35,16 @@
       .mx-toggle.on { background:#00a496; border-color:#00a496; }
       .mx-toggle.on::after { content:''; position:absolute; left:6px; top:2px; width:5px; height:10px; border:solid #fff; border-width:0 2px 2px 0; transform:rotate(45deg); }
       .mx-toggle.busy { opacity:.4; pointer-events:none; }
+      /* Ticked (or not) but can't take effect: the role lacks the module's access permission. */
+      td.mx-cell.inactive .mx-toggle { opacity:.35; }
+      td.mx-cell.inactive .mx-toggle.on { opacity:.45; }
+      .mx-legend { display:flex; flex-wrap:wrap; gap:16px; align-items:center; font-size:12px; color:#6b7489; margin:-6px 0 12px; }
+      .mx-legend .mx-toggle { cursor:default; width:16px; height:16px; }
+      .mx-legend .mx-toggle.on::after { left:4px; top:1px; width:4px; height:8px; }
+      .mx-legend .faded .mx-toggle { opacity:.45; }
+      .badge-you { background:#eef2ff; color:#3a44c7; font-weight:600; font-size:10px; border-radius:10px; padding:1px 7px; text-transform:none; letter-spacing:0; }
+      .badge-unused { background:#fff4e5; color:#a15c00; font-weight:600; font-size:10px; border-radius:10px; padding:1px 7px; margin-left:4px; }
+      .badge-system { background:#f1f3f7; color:#6b7489; font-weight:600; font-size:10px; border-radius:10px; padding:1px 7px; margin-left:4px; }
     </style>
 @endsection
 
@@ -67,7 +77,7 @@
             <tbody>
               @foreach($roles as $role)
                 <tr>
-                  <td><span class="role-name">{{ $role->display_name ?: $role->name }}</span><br><span class="mono">{{ $role->name }}</span></td>
+                  <td><span class="role-name">{{ $role->display_name ?: $role->name }}</span>@if(in_array($role->name, $systemRoles))<span class="badge-system" title="Built-in role: can't be deleted">built-in</span>@endif @if(in_array($role->id, $myRoleIds))<span class="badge-you">your role</span>@endif<br><span class="mono">{{ $role->name }}</span></td>
                   <td class="text-muted">{{ $role->description ?: '—' }}</td>
                   <td class="text-center"><span class="pill" id="role-perm-count-{{ $role->id }}">{{ count($rolePerms[$role->id]) }}</span></td>
                   <td class="text-center">{{ $userCounts[$role->id] }}</td>
@@ -76,8 +86,14 @@
                       <button type="button" class="btn btn-outline-info btn-sm edit-role-btn"
                         data-id="{{ $role->id }}" data-name="{{ $role->name }}"
                         data-display="{{ $role->display_name }}" data-desc="{{ $role->description }}">Edit</button>
-                      <button type="button" class="btn btn-outline-danger btn-sm delete-role-btn"
-                        data-id="{{ $role->id }}" data-name="{{ $role->display_name ?: $role->name }}">Delete</button>
+                      @if(in_array($role->name, $systemRoles))
+                        <button type="button" class="btn btn-outline-secondary btn-sm" disabled title="Built-in role: can't be deleted">Delete</button>
+                      @elseif($userCounts[$role->id] > 0)
+                        <button type="button" class="btn btn-outline-secondary btn-sm" disabled title="Move its {{ $userCounts[$role->id] }} user(s) to another role first">Delete</button>
+                      @else
+                        <button type="button" class="btn btn-outline-danger btn-sm delete-role-btn"
+                          data-id="{{ $role->id }}" data-name="{{ $role->display_name ?: $role->name }}">Delete</button>
+                      @endif
                     </div>
                   </td>
                 </tr>
@@ -92,14 +108,19 @@
     <div class="card">
       <div class="card-body">
         <h6 class="card-title">Access Matrix</h6>
-        <p class="matrix-hint">Tick a cell to grant a permission to a role, untick to revoke. The <strong>developer</strong> superuser always has full access and isn't listed.</p>
+        <p class="matrix-hint">Tick a cell to grant a permission to a role, untick to revoke — it applies on the user's next page load. A permission inside a module only works when the role also has that module's <strong>Access</strong> permission. The <strong>developer</strong> superuser always has full access and isn't listed.</p>
+        <div class="mx-legend" aria-hidden="true">
+          <span><span class="mx-toggle on"></span> Granted</span>
+          <span><span class="mx-toggle"></span> Not granted</span>
+          <span class="faded"><span class="mx-toggle on"></span> Granted, but no effect until the module's Access is granted</span>
+        </div>
         <div class="matrix-wrap">
           <table class="matrix">
             <thead>
               <tr>
                 <th class="perm-col">Permission</th>
                 @foreach($roles as $role)
-                  <th class="role-col">{{ $role->display_name ?: $role->name }}<small class="mono">{{ $role->name }}</small></th>
+                  <th class="role-col">{{ $role->display_name ?: $role->name }}<small class="mono">{{ $role->name }}</small>@if(in_array($role->id, $myRoleIds))<span class="badge-you">your role</span>@endif</th>
                 @endforeach
               </tr>
             </thead>
@@ -109,13 +130,17 @@
                 @foreach($perms as $perm)
                   <tr>
                     <td class="perm-cell">
-                      <span class="perm-name">{{ $perm->display_name ?: $perm->name }}</span>
+                      <span class="perm-name">{{ $perm->display_name ?: $perm->name }}</span>@if(in_array($perm->name, $unused))<span class="badge-unused" title="Nothing in the app checks this permission yet, so ticking it changes nothing">not used yet</span>@endif
                       <span class="mono">{{ $perm->name }}</span>
                     </td>
+                    @php $req = $requires[$perm->name] ?? null; $reqId = $req ? ($permIdsByName[$req] ?? null) : null; @endphp
                     @foreach($roles as $role)
-                      @php $on = in_array($perm->id, $rolePerms[$role->id]); @endphp
-                      <td class="mx-cell">
-                        <span class="mx-toggle {{ $on ? 'on' : '' }}" data-role="{{ $role->id }}" data-perm="{{ $perm->id }}" role="button" tabindex="0" aria-pressed="{{ $on ? 'true' : 'false' }}" title="{{ ($role->display_name ?: $role->name) }} · {{ $perm->display_name ?: $perm->name }}"></span>
+                      @php
+                        $on = in_array($perm->id, $rolePerms[$role->id]);
+                        $inactive = $reqId && ! in_array($reqId, $rolePerms[$role->id]);
+                      @endphp
+                      <td class="mx-cell {{ $inactive ? 'inactive' : '' }}" data-requires="{{ $reqId }}">
+                        <span class="mx-toggle {{ $on ? 'on' : '' }}" data-role="{{ $role->id }}" data-perm="{{ $perm->id }}" data-mine="{{ in_array($role->id, $myRoleIds) ? 1 : 0 }}" role="button" tabindex="0" aria-pressed="{{ $on ? 'true' : 'false' }}" title="{{ ($role->display_name ?: $role->name) }} · {{ $perm->display_name ?: $perm->name }}{{ $inactive ? ' — no effect until the module Access permission is granted' : '' }}"></span>
                       </td>
                     @endforeach
                   </tr>
@@ -155,12 +180,26 @@ $(function () {
         }).done(function (res) {
             $t.toggleClass('on', !!res.granted).attr('aria-pressed', res.granted ? 'true' : 'false');
             $('#role-perm-count-' + roleId).text(res.permCount);
-        }).fail(function () {
-            Swal.fire('Error', 'Could not update the permission. Please try again.', 'error');
+            refreshInactive(roleId);
+            var mine = $t.data('mine') == 1;
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', showConfirmButton: false, timer: mine ? 4200 : 2200,
+                        title: res.message, text: mine ? 'This is your own role — reload the page to see your menu change.' : '' });
+        }).fail(function (xhr) {
+            if (xhr.status !== 403 && xhr.status !== 419) Swal.fire('Error', 'Could not update the permission. Please try again.', 'error');
         }).always(function () {
             $t.removeClass('busy');
         });
     });
+    // Fade a role's cells whose module Access permission it doesn't have (they can't take effect).
+    function refreshInactive(roleId) {
+        $('.mx-toggle[data-role="' + roleId + '"]').each(function () {
+            var $cell = $(this).closest('td'), req = $cell.data('requires');
+            if (!req) return;
+            var granted = $('.mx-toggle[data-role="' + roleId + '"][data-perm="' + req + '"]').hasClass('on');
+            $cell.toggleClass('inactive', !granted);
+        });
+    }
+
     // keyboard toggle (space/enter)
     $(document).on('keydown', '.mx-toggle', function (e) {
         if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); $(this).trigger('click'); }
@@ -201,6 +240,7 @@ function showSwal(type, message, icon) {
     Swal.fire({ position: 'top-end', toast: true, icon: icon, title: message, showConfirmButton: false, timer: 2000 });
 }
 </script>
-@if (session('error'))   <script>$(function(){ showSwal('t', "{{ session('error') }}", 'error'); });</script> @endif
+@if (session('error'))   <script>$(function(){ Swal.fire({ icon: 'error', title: 'Not done', text: @json(session('error')) }); });</script> @endif
 @if (session('success')) <script>$(function(){ showSwal('t', "{{ session('success') }}", 'success'); });</script> @endif
+@if ($errors->any())     <script>$(function(){ Swal.fire({ icon: 'error', title: 'Not saved', text: @json($errors->first()) }); });</script> @endif
 @endsection

@@ -310,7 +310,8 @@ class AdminController extends Controller
 
     public function administrators()
     {
-        return view('admin.administrators');
+        // Change Role offers only the roles this admin may hand out (developer: developers only).
+        return view('admin.administrators', ['assignableRoles' => $this->assignableRoles()]);
     }
 
     public function report()
@@ -553,6 +554,8 @@ class AdminController extends Controller
 
         $data_arr = array();
 
+        $meIsDeveloper = auth()->user()->hasRole('developer');
+
         foreach ($records as $record) {
             $perm = $record->roles
                         ->flatMap->permissions
@@ -572,6 +575,11 @@ class AdminController extends Controller
                 "permissions" => $perm,
                 "roles"       => $record->roles->pluck('name')->all(),
                 "role_ids"    => $record->roles->pluck('id')->all(),
+                // Drives the Action menu: your own account and (for non-developers) developer
+                // accounts can't be changed here — the endpoints refuse them too.
+                "is_self"     => $record->id === auth()->id(),
+                "manageable"  => $record->id !== auth()->id()
+                                 && ($meIsDeveloper || ! $record->roles->contains('name', 'developer')),
                 "location"    => $record->location,
                 "created_at"  => date('Y-m-d H:i:s', strtotime($record->created_at)),
             );
@@ -1027,18 +1035,58 @@ class AdminController extends Controller
         return redirect('admin/borrowed');
     }
 
-    public function actionPatron()
+    /*
+     * Patron account actions (Patrons page). Each route carries its own permission
+     * (edit.patron / delete.patron); these only ever touch PATRON accounts — staff accounts
+     * go through the Administrators page, which has its own guards.
+     */
+    private function patronOrFail($id): User
     {
-        if(request()->action == 'delete')
-        {
-            App\Models\User::where('id',request()->patron_id)->delete();
-        }
-        else
-        {
-            App\Models\User::where('id',request()->patron_id)->update(['password' => bcrypt('pcaarrdelibrary') ]);
-        }
-        
-        return redirect('admin/patron');
+        return User::where('usertype', 'Patron')->findOrFail($id);
+    }
+
+    /** Set a one-time random password and hand it back once, for the librarian to pass on. */
+    public function resetPatronPassword($id)
+    {
+        $patron = $this->patronOrFail($id);
+
+        return response()->json($this->resetPasswordOf($patron));
+    }
+
+    public function regeneratePatronLibraryCode($id)
+    {
+        $patron = $this->patronOrFail($id);
+
+        return response()->json($this->regenerateLibraryCodeOf($patron));
+    }
+
+    public function destroyPatron($id)
+    {
+        $patron = $this->patronOrFail($id);
+        $patron->delete();   // soft delete (User uses SoftDeletes) — recoverable
+
+        return response()->json(['message' => $patron->name . "'s account was deleted."]);
+    }
+
+    private function resetPasswordOf(User $user): array
+    {
+        $password = generateRandomPassword();
+        $user->forceFill(['password' => Hash::make($password)])->save();
+
+        return [
+            'message'  => 'Password reset for ' . $user->name . '.',
+            'password' => $password,
+        ];
+    }
+
+    private function regenerateLibraryCodeOf(User $user): array
+    {
+        $user->forceFill(['library_code' => generateLibraryCode()])->save();
+
+        return [
+            'message'      => 'New library code for ' . $user->name . '.',
+            'library_code' => $user->library_code,
+        ];
     }
 
     public function registerPatron()
@@ -1093,38 +1141,69 @@ class AdminController extends Controller
             'user_library_code' => $libraryCode]);
     }
 
-    public function updatePatronLibraryCode(Request $request)
-    {
-        $libraryCode = updateLibraryCode($request->id);
         
-        return redirect()->route('patrons')->with([
-            'success' => 'Updated! You library code was updated!',
-            'user_library_code' => $libraryCode]);
+    /*
+     * Administrator account actions (Administrators page; routes are super_admin/developer only).
+     * Guards: never your own account (use Profile — and no locking yourself out), a developer
+     * account only by a developer, and never the last super_admin.
+     */
+    private function manageableAdminOrFail($id): User
+    {
+        $user = User::whereIn('usertype', ['Administrator', 'Developer'])->findOrFail($id);
+
+        abort_if($user->id === auth()->id(), 403, "You can't change your own account here. Use your Profile instead.");
+        abort_if($user->hasRole('developer') && ! auth()->user()->hasRole('developer'), 403, 'Only a developer can manage a developer account.');
+
+        return $user;
     }
 
-        
+    private function isLastSuperAdmin(User $user): bool
+    {
+        return $user->hasRole('super_admin')
+            && User::role('super_admin')->whereKeyNot($user->id)->count() === 0;
+    }
+
     public function adminChangeRole(Request $request)
     {
-        $role = Role::select('name')->where('id', $request->role_id)->first();
+        $data = $request->validate([
+            'user_id' => ['required', 'integer'],
+            'role_id' => ['required', 'integer', 'exists:roles,id'],
+        ], ['role_id.*' => 'Select a role.']);
 
-        $user = User::find($request->user_id);
+        $user = $this->manageableAdminOrFail($data['user_id']);
+        $role = $this->assignableRoles()->firstWhere('id', (int) $data['role_id']);
+        abort_unless($role, 403, "You can't assign that role.");
 
-        $currentUserRole = $user->getRoleNames();
-        
-        if(count($currentUserRole) != 0) {
-            $user->removeRole($currentUserRole[0]);
+        if ($role->name !== 'super_admin' && $this->isLastSuperAdmin($user)) {
+            return back()->with('error', $user->name . ' is the only Super Administrator. Make someone else a Super Administrator first.');
         }
 
+        $user->syncRoles([$role->name]);   // one role per administrator
 
-        $user->assignRole($role->name);
-  
-        // $permissions = $user->getPermissionsViaRoles();
-        // $perm = [];
-        // foreach($permissions as $index => $permission) {
-        //     $perm[$index] = $permission->display_name;
-        // }
-        // dump($perm);
-        // dd($permissions);
-        return view('admin.administrators');
+        return redirect()->route('administrators')
+            ->with('success', $user->name . ' is now ' . ($role->display_name ?: $role->name) . '.');
+    }
+
+    public function resetAdminPassword($id)
+    {
+        return response()->json($this->resetPasswordOf($this->manageableAdminOrFail($id)));
+    }
+
+    public function regenerateAdminLibraryCode($id)
+    {
+        return response()->json($this->regenerateLibraryCodeOf($this->manageableAdminOrFail($id)));
+    }
+
+    public function destroyAdmin($id)
+    {
+        $user = $this->manageableAdminOrFail($id);
+
+        if ($this->isLastSuperAdmin($user)) {
+            return response()->json(['message' => $user->name . ' is the only Super Administrator and can\'t be deleted.'], 422);
+        }
+
+        $user->delete();   // soft delete
+
+        return response()->json(['message' => $user->name . "'s administrator account was deleted."]);
     }
 }

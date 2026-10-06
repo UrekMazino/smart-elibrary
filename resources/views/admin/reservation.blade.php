@@ -63,12 +63,18 @@
           </div>
           <div class="modal-body">
             <div id="reservation-chat-thread" style="max-height:340px;overflow-y:auto;padding:4px;"></div>
+            @can('manage.circulation.reservation')
             <label class="form-label">Your message</label>
             <textarea class="form-control" id="reservation-chat-message" rows="3" placeholder="Type your message to the patron..."></textarea>
+            @else
+            <p class="text-muted small mb-0 mt-2"><i data-feather="lock" class="icon-sm me-1"></i>Your role can read these messages but not reply (needs <em>Manage Reservations</em>).</p>
+            @endcan
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+            @can('manage.circulation.reservation')
             <button type="button" class="btn btn-primary" onclick="sendReservationChat()"><i data-feather="send" class="icon-sm me-1"></i>Send</button>
+            @endcan
           </div>
         </div>
       </div>

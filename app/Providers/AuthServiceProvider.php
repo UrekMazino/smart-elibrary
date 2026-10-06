@@ -25,6 +25,11 @@ class AuthServiceProvider extends ServiceProvider
     {
         $this->registerPolicies();
 
-        //
+        // `developer` is the superuser role: it passes every permission check (can:, @can,
+        // $user->can(), Spatie's permission: middleware), including permissions added later
+        // that were never ticked for it in the access matrix.
+        Gate::before(function ($user) {
+            return method_exists($user, 'hasRole') && $user->hasRole('developer') ? true : null;
+        });
     }
 }

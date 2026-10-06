@@ -51,7 +51,7 @@
                             <h6 class="card-title">List of Import Batches</h6>
                         </div>
                         <div class="pull-right">
-                            <a href="{{ url('/admin/create-batch/') }}" class="btn btn-info" style="color:white;">+ New Upload</a>
+                            @can('create.catalog.import')<a href="{{ url('/admin/create-batch/') }}" class="btn btn-info" style="color:white;">+ New Upload</a>@endcan
                           </div>
                     </div>
 

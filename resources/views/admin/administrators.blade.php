@@ -88,11 +88,6 @@
 @include('admin.modals.edit-admin-role-modal')
 
 @include('admin.modals.view-rolepermissions-modal')
-<form method="post" action="{{ url('/admin/patron-action') }}" id="frm" enctype="multipart/form-data">
-  @csrf
-  <input type="hidden" name="user_id" id="user_id">
-  <input type="hidden" name="action" value="">
-</form>
 @endsection
 
 @section('js')
@@ -163,14 +158,17 @@ $('#tbl').DataTable({
           } },
         { data: null, orderable: false, className: 'text-center',
           render: function (d, type, row) {
+              // Your own account is managed from Profile; developer accounts only by a developer.
+              if (row.is_self) return '<span class="badge bg-light text-muted" title="Manage your own account from Profile">You</span>';
+              if (!row.manageable) return '<span class="text-muted small" title="Only a developer can manage this account">—</span>';
               return '<div class="btn-group btn-group-sm" role="group">' +
                        '<button type="button" class="btn btn-info btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>' +
                        '<div class="dropdown-menu dropdown-menu-end">' +
                          '<a class="dropdown-item" href="#" onclick="showEditAdminRoleModal(' + row.id + ')">Change Role</a>' +
-                         '<a class="dropdown-item" href="#" onclick="generateLibraryCode(' + row.id + ')">Generate Library Code</a>' +
-                         '<a class="dropdown-item" href="#" onclick="sendFrm(\'frm\',\'reset\',' + row.id + ')">Reset Password</a>' +
+                         '<a class="dropdown-item" href="#" data-act="library-code" data-id="' + row.id + '">Generate Library Code</a>' +
+                         '<a class="dropdown-item" href="#" data-act="reset-password" data-id="' + row.id + '">Reset Password</a>' +
                          '<div class="dropdown-divider"></div>' +
-                         '<a class="dropdown-item text-danger" href="#" onclick="sendFrm(\'frm\',\'delete\',' + row.id + ')">Delete</a>' +
+                         '<a class="dropdown-item text-danger" href="#" data-act="delete" data-id="' + row.id + '" data-name="' + escapeHtml(row.name) + '">Delete</a>' +
                        '</div>' +
                      '</div>';
           } },
@@ -189,43 +187,59 @@ if (window.feather) feather.replace();
 });
 
 
-function sendFrm(frm,type,id = null)
-{
-    if(type == 'delete')
-    {
-      msg = "";
-      $('#action').val('delete');
-    }
-    else
-    {
-      msg = "Default password is : `admin`";
-      $('#action').val('reset');
-    }
+// ---- Administrator account actions (Generate Library Code / Reset Password / Delete) ----
+var ADMIN_ACTIONS = {
+  'library-code': {
+    title: 'Generate a new library code?', text: 'Their current library code will stop working.',
+    confirm: 'Generate', method: 'POST', url: function (id) { return '{{ url("/superadmin/admin") }}/' + id + '/library-code'; },
+    done: function (res) { showSecret(res.message, 'Library code', res.library_code); }
+  },
+  'reset-password': {
+    title: 'Reset this administrator’s password?', text: 'A new temporary password is created and shown once, for you to pass on.',
+    confirm: 'Reset password', method: 'POST', url: function (id) { return '{{ url("/superadmin/admin") }}/' + id + '/reset-password'; },
+    done: function (res) { showSecret(res.message, 'Temporary password', res.password); }
+  },
+  'delete': {
+    title: 'Delete this administrator?', text: 'They lose access to the admin panel immediately.',
+    confirm: 'Delete', danger: true, method: 'DELETE', url: function (id) { return '{{ url("/superadmin/admin") }}/' + id; },
+    done: function (res) { Swal.fire({ icon: 'success', title: 'Deleted', text: res.message, timer: 2200, showConfirmButton: false }); }
+  }
+};
 
-    Swal.fire({
-      title: 'Are you sure?',
-      text: msg,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonClass: 'me-2',
-      confirmButtonText: 'Yes',
-      cancelButtonText: 'No',
-      reverseButtons: true
-    }).then((result) => {
-      if (result.value) {
-        $("#user_id").val(id);
-        $('#'+frm).submit();
-      } else if (
-        // Read more about handling dismissals
-        result.dismiss === Swal.DismissReason.cancel
-      ) {
-        Swal.fire(
-          'Cancelled',
-          'Action Canceled!',
-          'error'
-        )
-      }
-    })
+$(document).on('click', '#tbl [data-act]', function (e) {
+  e.preventDefault();
+  var act = ADMIN_ACTIONS[$(this).data('act')], id = $(this).data('id'), name = $(this).data('name');
+  Swal.fire({
+    title: act.title,
+    html: (name ? '<strong>' + escapeHtml(name) + '</strong><br>' : '') + act.text,
+    icon: 'warning', showCancelButton: true, reverseButtons: true, focusCancel: !!act.danger,
+    confirmButtonText: act.confirm, cancelButtonText: 'Cancel',
+    confirmButtonColor: act.danger ? '#dc3545' : undefined,
+    showLoaderOnConfirm: true,
+    preConfirm: function () {
+      return $.ajax({ type: act.method, url: act.url(id), data: { _token: '{{ csrf_token() }}' }, dataType: 'json' })
+        .catch(function (xhr) {
+          Swal.showValidationMessage((xhr.responseJSON && xhr.responseJSON.message) || 'Something went wrong. Please try again.');
+        });
+    },
+    allowOutsideClick: function () { return !Swal.isLoading(); }
+  }).then(function (result) {
+    if (!result.isConfirmed || !result.value) return;
+    $('#tbl').DataTable().ajax.reload(null, false);
+    act.done(result.value);
+  });
+});
+
+// Show a one-time value (temporary password / library code) with a copy button.
+function showSecret(message, label, value) {
+  Swal.fire({
+    icon: 'success', title: message,
+    html: '<div class="text-muted small mb-1">' + escapeHtml(label) + '</div>' +
+          '<code style="font-size:18px;letter-spacing:1px;user-select:all;">' + escapeHtml(value) + '</code>',
+    showCancelButton: true, confirmButtonText: 'Copy', cancelButtonText: 'Close', cancelButtonColor: '#6c757d', reverseButtons: true
+  }).then(function (r) {
+    if (r.isConfirmed && navigator.clipboard) navigator.clipboard.writeText(value);
+  });
 }
 
 function showEditAdminRoleModal(id)
@@ -238,49 +252,6 @@ function showEditAdminRoleModal(id)
     $('#role-list').val(roleId);
 
     $('#editAdminRoleModal').modal('show');
-}
-
-function generateLibraryCode(id)
-{
-  Swal.fire({
-      title: 'Are you sure?',
-      text: 'This will generate a new library code for this user.',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonClass: 'me-2',
-      confirmButtonText: 'Yes',
-      cancelButtonText: 'No',
-      reverseButtons: true
-    }).then((result) => {
-      if (result.value) {
-
-        // Make the AJAX call to the URL
-        $.ajax({
-          type: 'GET',
-          url: '{{ url("/admin/update-librarycode") }}',
-          data: {
-              "id": id
-          },
-          dataType: 'json',
-          success: function(res) {
-
-          },
-          error: function(e) {
-              // Handle the error case
-          }
-        });
-
-      } else if (
-        // Read more about handling dismissals
-        result.dismiss === Swal.DismissReason.cancel
-      ) {
-        Swal.fire(
-          'Cancelled',
-          'No library code generated.',
-          'error'
-        )
-      }
-    })
 }
 
 // permissions: array of display names for the role(s) this admin holds.
@@ -301,5 +272,12 @@ function showPermissions(permissions, role, title) {
   $('#viewRolePermissionModal').fadeIn();
 }
 
+
+// Result of Change Role (a normal form post) comes back as a flash message.
+$(function () {
+  @if (session('success')) Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: @json(session('success')), showConfirmButton: false, timer: 2600 }); @endif
+  @if (session('error'))   Swal.fire({ icon: 'error', title: 'Not changed', text: @json(session('error')) }); @endif
+  @if ($errors->any())     Swal.fire({ icon: 'error', title: 'Not changed', text: @json($errors->first()) }); @endif
+});
 </script>
 @endsection

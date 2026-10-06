@@ -35,32 +35,49 @@ class BorrowController extends Controller
         $order_arr = $request->get('order');
         $search_arr = $request->get('search');
 
-        $columnIndex = $columnIndex_arr[0]['column']; // Column index
-        $columnName = $columnName_arr[$columnIndex]['data']; // Column name
-        $columnSortOrder = $order_arr[0]['dir']; // asc or desc
-        $searchValue = $search_arr['value']; // Search value
+        $columnIndex = $columnIndex_arr[0]['column'] ?? 5; // Column index
+        $columnName = $columnName_arr[$columnIndex]['data'] ?? 'created_at'; // Column name
+        $columnSortOrder = strtolower($order_arr[0]['dir'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
+        $searchValue = $search_arr['value'] ?? ''; // Search value
 
-        // Total records
-        $totalRecordswithFilter =  Circulation::count();
+        // DataTables column -> SQL column. Only these can be sorted on (the table's own data
+        // names like "patron_name" aren't DB columns, and request input never reaches SQL raw).
+        $sortable = [
+            'title_statement'  => 'circulation_reservations.title_statement',
+            'patron_name'      => 'users.name',
+            'transaction_code' => 'circulations.transaction_code',
+            'reservation_code' => 'circulations.reservation_code',
+            'status'           => 'circulation_status.name',
+            'created_at'       => 'circulations.created_at',
+        ];
+        $sortColumn = $sortable[$columnName] ?? 'circulations.created_at';
 
-        // Fetch records
-        $records = DB::table('circulations')
-            ->orderBy('created_at', 'DESC')
+        $base = fn () => DB::table('circulations')
             ->leftJoin('circulation_reservations', 'circulation_reservations.reservation_code', '=', 'circulations.reservation_code')
             ->leftJoin('users', 'users.id', '=', 'circulations.user_id')
             ->leftJoin('circulation_status', 'circulation_status.order_no', '=', 'circulations.status')
-            ->whereIn('status', [1, 2, 3, 4, 5])
-            ->where(function ($query) use ($searchValue) {
-                $query->where('title_statement', 'like', '%' . $searchValue . '%')
-                    ->orWhere('circulations.transaction_code', 'like', '%' . $searchValue . '%')
-                    ->orWhere('circulations.created_at', 'like', '%' . $searchValue . '%')
-                    ->orWhere('circulation_reservations.reservation_code', 'like', '%' . $searchValue . '%')
-                    ->orWhere('circulations.circulation_number', 'like', '%' . $searchValue . '%')
-                    ->orWhere('circulation_status.name', 'like', '%' . $searchValue . '%')
-                    ->orWhere('users.name', 'like', '%' . $searchValue . '%');
-            })
+            ->whereIn('circulations.status', [1, 2, 3, 4, 5]);
+
+        $search = function ($query) use ($searchValue) {
+            $query->where('circulation_reservations.title_statement', 'like', '%' . $searchValue . '%')
+                ->orWhere('circulations.transaction_code', 'like', '%' . $searchValue . '%')
+                ->orWhere('circulations.created_at', 'like', '%' . $searchValue . '%')
+                ->orWhere('circulations.reservation_code', 'like', '%' . $searchValue . '%')
+                ->orWhere('circulations.circulation_number', 'like', '%' . $searchValue . '%')
+                ->orWhere('circulation_status.name', 'like', '%' . $searchValue . '%')
+                ->orWhere('users.name', 'like', '%' . $searchValue . '%');
+        };
+
+        // Totals: all transactions vs. the ones matching the search (DataTables paging needs both).
+        $totalRecords = $base()->count();
+        $totalRecordswithFilter = $searchValue === '' ? $totalRecords : $base()->where($search)->count();
+
+        // Fetch records: the clicked column in the clicked direction, newest first as tie-break.
+        $records = $base()
+            ->when($searchValue !== '', fn ($q) => $q->where($search))
             ->select('circulation_status.name as status_name', 'circulations.id', 'circulation_reservations.title_statement', 'circulations.catalog_id', 'circulations.user_id', 'circulations.status', 'circulations.reservation_code', 'circulations.circulation_number', 'circulations.transaction_code', 'circulations.created_at', 'users.name as user_name', 'circulations.copy_id')
-            ->orderBy($columnName, $columnSortOrder === 'asc' ? 'desc' : 'asc')
+            ->orderBy($sortColumn, $columnSortOrder)
+            ->orderBy('circulations.created_at', 'desc')
             ->skip($start)
             ->take($rowPerPage)
             ->get();
@@ -89,7 +106,7 @@ class BorrowController extends Controller
          
          $response = array(
             "draw" => intval($draw),
-            "iTotalRecords" => $totalRecordswithFilter,
+            "iTotalRecords" => $totalRecords,
             "iTotalDisplayRecords" => $totalRecordswithFilter,
             "aaData" => $data_arr
          );

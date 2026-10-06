@@ -114,8 +114,8 @@ use App\Http\Controllers\AdminController;
 Route::controller(AdminController::class)->group(function () {
     Route::get('/admin/dashboard', 'dashboard')->middleware('can:access.dashboard');
 
-    Route::get('/admin/borrowed', 'borrowed')->middleware('can:access.circulation.transaction');
-    Route::get('/admin/visits', 'visit');
+    Route::get('/admin/borrowed', 'borrowed')->middleware(['can:access.circulation', 'can:access.circulation.transaction']);
+    Route::get('/admin/visits', 'visit')->middleware('can:access.reports');
 
     Route::get('/admin/inquiry', 'inquiry')->middleware('can:access.inquiry');
     Route::get('/admin/inquiry/json', 'inquiryjson')->middleware('can:access.inquiry');
@@ -130,7 +130,10 @@ Route::controller(AdminController::class)->group(function () {
 
     Route::post('/admin/patron-borrow', 'assignMaterialToPatron')->middleware('can:access.accounts');
 
-    Route::post('/admin/patron-action', 'actionPatron')->middleware('can:access.accounts');
+    // Patron account actions — each gated by its own permission (UI hides what you can't do).
+    Route::post('/admin/patron/{id}/reset-password', 'resetPatronPassword')->whereNumber('id')->middleware(['can:access.accounts', 'can:edit.patron']);
+    Route::post('/admin/patron/{id}/library-code', 'regeneratePatronLibraryCode')->whereNumber('id')->middleware(['can:access.accounts', 'can:edit.patron']);
+    Route::delete('/admin/patron/{id}', 'destroyPatron')->whereNumber('id')->middleware(['can:access.accounts', 'can:delete.patron']);
 
     Route::get('/admin/patron/json', 'patronjson')->middleware('can:access.accounts');
 
@@ -159,7 +162,7 @@ Route::controller(AcquisitionController::class)->middleware('can:access.catalogi
 });
 
 use App\Http\Controllers\BorrowController;
-Route::controller(BorrowController::class)->middleware('can:access.circulation.transaction')->group(function () {
+Route::controller(BorrowController::class)->middleware(['can:access.circulation', 'can:access.circulation.transaction'])->group(function () {
     Route::get('/admin/borrowed/json', 'json');
     Route::post('/admin/borrowed/action', 'action');
 

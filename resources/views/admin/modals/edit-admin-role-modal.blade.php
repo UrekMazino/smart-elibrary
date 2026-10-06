@@ -18,7 +18,7 @@
                                             <div class="col-md-12 col-sm-12 mb-3 text-right">
                                                 <select class="form-select" id="role-list" name="role_id">
                                                     <option value="0" selected >Select a role..</option>
-                                                    @foreach(getRoles() as $role)
+                                                    @foreach($assignableRoles ?? getRoles() as $role)
                                                         <option value="{{ $role->id }}">{{ $role->display_name}}</option>
                                                     @endforeach
                                                 </select>
