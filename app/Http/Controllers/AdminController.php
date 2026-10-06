@@ -571,6 +571,7 @@ class AdminController extends Controller
                 "contactnum"  => $record->contactnum,
                 "permissions" => $perm,
                 "roles"       => $record->roles->pluck('name')->all(),
+                "role_ids"    => $record->roles->pluck('id')->all(),
                 "location"    => $record->location,
                 "created_at"  => date('Y-m-d H:i:s', strtotime($record->created_at)),
             );

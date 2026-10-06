@@ -231,8 +231,13 @@ function sendFrm(frm,type,id = null)
 function showEditAdminRoleModal(id)
 {
     $("#user-id").val(id);
+
+    // Pre-select the admin's current role; fall back to the placeholder when they have none.
+    var row = $('#tbl').DataTable().rows().data().toArray().find(function (r) { return r.id == id; });
+    var roleId = row && row.role_ids && row.role_ids.length ? row.role_ids[0] : 0;
+    $('#role-list').val(roleId);
+
     $('#editAdminRoleModal').modal('show');
-    $('#editAdminRoleModal').fadeIn();
 }
 
 function generateLibraryCode(id)
