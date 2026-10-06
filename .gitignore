@@ -7,6 +7,8 @@
 /public/pdf
 /public/thumb
 /public/storage
+/public/marc_file
+/public/marc_file_uploaded
 /storage/*.key
 /vendor
 .env
