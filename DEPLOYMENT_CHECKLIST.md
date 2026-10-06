@@ -28,7 +28,8 @@ They share **one MySQL database** (`elibrarydb`) and the eLibrary **`.env`** —
 # 1. code + dependencies
 git pull
 composer install --no-dev --optimize-autoloader
-npm install && npm run build
+npm install && npm run prod                           # there is no "build" script (Laravel Mix)
+php artisan storage:link                              # public/thumb, pdf, news_cover, ... -> storage/app/public
 
 # 2. database  — see the landmine note below before running this
 php artisan migrate:status          # confirm the baseline migrations show "Ran"
@@ -43,6 +44,7 @@ php artisan sitemap:generate                          # writes sitemap*.xml + ro
 
 # 5. caches
 php artisan config:cache && php artisan route:cache && php artisan view:cache
+php artisan permission:cache-reset                    # roles/permissions are cached for 24h
 ```
 
 > ⚠️ **Migration landmine.** The migration history contains `2025_09_15_114348_drop_all_tables`.
@@ -110,6 +112,7 @@ These are real changes that a `git pull` will **not** give you. They must be app
 | `pymysql` in the RAG venv | `rag/.venv` | `uv pip install -r requirements.txt` |
 | **MARC seed constants corrected** | `elibrarydb` | re-seed the 3 MARC tables from `database/seeders/data/*.json` |
 | Generated `sitemap*.xml` | `public/` | `php artisan sitemap:generate` (gitignored on purpose) |
+| `public/{thumb,pdf,fullpage,news_cover,marc_file,marc_file_uploaded}` links | `public/` → `storage/app/public/*` | `php artisan storage:link`. The link *targets* (uploaded covers, PDFs) live in `storage/app/public` and are per-server data — back them up. The app creates a missing target folder on first write. |
 
 > The MARC fixes (mojibake in `marctag_indicators_loc` #243, malformed `388` indicator ref, `842 `
 > trailing space, 25 duplicate subfields) were applied to **both** the seed JSON *and* the live dev

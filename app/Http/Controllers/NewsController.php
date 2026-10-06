@@ -43,6 +43,7 @@ class NewsController extends Controller
             //COVER PHOTO -> store under public/news_cover (where it is served from) + thumbnail
             $file = $request->file('news_cover');
             $coverName = 'news-'.uniqid().'.'.$file->getClientOriginalExtension();
+            ensurePublicDir(public_path('news_cover'));   // link target may not exist yet (fresh checkout)
             $file->move(public_path('news_cover'), $coverName);
             $news->news_cover = 'news_cover/'.$coverName;
             makeThumbnail(public_path('news_cover/'.$coverName), public_path('thumb/'.$coverName));
@@ -81,6 +82,7 @@ class NewsController extends Controller
             // Store under public/news_cover (where it is served from) + thumbnail
             $file = $request->file('news_cover');
             $coverName = 'news-'.uniqid().'.'.$file->getClientOriginalExtension();
+            ensurePublicDir(public_path('news_cover'));   // link target may not exist yet (fresh checkout)
             $file->move(public_path('news_cover'), $coverName);
             $article->news_cover = 'news_cover/'.$coverName;
             makeThumbnail(public_path('news_cover/'.$coverName), public_path('thumb/'.$coverName));

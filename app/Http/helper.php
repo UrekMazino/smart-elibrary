@@ -415,6 +415,30 @@ function getFrontpageResult($catalog_id)
 }
 
 /**
+ * Make sure a directory under public/ exists and can be written to before saving into it.
+ *
+ * public/thumb, public/pdf, public/news_cover, ... are symlinks into storage/app/public
+ * (config/filesystems.php `links`). On a fresh checkout `storage:link` creates the links but
+ * not their targets, and a plain is_dir()/mkdir() can't fix that: is_dir() is false for a
+ * dangling link and mkdir() fails because the link itself exists. So create the link's
+ * TARGET when the link is dangling, otherwise the directory itself.
+ */
+function ensurePublicDir($dir)
+{
+	if (is_dir($dir)) return true;
+
+	if (is_link($dir)) {
+		$target = readlink($dir);
+		if ($target !== false && $target !== '' && $target[0] !== '/') {
+			$target = dirname($dir) . '/' . $target;   // relative link
+		}
+		return $target !== false && (is_dir($target) || @mkdir($target, 0775, true));
+	}
+
+	return @mkdir($dir, 0775, true) || is_dir($dir);
+}
+
+/**
  * Create a downscaled thumbnail copy of an image (JPG/PNG/WEBP).
  * Scales down to $maxWidth (never upscales), preserving aspect ratio + transparency.
  */
@@ -447,7 +471,7 @@ function makeThumbnail($sourcePath, $destPath, $maxWidth = 250)
 	}
 	imagecopyresampled($thumb, $src, 0, 0, 0, 0, $nw, $nh, $w, $h);
 
-	if (!is_dir(dirname($destPath))) @mkdir(dirname($destPath), 0775, true);
+	if (!ensurePublicDir(dirname($destPath))) return false;
 	switch ($info['mime']) {
 		case 'image/jpeg': imagejpeg($thumb, $destPath, 85); break;
 		case 'image/png':  imagepng($thumb, $destPath, 6); break;
@@ -687,7 +711,7 @@ function generatePlaceholderCover($vc, $destPath, $w = 400, $h = 520)
 		imagestring($im, 5, 20, 40, wordwrap($title, 34, "\n", true), $white);
 	}
 
-	if (!is_dir(dirname($destPath))) @mkdir(dirname($destPath), 0775, true);
+	if (!ensurePublicDir(dirname($destPath))) { imagedestroy($im); return false; }
 	imagejpeg($im, $destPath, 88);
 	imagedestroy($im);
 	return true;
@@ -723,22 +747,28 @@ function coverWrapLines($font, $size, $text, $maxWidth)
  */
 function ensurePlaceholderCover($catalog_id)
 {
-	if (!$catalog_id || !settingEnabled('enable_placeholder_covers')) return false;
-	if (App\Models\Frontpage::where('catalog_id', $catalog_id)->whereNull('deleted_at')->exists()) return false;
+	// A placeholder is decoration: it runs AFTER the record is saved, so it must never turn a
+	// successful save into an error page (which invites a retry and a duplicate record).
+	try {
+		if (!$catalog_id || !settingEnabled('enable_placeholder_covers')) return false;
+		if (App\Models\Frontpage::where('catalog_id', $catalog_id)->whereNull('deleted_at')->exists()) return false;
 
-	$vc = App\Models\ViewCatalog::where('catalog_id', $catalog_id)->first();
-	if (!$vc) return false;
+		$vc = App\Models\ViewCatalog::where('catalog_id', $catalog_id)->first();
+		if (!$vc) return false;
 
-	$file = 'gen-'.$catalog_id.'.jpg';
-	if (generatePlaceholderCover($vc, public_path('frontpages/'.$file))) {
-		makeThumbnail(public_path('frontpages/'.$file), public_path('thumb/'.$file));
-		App\Models\Frontpage::create([
-			'catalog_id'        => $catalog_id,
-			'FrontPageName'     => $file,
-			'FrontPageType'     => 'jpg',
-			'FrontPageLocation' => 'frontpages/'.$file,
-		]);
-		return true;
+		$file = 'gen-'.$catalog_id.'.jpg';
+		if (generatePlaceholderCover($vc, public_path('frontpages/'.$file))) {
+			makeThumbnail(public_path('frontpages/'.$file), public_path('thumb/'.$file));
+			App\Models\Frontpage::create([
+				'catalog_id'        => $catalog_id,
+				'FrontPageName'     => $file,
+				'FrontPageType'     => 'jpg',
+				'FrontPageLocation' => 'frontpages/'.$file,
+			]);
+			return true;
+		}
+	} catch (\Throwable $e) {
+		report($e);   // logged for the admin; the record itself is fine
 	}
 	return false;
 }

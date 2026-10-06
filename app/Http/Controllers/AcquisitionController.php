@@ -326,6 +326,7 @@ class AcquisitionController extends Controller
         if(isset(request()->formCover))
         {
             $coverName = 'cp-'.uniqid().'.'.request()->file('formCover')->getClientOriginalExtension();
+            ensurePublicDir(public_path('frontpages'));   // link target may not exist yet (fresh checkout)
             request()->file('formCover')->move(public_path('frontpages'), $coverName);
             $frontpage_path = 'frontpages/'.$coverName;
             makeThumbnail(public_path('frontpages/'.$coverName), public_path('thumb/'.$coverName));
@@ -682,6 +683,7 @@ class AcquisitionController extends Controller
             App\Models\Frontpage::where('catalog_id',$holdings['catalog_id'])->delete();
 
              $coverName = 'cp-'.uniqid().'.'.request()->file('formCover')->getClientOriginalExtension();
+             ensurePublicDir(public_path('frontpages'));   // link target may not exist yet (fresh checkout)
              request()->file('formCover')->move(public_path('frontpages'), $coverName);
              $frontpage_path = 'frontpages/'.$coverName;
              makeThumbnail(public_path('frontpages/'.$coverName), public_path('thumb/'.$coverName));

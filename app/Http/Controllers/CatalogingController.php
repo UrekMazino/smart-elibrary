@@ -2706,6 +2706,7 @@ class CatalogingController extends Controller
             $filePath = 'frontpages/' . $newFileName;
 
             // Store directly under public/frontpages (where getFrontpageResult serves from).
+            ensurePublicDir(public_path('frontpages'));   // link target may not exist yet (fresh checkout)
             $uploadedFile->move(public_path('frontpages'), $newFileName);
 
             // Also generate a thumbnail copy under public/thumb (same filename).
@@ -2795,6 +2796,7 @@ class CatalogingController extends Controller
             $filePath = 'pdf/' . $newFileName;
 
             // Store directly under public/pdf (where DownloadController's public_path() serves from).
+            ensurePublicDir(public_path('pdf'));   // link target may not exist yet (fresh checkout)
             $uploadedFile->move(public_path('pdf'), $newFileName);
 
             $coverPage = Multimedia::where('catalog_id', $request->catalog_id)->where('deleted_at', null)->first();

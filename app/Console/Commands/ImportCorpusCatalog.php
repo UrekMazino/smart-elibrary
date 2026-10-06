@@ -87,8 +87,8 @@ class ImportCorpusCatalog extends Command
         $this->line('already imported: ' . $existing->count());
 
         $pdfDir = public_path('pdf');
-        if (! $dry && ! is_dir($pdfDir)) {
-            mkdir($pdfDir, 0775, true);
+        if (! $dry) {
+            ensurePublicDir($pdfDir);   // public/pdf is a link into storage; its target may not exist yet
         }
 
         $stats = ['imported' => 0, 'held' => 0, 'published' => 0, 'skipped' => 0,
