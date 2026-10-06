@@ -1159,16 +1159,13 @@ class CatalogingController extends Controller
                         $jointAuthorString = NULL;
                     }
 
-                    if(isset($matchingRecordType['recordType'])) {
-                        $material = getMaterialDataCUsingCode($matchingRecordType['recordType']);
-                    } else {
-                        $material = getMaterialData($request->material_type_id);
-                    }
-        
+                    // One material for the catalog row AND the OPAC row (see resolveMaterial()).
+                    $material = $this->resolveMaterial($request->material_type_id, $matchingRecordType['recordType'] ?? null);
+
                     $material_type = $material->name;
                     $material_type_id = $material->id;
 
-                    $viewCatMattype = getMaterialData($request->material_type_id);
+                    $viewCatMattype = $material;
 
 
                     // $task->progress = $index+1;
@@ -1627,12 +1624,47 @@ class CatalogingController extends Controller
 
             $record = Catalog::where('id', $request->record_id)->first();
             
-            return view('admin.catalog-edit-record', ['marcTemplates' => $marcTemplates, 'materials' => $materials, 'fieldData' => $jsonOutput, 'record' => $record]);            
+            return view('admin.catalog-edit-record', ['marcTemplates' => $marcTemplates, 'materials' => $materials, 'fieldData' => $jsonOutput, 'record' => $record, 'recordMaterialId' => $this->recordMaterialId($record)]);            
         }
 
         return view('admin.create-catalog-record', ['marcTemplates' => $marcTemplates, 'materials' => $materials, 'fieldData' => $jsonOutput]);
     }
     
+    /**
+     * The material a record is saved under — the SAME value for catalogs.material_type_id
+     * (Record History, Reports, circulation) and view_catalogs (OPAC, search filters).
+     *
+     * It is the Material Type the cataloger picked. LDR/06 ("type of record") is a different,
+     * MARC-level axis — a thesis or a book is LDR/06 'a' (language material) — and stays in
+     * field_data; it is only used when no Material Type was picked (e.g. a MARC import without
+     * one). Previously LDR/06 always won for the catalog row, so a Thesis was recorded as
+     * "Language material" there while the OPAC showed "Thesis/Dissertations".
+     */
+    private function resolveMaterial($selectedId, $recordTypeCode = null)
+    {
+        $material = $selectedId ? getMaterialData($selectedId) : null;
+
+        if (! $material && $recordTypeCode) {
+            $material = getMaterialDataCUsingCode($recordTypeCode);
+        }
+
+        if (! $material) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['material_type' => 'Select a Material Type.']);
+        }
+
+        return $material;
+    }
+
+    /**
+     * Material to pre-select on the Edit page: the one the OPAC shows (view_catalogs). Records
+     * saved before resolveMaterial() can still carry an LDR/06-derived id in catalogs.
+     */
+    private function recordMaterialId($record)
+    {
+        return optional(ViewCatalog::where('catalog_id', $record->id)->first())->material_type_id
+            ?? $record->material_type_id;
+    }
+
     public function storeRecord(Request $request)
     {
         $user = Auth::user();
@@ -1848,17 +1880,13 @@ class CatalogingController extends Controller
                 $jointAuthorString = NULL;
             }
 
-            if(isset($matchingRecordType['recordType'])) {
-                $material = getMaterialDataCUsingCode($matchingRecordType['recordType']);
-            } else {
-             
-                $material = getMaterialData($request->material_type);
-            }
-            
+            // One material for the catalog row AND the OPAC row (see resolveMaterial()).
+            $material = $this->resolveMaterial($request->material_type, $matchingRecordType['recordType'] ?? null);
+
             $material_type = $material->name;
             $material_type_id = $material->id;
 
-            $viewCatMatType = getMaterialData($request->material_type);
+            $viewCatMatType = $material;
 
         $catalog = Catalog::create([
             'material_type_id' => $material_type_id,
@@ -1942,6 +1970,7 @@ class CatalogingController extends Controller
             'marcTemplates'    => $marcTemplates,
             'materials'        => $materials,
             'record'           => $record,
+            'recordMaterialId' => $this->recordMaterialId($record),
             // The record in SOURCE shape for the shared MarcEditor (create + edit share one
             // module). No 'fieldData' key here — that is set ONLY on a Parse-a-Record round-trip
             // (singleImportMarcFile action=edit), which flips the page's import flag so
@@ -2165,17 +2194,13 @@ class CatalogingController extends Controller
                 $jointAuthorString = NULL;
             }
 
-            if(isset($matchingRecordType['recordType'])) {
-                $material = getMaterialDataCUsingCode($matchingRecordType['recordType']);
-            } else {
-             
-                $material = getMaterialData($request->material_type);
-            }
-            
+            // One material for the catalog row AND the OPAC row (see resolveMaterial()).
+            $material = $this->resolveMaterial($request->material_type, $matchingRecordType['recordType'] ?? null);
+
             $material_type = $material->name;
             $material_type_id = $material->id;
 
-            $viewCatMatType = getMaterialData($request->material_type);
+            $viewCatMatType = $material;
             
             
             $catalog = Catalog::where('id', $id)

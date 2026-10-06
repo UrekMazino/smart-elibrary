@@ -112,6 +112,7 @@ These are real changes that a `git pull` will **not** give you. They must be app
 | `pymysql` in the RAG venv | `rag/.venv` | `uv pip install -r requirements.txt` |
 | **MARC seed constants corrected** | `elibrarydb` | re-seed the 3 MARC tables from `database/seeders/data/*.json` |
 | Generated `sitemap*.xml` | `public/` | `php artisan sitemap:generate` (gitignored on purpose) |
+| Material Type repair for records saved via Create/Edit/Batch before the fix (Record History + Reports showed the LDR/06 type, e.g. "Language material") | `elibrarydb.catalogs` | `php artisan catalog:sync-material-types` (dry run, shows the changes) then `--apply`. Idempotent. |
 | `public/{thumb,pdf,fullpage,news_cover,marc_file,marc_file_uploaded}` links | `public/` → `storage/app/public/*` | `php artisan storage:link`. The link *targets* (uploaded covers, PDFs) live in `storage/app/public` and are per-server data — back them up. The app creates a missing target folder on first write. |
 
 > The MARC fixes (mojibake in `marctag_indicators_loc` #243, malformed `388` indicator ref, `842 `

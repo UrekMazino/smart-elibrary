@@ -181,8 +181,8 @@
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label for="materialTypeSelect" class="cr-label">Material Type <span class="cr-req">*</span></label>
-                                    <select class="form-select" name="material_type" id="materialTypeSelect">
-                                        <option selected disabled>Select Material Type</option>
+                                    <select class="form-select" name="material_type" id="materialTypeSelect" required>
+                                        <option value="" selected disabled>Select Material Type</option>
                                         @foreach($materials as $material)
                                             <option value="{{$material->id}}" class="{{ $material->code }}">{{ $material->name }}</option>
                                         @endforeach
