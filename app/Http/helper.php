@@ -585,6 +585,9 @@ function getFullRecordFields($catalog_id)
 	{
 		$code = $f['marctag']['code'] ?? '';
 		if($code === '' || in_array($code, $skip, true)) continue;
+		// 9XX are local / vendor fields (Koha's 942 item type, 952 items, 999 ids): system data, not
+		// bibliographic description — they showed as junk rows like "2500 | lcc FN".
+		if(strlen((string) $code) === 3 && $code[0] === '9') continue;
 
 		$vals = [];
 		$justify = false;

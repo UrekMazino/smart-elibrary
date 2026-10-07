@@ -140,6 +140,47 @@
 			.fd-rating-bars .row { margin: 0 0 7px; align-items: center; }
 			.fd-rating-bars .progress { height: 9px; }
 			.fd-rating-bars small { font-size: 11px; white-space: nowrap; }
+
+			/* Desktop: the header and details cards read as one card (as before the split). */
+			@media (min-width: 992px) {
+				.fd-head { margin-bottom: 0; border-bottom: 0; border-radius: 5px 5px 0 0; padding-bottom: 6px; }
+				.fd-details { border-top: 0; border-radius: 0 0 5px 5px; padding-top: 0; }
+			}
+
+			/* ---- Phones & tablets: one column, most important first -------------------------------
+			   title + actions -> cover & availability -> full record / citation / copies -> ratings ->
+			   reviews. The two Bootstrap columns are flattened (display: contents) so their parts can be
+			   ordered individually; desktop keeps the two-column layout. */
+			@media (max-width: 991.98px) {
+				.fd-layout { flex-direction: column; flex-wrap: nowrap; margin-left: 0; margin-right: 0; }
+				.fd-layout > .fd-main, .fd-layout > #sidebar, #sidebar > .theiaStickySidebar, .fd-main > #section_1 { display: contents; }
+				#secondary_nav { display: none !important; }   /* in-page tabs: sections simply follow each other */
+				.fd-head      { order: 1; }
+				.fd-side-top  { order: 2; }
+				.fd-details   { order: 3; }
+				.fd-side-rate { order: 4; }
+				#section_2    { order: 5; }
+				.fd-head, .fd-details, #section_2 .box_general_3, #sidebar .box_general_3 { padding: 18px 16px; margin-bottom: 12px; max-width: none; }
+				.fd-details .fd-section:first-child { margin-top: 0; }
+				#sidebar .fd-cover { text-align: center !important; margin: 0 0 12px !important; }
+				#sidebar .fd-cover img { max-width: 210px; }
+				#sidebar .booking .title { margin: -18px -16px 14px -16px; }
+				#sidebar .booking .title h3 { font-size: 15px; }
+				.fd-review-box #review_summary { margin: -18px -16px 14px -16px; }
+				.fd-title { font-size: 18px; }
+			}
+			@media (max-width: 575.98px) {
+				/* Action buttons: four equal tiles in one row. */
+				.fd-actions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+				.fd-actions form, .fd-actions form .fd-btn { width: 100%; }
+				.fd-btn { min-width: 0; padding: 10px 4px; font-size: 11.5px; }
+				/* Full Record: label above value (a two-column table leaves values one word wide). */
+				.fd-table, .fd-table tbody, .fd-table tr, .fd-table th, .fd-table td { display: block; width: auto; }
+				.fd-table tr { border-bottom: 1px solid #eef0f2; padding: 9px 0; }
+				.fd-table th { background: none; border: 0; padding: 0 0 2px; white-space: normal; font-size: 11.5px; text-transform: uppercase; letter-spacing: .3px; color: #7a8590; }
+				.fd-table td { border: 0; padding: 0; font-size: 14px; }
+				.fd-copies .fd-copy-badge { flex: 1 1 0; text-align: center; padding: 9px 10px; }
+			}
 		</style>
 		<div class="container margin_60">
 			@if(session('success'))
@@ -148,8 +189,8 @@
 					<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 				</div>
 			@endif
-			<div class="row">
-				<div class="col-xl-9 col-lg-8 order-2">
+			<div class="row fd-layout">
+				<div class="col-xl-9 col-lg-8 order-2 fd-main">
 					<nav id="secondary_nav" style="background-color: #00a496;">
 						<div class="container">
 							<ul class="clearfix">
@@ -159,7 +200,8 @@
 						</div>
 					</nav>
 					<div id="section_1">
-						<div class="box_general_3">
+						{{-- Header card: title, authors, rating, stats, actions. Its own card so phones can show it first. --}}
+						<div class="box_general_3 fd-head">
 							<div class="profile fd-info">
 							<h5 class="fd-title">{!! $result->title_statement !!}</h5>
 							@if($result->joint_authors)
@@ -188,6 +230,10 @@
 								<button type="button" class="btn_1 fd-btn" data-share-url="{{ recordUrl($result) }}" data-share-title="{{ $result->title_statement }}" onclick="shareRecord(this)" title="Copy link to this record"><i class="pe-7s-link"></i> Share</button>
 							</div>
 						</div>
+						</div>
+
+						{{-- Details card: full record, citation, physical copies (joined to the header card on desktop). --}}
+						<div class="box_general_3 fd-details">
 
 						@php $fullRecord = getFullRecordFields($result->catalog_id); @endphp
 						<div class="fd-section">
@@ -261,6 +307,7 @@
 				</div>
 				<!-- /col -->
 				<aside class="col-xl-3 col-lg-4 order-1" id="sidebar">
+					<div class="fd-side-top">
 					<figure class="fd-cover" style="margin-bottom: 10px; text-align: left;">
 						{!! getFrontpageResult($result->catalog_id) !!}
 					</figure>
@@ -330,8 +377,10 @@
 						</div>
 					</div>
 					@endif
+					</div>
 					<!-- /box_general -->
 					{{-- Ratings summary + submit review (moved from the reviews section) --}}
+					<div class="fd-side-rate">
 					<div class="box_general_3 booking fd-review-box">
 						<div id="review_summary" style="background-color: #00a496;">
 							<div class="fd-avg-num">{{ $ave }}</div>
@@ -355,6 +404,7 @@
 							@endforeach
 						</div>
 						<a href="#" class="btn_1 full-width text-center" onclick="getElementById('frm_review').submit()">Submit review</a>
+					</div>
 					</div>
 				</aside>
 				<!-- /asdide -->

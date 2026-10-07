@@ -137,7 +137,8 @@
 		var headerH = opacDockResults();
 		var resultsH = $('#results').length ? $('#results').outerHeight() : 0;
 		$('#sidebar').theiaStickySidebar({
-			additionalMarginTop: headerH + resultsH + 10
+			additionalMarginTop: headerH + resultsH + 10,
+			minWidth: 992   // desktop only: below this the page is one column (see full-description)
 		});
 	});
 
