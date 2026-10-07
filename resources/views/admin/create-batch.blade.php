@@ -180,6 +180,13 @@
                                 <div id="analyzeStatus" class="bm-status" aria-live="polite"></div>
 							</div>
 
+                            <div class="mb-3">
+                                <label class="form-label" for="batchSubject"><strong>Subject</strong> <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="batchSubject" name="subject" maxlength="255" required
+                                       value="{{ old('subject') }}" placeholder="What this batch is about, e.g. FNRI nutrition publications 1978–2023">
+                                <span class="bm-hint">Shown in the Batch Import list and on the batch's page.</span>
+                            </div>
+
                             {{-- Per-record material type mapping (shown once a file has been analyzed). --}}
                             <div id="mapCard" class="bm-card mb-3" style="display:none;">
                                 <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-1">
@@ -443,6 +450,10 @@ $('#presetDelete').on('click', function () {
 // ---- Import ----
 function saveImport() {
     if (!$('#batchFile').val()) return Swal.fire({ icon: 'warning', title: 'Choose a MARC file first' });
+    if (!$('#batchSubject').val().trim()) {
+        return Swal.fire({ icon: 'warning', title: 'Enter the subject', text: 'Describe what this batch is about — it identifies the batch in the list.' })
+            .then(function () { $('#batchSubject').trigger('focus'); });
+    }
     if (!$('#materialTypeSelect').val()) {
         return Swal.fire({ icon: 'warning', title: 'Select the Default Material Type', text: 'It is used for records the mapping does not cover.' });
     }

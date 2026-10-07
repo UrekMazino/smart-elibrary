@@ -1201,6 +1201,43 @@ function marcTitle($fieldData, bool $withResponsibility = true): ?string
 	return $out === '' ? null : $out;
 }
 
+/**
+ * Authors for joint_authors from the MARC main entries: 100 (personal name, $a) and 110 (corporate
+ * name, $a + subordinate units $b), in record order, joined with " / " — the separator citations,
+ * the OPAC and SEO split on. Batch Import used to read 100 only, so records whose author is a
+ * corporate body (110) showed no author.
+ *
+ * $fieldData: catalogs.field_data (JSON string or decoded array, the MarcEditor shape).
+ */
+function marcAuthors($fieldData): ?string
+{
+	$fields = is_array($fieldData) ? $fieldData : json_decode((string) $fieldData, true);
+	if (!is_array($fields)) return null;
+
+	$want  = ['100' => ['a'], '110' => ['a', 'b']];
+	$names = [];
+	foreach ($fields as $f) {
+		$tag = is_array($f) ? (string) ($f['marctag']['code'] ?? '') : '';
+		if (!isset($want[$tag])) continue;
+
+		$name = '';
+		foreach (($f['subfield'] ?? []) as $s) {
+			$code = (string) ($s['code'] ?? '');
+			$letter = substr($code, strrpos($code, '$') === false ? 0 : strrpos($code, '$') + 1, 1);
+			if (!in_array($letter, $want[$tag], true)) continue;
+			// Square brackets mark cataloger-supplied text ("[Author not identified]"); shown without them.
+			$v = trim(preg_replace('/\s+/u', ' ', str_replace(['[', ']'], '', (string) ($s['value'] ?? ''))));
+			if ($v === '' || $v === 'Enter value') continue;
+			// "Institute." + "Nutrition Division" -> "Institute. Nutrition Division"
+			$name = $name === '' ? $v : (preg_match('/[.,;:]$/u', $name) ? "$name $v" : "$name. $v");
+		}
+		$name = rtrim($name, " ,;:/=");   // ISBD trailing separators (a final "." of initials stays)
+		if ($name !== '' && !in_array($name, $names, true)) $names[] = $name;
+	}
+
+	return $names ? implode(' / ', $names) : null;
+}
+
 function seoTrimIsbd($text): string
 {
     $t = preg_replace('/\s+/u', ' ', trim(strip_tags((string) $text)));

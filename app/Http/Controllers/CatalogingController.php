@@ -423,7 +423,6 @@ class CatalogingController extends Controller
     public function viewBatch(Request $request)
     {
         $batch = CatalogImport::select('*', 'catalog_imports.id as batch_id')
-        ->join('materials', 'materials.id', '=', 'catalog_imports.material_type_id')
         ->where('catalog_imports.id', $request->batch_id)
         ->where('catalog_imports.deleted_at', null)
         ->first();
@@ -431,103 +430,21 @@ class CatalogingController extends Controller
        return view('admin.batch-view', ['batch' => $batch]);
     }
 
+    /** A batch's records: the same filters / table as the Record List, scoped to the batch. */
     public function viewBatchRecords($id)
     {
-        return view('admin.batch-records', ['id' => $id]);
+        $batch = CatalogImport::whereNull('deleted_at')->findOrFail($id);
+
+        return view('admin.batch-records', [
+            'id'      => $batch->id,
+            'batch'   => $batch,
+            'filters' => $this->catalogListFilterOptions(null, $batch->id),
+        ]);
     }
 
-    public function viewBatchRecordsJson(Request $request)
+    public function viewBatchRecordsJson(Request $request, $id)
     {
-        $parts = explode('/', $request->getPathInfo());
-        $batchId = end($parts);
-   
-        $draw = isset($request->search_title) ? 1 : $request->get('draw');
-        $start =  isset($request->search_title) ? 0 : $request->get("start");
-        $rowperpage =  isset($request->search_title) ? PHP_INT_MAX : $request->get("length"); // Rows display per page
-
-        $columnIndex_arr = $request->get('order');
-        $columnName_arr = $request->get('columns');
-        
-        $order_arr = $request->get('order');
-        $search_arr = $request->get('search');
-
-        if(isset($request->search_title)) {
-            $columnIndex = 0;
-            $columnName = 'id';
-            $columnSortOrder = 'desc';
-            $searchValue =  $request->search_title;
-            $searchTitle = $request->search_title;
-        } else {
-            $columnIndex = is_null($columnIndex_arr) ? 0 : $columnIndex_arr[0]['column']; // Column index
-            $columnName = is_null($columnName_arr) ? 'id' : $columnName_arr[$columnIndex]['data']; // Column name
-            $columnName = $columnName == "function" ? "id" : $columnName;
-            $columnSortOrder = is_null($order_arr) ? 'desc' : $order_arr[0]['dir']; // asc or desc
-            $searchValue = is_null($search_arr['value']) ? '' : $search_arr['value']; // Search value
-            $searchTitle = '';
-        }
-       
-        // Total records
-        $totalRecords = ViewCatalog::where('deleted_at', null)->where('catalog_import_id', $batchId)->count();
-        $totalRecordswithFilter = ViewCatalog::select('count(*) as allcount')
-            ->where(function ($query) use ($searchValue) {
-                $query->where('material_type', 'like', '%' . $searchValue . '%')
-                    ->orWhere('catalog_id', 'like', '%' . $searchValue . '%')
-                    ->orWhere('accession_number', 'like', '%' . $searchValue . '%')
-                    ->orWhere('title_statement', 'like', '%' . $searchValue . '%')
-                    ->orWhere('isbn', 'like', '%' . $searchValue . '%')
-                    ->orWhere('issn', 'like', '%' . $searchValue . '%')
-                    ->orWhere('pub_year', 'like', '%' . $searchValue . '%')
-                    ->orWhere('publisher', 'like', '%' . $searchValue . '%')
-                    ->orWhere('joint_authors', 'like', '%' . $searchValue . '%')
-                    ->orWhere(DB::raw("DATE_FORMAT(created_at, '%m/%d/%y')"), 'like', '%' . $searchValue . '%');
-            })
-            ->where('deleted_at', null)
-            ->where('catalog_import_id', $batchId)
-            ->count();
-
-
-        $records = ViewCatalog::select('*')
-            ->where(function ($query) use ($searchValue) {
-                $query->where('material_type', 'like', '%' . $searchValue . '%')
-                    ->orWhere('catalog_id', 'like', '%' . $searchValue . '%')
-                    ->orWhere('accession_number', 'like', '%' . $searchValue . '%')
-                    ->orWhere('title_statement', 'like', '%' . $searchValue . '%')
-                    ->orWhere('isbn', 'like', '%' . $searchValue . '%')
-                    ->orWhere('issn', 'like', '%' . $searchValue . '%')
-                    ->orWhere('pub_year', 'like', '%' . $searchValue . '%')
-                    ->orWhere('publisher', 'like', '%' . $searchValue . '%')
-                    ->orWhere('joint_authors', 'like', '%' . $searchValue . '%')
-                    ->orWhere(DB::raw("DATE_FORMAT(created_at, '%m/%d/%y')"), 'like', '%' . $searchValue . '%');
-            })
-            ->where('deleted_at', null)
-            ->where('catalog_import_id', $batchId)
-            ->orderBy($columnName, $columnSortOrder === 'asc' ? 'desc' : 'asc')
-            ->skip($start)
-            ->take($rowperpage)
-            ->get();
-
-
-            $resultArr = [];
-
-            foreach($records as $record) {
-                $resultArr[] = [
-                    'id' => $record->catalog_id,
-                    'material_type' => $record->material_type,
-                    'pub_year' => $record->pub_year,
-                    'publisher' => $record->publisher,
-                    'authors' => $record->joint_authors,
-                    'title_statement' => $record->title_statement,
-                ];
-            }
-   
-         $response = array(
-            "draw" => intval($draw),
-            "iTotalRecords" => $totalRecords,
-            "iTotalDisplayRecords" => $totalRecordswithFilter,
-            "aaData" => $resultArr,
-         );
-   
-         return response()->json($response);
+        return $this->catalogListJson($request, null, (int) $id);
     }
 
     public function storeBatch(BatchUploadRequest $request, MarcMaterialMapper $mapper)
@@ -563,6 +480,7 @@ class CatalogingController extends Controller
 
         $catalogImport = CatalogImport::create([
             'no_of_records' => $totalRecords,
+            'subject' => trim((string) $request->subject),
             'is_aanr' => isset($request->is_aanr) ? 1 : 0,
             'comment' => $request->comment,
             'material_type_id' => $request->material_type_id,   // the default type
@@ -1204,7 +1122,7 @@ class CatalogingController extends Controller
                         'general_note' => isset($matchingGeneralNote['general_note']) ? $matchingGeneralNote['general_note'] : NULL,
                         'publisher' => isset($matchingPublisher['publisher']) ? $matchingPublisher['publisher'] : NULL,
                         'pub_year' => isset($matchingDateOfPublication['date_of_pub']) ? $matchingDateOfPublication['date_of_pub'] : NULL,
-                        'joint_authors' => $jointAuthorString, 
+                        'joint_authors' => marcAuthors($fieldData),   // 100 + 110 main entries, " / "-separated
                         'call_number' => isset($matchingCallNumber['call_number']) ? $matchingCallNumber['call_number'] : NULL,
                         'created_by' => $user->id,
                         'updated_by' => $user->id,
@@ -1380,7 +1298,7 @@ class CatalogingController extends Controller
         // Whitelisted sortable columns; default = most recent import first.
         $sortable = [
             'id'            => 'catalog_imports.id',
-            'material_type' => 'materials.name',
+            'subject'       => 'catalog_imports.subject',
             'comment'       => 'catalog_imports.comment',
             'created_at'    => 'catalog_imports.created_at',
         ];
@@ -1395,33 +1313,32 @@ class CatalogingController extends Controller
 
         
 
-        $totalRecordswithFilter = CatalogImport::leftJoin('materials', 'materials.id', '=', 'catalog_imports.material_type_id')
-            ->where(function ($query) use ($searchValue) {
+        $totalRecordswithFilter = CatalogImport::where(function ($query) use ($searchValue) {
                 $query->where('catalog_imports.no_of_records', 'like', '%' . $searchValue . '%')
                     ->orWhere('catalog_imports.comment', 'like', '%' . $searchValue . '%')
-                    ->orWhere('materials.name', 'like', '%' . $searchValue . '%')
+                    ->orWhere('catalog_imports.subject', 'like', '%' . $searchValue . '%')
                     ->orWhere('catalog_imports.created_at', 'like', '%' . $searchValue . '%');
             })->where('catalog_imports.deleted_at', null)->count();
 
-        // Fetch records (join materials for the type name; count live catalog rows)
+        // Fetch records (count live catalog rows). The batch shows its subject, not a material
+        // type: records can each have their own type (Batch Import mapping).
         $records = CatalogImport::select(
                 'catalog_imports.id as batch_id',
                 'catalog_imports.no_of_records',
+                'catalog_imports.subject',
                 'catalog_imports.comment',
                 'catalog_imports.created_at',
-                'materials.name as material_type',
                 \DB::raw('count(case when catalog_imports.id = catalogs.catalog_import_id and catalogs.deleted_at is null then 1 else null end) as current_no_of_records')
             )
             ->join('catalogs', 'catalogs.catalog_import_id', '=', 'catalog_imports.id')
-            ->leftJoin('materials', 'materials.id', '=', 'catalog_imports.material_type_id')
             ->where(function ($query) use ($searchValue) {
                 $query->where('catalog_imports.no_of_records', 'like', '%' . $searchValue . '%')
                     ->orWhere('catalog_imports.comment', 'like', '%' . $searchValue . '%')
-                    ->orWhere('materials.name', 'like', '%' . $searchValue . '%')
+                    ->orWhere('catalog_imports.subject', 'like', '%' . $searchValue . '%')
                     ->orWhere('catalog_imports.created_at', 'like', '%' . $searchValue . '%');
             })
             ->where('catalog_imports.deleted_at', null)
-            ->groupBy('catalog_imports.id', 'catalog_imports.no_of_records', 'catalog_imports.comment', 'catalog_imports.created_at', 'materials.name')
+            ->groupBy('catalog_imports.id', 'catalog_imports.no_of_records', 'catalog_imports.subject', 'catalog_imports.comment', 'catalog_imports.created_at')
             ->orderBy($orderColumn, $columnSortOrder)
             ->skip($start)
             ->take($rowPerPage)
@@ -1434,7 +1351,7 @@ class CatalogingController extends Controller
                 "id" => $record->batch_id,
                 "init_no_of_records" => $record->no_of_records,
                 "current_no_of_records" => $record->current_no_of_records,
-                "material_type" => $record->material_type,
+                "subject" => $record->subject,
                 "comment" => $record->comment,
                 "created_at" => $record->created_at,
             );
@@ -2005,7 +1922,7 @@ class CatalogingController extends Controller
                 'call_number' => isset($matchingCallNumber['call_number']) ? $matchingCallNumber['call_number'] : NULL,
                 'publisher' => isset($matchingPublisher['publisher']) ? $matchingPublisher['publisher'] : NULL,
                 'pub_year' => isset($matchingDateOfPublication['date_of_pub']) ? $matchingDateOfPublication['date_of_pub'] : NULL,
-                'joint_authors' => $jointAuthorString, 
+                'joint_authors' => marcAuthors($fieldData),   // 100 + 110 main entries, " / "-separated
                 'created_by' => $user->id,
                 'updated_by' => $user->id,
             ]);
@@ -2321,7 +2238,7 @@ class CatalogingController extends Controller
                     'call_number' => isset($matchingCallNumber['call_number']) ? $matchingCallNumber['call_number'] : NULL,
                     'publisher' => isset($matchingPublisher['publisher']) ? $matchingPublisher['publisher'] : NULL,
                     'pub_year' => isset($matchingDateOfPublication['date_of_pub']) ? $matchingDateOfPublication['date_of_pub'] : NULL,
-                    'joint_authors' => $jointAuthorString,
+                    'joint_authors' => marcAuthors($fieldData),   // 100 + 110 main entries, " / "-separated
                     'updated_by' => $user->id,
                 ]);
             }
@@ -2337,190 +2254,32 @@ class CatalogingController extends Controller
 
     public function recordList(Request $request)
     {
-        return view('admin.catalog-record-list');
+        return view('admin.catalog-record-list', ['filters' => $this->catalogListFilterOptions(true)]);
     }
 
     public function onholdList(Request $request)
     {
-        return view('admin.catalog-onhold-list');
+        return view('admin.catalog-onhold-list', ['filters' => $this->catalogListFilterOptions(false)]);
     }
-    
+
     public function recordListJson(Request $request)
     {
-        $draw = isset($request->filter_search) ? 1 : $request->get('draw');
-        $start =  isset($request->filter_search) ? 0 : $request->get("start");
-        $rowperpage =  isset($request->filter_search) ? PHP_INT_MAX : $request->get("length"); // Rows display per page
-
-        $columnIndex_arr = $request->get('order');
-        $columnName_arr = $request->get('columns');
-        
-        $order_arr = $request->get('order');
-        $search_arr = $request->get('search');
-
-        // Whitelist of sortable columns (DataTables column `data` name => real DB column).
-        // Anything outside this list falls back to Title, so the list stays
-        // alphabetical-by-Title unless the admin explicitly sorts another column.
-        $sortMap = [
-            'id'              => 'view_catalogs.catalog_id',
-            'title_statement' => 'view_catalogs.title_statement',
-            'material_type'   => 'view_catalogs.material_type',
-            'authors'         => 'view_catalogs.joint_authors',
-            'pub_year'        => 'view_catalogs.pub_year',
-        ];
-
-        if(isset($request->filter_search)) {
-            $columnName = 'view_catalogs.title_statement';
-            $columnSortOrder = 'asc';
-            $searchValue = is_null($search_arr)  ? '' : $search_arr['value'];
-            $searchTitle = $request->filter_search;
-        } else {
-            $columnIndex = is_null($columnIndex_arr) ? 1 : $columnIndex_arr[0]['column']; // Column index (default: Title)
-            $requestedData = $columnName_arr[$columnIndex]['data'] ?? 'title_statement'; // DataTables column key
-            $columnName = $sortMap[$requestedData] ?? 'view_catalogs.title_statement'; // Map to DB column; default Title
-            $columnSortOrder = (isset($order_arr[0]['dir']) && strtolower($order_arr[0]['dir']) === 'desc') ? 'desc' : 'asc';
-            $searchValue = is_null($search_arr['value']) ? '' : $search_arr['value']; // Search value
-            $searchTitle = '';
-        }
-
-        // Initialize query
-        $query = ViewCatalog::select('*')
-            ->where('view_catalogs.deleted_at', null)
-            ->where('is_published', 1);
-
-        // Filter conditions
-        switch ($searchTitle) {
-            case "fulltext-only":
-                $query->whereIn('view_catalogs.catalog_id', function ($query) {
-                    $query->select('catalog_id')
-                        ->from('multimedia')
-                        ->whereNull('deleted_at');
-                });
-                break;
-            case "coverphoto-only":
-                $query->whereIn('view_catalogs.catalog_id', function ($query) {
-                    $query->select('catalog_id')
-                        ->from('frontpages')
-                        ->whereNull('deleted_at');
-                });
-                break;
-            case "without-fulltext":
-                $query->whereNotIn('view_catalogs.catalog_id', function ($query) {
-                    $query->select('catalog_id')
-                        ->from('multimedia')
-                        ->whereNull('deleted_at');
-                });
-                break;
-            case "without-coverphoto":
-                $query->whereNotIn('view_catalogs.catalog_id', function ($query) {
-                    $query->select('catalog_id')
-                        ->from('frontpages')
-                        ->whereNull('deleted_at');
-                });
-                break;
-            case "both":
-                $query->whereExists(function ($query) {
-                    $query->select(DB::raw(1))
-                        ->from('multimedia')
-                        ->whereRaw('multimedia.catalog_id = view_catalogs.catalog_id')
-                        ->whereNull('multimedia.deleted_at');
-                })->whereExists(function ($query) {
-                    $query->select(DB::raw(1))
-                        ->from('frontpages')
-                        ->whereRaw('frontpages.catalog_id = view_catalogs.catalog_id')
-                        ->whereNull('frontpages.deleted_at');
-                });
-                break;
-            // Records with no 520 summary: these fall back to a generated meta description,
-            // which reads worse in search results. A worklist for cataloguers (OPAC_SEO_PLAN.md).
-            case "without-summary":
-                $query->where(function ($q) {
-                    $q->whereNull('view_catalogs.summary')->orWhere('view_catalogs.summary', '');
-                });
-                break;
-            case "without-both":
-                $query->whereNotExists(function ($query) {
-                    $query->select(DB::raw(1))
-                        ->from('multimedia')
-                        ->whereRaw('multimedia.catalog_id = view_catalogs.catalog_id')
-                        ->whereNull('multimedia.deleted_at');
-                })->whereNotExists(function ($query) {
-                    $query->select(DB::raw(1))
-                        ->from('frontpages')
-                        ->whereRaw('frontpages.catalog_id = view_catalogs.catalog_id')
-                        ->whereNull('frontpages.deleted_at');
-                });
-                break;
-        }
-
-        // Search criteria
-        $query->where(function ($query) use ($searchValue) {
-            $query->where('view_catalogs.material_type', 'like', '%' . $searchValue . '%')
-                ->orWhere('view_catalogs.catalog_id', 'like', '%' . $searchValue . '%')
-                ->orWhere('view_catalogs.accession_number', 'like', '%' . $searchValue . '%')
-                ->orWhere('view_catalogs.title_statement', 'like', '%' . $searchValue . '%')
-                ->orWhere('view_catalogs.isbn', 'like', '%' . $searchValue . '%')
-                ->orWhere('view_catalogs.issn', 'like', '%' . $searchValue . '%')
-                ->orWhere('view_catalogs.pub_year', 'like', '%' . $searchValue . '%')
-                ->orWhere('view_catalogs.publisher', 'like', '%' . $searchValue . '%')
-                ->orWhere('view_catalogs.joint_authors', 'like', '%' . $searchValue . '%')
-                ->orWhere(DB::raw("DATE_FORMAT(view_catalogs.created_at, '%m/%d/%y')"), 'like', '%' . $searchValue . '%');
-        });
-
-        // Add binary fields for coverpage and multimedia
-        $query->selectRaw('IF((SELECT COUNT(*) FROM frontpages WHERE frontpages.catalog_id = view_catalogs.catalog_id AND frontpages.deleted_at IS NULL) > 0, 1, 0) AS has_coverpage')
-            ->selectRaw('IF((SELECT COUNT(*) FROM multimedia WHERE multimedia.catalog_id = view_catalogs.catalog_id AND multimedia.deleted_at IS NULL) > 0, 1, 0) AS has_multimedia');
-
-        // Sorting and pagination
-        $totalRecords = $query->count();
-        $totalRecordswithFilter = $query->count();
-
-        $records = $query->orderBy($columnName, $columnSortOrder)
-            ->skip($start)
-            ->take($rowperpage)
-            ->get();
-
-        // Format response
-        $resultArr = [];
-        foreach ($records as $record) {
-            $resultArr[] = [
-                'id' => $record->catalog_id,
-                'material_type' => $record->material_type,
-                'pub_year' => htmlspecialchars($record->pub_year, ENT_QUOTES, 'UTF-8'),
-                'publisher' => htmlspecialchars($record->publisher, ENT_QUOTES, 'UTF-8'),
-                'authors' => htmlspecialchars($record->joint_authors, ENT_QUOTES, 'UTF-8'),
-                'title_statement' => htmlspecialchars($record->title_statement, ENT_QUOTES, 'UTF-8'),
-                'has_multimedia' => $record->has_multimedia,
-                'has_coverpage' => $record->has_coverpage
-            ];
-        }
-
-        $response = [
-            "draw" => intval($draw),
-            "iTotalRecords" => $totalRecords,
-            "iTotalDisplayRecords" => $totalRecordswithFilter,
-            "aaData" => $resultArr,
-        ];
-
-        return response()->json($response);
-
-
+        return $this->catalogListJson($request, true);
     }
 
     public function onholdListJson(Request $request)
     {
-        $draw = isset($request->filter_search) ? 1 : $request->get('draw');
-        $start =  isset($request->filter_search) ? 0 : $request->get("start");
-        $rowperpage =  isset($request->filter_search) ? PHP_INT_MAX : $request->get("length"); // Rows display per page
+        return $this->catalogListJson($request, false);
+    }
 
-        $columnIndex_arr = $request->get('order');
-        $columnName_arr = $request->get('columns');
-        
-        $order_arr = $request->get('order');
-        $search_arr = $request->get('search');
-
-        // Whitelist of sortable columns (DataTables column `data` name => real DB column).
-        // Anything outside this list falls back to Title, so the list stays
-        // alphabetical-by-Title unless the admin explicitly sorts another column.
+    /**
+     * Record List (published) / On-Hold (not published) table data — one implementation for both.
+     * Server-side paging, sorting, search and the toolbar filters: type, author, year, resources.
+     */
+    private function catalogListJson(Request $request, ?bool $published, ?int $batchId = null)
+    {
+        // Whitelist of sortable columns (DataTables column `data` name => real DB column). Anything
+        // else falls back to Title, so the list stays alphabetical unless the admin sorts another column.
         $sortMap = [
             'id'              => 'view_catalogs.catalog_id',
             'title_statement' => 'view_catalogs.title_statement',
@@ -2528,136 +2287,184 @@ class CatalogingController extends Controller
             'authors'         => 'view_catalogs.joint_authors',
             'pub_year'        => 'view_catalogs.pub_year',
         ];
+        $start  = max(0, (int) $request->get('start', 0));
+        $length = (int) $request->get('length', 25);
+        if ($length <= 0 || $length > 500) $length = 25;
+        $colIdx      = (int) $request->input('order.0.column', 1);
+        $columnName  = $sortMap[$request->input("columns.$colIdx.data", 'title_statement')] ?? 'view_catalogs.title_statement';
+        $sortDir     = strtolower((string) $request->input('order.0.dir', 'asc')) === 'desc' ? 'desc' : 'asc';
+        $searchValue = trim((string) $request->input('search.value', ''));
 
-        if(isset($request->filter_search)) {
-            $columnName = 'view_catalogs.title_statement';
-            $columnSortOrder = 'asc';
-            $searchValue = is_null($search_arr)  ? '' : $search_arr['value'];
-            $searchTitle = $request->filter_search;
-        } else {
-            $columnIndex = is_null($columnIndex_arr) ? 1 : $columnIndex_arr[0]['column']; // Column index (default: Title)
-            $requestedData = $columnName_arr[$columnIndex]['data'] ?? 'title_statement'; // DataTables column key
-            $columnName = $sortMap[$requestedData] ?? 'view_catalogs.title_statement'; // Map to DB column; default Title
-            $columnSortOrder = (isset($order_arr[0]['dir']) && strtolower($order_arr[0]['dir']) === 'desc') ? 'desc' : 'asc';
-            $searchValue = is_null($search_arr['value']) ? '' : $search_arr['value']; // Search value
-            $searchTitle = '';
+        // Record List = published, On-Hold = not published, a batch = both (filter by Status).
+        $base = fn () => ViewCatalog::query()
+            ->whereNull('view_catalogs.deleted_at')
+            ->when($published !== null, fn ($q) => $q->where('view_catalogs.is_published', $published ? 1 : 0))
+            ->when($batchId !== null, fn ($q) => $q->where('view_catalogs.catalog_import_id', $batchId));
+
+        $totalRecords = $base()->count();   // the whole list, before filters / search
+
+        $query = $base();
+        $this->applyCatalogListFilters($query, $request);
+        if ($searchValue !== '') {
+            $query->where(function ($q) use ($searchValue) {
+                $like = '%' . $searchValue . '%';
+                $q->where('view_catalogs.material_type', 'like', $like)
+                    ->orWhere('view_catalogs.catalog_id', 'like', $like)
+                    ->orWhere('view_catalogs.accession_number', 'like', $like)
+                    ->orWhere('view_catalogs.title_statement', 'like', $like)
+                    ->orWhere('view_catalogs.isbn', 'like', $like)
+                    ->orWhere('view_catalogs.issn', 'like', $like)
+                    ->orWhere('view_catalogs.pub_year', 'like', $like)
+                    ->orWhere('view_catalogs.publisher', 'like', $like)
+                    ->orWhere('view_catalogs.joint_authors', 'like', $like)
+                    ->orWhere(DB::raw("DATE_FORMAT(view_catalogs.created_at, '%m/%d/%y')"), 'like', $like);
+            });
         }
+        $totalRecordswithFilter = (clone $query)->count();
 
-        // Initialize query
-        $query = ViewCatalog::select('*')
-            ->where('view_catalogs.deleted_at', null)
-            ->where('is_published', 0);
-
-        // Filter conditions
-        switch ($searchTitle) {
-            case "fulltext-only":
-                $query->whereIn('view_catalogs.catalog_id', function ($query) {
-                    $query->select('catalog_id')
-                        ->from('multimedia')
-                        ->whereNull('deleted_at');
-                });
-                break;
-            case "coverphoto-only":
-                $query->whereIn('view_catalogs.catalog_id', function ($query) {
-                    $query->select('catalog_id')
-                        ->from('frontpages')
-                        ->whereNull('deleted_at');
-                });
-                break;
-            case "without-fulltext":
-                $query->whereNotIn('view_catalogs.catalog_id', function ($query) {
-                    $query->select('catalog_id')
-                        ->from('multimedia')
-                        ->whereNull('deleted_at');
-                });
-                break;
-            case "without-coverphoto":
-                $query->whereNotIn('view_catalogs.catalog_id', function ($query) {
-                    $query->select('catalog_id')
-                        ->from('frontpages')
-                        ->whereNull('deleted_at');
-                });
-                break;
-            case "both":
-                $query->whereExists(function ($query) {
-                    $query->select(DB::raw(1))
-                        ->from('multimedia')
-                        ->whereRaw('multimedia.catalog_id = view_catalogs.catalog_id')
-                        ->whereNull('multimedia.deleted_at');
-                })->whereExists(function ($query) {
-                    $query->select(DB::raw(1))
-                        ->from('frontpages')
-                        ->whereRaw('frontpages.catalog_id = view_catalogs.catalog_id')
-                        ->whereNull('frontpages.deleted_at');
-                });
-                break;
-            case "without-both":
-                $query->whereNotExists(function ($query) {
-                    $query->select(DB::raw(1))
-                        ->from('multimedia')
-                        ->whereRaw('multimedia.catalog_id = view_catalogs.catalog_id')
-                        ->whereNull('multimedia.deleted_at');
-                })->whereNotExists(function ($query) {
-                    $query->select(DB::raw(1))
-                        ->from('frontpages')
-                        ->whereRaw('frontpages.catalog_id = view_catalogs.catalog_id')
-                        ->whereNull('frontpages.deleted_at');
-                });
-                break;
-        }
-
-        // Search criteria
-        $query->where(function ($query) use ($searchValue) {
-            $query->where('view_catalogs.material_type', 'like', '%' . $searchValue . '%')
-                ->orWhere('view_catalogs.catalog_id', 'like', '%' . $searchValue . '%')
-                ->orWhere('view_catalogs.accession_number', 'like', '%' . $searchValue . '%')
-                ->orWhere('view_catalogs.title_statement', 'like', '%' . $searchValue . '%')
-                ->orWhere('view_catalogs.isbn', 'like', '%' . $searchValue . '%')
-                ->orWhere('view_catalogs.issn', 'like', '%' . $searchValue . '%')
-                ->orWhere('view_catalogs.pub_year', 'like', '%' . $searchValue . '%')
-                ->orWhere('view_catalogs.publisher', 'like', '%' . $searchValue . '%')
-                ->orWhere('view_catalogs.joint_authors', 'like', '%' . $searchValue . '%')
-                ->orWhere(DB::raw("DATE_FORMAT(view_catalogs.created_at, '%m/%d/%y')"), 'like', '%' . $searchValue . '%');
-        });
-
-        // Add binary fields for coverpage and multimedia
-        $query->selectRaw('IF((SELECT COUNT(*) FROM frontpages WHERE frontpages.catalog_id = view_catalogs.catalog_id AND frontpages.deleted_at IS NULL) > 0, 1, 0) AS has_coverpage')
-            ->selectRaw('IF((SELECT COUNT(*) FROM multimedia WHERE multimedia.catalog_id = view_catalogs.catalog_id AND multimedia.deleted_at IS NULL) > 0, 1, 0) AS has_multimedia');
-
-        // Sorting and pagination
-        $totalRecords = $query->count();
-        $totalRecordswithFilter = $query->count();
-
-        $records = $query->orderBy($columnName, $columnSortOrder)
+        $records = $query->select('view_catalogs.*')
+            ->selectRaw('EXISTS (SELECT 1 FROM frontpages WHERE frontpages.catalog_id = view_catalogs.catalog_id AND frontpages.deleted_at IS NULL) AS has_coverpage')
+            ->selectRaw('EXISTS (SELECT 1 FROM multimedia WHERE multimedia.catalog_id = view_catalogs.catalog_id AND multimedia.deleted_at IS NULL) AS has_multimedia')
+            ->orderBy($columnName, $sortDir)
+            ->orderBy('view_catalogs.catalog_id')
             ->skip($start)
-            ->take($rowperpage)
+            ->take($length)
             ->get();
 
-        // Format response
         $resultArr = [];
         foreach ($records as $record) {
             $resultArr[] = [
-                'id' => $record->catalog_id,
-                'material_type' => $record->material_type,
-                'pub_year' => htmlspecialchars($record->pub_year, ENT_QUOTES, 'UTF-8'),
-                'publisher' => htmlspecialchars($record->publisher, ENT_QUOTES, 'UTF-8'),
-                'authors' => htmlspecialchars($record->joint_authors, ENT_QUOTES, 'UTF-8'),
-                'title_statement' => htmlspecialchars($record->title_statement, ENT_QUOTES, 'UTF-8'),
-                'has_multimedia' => $record->has_multimedia,
-                'has_coverpage' => $record->has_coverpage
+                'id'              => $record->catalog_id,
+                'material_type'   => $record->material_type,
+                'pub_year'        => htmlspecialchars((string) $record->pub_year, ENT_QUOTES, 'UTF-8'),
+                'publisher'       => htmlspecialchars((string) $record->publisher, ENT_QUOTES, 'UTF-8'),
+                'authors'         => htmlspecialchars((string) $record->joint_authors, ENT_QUOTES, 'UTF-8'),
+                'title_statement' => htmlspecialchars((string) $record->title_statement, ENT_QUOTES, 'UTF-8'),
+                'has_multimedia'  => (int) $record->has_multimedia,
+                'has_coverpage'   => (int) $record->has_coverpage,
+                'is_published'    => (int) $record->is_published,
             ];
         }
 
-        $response = [
-            "draw" => intval($draw),
-            "iTotalRecords" => $totalRecords,
-            "iTotalDisplayRecords" => $totalRecordswithFilter,
-            "aaData" => $resultArr,
+        return response()->json([
+            'draw'                 => (int) $request->get('draw'),
+            'iTotalRecords'        => $totalRecords,
+            'iTotalDisplayRecords' => $totalRecordswithFilter,
+            'aaData'               => $resultArr,
+        ]);
+    }
+
+    /** Toolbar filters: status, type, author, year (each also "__none__" = missing) and resources. */
+    private function applyCatalogListFilters($query, Request $request): void
+    {
+        $none = '__none__';
+
+        $status = (string) $request->input('status', '');   // batch page: published / on hold
+        if ($status === 'published') {
+            $query->where('view_catalogs.is_published', 1);
+        } elseif ($status === 'onhold') {
+            $query->where('view_catalogs.is_published', 0);
+        }
+
+        $type = (string) $request->input('type', '');
+        if ($type === $none) {
+            $query->whereNull('view_catalogs.material_type_id');
+        } elseif (ctype_digit($type)) {
+            $query->where('view_catalogs.material_type_id', (int) $type);
+        }
+
+        $author = trim((string) $request->input('author', ''));
+        if ($author === $none) {
+            $query->where(fn ($q) => $q->whereNull('view_catalogs.joint_authors')->orWhere('view_catalogs.joint_authors', ''));
+        } elseif ($author !== '') {
+            // joint_authors lists names separated by "/" (with or without spaces): match one whole name.
+            $escaped = str_replace(['\\', '%', '_'], ['\\\\', '\%', '\_'], $author);
+            $query->whereRaw(
+                "CONCAT('/', REGEXP_REPLACE(COALESCE(view_catalogs.joint_authors, ''), '[[:space:]]*/[[:space:]]*', '/'), '/') LIKE ?",
+                ['%/' . $escaped . '/%']
+            );
+        }
+
+        $year = (string) $request->input('year', '');
+        if ($year === $none) {
+            $query->where(fn ($q) => $q->whereNull('view_catalogs.pub_year')->orWhere('view_catalogs.pub_year', 'not regexp', '[0-9]{4}'));
+        } elseif (preg_match('/^\d{4}$/', $year)) {
+            $query->where('view_catalogs.pub_year', 'regexp', '(^|[^0-9])' . $year . '([^0-9]|$)');
+        }
+
+        $hasFile  = fn ($q) => $q->select(DB::raw(1))->from('multimedia')->whereColumn('multimedia.catalog_id', 'view_catalogs.catalog_id')->whereNull('multimedia.deleted_at');
+        $hasCover = fn ($q) => $q->select(DB::raw(1))->from('frontpages')->whereColumn('frontpages.catalog_id', 'view_catalogs.catalog_id')->whereNull('frontpages.deleted_at');
+        switch ((string) $request->input('resource', '')) {
+            case 'fulltext-only':      $query->whereExists($hasFile); break;
+            case 'coverphoto-only':    $query->whereExists($hasCover); break;
+            case 'both':               $query->whereExists($hasFile)->whereExists($hasCover); break;
+            case 'without-fulltext':   $query->whereNotExists($hasFile); break;
+            case 'without-coverphoto': $query->whereNotExists($hasCover); break;
+            case 'without-both':       $query->whereNotExists($hasFile)->whereNotExists($hasCover); break;
+            // No 520 summary: the OPAC falls back to a generated meta description (OPAC_SEO_PLAN.md).
+            case 'without-summary':
+                $query->where(fn ($q) => $q->whereNull('view_catalogs.summary')->orWhere('view_catalogs.summary', ''));
+                break;
+        }
+    }
+
+    /**
+     * Filter options built from the list's own records (published or on-hold), with counts:
+     * types, individual authors (joint_authors split on "/") and years (any 4-digit year in pub_year).
+     */
+    private function catalogListFilterOptions(?bool $published, ?int $batchId = null): array
+    {
+        $rows = ViewCatalog::whereNull('deleted_at')
+            ->when($published !== null, fn ($q) => $q->where('is_published', $published ? 1 : 0))
+            ->when($batchId !== null, fn ($q) => $q->where('catalog_import_id', $batchId))
+            ->get(['material_type_id', 'material_type', 'joint_authors', 'pub_year', 'is_published']);
+        $names = DB::table('materials')->pluck('name', 'id');
+
+        $types = []; $authors = []; $years = []; $noType = 0; $noAuthor = 0; $noYear = 0;
+        foreach ($rows as $r) {
+            if ($r->material_type_id) {
+                $id = (int) $r->material_type_id;
+                $types[$id] ??= ['id' => $id, 'name' => $names[$id] ?? ($r->material_type ?: 'Unknown'), 'count' => 0];
+                $types[$id]['count']++;
+            } else {
+                $noType++;
+            }
+
+            $seen = [];
+            foreach (preg_split('#\s*/\s*#u', (string) $r->joint_authors) as $name) {
+                $name = trim(preg_replace('/\s+/u', ' ', $name));
+                $key = mb_strtolower($name);
+                if ($name === '' || isset($seen[$key])) continue;
+                $seen[$key] = true;
+                $authors[$key] ??= ['name' => $name, 'count' => 0];
+                $authors[$key]['count']++;
+            }
+            if (! $seen) $noAuthor++;
+
+            preg_match_all('/(?<!\d)(1[5-9]\d\d|20\d\d)(?!\d)/', (string) $r->pub_year, $m);
+            $ys = array_unique($m[1]);
+            foreach ($ys as $y) $years[$y] = ($years[$y] ?? 0) + 1;
+            if (! $ys) $noYear++;
+        }
+
+        usort($types, fn ($a, $b) => strcasecmp($a['name'], $b['name']));
+        $authors = array_values($authors);
+        usort($authors, fn ($a, $b) => strnatcasecmp($a['name'], $b['name']));
+        krsort($years);
+
+        return [
+            'total'    => $rows->count(),
+            // Only when the list mixes both (a batch): offers the Status filter.
+            'statuses' => $published === null
+                ? ['published' => $rows->where('is_published', 1)->count(), 'onhold' => $rows->where('is_published', 0)->count()]
+                : null,
+            'types'    => array_values($types),
+            'authors'  => $authors,
+            'years'    => array_map(fn ($y, $c) => ['year' => (string) $y, 'count' => $c], array_keys($years), $years),
+            'noType'   => $noType,
+            'noAuthor' => $noAuthor,
+            'noYear'   => $noYear,
         ];
-
-        return response()->json($response);
-
-
     }
 
     public function holdAllPublished()

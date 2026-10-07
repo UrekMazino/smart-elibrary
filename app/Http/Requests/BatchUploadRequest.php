@@ -25,6 +25,7 @@ class BatchUploadRequest extends FormRequest
     {
         return [
             'batch_file'         => 'required|file|mimes:mrc|max:40960',
+            'subject'            => 'required|string|max:255',
             // The default type: every record whose mapped value is missing/unmapped gets it.
             'material_type_id'   => 'required|integer|exists:materials,id',
             'material_map_field' => 'nullable|string|max:20',
@@ -36,6 +37,7 @@ class BatchUploadRequest extends FormRequest
     {
         return [
             'material_type_id.required' => 'Select the default Material Type.',
+            'subject.required'          => 'Enter the subject of this batch.',
         ];
     }
 }

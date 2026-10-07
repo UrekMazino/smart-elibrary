@@ -13,6 +13,7 @@ class CatalogImport extends Model
 
     protected $fillable = [
         'no_of_records',
+        'subject',          // what the batch is about (shown in the Batch Import list)
         'status',
         'is_aanr',
         'material_type_id',

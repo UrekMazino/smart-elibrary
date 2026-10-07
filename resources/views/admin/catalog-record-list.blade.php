@@ -57,8 +57,11 @@
         <div class="col-md-12">
             <div class="card">
                 <div class="card-body">
-                  <div class="d-flex justify-content-between align-items-baseline mb-3">
-                    <h6 class="card-title mb-0">CATALOG LIST</h6>
+                  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                    <div>
+                      <h6 class="card-title mb-1">Record List</h6>
+                      <p class="text-muted mb-0" style="font-size: 12.5px;">Published records — these are visible in the OPAC.</p>
+                    </div>
                     <div class="btn-group btn-group-sm me-2">
                       @can('publish-hold.catalog')<button class="btn btn-outline-warning btn-sm" onclick="holdAllPublished()">Hold All</button>@endcan
                       <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">Export MARC</button>
@@ -72,22 +75,10 @@
                           <li><a class="dropdown-item" href="{{ route('export-records', ['format' => 'xml']) }}">MARCXML (.xml)</a></li>
                       </ul>
                       <button class="btn btn-outline-info btn-sm" type="button" onclick="reindexAllForAi()" title="Queue all published records for AI (RAG) re-indexing">Re-index AI</button>
-                      <button class="btn btn-outline-info btn-sm dropdown-toggle" type="button" id="filterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                         Resource Filter
-                      </button>
-                      <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="filterDropdown">
-                          <li><button class="dropdown-item filter-btn active" id="all" type="button" onclick="refreshPage()">All</button></li>
-                          <li><button class="dropdown-item filter-btn" id="fulltext-only" type="button">w/ Fulltext</button></li>
-                          <li><button class="dropdown-item filter-btn" id="coverphoto-only" type="button">w/ Coverphoto</button></li>
-                          <li><button class="dropdown-item filter-btn" id="both" type="button">w/ Fulltext & Coverphoto Only</button></li>
-                          <li><button class="dropdown-item filter-btn" id="without-fulltext" type="button">w/o Fulltext</button></li>
-                          <li><button class="dropdown-item filter-btn" id="without-coverphoto" type="button">w/o Coverphoto</button></li>
-                          <li><button class="dropdown-item filter-btn" id="without-both" type="button">w/o Fulltext & Coverphoto</button></li>
-                          <li><button class="dropdown-item filter-btn" id="without-summary" type="button">w/o Summary</button></li>
-                      </ul>
                   </div>
 
                   </div>
+                  @include('admin.partials.catalog-list-filters', ['filters' => $filters])
                   <div class="table-responsive">
                       <table id="tbl" class="table table-hover table-sm align-middle mb-0">
                         <thead>
@@ -137,6 +128,7 @@
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/DataTables/buttons/js/buttons.colVis.min.js') }}"></script>
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/DataTables/buttons/js/buttons.html5.min.js') }}"></script>
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/DataTables/buttons/js/buttons.print.min.js') }}"></script>
+@include('admin.partials.catalog-list-filters-js')
 
 <script>
 
@@ -206,42 +198,6 @@ $(document).ready(function(){
       ];
     }
 
-    $('.filter-btn').on('click', function() {
-      $('.filter-btn').removeClass('active');
-      $(this).addClass('active');
-      $('#loadingOverlay').show();
-      $('#loadingSpinnerContainer').show();
-
-      let selectedFilter = $(this).attr("id");
-      $.ajax({
-        type: 'GET',
-        url: '{{ url("/admin/record-list-json") }}',
-        data: {
-            "filter_search": selectedFilter,
-        },
-        dataType: 'json',
-        success: function(res) {
-          let data = $.map(res.aaData, function(value) { return value; });
-          let table = $('#tbl').DataTable();
-          table.destroy();
-          $('#tbl').DataTable({
-            data: data,
-            autoWidth: false,
-            pageLength: 25,
-            order: [[1, 'asc']],
-            columns: makeColumns(),
-          });
-          $('#loadingOverlay').hide();
-          $('#loadingSpinnerContainer').hide();
-        },
-        error: function(e) {
-            console.log("Something's wrong!");
-            $('#loadingOverlay').hide();
-            $('#loadingSpinnerContainer').hide();
-        }
-      });
-    });
-
     // Main table: server-side, default sort = Title (A → Z), other columns sortable.
     $('#tbl').DataTable({
         processing: true,
@@ -249,7 +205,8 @@ $(document).ready(function(){
         autoWidth: false,
         pageLength: 25,
         order: [[1, 'asc']],
-        ajax: '{{ url("/admin/record-list-json") }}',
+        // Toolbar filters (type / author / year / resources) are sent with every request.
+        ajax: { url: '{{ url("/admin/record-list-json") }}', data: clFilters.params },
         columns: makeColumns(),
         language: { search: '', searchPlaceholder: 'Search title, author, type, year…' }
     });

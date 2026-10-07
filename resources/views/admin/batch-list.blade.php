@@ -19,7 +19,7 @@
       .bl-records { font-variant-numeric: tabular-nums; white-space: nowrap; }
       .bl-records .sep { color: #c4ccd8; margin: 0 4px; }
       /* #tbl prefix beats the template's `.badge { color:#fff }`. */
-      #tbl .bl-type { background: #e4e9f2; color: #33415c; font-weight: 600; font-size: 11.5px; letter-spacing: .2px; }
+      .bl-subject { font-weight: 600; color: #22283b; overflow-wrap: anywhere; }
       .bl-comment {
         display: inline-block; max-width: 460px; overflow: hidden; text-overflow: ellipsis;
         white-space: nowrap; vertical-align: middle; color: #5a6a85;
@@ -61,7 +61,7 @@
                             <tr>
                               <th style="width: 60px">ID</th>
                               <th style="width: 130px">Initial / Current</th>
-                              <th style="width: 160px">Material Type</th>
+                              <th style="width: 30%">Subject</th>
                               <th>Comment</th>
                               <th style="width: 120px">Date Imported</th>
                               <th style="width: 92px" class="text-center">Action</th>
@@ -140,10 +140,10 @@ $(document).ready(function(){
                        '<span class="sep">/</span>' +
                        '<span class="' + curCls + '">' + esc(cur) + '</span>';
               } },
-            { data: 'material_type',
+            { data: 'subject',
               render: function (d, type) {
                 if (type !== 'display') return d;
-                return d ? '<span class="badge bl-type rounded-pill">' + esc(d) + '</span>' : '<span class="text-muted small">&mdash;</span>';
+                return d ? '<span class="bl-subject">' + esc(d) + '</span>' : '<span class="text-muted small">&mdash;</span>';
               } },
             { data: 'comment',
               render: function (d, type) {

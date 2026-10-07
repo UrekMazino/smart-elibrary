@@ -38,10 +38,8 @@
                     </div>
                         <div class="container" id="main-el">
                             <div class="mb-3">
-                                <label for="materialTypeSelect" class="form-label"><strong>Material Type</strong></label>
-                                <select class="form-select" name="material_type_id" id="materialTypeSelect">
-                                    <option selected disabled value="{{$batch->material_type_id }}">{{ $batch->name }}</option>
-                                </select>
+                                <label for="batchSubject" class="form-label"><strong>Subject</strong></label>
+                                <input type="text" class="form-control" id="batchSubject" value="{{ $batch->subject ?: '—' }}" disabled>
                             </div>
                             <div class="mb-3">
                                 <label for="batchComment" class="form-label">Comment</label>
