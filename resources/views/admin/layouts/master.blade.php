@@ -229,6 +229,16 @@ License: For each use you must have a valid license purchased only from above li
                 <span class="link-title">Settings</span>
               </a>
             </li>
+
+            {{-- Utilities hub: shown when the admin can use at least one utility. --}}
+            @canany(['manage.material.types'])
+            <li class="nav-item">
+              <a href="{{ route('utilities') }}" class="nav-link">
+                <i class="link-icon" data-feather="tool"></i>
+                <span class="link-title">Utilities</span>
+              </a>
+            </li>
+            @endcanany
             
             @can('view.config.template')
               <li class="nav-item">

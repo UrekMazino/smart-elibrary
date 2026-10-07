@@ -40,7 +40,7 @@ class CatalogingController extends Controller
     {
         $marcTemplates = MarcTemplate::get();
 
-        $materials = Material::get();
+        $materials = Material::forPicker();   // active types only (Utilities → Material Types)
 
         return view('admin.create-catalog-record', [
             'marcTemplates' => $marcTemplates,
@@ -1321,7 +1321,7 @@ class CatalogingController extends Controller
 
     public function createBatch()
     {
-        $materials = Material::get();
+        $materials = Material::forPicker();
         $presets = MaterialTypeMap::orderBy('name')->get(['id', 'name', 'source_field', 'mappings', 'default_material_type_id']);
 
         return view('admin.create-batch', ['materials' => $materials, 'presets' => $presets]);
@@ -1709,11 +1709,12 @@ class CatalogingController extends Controller
 
         $marcTemplates = MarcTemplate::get();
 
-        $materials = Material::get();
+        $materials = Material::forPicker();
 
         if ($request->action  == "edit") {
 
             $record = Catalog::where('id', $request->record_id)->first();
+            $materials = Material::forPicker($this->recordMaterialId($record));
             
             return view('admin.catalog-edit-record', ['marcTemplates' => $marcTemplates, 'materials' => $materials, 'fieldData' => $jsonOutput, 'record' => $record, 'recordMaterialId' => $this->recordMaterialId($record)]);            
         }
@@ -2055,7 +2056,7 @@ class CatalogingController extends Controller
 
         $marcTemplates = MarcTemplate::get();
 
-        $materials = Material::get();
+        $materials = Material::forPicker($this->recordMaterialId($record));   // + the record's own type, even if hidden
 
         return view('admin.catalog-edit-record', [
             'marcTemplates'    => $marcTemplates,

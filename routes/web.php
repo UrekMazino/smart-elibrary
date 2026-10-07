@@ -87,6 +87,21 @@ Route::controller(SettingController::class)->middleware('can:access.configuratio
     Route::post('/admin/settings/generate-sitemap', 'generateSitemap')->middleware('throttle:5,1');
 });
 
+//UTILITIES (Administration → Utilities). The hub needs the Administration module; each
+// utility has its own permission.
+use App\Http\Controllers\MaterialTypeController;
+Route::controller(MaterialTypeController::class)->middleware('can:access.configuration')->group(function () {
+    Route::get('/admin/utilities', 'utilities')->name('utilities');
+    Route::middleware('can:manage.material.types')->group(function () {
+        Route::get('/admin/utilities/material-types', 'index')->name('utilities.material-types');
+        Route::post('/admin/utilities/material-types', 'store');
+        Route::put('/admin/utilities/material-types/{id}', 'update')->whereNumber('id');
+        Route::post('/admin/utilities/material-types/{id}/toggle', 'toggle')->whereNumber('id');
+        Route::post('/admin/utilities/material-types/{id}/merge', 'merge')->whereNumber('id');
+        Route::delete('/admin/utilities/material-types/{id}', 'destroy')->whereNumber('id');
+    });
+});
+
 //INQUIRY
 use App\Http\Controllers\InquiryController;
 Route::controller(InquiryController::class)->group(function () {

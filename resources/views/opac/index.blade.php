@@ -140,7 +140,7 @@
 	  						</label>
   						</div>
 
-  						@foreach(getMaterials() AS $materials)
+  						@foreach(opacMaterials() AS $materials)
   						<div class="form-check form-check-inline">
 							<input class="form-check-input" type="checkbox" value="{{ $materials->id }}" name="seachtype[]" id="materials-{{ $materials->id }}">
 	  						<label class="form-check-label lbl-check" id="materials-{{ $materials->id }}" style="font-size:17px;padding: 2px!important;background-color: transparent;" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ $materials->tooltip }}">

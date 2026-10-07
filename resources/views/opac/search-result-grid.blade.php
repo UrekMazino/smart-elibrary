@@ -174,7 +174,7 @@
 									<label for="checkAll" class="css-label">All</label>
 								</div>
 							</li>
-							@foreach(getMaterials() AS $materials)
+							@foreach(opacMaterials() AS $materials)
 								<li>
 									<div class="checkbox">
 										<input type="checkbox" class="css-checkbox form-check-input" id="mat_{{$materials->id}}" name="seachtype[]" value="{{ $materials->id }}">

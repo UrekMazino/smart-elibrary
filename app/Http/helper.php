@@ -340,10 +340,27 @@ function getNotif($type)
 	
 }
 
+/**
+ * Library Material Types for admin lists (Reports, acquisitions): the active ones, managed in
+ * Administration → Utilities → Material Types. (Was hard-coded to id < 8, so types added later
+ * never appeared.) MARC record-type codes (LDR/06) are not library categories — excluded.
+ */
 function getMaterials()
 {
-	$list = App\Models\Material::where('id','<',8)->orderBy('name')->get();
-	return $list;
+	return App\Models\Material::where('is_active', true)->where('is_marc_type', false)->orderBy('name')->get();
+}
+
+/**
+ * Material Types for the OPAC search filters: active library types that have at least one
+ * published record, so a patron never filters into an empty category.
+ */
+function opacMaterials()
+{
+	$withRecords = App\Models\ViewCatalog::where('is_published', 1)->whereNull('deleted_at')
+		->distinct()->pluck('material_type_id')->filter()->all();
+
+	return App\Models\Material::where('is_active', true)->where('is_marc_type', false)
+		->whereIn('id', $withRecords)->orderBy('name')->get();
 }
 
 /**
