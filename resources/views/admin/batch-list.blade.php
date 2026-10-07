@@ -263,4 +263,10 @@ function actionFrm(id,action)
 }
 
 </script>
+@if(session('success'))
+<script>
+  // Result of a Batch Import (with the per-material breakdown).
+  $(function () { Swal.fire({ icon: 'success', title: 'Batch imported', text: @json(session('success')) }); });
+</script>
+@endif
 @endsection

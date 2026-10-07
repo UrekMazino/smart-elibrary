@@ -16,10 +16,15 @@ class CatalogImport extends Model
         'status',
         'is_aanr',
         'material_type_id',
+        'material_map',     // the mapping used for per-record material types (audit)
         'comment',
         'created_by',
         'updated_by',
         'deleted_by',
         'deleted_at',
+    ];
+
+    protected $casts = [
+        'material_map' => 'array',
     ];
 }

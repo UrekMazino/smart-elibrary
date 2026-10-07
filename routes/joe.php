@@ -133,6 +133,10 @@ Route::controller(CatalogingController::class, 'admin')->middleware('can:access.
     Route::get('/admin/batch-list-json', 'batchListJson')->middleware('can:view.catalog.importlist');
     Route::get('/admin/create-batch', 'createBatch')->middleware('can:create.catalog.import');
     Route::post('/admin/create-batch/store', 'storeBatch')->middleware('can:create.catalog.import');
+    // Material-type mapping for Batch Import: analyze the chosen file, and saved presets.
+    Route::post('/admin/create-batch/analyze', 'analyzeBatchFile')->middleware('can:create.catalog.import');
+    Route::post('/admin/material-maps', 'saveMaterialMap')->middleware('can:create.catalog.import');
+    Route::delete('/admin/material-maps/{id}', 'destroyMaterialMap')->whereNumber('id')->middleware('can:create.catalog.import');
     Route::post('/admin/create-record/store', 'storeRecord')->middleware('can:create.catalog');
     Route::post('/admin/edit-record/update/{id}', 'updateRecord')->name('update-record')->middleware('can:edit.catalog');
 

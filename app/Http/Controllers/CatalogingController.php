@@ -19,6 +19,8 @@ use App\Models\Multimedia;
 use App\Models\ViewCatalog;
 use App\Services\AiSearchService;
 use App\Services\MarcExportService;
+use App\Services\MarcMaterialMapper;
+use App\Models\MaterialTypeMap;
 use App\Services\RagSync;
 use Illuminate\Support\Facades\DB;
 use Scriptotek\Marc\Collection;
@@ -528,9 +530,14 @@ class CatalogingController extends Controller
          return response()->json($response);
     }
 
-    public function storeBatch(BatchUploadRequest $request)
+    public function storeBatch(BatchUploadRequest $request, MarcMaterialMapper $mapper)
     {
         $records = Collection::fromFile($request->file('batch_file'));
+
+        // Optional per-record material mapping: values of one MARC field (e.g. 942$c) ->
+        // Material Type. Unmapped values / records without the field use the default type.
+        [$mapField, $materialMap] = $this->batchMaterialMap($request);
+        $materialCounts = [];   // material name => records imported under it
         
         $user = Auth::user();
 
@@ -558,7 +565,8 @@ class CatalogingController extends Controller
             'no_of_records' => $totalRecords,
             'is_aanr' => isset($request->is_aanr) ? 1 : 0,
             'comment' => $request->comment,
-            'material_type_id' => $request->material_type_id,
+            'material_type_id' => $request->material_type_id,   // the default type
+            'material_map' => $mapField ? ['field' => $mapField, 'map' => $materialMap] : null,
             'status' => 'imported',
             'created_by' => $user->id,
             'updated_by' => $user->id,
@@ -1159,8 +1167,11 @@ class CatalogingController extends Controller
                         $jointAuthorString = NULL;
                     }
 
-                    // One material for the catalog row AND the OPAC row (see resolveMaterial()).
-                    $material = $this->resolveMaterial($request->material_type_id, $matchingRecordType['recordType'] ?? null);
+                    // One material for the catalog row AND the OPAC row (see resolveMaterial()):
+                    // the mapped type for this record's field value, else the batch default.
+                    $mappedId = $mapper->materialFor($files[$index], $mapField, $materialMap);
+                    $material = $this->resolveMaterial($mappedId ?? $request->material_type_id, $matchingRecordType['recordType'] ?? null);
+                    $materialCounts[$material->name] = ($materialCounts[$material->name] ?? 0) + 1;
 
                     $material_type = $material->name;
                     $material_type_id = $material->id;
@@ -1220,8 +1231,87 @@ class CatalogingController extends Controller
             'imported'
         );
 
-        return view('admin.batch-list', ['message' => 'Successfully saved!']);
+        // Post/Redirect/Get, with what was imported under which type.
+        arsort($materialCounts);
+        $breakdown = collect($materialCounts)->map(fn ($n, $name) => "{$n} {$name}")->implode(', ');
 
+        return redirect('/admin/batch-list')->with('success',
+            'Imported ' . array_sum($materialCounts) . ' record(s)' . ($breakdown ? ': ' . $breakdown . '.' : '.'));
+    }
+
+    /**
+     * The validated material map posted with a batch: [field, [normalised value => material id]].
+     * Values mapped to a material that doesn't exist are dropped (they fall back to the default).
+     */
+    private function batchMaterialMap(Request $request): array
+    {
+        $field = (string) $request->input('material_map_field', '');
+        if (! preg_match('#^(\d{3}\$[a-z0-9]|LDR/\d{2})$#i', $field)) return [null, []];
+
+        $raw = json_decode((string) $request->input('material_map', '{}'), true);
+        if (! is_array($raw)) return [null, []];
+
+        $valid = Material::pluck('id')->map(fn ($id) => (int) $id)->all();
+        $map = [];
+        foreach ($raw as $value => $materialId) {
+            $key = MarcMaterialMapper::normalize($value);
+            if ($key !== '' && in_array((int) $materialId, $valid, true)) $map[$key] = (int) $materialId;
+        }
+
+        return $map ? [$field, $map] : [null, []];
+    }
+
+    /** Scan an uploaded MARC file (nothing is imported) for fields that can identify material type. */
+    public function analyzeBatchFile(Request $request, MarcMaterialMapper $mapper)
+    {
+        $request->validate(['batch_file' => 'required|file|mimes:mrc|max:40960']);
+
+        try {
+            return response()->json($mapper->analyze($request->file('batch_file')->getRealPath()));
+        } catch (\Throwable $e) {
+            report($e);
+            return response()->json(['message' => 'This file could not be read as MARC records.'], 422);
+        }
+    }
+
+    /** Save (create or overwrite, by name) a material-type mapping preset. */
+    public function saveMaterialMap(Request $request)
+    {
+        $data = $request->validate([
+            'name'                     => ['required', 'string', 'max:100'],
+            'source_field'             => ['required', 'string', 'regex:#^(\d{3}\$[a-z0-9]|LDR/\d{2})$#i'],
+            'mappings'                 => ['required', 'json'],   // {"value": material_id} — JSON so any value text survives
+            'default_material_type_id' => ['nullable', 'integer', 'exists:materials,id'],
+        ], ['source_field.regex' => 'Choose a field such as 942$c or LDR/06.']);
+
+        $valid = Material::pluck('id')->map(fn ($id) => (int) $id)->all();
+        $mappings = [];
+        foreach ((array) json_decode($data['mappings'], true) as $value => $id) {
+            $key = MarcMaterialMapper::normalize($value);
+            if ($key !== '' && in_array((int) $id, $valid, true)) $mappings[$key] = (int) $id;
+        }
+        if (! $mappings) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['mappings' => 'Map at least one value to a Material Type.']);
+        }
+
+        $preset = MaterialTypeMap::firstOrNew(['name' => trim($data['name'])]);
+        $preset->fill([
+            'source_field'             => $data['source_field'],
+            'mappings'                 => $mappings,
+            'default_material_type_id' => $data['default_material_type_id'] ?? null,
+            'updated_by'               => Auth::id(),
+        ]);
+        if (! $preset->exists) $preset->created_by = Auth::id();
+        $preset->save();
+
+        return response()->json(['preset' => $preset->only(['id', 'name', 'source_field', 'mappings', 'default_material_type_id'])]);
+    }
+
+    public function destroyMaterialMap($id)
+    {
+        MaterialTypeMap::findOrFail($id)->delete();
+
+        return response()->json(['message' => 'Preset deleted.']);
     }
 
     public function batchList()
@@ -1232,8 +1322,9 @@ class CatalogingController extends Controller
     public function createBatch()
     {
         $materials = Material::get();
-        
-        return view('admin.create-batch', ['materials' => $materials]);
+        $presets = MaterialTypeMap::orderBy('name')->get(['id', 'name', 'source_field', 'mappings', 'default_material_type_id']);
+
+        return view('admin.create-batch', ['materials' => $materials, 'presets' => $presets]);
     }
 
     public function destroyBatch(Request $request)
