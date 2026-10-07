@@ -279,24 +279,24 @@
         "id": 24,
         "name": "Food Nutrition",
         "code": "#",
-        "tooltip": "Food nutritioin",
+        "tooltip": "Publications on food, nutrition and health, such as national nutrition survey reports, dietary guidelines and nutrient intake references, food composition data, nutrition education materials, food processing and technology manuals, research studies, and seminar proceedings and abstracts.",
         "is_active": 1,
         "is_marc_type": 0,
         "created_by": 3,
         "updated_by": 3,
         "created_at": "2026-10-07 18:38:45",
-        "updated_at": "2026-10-07 18:38:45"
+        "updated_at": "2026-10-07 19:00:58"
     },
     {
         "id": 25,
         "name": "Articles",
         "code": "#",
-        "tooltip": "Articles",
+        "tooltip": "Individual articles published in scholarly journals, magazines or newsletters and cataloged on their own, such as research papers, review articles and short communications.",
         "is_active": 1,
         "is_marc_type": 0,
         "created_by": 3,
         "updated_by": 3,
         "created_at": "2026-10-07 18:41:15",
-        "updated_at": "2026-10-07 18:41:15"
+        "updated_at": "2026-10-07 19:00:58"
     }
 ]
