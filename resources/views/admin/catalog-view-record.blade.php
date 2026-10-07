@@ -706,7 +706,7 @@ $(function () {
             reverseButtons: true
             }).then((result) => {
             if (result.value) {
-                $("#modalSaving").modal("toggle");
+                appBusy.show();
 
                 if(action == 'edit') {
                     let act = "{{ route('edit-record', ['id' => ':id']) }}".replace(':id', id);

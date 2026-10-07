@@ -210,7 +210,7 @@ function actionFrm(id,action)
       reverseButtons: true
     }).then((result) => {
       if (result.value) {
-        $("#modalSaving").modal("toggle");
+        appBusy.show();
 
         if(action == 'delete')
         {

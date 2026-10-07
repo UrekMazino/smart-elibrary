@@ -194,7 +194,7 @@ function togglePublishFrm(id, action)
       reverseButtons: true
   }).then((result) => {
     if (result.value) {
-      $("#modalSaving").modal("toggle");
+      appBusy.show();
 
       let act = "{{ route('delete-batch', ['id' => ':id']) }}".replace(':id', id);
       $("#action").val(action);
@@ -242,7 +242,7 @@ function actionFrm(id,action)
       reverseButtons: true
     }).then((result) => {
       if (result.value) {
-        $("#modalSaving").modal("toggle");
+        appBusy.show();
 
         let act = "{{ route('delete-batch', ['id' => ':id']) }}".replace(':id', id);
 

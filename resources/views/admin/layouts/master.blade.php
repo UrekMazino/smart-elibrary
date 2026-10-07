@@ -391,12 +391,13 @@ License: For each use you must have a valid license purchased only from above li
 	</div>
 
   <!-- Modal -->
-  <div class="modal hide fade in" data-keyboard="false" data-backdrop="static" id="modalSaving" tabindex="-1">
+  {{-- The admin-wide "busy" modal. Open/close it with appBusy.show() / appBusy.hide() (below). --}}
+  <div class="modal fade" data-bs-keyboard="false" data-bs-backdrop="static" id="modalSaving" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
-        <div class="modal-body">
+        <div class="modal-body" role="status" aria-live="polite">
           <div class="d-flex align-items-center">
-            <strong>loading...Please wait</strong>
+            <strong>Loading… please wait</strong>
             <div class="spinner-border text-success ms-auto" role="status" aria-hidden="true"></div>
           </div>
         </div>
@@ -451,6 +452,38 @@ License: For each use you must have a valid license purchased only from above li
       if (!msg || DEFAULT_403.indexOf(msg) !== -1) msg = 'Your role doesn’t have permission to do that.';
       Swal.fire({ icon: 'error', title: 'Not allowed', text: msg });
     });
+    // ---- appBusy: the "Loading… please wait" modal (#modalSaving) ----------------------------
+    // Pages used to open AND close it with $('#modalSaving').modal('toggle'). Bootstrap ignores a
+    // toggle while the modal is still animating open, so a fast response (or an error path that
+    // never toggled) left it stuck on screen. hide() now always wins: if it arrives mid-animation,
+    // the modal closes as soon as it has finished opening.
+    window.appBusy = (function () {
+      var el = document.getElementById('modalSaving'), wanted = false;
+      function modal() { return el && window.bootstrap ? bootstrap.Modal.getOrCreateInstance(el, { backdrop: 'static', keyboard: false }) : null; }
+      if (el) el.addEventListener('shown.bs.modal', function () { if (!wanted) modal().hide(); });
+      return {
+        show: function () { wanted = true;  var m = modal(); if (m) m.show(); },
+        hide: function () { wanted = false; var m = modal(); if (m) m.hide(); }
+      };
+    })();
+
+    // Back / Forward can restore a page from the browser's cache exactly as it was left —
+    // including a busy modal / overlay opened just before navigating away. Clear them.
+    window.addEventListener('pageshow', function (e) {
+      if (!e.persisted) return;
+      var el = document.getElementById('modalSaving');
+      if (el) {
+        var m = window.bootstrap && bootstrap.Modal.getInstance(el);
+        if (m) m.dispose();
+        el.classList.remove('show'); el.style.display = 'none'; el.setAttribute('aria-hidden', 'true');
+      }
+      document.querySelectorAll('.modal-backdrop').forEach(function (b) { b.remove(); });
+      document.body.classList.remove('modal-open');
+      document.body.style.removeProperty('overflow'); document.body.style.removeProperty('padding-right');
+      ['loadingOverlay', 'loadingSpinnerContainer'].forEach(function (id) { var x = document.getElementById(id); if (x) x.style.display = 'none'; });
+      if (window.Swal) Swal.close();
+    });
+
     // DataTables: report load failures through the handler above instead of a browser alert().
     if ($.fn.dataTable) $.fn.dataTable.ext.errMode = function (settings, techNote, message) { console.warn(message); };
   })();

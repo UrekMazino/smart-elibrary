@@ -261,6 +261,14 @@ $(document).ready(function(){
 
 });
 
+// Back / Forward restores this page from the browser cache: refresh the list, since records
+// may have moved between the Record List and On-Hold while you were away.
+window.addEventListener('pageshow', function (e) {
+  if (!e.persisted || !$.fn.dataTable.isDataTable('#tbl')) return;
+  var t = $('#tbl').DataTable();
+  if (t.settings()[0].ajax) t.ajax.reload(null, false); else location.reload();
+});
+
 function refreshPage() {
     location.reload();
 }
@@ -283,7 +291,7 @@ function publishAllOnhold()
       reverseButtons: true
     }).then((result) => {
       if (result.value) {
-        $("#modalSaving").modal("toggle");
+        appBusy.show();
         $.ajax({
           url: "{{ url('/admin/publish-all-onhold') }}",
           method: "POST",
@@ -298,10 +306,11 @@ function publishAllOnhold()
                 timer: 1000,
                 showConfirmButton: false
             });
-            $("#modalSaving").modal("toggle");
+            appBusy.hide();
             refreshAjax();
           },
           error: function () {
+              appBusy.hide();
               Swal.fire(
                   'Error',
                   'An error occurred while updating the record.',
@@ -376,7 +385,7 @@ function actionFrm(id,action)
       reverseButtons: true
     }).then((result) => {
       if (result.value) {
-        $("#modalSaving").modal("toggle");
+        appBusy.show();
 
         if(action == 'edit') {
           let act = "{{ route('edit-record', ['id' => ':id']) }}".replace(':id', id);

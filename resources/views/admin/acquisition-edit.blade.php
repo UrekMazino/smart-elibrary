@@ -796,7 +796,7 @@ function saveMaterial()
       reverseButtons: true
     }).then((result) => {
       if (result.value) {
-        $("#modalSaving").modal("toggle"); 
+        appBusy.show(); 
         $('#frm_acquisition').submit();
       } else if (
         // Read more about handling dismissals
