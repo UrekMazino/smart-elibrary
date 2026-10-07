@@ -286,5 +286,14 @@
         "description": "Allows enabling or disabling AI mode in the OPAC",
         "created_at": "2026-07-16 02:51:31",
         "updated_at": "2026-07-16 02:51:31"
+    },
+    {
+        "id": 38,
+        "name": "manage.material.types",
+        "guard_name": "web",
+        "display_name": "Manage Material Types",
+        "description": "Add, edit, hide, merge and delete Material Types (Administration → Utilities)",
+        "created_at": "2026-10-07 16:05:11",
+        "updated_at": "2026-10-07 16:05:11"
     }
 ]

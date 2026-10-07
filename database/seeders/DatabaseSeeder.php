@@ -17,6 +17,10 @@ class DatabaseSeeder extends Seeder
      * (developer, super admin, one patron), and `model_has_roles` to their role links.
      * Re-snapshot both from the live DB whenever an account you rely on changes —
      * seedTable() TRUNCATES, so anything absent from the JSON is gone after a reseed.
+     *
+     * The seed runs AFTER every migration, so a migration that adds rows to one of these tables
+     * (a new permission and its role grants, flags on materials, ...) must add the same rows to the
+     * JSON too — otherwise `migrate:fresh --seed` wipes them (e.g. manage.material.types).
      */
     private array $tables = [
         // Access control (roles/permissions before the pivots that reference them)
