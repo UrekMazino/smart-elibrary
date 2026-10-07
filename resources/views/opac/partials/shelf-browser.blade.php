@@ -32,7 +32,9 @@
 		background:rgba(4,46,42,.40); -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px);
 		box-shadow:0 2px 10px rgba(0,0,0,.42), inset 0 0 0 1px rgba(255,255,255,.18);
 		opacity:0; transition:opacity .22s ease, background .18s ease; }
-	.col-scroll-wrap:hover .row-arrow { opacity:1; }
+	.col-scroll-wrap:hover .row-arrow, .col-scroll-wrap:focus-within .row-arrow { opacity:1; }
+	/* Touch screens have no hover: keep the row arrows visible there. */
+	@media (hover: none) { .row-arrow { opacity:.9; } }
 	.row-arrow:hover { background:rgba(127,65,10,.85); }
 	.row-arrow.prev { left:7px; } .row-arrow.next { right:7px; }
 	.row-arrow[hidden] { display:none; }
@@ -59,6 +61,12 @@
 	.shelf-page:disabled { opacity:.3; cursor:default; background:transparent; color:#724e0a; }
 
 	@media (max-width:1100px){ .col-book img { max-height:162px; max-width:126px; } }
+	/* Phones: one full-width shelf at a time. A horizontal swipe anywhere on the shelf changes shelf
+	   (pan-y: vertical swipes still scroll the page); book rows scroll with their ‹ › arrows. */
+	@media (max-width:767px){
+		.shelf-browser { padding:36px 6px 44px; }
+		.shelf-viewport, .col-scroll { touch-action:pan-y; }
+	}
 	@media (max-width:767px){ .shelf-explorer { padding:0 8px; } .shelf-page { width:34px; height:34px; font-size:16px; } .col-book img { max-height:140px; max-width:110px; } }
 </style>
 <section class="shelf-browser">
@@ -150,23 +158,47 @@
 		rn.addEventListener('click', function () { sc.scrollBy({ left: sc.clientWidth * 0.8, behavior: 'smooth' }); });
 		sc.addEventListener('scroll', updRow);
 		rowUpds.push(updRow);
+		wrap._updRow = updRow;
 	});
 	function updRows() { rowUpds.forEach(function (fn) { fn(); }); }
+
+	// The covers are lazy-loaded and have no fixed size, so a row only overflows (and needs its
+	// arrows) once its images arrive — after the first check ran. Re-check as they load / as the
+	// row changes size; previously the arrows stayed hidden on rows that did overflow.
+	[].slice.call(root.querySelectorAll('.col-scroll-wrap')).forEach(function (wrap) {
+		var upd = wrap._updRow;
+		if (!upd) return;
+		[].slice.call(wrap.querySelectorAll('img')).forEach(function (img) {
+			if (!img.complete) { img.addEventListener('load', upd); img.addEventListener('error', upd); }
+		});
+		if (window.ResizeObserver) {
+			var ro = new ResizeObserver(function () { upd(); });
+			ro.observe(wrap.querySelector('.col-scroll'));
+			var row = wrap.querySelector('.col-row'); if (row) ro.observe(row);
+		}
+	});
+	window.addEventListener('load', updRows);
 
 	function windowSize() {
 		var w = window.innerWidth;
 		return w < 768 ? 1 : (w < 1100 ? 2 : 3);   // max 3 shelves at once
 	}
 
+	var curOffset = 0;   // the track's resting offset (swipe-to-drag starts from here)
 	function setTransform(offset, animate) {
+		curOffset = offset;
 		if (!animate) track.style.transition = 'none';
 		track.style.transform = 'translateX(' + (-offset) + 'px)';
 		if (!animate) { void track.offsetWidth; track.style.transition = ''; }   // restore transition after reflow
 	}
-	function showArrows(show) {
-		var d = show ? '' : 'none';
-		if (prev) { prev.style.display = d; prev.disabled = false; }
-		if (next) { next.style.display = d; next.disabled = false; }
+	// When every shelf fits, the paging arrows stay in place but disabled (rather than vanishing),
+	// so the layout is stable and it's clear there's nothing more to page to.
+	function showArrows(enabled) {
+		[prev, next].forEach(function (btn) {
+			if (!btn) return;
+			btn.disabled = !enabled;
+			btn.title = enabled ? '' : 'All shelves are shown';
+		});
 	}
 
 	function refresh(animate) {
@@ -183,13 +215,23 @@
 			return;
 		}
 
+		var physical = base + start;   // start may be -1..m transiently while wrapping
+
+		if (n === 1) {
+			// Phones: one shelf fills the whole width (no peeking neighbours); swipe or use the arrows.
+			cols.forEach(function (c) { c.style.width = vp + 'px'; });
+			setTransform(physical * (vp + GAP), animate);
+			showArrows(true);
+			updRows();
+			return;
+		}
+
 		// Looping + both-side peek: narrow the columns so ~PEEKF of each neighbour shows.
 		var colW = (vp - (n + 1) * GAP) / (n + 2 * PEEKF);
 		var PEEK = PEEKF * colW;
 		cols.forEach(function (c) { c.style.width = colW + 'px'; });
 		var step = colW + GAP;
 
-		var physical = base + start;   // start may be -1..m transiently while wrapping
 		setTransform(physical * step - GAP - PEEK, animate);
 		showArrows(true);
 		updRows();
@@ -210,6 +252,46 @@
 	}
 	if (prev) prev.addEventListener('click', function () { go(-1); });
 	if (next) next.addEventListener('click', function () { go(1); });
+
+	// ---- Swipe between shelves (phones) -------------------------------------------------------
+	// A horizontal swipe anywhere on the shelf moves to the previous / next shelf: the shelf follows
+	// the finger, then pages if the swipe was far or fast enough, else springs back. Vertical swipes
+	// scroll the page (CSS touch-action: pan-y). Book rows scroll with their arrows.
+	(function () {
+		var x0, y0, t0, dx, mode;   // mode: null (undecided) | 'shelf' | 'page'
+		var swipedAt = 0;           // a swipe that started on a book must not also open it
+		viewport.addEventListener('touchstart', function (e) {
+			if (windowSize() !== 1 || !LOOP || animating || e.touches.length !== 1) { mode = 'page'; return; }
+			x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; t0 = Date.now(); dx = 0; mode = null;
+		}, { passive: true });
+		viewport.addEventListener('touchmove', function (e) {
+			if (mode === 'page') return;
+			var mx = e.touches[0].clientX - x0, my = e.touches[0].clientY - y0;
+			if (mode === null) {
+				if (Math.abs(mx) < 8 && Math.abs(my) < 8) return;            // not decided yet
+				if (Math.abs(my) > Math.abs(mx)) { mode = 'page'; return; }   // vertical: page scroll
+				mode = 'shelf';
+				track.style.transition = 'none';
+			}
+			e.preventDefault();                                              // we own this gesture
+			dx = mx;
+			track.style.transform = 'translateX(' + (-curOffset + dx) + 'px)';
+		}, { passive: false });
+		function end() {
+			if (mode !== 'shelf') { mode = null; return; }
+			mode = null;
+			swipedAt = Date.now();
+			track.style.transition = '';
+			var fast = Math.abs(dx) > 30 && (Date.now() - t0) < 280;
+			if (Math.abs(dx) > viewport.clientWidth * 0.2 || fast) go(dx < 0 ? 1 : -1);
+			else refresh(true);                                              // spring back
+		}
+		viewport.addEventListener('touchend', end);
+		viewport.addEventListener('touchcancel', end);
+		viewport.addEventListener('click', function (e) {
+			if (Date.now() - swipedAt < 400) { e.preventDefault(); e.stopPropagation(); }
+		}, true);
+	})();
 
 	var rt;
 	window.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(function () { refresh(false); }, 120); });
