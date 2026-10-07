@@ -24,7 +24,7 @@
     .ol-card .ol-cover img { max-height: 230px; max-width: 100%; width: auto; box-shadow: 0 1px 6px rgba(0,0,0,.22); border-radius: 2px; }
     .ol-card .ol-hover-info { position: absolute; left: 0; right: 0; bottom: 0; box-sizing: border-box; padding: 10px 9px; background: linear-gradient(to top, rgba(0,0,0,.88) 60%, rgba(0,0,0,0)); text-align: left; opacity: 0; transform: translateY(6px); transition: opacity .16s ease, transform .16s ease; pointer-events: none; }
     .ol-card .ol-cover:hover .ol-hover-info { opacity: 1; transform: translateY(0); }
-    .ol-card .ol-hover-title { color: #fff; font-size: 12.5px; line-height: 1.32; font-weight: 600; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
+    .ol-card .ol-hover-title { color: #fff; font-size: 12.5px; line-height: 1.32; font-weight: 600; display: -webkit-box; -webkit-line-clamp: 8; -webkit-box-orient: vertical; overflow: hidden; }
     .ol-card .ol-hover-rating { display: block; margin-top: 5px; line-height: 1; }
     .ol-card .ol-hover-rating [data-star] { font-size: 13px; }
     .ol-card .ol-actions { margin-top: 9px; display: flex; flex-direction: column; gap: 6px; }

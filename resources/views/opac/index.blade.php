@@ -195,7 +195,7 @@
 			.cc-cover { position:relative; display:flex; align-items:flex-end; justify-content:center; height:178px; }
 			.cc-cover img { max-height:178px; max-width:100%; width:auto; border-radius:3px; box-shadow:0 2px 6px rgba(0,0,0,.22); transition:transform .14s ease, box-shadow .14s ease; }
 			.cc-cover:hover img { transform:translateY(-5px); box-shadow:0 10px 18px rgba(0,0,0,.28); }
-			.cc-cap { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; margin-top:7px; font-size:12.5px; line-height:1.3; color:#0176d3; text-decoration:none; font-weight:600; }
+			.cc-cap { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; margin-top:7px; font-size:12.5px; line-height:1.3; color:#0176d3; text-decoration:none; font-weight:600; }
 			.cc-cap:hover { text-decoration:underline; }
 			.cc-arrow { position:absolute; top:44%; transform:translateY(-50%); width:42px; height:42px; border-radius:50%; border:1px solid #d0d7de; background:#fff; color:#3f4079; font-size:22px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,.16); z-index:3; }
 			.cc-arrow:hover { background:#00a496; border-color:#00a496; color:#fff; }

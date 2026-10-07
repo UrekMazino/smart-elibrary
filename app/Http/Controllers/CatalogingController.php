@@ -1188,7 +1188,7 @@ class CatalogingController extends Controller
                         'material_type' => $viewCatMattype->name,
                         'material_type_id'=> $viewCatMattype->id,
                         'catalog_import_id' => $catalogImport->id,
-                        'title_statement' => isset($matchingTitles['title']) ? $matchingTitles['title'] : NULL,
+                        'title_statement' => marcTitle($fieldData) ?? ($matchingTitles['title'] ?? NULL),   // full 245 ($a $b $n $p $c ...), not just $a
                         'summary' => isset($matchingSummary['summary']) ? $matchingSummary['summary'] : NULL,
                         'general_note' => isset($matchingGeneralNote['general_note']) ? $matchingGeneralNote['general_note'] : NULL,
                         'publisher' => isset($matchingPublisher['publisher']) ? $matchingPublisher['publisher'] : NULL,
@@ -1907,7 +1907,7 @@ class CatalogingController extends Controller
                 'accession_number' => $request->accession_number,
                 'material_type' => $viewCatMatType->name,
                 'material_type_id'=> $viewCatMatType->id,
-                'title_statement' => isset($matchingTitles['title']) ? $matchingTitles['title'] : NULL,
+                'title_statement' => marcTitle($fieldData) ?? ($matchingTitles['title'] ?? NULL),   // full 245 ($a $b $n $p $c ...), not just $a
                 'summary' => isset($matchingSummary['summary']) ? $matchingSummary['summary'] : NULL,
                 'general_note' => isset($matchingGeneralNote['general_note']) ? $matchingGeneralNote['general_note'] : NULL,
                 'call_number' => isset($matchingCallNumber['call_number']) ? $matchingCallNumber['call_number'] : NULL,
@@ -2223,7 +2223,7 @@ class CatalogingController extends Controller
                     'accession_number' => $request->accession_number,
                     'material_type' => $viewCatMatType->name,
                     'material_type_id'=> $viewCatMatType->id,
-                    'title_statement' => isset($matchingTitles['title']) ? $matchingTitles['title'] : NULL,
+                    'title_statement' => marcTitle($fieldData) ?? ($matchingTitles['title'] ?? NULL),   // full 245 ($a $b $n $p $c ...), not just $a
                     'summary' => isset($matchingSummary['summary']) ? $matchingSummary['summary'] : NULL,
                     'general_note' => isset($matchingGeneralNote['general_note']) ? $matchingGeneralNote['general_note'] : NULL,
                     'call_number' => isset($matchingCallNumber['call_number']) ? $matchingCallNumber['call_number'] : NULL,

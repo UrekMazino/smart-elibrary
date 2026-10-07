@@ -106,7 +106,7 @@
 							{!! getThumbnailResult($results->catalog_id) !!}
 						</a>
 						<div class="ol-list-body">
-							<a href="{{ recordUrl($results) }}" class="ol-list-title">{{ maxTitle($results->title_statement,200) }}</a>
+							<a href="{{ recordUrl($results) }}" class="ol-list-title">{{ $results->title_statement }}</a>
 							@if($results->joint_authors)
 								<div class="ol-list-author">by {{ trim(explode('/', $results->joint_authors)[0]) }}</div>
 							@endif

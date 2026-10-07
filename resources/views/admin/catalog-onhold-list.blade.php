@@ -16,10 +16,8 @@
       #tbl tbody tr { cursor: pointer; }
       #tbl tbody tr:hover { background: #f7f9fc; }
       .tbl-id { color: #a3adc2; font-size: 12px; }
-      .tbl-title {
-        font-weight: 600; color: #22283b; display: inline-block; max-width: 420px;
-        overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle;
-      }
+      /* Full MARC 245 title (all subfields), wrapped — never cut to one line. */
+      .tbl-title { font-weight: 600; color: #22283b; display: block; white-space: normal; overflow-wrap: anywhere; min-width: 220px; }
       .tbl-authors {
         color: #7987a1; display: inline-block; max-width: 220px;
         overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle;
@@ -29,8 +27,8 @@
         background: #e4e9f2; color: #33415c; font-weight: 600;
         font-size: 11.5px; letter-spacing: .2px;
       }
-      @media (max-width: 1200px) { .tbl-title { max-width: 260px; } .tbl-authors { max-width: 150px; } }
-      @media (max-width: 768px)  { .tbl-title { max-width: 170px; } .tbl-authors { max-width: 110px; } }
+      @media (max-width: 1200px) { .tbl-authors { max-width: 150px; } }
+      @media (max-width: 768px)  { .tbl-authors { max-width: 110px; } }
 
       #loadingSpinnerContainer { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9999; display: none; }
       #loadingSpinner { display: inline-block; }

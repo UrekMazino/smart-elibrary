@@ -10,7 +10,7 @@
 	.instant-row:hover, .instant-row.active { background: #f1faf7; }
 	.instant-thumb { width: 34px; height: 46px; object-fit: cover; border-radius: 3px; flex: 0 0 auto; box-shadow: 0 1px 3px rgba(0,0,0,.22); }
 	.instant-text { min-width: 0; }
-	.instant-title { font-size: 13.5px; font-weight: 600; color: #0f6ea3; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+	.instant-title { font-size: 13.5px; font-weight: 600; color: #0f6ea3; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 	.instant-meta { font-size: 11.5px; color: #777; margin-top: 2px; }
 	.instant-type, .instant-year { margin-left: 8px; }
 	.instant-empty, .instant-loading { padding: 14px; color: #888; font-size: 13px; text-align: center; }
@@ -51,7 +51,7 @@
 				html += '<a class="instant-row" href="' + esc(h.url) + '">'
 				     +    (h.thumb ? '<img class="instant-thumb" src="' + esc(h.thumb) + '" alt="">' : '')
 				     +    '<div class="instant-text">'
-				     +      '<div class="instant-title">' + esc(h.title) + '</div>'
+				     +      '<div class="instant-title" title="' + esc(h.title).replace(/"/g, '&quot;') + '">' + esc(h.title) + '</div>'
 				     +      '<div class="instant-meta">'
 				     +        (h.author ? esc(h.author) : '')
 				     +        (h.type ? '<span class="instant-type">' + esc(h.type) + '</span>' : '')

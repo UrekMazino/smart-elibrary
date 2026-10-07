@@ -2,8 +2,9 @@
 
 function maxTitle($title,$max = 115)
 {
-	if(strlen($title) >= $max)
-		return substr($title, 0, $max).'...'; 
+	// Character-based (mb_*): a byte cut could split "ñ" / "’" into an invalid sequence.
+	if(mb_strlen((string) $title) > $max)
+		return rtrim(mb_substr((string) $title, 0, $max)).'…';
 	else
 		return $title;
 }
@@ -625,11 +626,14 @@ function buildCitations($record)
 {
 	if (!$record) return [];
 
-	$title = rtrim(trim((string)($record->title_statement ?? '')), " .");
+	// Title + subtitle from 245 WITHOUT $c: the citation prints the authors itself, and the
+	// stored title_statement now carries the statement of responsibility too.
+	$fieldData = !empty($record->catalog_id) ? \App\Models\Catalog::whereKey($record->catalog_id)->value('field_data') : null;
+	$title = rtrim(trim((string)(marcTitle($fieldData, false) ?? seoTrimIsbd($record->title_statement ?? ''))), " .");
 	if ($title === '') return [];
 
 	$year      = trim((string)($record->pub_year ?? '')) ?: 'n.d.';
-	$publisher = trim((string)($record->publisher ?? ''));
+	$publisher = seoTrimIsbd($record->publisher ?? '');   // drop ISBD's trailing "," / ":" (260$b "Publisher,")
 	$edition   = trim((string)($record->edition ?? ''));
 	$authors   = array_values(array_filter(array_map('trim', preg_split('#\s*/\s*#', (string)($record->joint_authors ?? '')))));
 
@@ -690,12 +694,21 @@ function generatePlaceholderCover($vc, $destPath, $w = 400, $h = 520)
 	$fontR = coverFontPath(false);
 
 	if ($fontB && $fontR) {
-		$lines = coverFitLines(coverWrapLines($fontB, 22, $title, $w - 60), 8, $fontB, 22, $w - 60);
-		$y = 100;
+		// The full 245 title (incl. subtitle and statement of responsibility) can be long:
+		// step the font down until it all fits above the author/material block, and only cut
+		// with "…" if even the smallest size can't hold it.
+		$top = 100; $bottom = $h - 150;
+		foreach ([22, 20, 18, 16, 14] as $size) {
+			$lh = (int) round($size * 1.5);
+			$maxLines = (int) floor(($bottom - $top) / $lh) + 1;
+			$lines = coverWrapLines($fontB, $size, $title, $w - 60);
+			if (count($lines) <= $maxLines) break;
+		}
+		$lines = coverFitLines($lines, $maxLines, $fontB, $size, $w - 60);
+		$y = $top;
 		foreach ($lines as $ln) {
-			$bb = imagettfbbox(22, 0, $fontB, $ln);
-			imagettftext($im, 22, 0, (int)(($w - ($bb[2]-$bb[0])) / 2), $y, $white, $fontB, $ln);
-			$y += 34;
+			imagettftext($im, $size, 0, (int)(($w - coverTextWidth($fontB, $size, $ln)) / 2), $y, $white, $fontB, $ln);
+			$y += $lh;
 		}
 		$author = trim(explode('/', (string)($vc->joint_authors ?? ''))[0]);
 		if ($author !== '') {
@@ -1114,6 +1127,60 @@ function getShelves($limit = 45)
  * MARC fields carry these marks as field separators; they read as typos outside a catalogue card.
  * Trailing periods are deliberately kept — they are often meaningful ("Jatropha curcas L.").
  */
+/**
+ * The full title from MARC 245 (all its display subfields, in the cataloger's order), e.g.
+ *   $a "2021 expanded national nutrition survey monograph series :"  $b "the food ... of Cebu /"
+ *   $c "Department of Science and Technology - FNRI"
+ *   -> "2021 expanded national nutrition survey monograph series : the food ... of Cebu /
+ *       Department of Science and Technology - FNRI"
+ *
+ * - $6/$7/$8 are linkage/control subfields, never display text, so they're skipped.
+ * - ISBD punctuation is usually already typed at the end of the preceding subfield; when it's
+ *   missing, the conventional separator is inserted (" : " before $b, " / " before $c, ...).
+ * - $withResponsibility = false drops $c (statement of responsibility) — for citations, which
+ *   print the authors themselves.
+ * Trailing ISBD separators (a dangling " /" or " :") are removed. Returns null without a 245.
+ *
+ * $fieldData: catalogs.field_data (JSON string or decoded array, the MarcEditor shape).
+ */
+function marcTitle($fieldData, bool $withResponsibility = true): ?string
+{
+	$fields = is_array($fieldData) ? $fieldData : json_decode((string) $fieldData, true);
+	if (!is_array($fields)) return null;
+
+	$f245 = null;
+	foreach ($fields as $f) {
+		if (is_array($f) && (string) ($f['marctag']['code'] ?? '') === '245') { $f245 = $f; break; }
+	}
+	if (!$f245) return null;
+
+	$sep = ['b' => ' : ', 'c' => ' / ', 'n' => '. ', 'p' => '. ', 's' => '. ', 'f' => ', ', 'g' => ', ', 'k' => ' : ', 'h' => ' '];
+	$out = ''; $prev = null;
+	foreach (($f245['subfield'] ?? []) as $s) {
+		$code = (string) ($s['code'] ?? '');
+		$letter = strtolower(substr($code, strrpos($code, '$') === false ? 0 : strrpos($code, '$') + 1, 1));
+		if ($letter === '' || in_array($letter, ['6', '7', '8'], true)) continue;
+		if ($letter === 'c' && !$withResponsibility) continue;
+
+		$value = trim(preg_replace('/\s+/u', ' ', (string) ($s['value'] ?? '')));
+		if ($value === '' || $value === 'Enter value') continue;
+
+		if ($out === '') {
+			$out = $value;
+		} elseif (preg_match('/[:;=\/.,!?]$/u', $out)) {
+			$out .= ' ' . $value;                       // cataloger already typed the punctuation
+		} else {
+			$glue = $sep[$letter] ?? ' ';
+			if ($letter === 'p' && $prev === 'n') $glue = ', ';   // "Part 2, Title of part"
+			$out .= $glue . $value;
+		}
+		$prev = $letter;
+	}
+
+	$out = trim(preg_replace('/\s*[\/:;,=]+\s*$/u', '', $out));
+	return $out === '' ? null : $out;
+}
+
 function seoTrimIsbd($text): string
 {
     $t = preg_replace('/\s+/u', ' ', trim(strip_tags((string) $text)));
