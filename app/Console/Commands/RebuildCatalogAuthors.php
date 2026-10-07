@@ -9,12 +9,13 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Rebuild every record's authors (view_catalogs.joint_authors) from its MARC main entries:
- * 100 (personal name) and 110 (corporate name) — see marcAuthors().
+ * Rebuild every record's authors (view_catalogs.joint_authors) from its MARC main entries,
+ * 100 (personal name) and 110 (corporate name), or — when it has neither — its added entries,
+ * 700 and 710 — see marcAuthors().
  *
  * Records saved before the fix took authors from 100 only, so a record whose author is a
- * corporate body (110, e.g. "Food and Nutrition Research Institute") showed no author in the
- * OPAC, citations, search and on its generated cover.
+ * corporate body (110, e.g. "Food and Nutrition Research Institute") or is only in 700 / 710
+ * showed no author in the OPAC, citations, search and on its generated cover.
  *
  * Dry run by default. With --apply it updates joint_authors, re-syncs the search index, queues
  * the AI (RAG) re-sync, regenerates placeholder covers (they print the author) and clears the
@@ -25,7 +26,7 @@ class RebuildCatalogAuthors extends Command
     protected $signature = 'catalog:rebuild-authors
                             {--apply : Write the changes (without it, only reports what would change)}';
 
-    protected $description = 'Rebuild record authors from MARC 100 + 110 (personal and corporate main entries)';
+    protected $description = 'Rebuild record authors from MARC 100 + 110 (main entries), else 700 + 710 (added entries)';
 
     public function handle()
     {
@@ -46,11 +47,11 @@ class RebuildCatalogAuthors extends Command
             });
 
         if (! $changes) {
-            $this->info('Every record’s authors already match its MARC 100 / 110 — nothing to do.');
+            $this->info('Every record’s authors already match its MARC 100 / 110 (or 700 / 710) — nothing to do.');
             return self::SUCCESS;
         }
 
-        $this->table(['Record', 'Current authors', 'From MARC 100 + 110'], collect($changes)->take(15)->map(
+        $this->table(['Record', 'Current authors', 'From MARC 100 + 110 / 700 + 710'], collect($changes)->take(15)->map(
             fn ($c, $id) => [$id, $c[0] === '' ? '—' : mb_strimwidth($c[0], 0, 45, '…'), mb_strimwidth($c[1], 0, 80, '…')]
         )->values()->all());
         if (count($changes) > 15) {
@@ -58,7 +59,7 @@ class RebuildCatalogAuthors extends Command
         }
 
         if (! $this->option('apply')) {
-            $this->warn('Dry run: ' . count($changes) . ' record(s) would get their authors from 100 + 110. Re-run with --apply to write.');
+            $this->warn('Dry run: ' . count($changes) . ' record(s) would get their authors from 100 + 110 (or 700 + 710). Re-run with --apply to write.');
             return self::SUCCESS;
         }
 

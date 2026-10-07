@@ -888,10 +888,6 @@ class CatalogingController extends Controller
                 $publishersCode = "260\$b";
                 $publicationDatesCode = "260\$c";
         
-                $authorTagCode = "100";
-                $authorsCode = "100\$a";
-                $termCode = "700\$e";
-                
                 $isbnTagCode = "020";
                 $isbnCode = "020\$a";
 
@@ -1044,46 +1040,6 @@ class CatalogingController extends Controller
                         return $dateOfPublication;
                     })->toArray();
         
-                    // Getting the Relator/Author
-                    $matchingAuthor = collect($fieldData)->filter(function ($item) use ($authorTagCode) {
-                        return isset($item['marctag']) && isset($item['marctag']['id']) && $item['marctag']['code'] == $authorTagCode;
-                    })->flatMap(function ($item) use ($authorsCode, $termCode) {
-                        $author = [];
-                        $role = [];
-                        if (isset($item['subfield'])) {
-                            collect($item['subfield'])->each(function ($subfield) use ($authorsCode, $termCode, &$author, &$role) {
-                                if ($subfield['code'] == $authorsCode) {
-                                    $author[] = $subfield['value'];
-                                }
-        
-                                if ($subfield['code'] == $termCode) {
-                                    $role[] = $subfield['value'];
-                                }
-                            });
-                        }            
-                        return [$author, $role];
-                    })->toArray();
-        
-        
-                    if( count($matchingAuthor) > 0) {
-                        $jointAuthors = []; // Initialize an empty array to store joint authors
-        
-                        for ($x = 0; $x < count($matchingAuthor[0]); $x++) {
-                            if(count($matchingAuthor[0]) == count($matchingAuthor[1])) {
-                                $jointAuthors[] = $matchingAuthor[0][$x] . ' ' . $matchingAuthor[1][$x];                    
-                            } else {
-                                $jointAuthors[] = $matchingAuthor[0][$x];
-                            }
-        
-        
-                        }
-                        $jointAuthorString = implode(', ', $jointAuthors); // Converts the array to a comma-separated string
-                        
-                        // Remove square brackets
-                        $jointAuthorString = str_replace(['[', ']'], '', $jointAuthorString);
-                    } else {
-                        $jointAuthorString = NULL;
-                    }
 
                     // One material for the catalog row AND the OPAC row (see resolveMaterial()):
                     // the mapped type for this record's field value, else the batch default.
@@ -1122,7 +1078,7 @@ class CatalogingController extends Controller
                         'general_note' => isset($matchingGeneralNote['general_note']) ? $matchingGeneralNote['general_note'] : NULL,
                         'publisher' => isset($matchingPublisher['publisher']) ? $matchingPublisher['publisher'] : NULL,
                         'pub_year' => isset($matchingDateOfPublication['date_of_pub']) ? $matchingDateOfPublication['date_of_pub'] : NULL,
-                        'joint_authors' => marcAuthors($fieldData),   // 100 + 110 main entries, " / "-separated
+                        'joint_authors' => marcAuthors($fieldData),   // 100 + 110, else 700 + 710; " / "-separated
                         'call_number' => isset($matchingCallNumber['call_number']) ? $matchingCallNumber['call_number'] : NULL,
                         'created_by' => $user->id,
                         'updated_by' => $user->id,
@@ -1691,10 +1647,6 @@ class CatalogingController extends Controller
         $publishersCode = "260\$b";
         $publicationDatesCode = "260\$c";
 
-        $authorTagCode = "100";
-        $authorsCode = "100\$a";
-        $termCode = "700\$e";
-        
         $isbnTagCode = "020";
         $isbnCode = "020\$a";
 
@@ -1848,46 +1800,6 @@ class CatalogingController extends Controller
                 return $dateOfPublication;
             })->toArray();
 
-            // Getting the Relator/Author
-            $matchingAuthor = collect($fieldData)->filter(function ($item) use ($authorTagCode) {
-                return isset($item['marctag']) && isset($item['marctag']['id']) && $item['marctag']['code'] == $authorTagCode;
-            })->flatMap(function ($item) use ($authorsCode, $termCode) {
-                $author = [];
-                $role = [];
-                if (isset($item['subfield'])) {
-                    collect($item['subfield'])->each(function ($subfield) use ($authorsCode, $termCode, &$author, &$role) {
-                        if ($subfield['code'] == $authorsCode) {
-                            $author[] = $subfield['value'];
-                        }
-
-                        if ($subfield['code'] == $termCode) {
-                            $role[] = $subfield['value'];
-                        }
-                    });
-                }            
-                return [$author, $role];
-            })->toArray();
-
-
-            if( count($matchingAuthor) > 0) {
-                $jointAuthors = []; // Initialize an empty array to store joint authors
-
-                for ($x = 0; $x < count($matchingAuthor[0]); $x++) {
-                    if(count($matchingAuthor[0]) == count($matchingAuthor[1])) {
-                        $jointAuthors[] = $matchingAuthor[0][$x] . ' ' . $matchingAuthor[1][$x];                    
-                    } else {
-                        $jointAuthors[] = $matchingAuthor[0][$x];
-                    }
-
-
-                }
-                $jointAuthorString = implode(', ', $jointAuthors); // Converts the array to a comma-separated string
-                
-                // Remove square brackets
-                $jointAuthorString = str_replace(['[', ']'], '', $jointAuthorString);
-            } else {
-                $jointAuthorString = NULL;
-            }
 
             // One material for the catalog row AND the OPAC row (see resolveMaterial()).
             $material = $this->resolveMaterial($request->material_type, $matchingRecordType['recordType'] ?? null);
@@ -1922,7 +1834,7 @@ class CatalogingController extends Controller
                 'call_number' => isset($matchingCallNumber['call_number']) ? $matchingCallNumber['call_number'] : NULL,
                 'publisher' => isset($matchingPublisher['publisher']) ? $matchingPublisher['publisher'] : NULL,
                 'pub_year' => isset($matchingDateOfPublication['date_of_pub']) ? $matchingDateOfPublication['date_of_pub'] : NULL,
-                'joint_authors' => marcAuthors($fieldData),   // 100 + 110 main entries, " / "-separated
+                'joint_authors' => marcAuthors($fieldData),   // 100 + 110, else 700 + 710; " / "-separated
                 'created_by' => $user->id,
                 'updated_by' => $user->id,
             ]);
@@ -2005,10 +1917,6 @@ class CatalogingController extends Controller
         $publishersCode = "260\$b";
         $publicationDatesCode = "260\$c";
 
-        $authorTagCode = "100";
-        $authorsCode = "100\$a";
-        $termCode = "700\$e";
-        
         $isbnTagCode = "020";
         $isbnCode = "020\$a";
 
@@ -2162,46 +2070,6 @@ class CatalogingController extends Controller
                 return $dateOfPublication;
             })->toArray();
 
-            // Getting the Relator/Author
-            $matchingAuthor = collect($fieldData)->filter(function ($item) use ($authorTagCode) {
-                return isset($item['marctag']) && isset($item['marctag']['id']) && $item['marctag']['code'] == $authorTagCode;
-            })->flatMap(function ($item) use ($authorsCode, $termCode) {
-                $author = [];
-                $role = [];
-                if (isset($item['subfield'])) {
-                    collect($item['subfield'])->each(function ($subfield) use ($authorsCode, $termCode, &$author, &$role) {
-                        if ($subfield['code'] == $authorsCode) {
-                            $author[] = $subfield['value'];
-                        }
-
-                        if ($subfield['code'] == $termCode) {
-                            $role[] = $subfield['value'];
-                        }
-                    });
-                }            
-                return [$author, $role];
-            })->toArray();
-
-
-            if( count($matchingAuthor) > 0) {
-                $jointAuthors = []; // Initialize an empty array to store joint authors
-
-                for ($x = 0; $x < count($matchingAuthor[0]); $x++) {
-                    if(count($matchingAuthor[0]) == count($matchingAuthor[1])) {
-                        $jointAuthors[] = $matchingAuthor[0][$x] . ' ' . $matchingAuthor[1][$x];                    
-                    } else {
-                        $jointAuthors[] = $matchingAuthor[0][$x];
-                    }
-
-
-                }
-                $jointAuthorString = implode(', ', $jointAuthors); // Converts the array to a comma-separated string
-                
-                // Remove square brackets
-                $jointAuthorString = str_replace(['[', ']'], '', $jointAuthorString);
-            } else {
-                $jointAuthorString = NULL;
-            }
 
             // One material for the catalog row AND the OPAC row (see resolveMaterial()).
             $material = $this->resolveMaterial($request->material_type, $matchingRecordType['recordType'] ?? null);
@@ -2238,7 +2106,7 @@ class CatalogingController extends Controller
                     'call_number' => isset($matchingCallNumber['call_number']) ? $matchingCallNumber['call_number'] : NULL,
                     'publisher' => isset($matchingPublisher['publisher']) ? $matchingPublisher['publisher'] : NULL,
                     'pub_year' => isset($matchingDateOfPublication['date_of_pub']) ? $matchingDateOfPublication['date_of_pub'] : NULL,
-                    'joint_authors' => marcAuthors($fieldData),   // 100 + 110 main entries, " / "-separated
+                    'joint_authors' => marcAuthors($fieldData),   // 100 + 110, else 700 + 710; " / "-separated
                     'updated_by' => $user->id,
                 ]);
             }

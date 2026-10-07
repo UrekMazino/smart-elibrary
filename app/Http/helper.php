@@ -554,8 +554,8 @@ function getPDFLink($catalog_id)
 
 /**
  * Parse a catalog's stored MARC field_data into readable "Full Record" rows for the OPAC.
- * Skips the Leader + 00X control fields (pure MARC plumbing) and the title/main-author
- * tags (already shown at the top of the page), so it lists the *other* available details.
+ * Skips the Leader + 00X control fields (pure MARC plumbing), the title and the author tags the
+ * page header already shows (see marcAuthors()), so it lists the *other* available details.
  * Returns an array of ['label' => ..., 'value' => ..., 'justify' => bool], only for fields that have
  * a value. 'justify' is set when any subfield was saved with the editor's Justify button.
  */
@@ -567,16 +567,20 @@ function getFullRecordFields($catalog_id)
 	$data = json_decode($cat->field_data, true);
 	if(!is_array($data)) return [];
 
-	$skip = ['LDR','001','003','005','006','007','008','245','100','700'];
+	// Authors: the page header shows the main entries (100 / 110) or, when there are none, the added
+	// entries (700 / 710) — see marcAuthors(). Skip what it shows; list any other authors here.
+	$authors = marcAuthorGroups($data);
+	$skip = ['LDR','001','003','005','006','007','008','245','100','110'];
+	if (!$authors['main']) array_push($skip, '700', '710');
 	$labels = [
 		'020' => 'ISBN', '022' => 'ISSN', '041' => 'Language',
-		'110' => 'Corporate Author', '111' => 'Meeting Name',
+		'111' => 'Meeting Name',
 		'250' => 'Edition', '260' => 'Publication', '264' => 'Publication',
 		'300' => 'Physical Description', '336' => 'Content Type',
 		'490' => 'Series', '500' => 'Note', '504' => 'Bibliography Note',
 		'505' => 'Contents', '520' => 'Summary', '546' => 'Language Note',
 		'650' => 'Subject', '651' => 'Subject', '653' => 'Subject',
-		'710' => 'Corporate Author', '830' => 'Series', '852' => 'Location',
+		'830' => 'Series', '852' => 'Location',
 		'856' => 'URL',
 	];
 
@@ -588,6 +592,13 @@ function getFullRecordFields($catalog_id)
 		// 9XX are local / vendor fields (Koha's 942 item type, 952 items, 999 ids): system data, not
 		// bibliographic description — they showed as junk rows like "2500 | lcc FN".
 		if(strlen((string) $code) === 3 && $code[0] === '9') continue;
+
+		// Added authors: names only ("Fabian, E. F.; Payumo, F. M."), not every subfield ($e roles, dates).
+		if($code === '700' || $code === '710') {
+			$names = marcAuthorGroups([$f])['added'];
+			if($names) $out[] = ['label' => $code === '700' ? 'Other Authors' : 'Corporate Author', 'value' => implode('; ', $names), 'justify' => false];
+			continue;
+		}
 
 		$vals = [];
 		$justify = false;
@@ -1202,25 +1213,40 @@ function marcTitle($fieldData, bool $withResponsibility = true): ?string
 }
 
 /**
- * Authors for joint_authors from the MARC main entries: 100 (personal name, $a) and 110 (corporate
- * name, $a + subordinate units $b), in record order, joined with " / " — the separator citations,
- * the OPAC and SEO split on. Batch Import used to read 100 only, so records whose author is a
- * corporate body (110) showed no author.
+ * Authors for joint_authors, joined with " / " (the separator citations, the OPAC and SEO split on):
+ * the MARC main entries 100 (personal name, $a) and 110 (corporate name, $a + subordinate units $b),
+ * in record order. A record with neither falls back to its added entries, 700 / 710 (same subfields)
+ * — many catalogued items carry their authors only there.
+ *
+ * Each $a starts a new name and $b extends the one before it, so a field holding several names as
+ * repeated $a (common in imported 700 / 710: "Fabian, E. F." $a "Payumo, F. M.") gives one author each.
  *
  * $fieldData: catalogs.field_data (JSON string or decoded array, the MarcEditor shape).
  */
 function marcAuthors($fieldData): ?string
 {
-	$fields = is_array($fieldData) ? $fieldData : json_decode((string) $fieldData, true);
-	if (!is_array($fields)) return null;
+	$names = marcAuthorGroups($fieldData);
+	$list  = $names['main'] ?: $names['added'];
+	return $list ? implode(' / ', $list) : null;
+}
 
-	$want  = ['100' => ['a'], '110' => ['a', 'b']];
-	$names = [];
+/**
+ * The author names of a record, split into main entries (100 / 110) and added entries (700 / 710):
+ * ['main' => [...], 'added' => [...]], each in record order without duplicates. See marcAuthors().
+ */
+function marcAuthorGroups($fieldData): array
+{
+	$fields = is_array($fieldData) ? $fieldData : json_decode((string) $fieldData, true);
+	if (!is_array($fields)) return ['main' => [], 'added' => []];
+
+	$want  = ['100' => ['a'], '110' => ['a', 'b'], '700' => ['a'], '710' => ['a', 'b']];
+	$names = ['main' => [], 'added' => []];
 	foreach ($fields as $f) {
 		$tag = is_array($f) ? (string) ($f['marctag']['code'] ?? '') : '';
 		if (!isset($want[$tag])) continue;
+		$group = $tag[0] === '1' ? 'main' : 'added';
 
-		$name = '';
+		$found = [];
 		foreach (($f['subfield'] ?? []) as $s) {
 			$code = (string) ($s['code'] ?? '');
 			$letter = substr($code, strrpos($code, '$') === false ? 0 : strrpos($code, '$') + 1, 1);
@@ -1228,14 +1254,21 @@ function marcAuthors($fieldData): ?string
 			// Square brackets mark cataloger-supplied text ("[Author not identified]"); shown without them.
 			$v = trim(preg_replace('/\s+/u', ' ', str_replace(['[', ']'], '', (string) ($s['value'] ?? ''))));
 			if ($v === '' || $v === 'Enter value') continue;
-			// "Institute." + "Nutrition Division" -> "Institute. Nutrition Division"
-			$name = $name === '' ? $v : (preg_match('/[.,;:]$/u', $name) ? "$name $v" : "$name. $v");
+			if ($letter === 'a' || !$found) {
+				$found[] = $v;
+			} else {
+				// "Institute." + "Nutrition Division" -> "Institute. Nutrition Division"
+				$last = array_pop($found);
+				$found[] = preg_match('/[.,;:]$/u', $last) ? "$last $v" : "$last. $v";
+			}
 		}
-		$name = rtrim($name, " ,;:/=");   // ISBD trailing separators (a final "." of initials stays)
-		if ($name !== '' && !in_array($name, $names, true)) $names[] = $name;
+		foreach ($found as $name) {
+			$name = rtrim($name, " ,;:/=");   // ISBD trailing separators (a final "." of initials stays)
+			if ($name !== '' && !in_array($name, $names[$group], true)) $names[$group][] = $name;
+		}
 	}
 
-	return $names ? implode(' / ', $names) : null;
+	return $names;
 }
 
 function seoTrimIsbd($text): string
