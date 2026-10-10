@@ -23,6 +23,7 @@ use App\Services\MarcMaterialMapper;
 use App\Models\MaterialTypeMap;
 use App\Services\RagSync;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Scriptotek\Marc\Collection;
 use Scriptotek\Marc\Record;
 use ReflectionClass; 
@@ -252,8 +253,6 @@ class CatalogingController extends Controller
      */
     public function exportRecords(Request $request, $format, MarcExportService $marc)
     {
-        error_reporting(error_reporting() & ~E_DEPRECATED);
-
         $status = $request->query('status');
         $build  = fn () => Catalog::whereNull('deleted_at')
             ->when($status === 'published', fn ($q) => $q->where('is_published', 1))
@@ -261,6 +260,14 @@ class CatalogingController extends Controller
             ->orderBy('id');
 
         $name = 'catalog' . ($status ? '-' . $status : '') . '-' . now()->format('Ymd-His');
+
+        return $this->streamMarcExport($build, $format, $name, $marc);
+    }
+
+    /** Stream the records from $build() (a query factory) as MARC21 binary or MARCXML, 200 at a time. */
+    private function streamMarcExport(\Closure $build, string $format, string $name, MarcExportService $marc)
+    {
+        error_reporting(error_reporting() & ~E_DEPRECATED);
 
         if ($format === 'xml') {
             return response()->stream(function () use ($build, $marc) {
@@ -2163,31 +2170,9 @@ class CatalogingController extends Controller
         $sortDir     = strtolower((string) $request->input('order.0.dir', 'asc')) === 'desc' ? 'desc' : 'asc';
         $searchValue = trim((string) $request->input('search.value', ''));
 
-        // Record List = published, On-Hold = not published, a batch = both (filter by Status).
-        $base = fn () => ViewCatalog::query()
-            ->whereNull('view_catalogs.deleted_at')
-            ->when($published !== null, fn ($q) => $q->where('view_catalogs.is_published', $published ? 1 : 0))
-            ->when($batchId !== null, fn ($q) => $q->where('view_catalogs.catalog_import_id', $batchId));
+        $totalRecords = $this->catalogListBase($published, $batchId)->count();   // the whole list, before filters / search
 
-        $totalRecords = $base()->count();   // the whole list, before filters / search
-
-        $query = $base();
-        $this->applyCatalogListFilters($query, $request);
-        if ($searchValue !== '') {
-            $query->where(function ($q) use ($searchValue) {
-                $like = '%' . $searchValue . '%';
-                $q->where('view_catalogs.material_type', 'like', $like)
-                    ->orWhere('view_catalogs.catalog_id', 'like', $like)
-                    ->orWhere('view_catalogs.accession_number', 'like', $like)
-                    ->orWhere('view_catalogs.title_statement', 'like', $like)
-                    ->orWhere('view_catalogs.isbn', 'like', $like)
-                    ->orWhere('view_catalogs.issn', 'like', $like)
-                    ->orWhere('view_catalogs.pub_year', 'like', $like)
-                    ->orWhere('view_catalogs.publisher', 'like', $like)
-                    ->orWhere('view_catalogs.joint_authors', 'like', $like)
-                    ->orWhere(DB::raw("DATE_FORMAT(view_catalogs.created_at, '%m/%d/%y')"), 'like', $like);
-            });
-        }
+        $query = $this->catalogListQuery($request, $published, $batchId, $searchValue);
         $totalRecordswithFilter = (clone $query)->count();
 
         $records = $query->select('view_catalogs.*')
@@ -2220,6 +2205,165 @@ class CatalogingController extends Controller
             'iTotalDisplayRecords' => $totalRecordswithFilter,
             'aaData'               => $resultArr,
         ]);
+    }
+
+    /** Record List = published, On-Hold = not published, a batch = both (filter by Status). */
+    private function catalogListBase(?bool $published, ?int $batchId = null)
+    {
+        return ViewCatalog::query()
+            ->whereNull('view_catalogs.deleted_at')
+            ->when($published !== null, fn ($q) => $q->where('view_catalogs.is_published', $published ? 1 : 0))
+            ->when($batchId !== null, fn ($q) => $q->where('view_catalogs.catalog_import_id', $batchId));
+    }
+
+    /**
+     * The rows a list shows, before paging: its scope + the toolbar filters + the search box.
+     * Shared by the table and by the bulk actions' "select all matching", so both act on the
+     * exact same set of records.
+     */
+    private function catalogListQuery(Request $request, ?bool $published, ?int $batchId, string $searchValue)
+    {
+        $query = $this->catalogListBase($published, $batchId);
+        $this->applyCatalogListFilters($query, $request);
+        if ($searchValue !== '') {
+            $query->where(function ($q) use ($searchValue) {
+                $like = '%' . $searchValue . '%';
+                $q->where('view_catalogs.material_type', 'like', $like)
+                    ->orWhere('view_catalogs.catalog_id', 'like', $like)
+                    ->orWhere('view_catalogs.accession_number', 'like', $like)
+                    ->orWhere('view_catalogs.title_statement', 'like', $like)
+                    ->orWhere('view_catalogs.isbn', 'like', $like)
+                    ->orWhere('view_catalogs.issn', 'like', $like)
+                    ->orWhere('view_catalogs.pub_year', 'like', $like)
+                    ->orWhere('view_catalogs.publisher', 'like', $like)
+                    ->orWhere('view_catalogs.joint_authors', 'like', $like)
+                    ->orWhere(DB::raw("DATE_FORMAT(view_catalogs.created_at, '%m/%d/%y')"), 'like', $like);
+            });
+        }
+        return $query;
+    }
+
+    /**
+     * The catalog ids a bulk action applies to. The client sends which list it is on
+     * (published / onhold / batch) and either explicit `ids[]` or scope=all (= every record
+     * matching the current filters + search, minus `excluded[]`). Explicit ids are re-checked
+     * against the list's scope, so a stale selection can't reach records outside that list.
+     */
+    private function bulkSelectionIds(Request $request): \Illuminate\Support\Collection
+    {
+        $request->validate([
+            'list'       => 'required|in:published,onhold,batch',
+            'scope'      => 'required|in:ids,all',
+            'batch_id'   => 'required_if:list,batch|integer|min:1',
+            'ids'        => 'required_if:scope,ids|array|max:20000',
+            'ids.*'      => 'integer|min:1',
+            'excluded'   => 'array',
+            'excluded.*' => 'integer|min:1',
+        ]);
+
+        $list    = $request->input('list');
+        $batchId = $list === 'batch' ? (int) $request->input('batch_id') : null;
+        $published = ['published' => true, 'onhold' => false, 'batch' => null][$list];
+
+        // Same view permission as the list page itself.
+        abort_unless(Auth::user()->can($list === 'batch' ? 'view.catalog.importlist' : 'view.catalog.list'), 403);
+
+        if ($request->input('scope') === 'all') {
+            $query = $this->catalogListQuery($request, $published, $batchId, trim((string) $request->input('search', '')));
+            $excluded = array_map('intval', (array) $request->input('excluded', []));
+            if ($excluded) $query->whereNotIn('view_catalogs.catalog_id', $excluded);
+        } else {
+            $query = $this->catalogListBase($published, $batchId)
+                ->whereIn('view_catalogs.catalog_id', array_map('intval', (array) $request->input('ids', [])));
+        }
+
+        return $query->orderBy('view_catalogs.catalog_id')->pluck('view_catalogs.catalog_id')->map(fn ($id) => (int) $id)->unique()->values();
+    }
+
+    /**
+     * Bulk action on the selected rows of the Record List / On-Hold / batch records tables:
+     * publish, hold, delete or re-index for AI. Each action needs the same permission as its
+     * single-record counterpart, and keeps Meilisearch, the RAG outbox and the home cache in step.
+     */
+    public function bulkRecords(Request $request)
+    {
+        $request->validate(['action' => 'required|in:publish,hold,delete,reindex']);
+        $action = $request->input('action');
+        $permission = ['publish' => 'publish-hold.catalog', 'hold' => 'publish-hold.catalog',
+                       'delete' => 'delete.catalog', 'reindex' => 'access.cataloging'][$action];
+        abort_unless(Auth::user()->can($permission), 403);
+
+        $ids     = $this->bulkSelectionIds($request);
+        $userId  = Auth::id();
+        $changed = 0;
+
+        foreach ($ids->chunk(500) as $chunk) {
+            $chunk = $chunk->values()->all();
+
+            if ($action === 'publish' || $action === 'hold') {
+                $to = $action === 'publish' ? 1 : 0;
+                // Only records whose state actually changes (a batch mixes published and on-hold).
+                $target = ViewCatalog::whereIn('catalog_id', $chunk)->where('is_published', '!=', $to)->pluck('catalog_id')->all();
+                if (! $target) continue;
+                $stamp = ['is_published' => $to, 'updated_at' => now(), 'updated_by' => $userId];
+                Catalog::whereIn('id', $target)->update($stamp);
+                ViewCatalog::whereIn('catalog_id', $target)->update($stamp);
+                // Query-builder updates bypass Scout: re-index so OPAC search sees the new is_published.
+                ViewCatalog::whereIn('catalog_id', $target)->searchable();
+                RagSync::enqueueMany($target, $to ? RagSync::UPSERT : RagSync::DELETE, $to ? 'published' : 'unpublished');
+                $changed += count($target);
+            } elseif ($action === 'delete') {
+                // Drop from the search index first (same reason as destroyRecord), then soft-delete.
+                ViewCatalog::whereIn('catalog_id', $chunk)->get()->unsearchable();
+                $stamp = ['deleted_at' => now(), 'deleted_by' => $userId];
+                Catalog::whereIn('id', $chunk)->update($stamp);
+                ViewCatalog::whereIn('catalog_id', $chunk)->update($stamp);
+                RagSync::enqueueMany($chunk, RagSync::DELETE, 'deleted');
+                $changed += count($chunk);
+            } else {   // reindex: just queue; the worker gates on is_published as usual
+                RagSync::enqueueMany($chunk, RagSync::UPSERT, 'manual');
+                $changed += count($chunk);
+            }
+        }
+
+        if ($action !== 'reindex' && $changed) clearHomeCache();
+
+        return response()->json(['success' => true, 'action' => $action, 'selected' => $ids->count(), 'changed' => $changed]);
+    }
+
+    /**
+     * Step 1 of exporting the selected rows: resolve the selection (same rules as bulkRecords) and
+     * park the ids under a short-lived ticket. The download itself is a plain GET (step 2), because
+     * download managers (IDM etc.) and some browsers re-request a download URL with HEAD/GET — a
+     * POST-only download then fails with 405 even though the first response was fine.
+     */
+    public function bulkExportTicket(Request $request)
+    {
+        $ids = $this->bulkSelectionIds($request)->all();
+        abort_if(! $ids, 422, 'No records selected.');
+
+        $token = Str::random(40);
+        cache()->put('bulk-export:' . $token, ['user' => Auth::id(), 'ids' => $ids], now()->addMinutes(15));
+
+        return response()->json([
+            'count' => count($ids),
+            'urls'  => [
+                'mrc' => route('records-bulk-export', ['token' => $token, 'format' => 'mrc']),
+                'xml' => route('records-bulk-export', ['token' => $token, 'format' => 'xml']),
+            ],
+        ]);
+    }
+
+    /** Step 2: stream the ticket's records as MARC21 or MARCXML. Re-requestable until it expires. */
+    public function bulkExport($token, $format, MarcExportService $marc)
+    {
+        $ticket = cache()->get('bulk-export:' . $token);
+        abort_unless($ticket && (int) $ticket['user'] === (int) Auth::id(), 404, 'This export link has expired. Export the selection again.');
+
+        $ids   = $ticket['ids'];
+        $build = fn () => Catalog::whereNull('deleted_at')->whereIn('id', $ids)->orderBy('id');
+
+        return $this->streamMarcExport($build, $format, 'catalog-selection-' . count($ids) . '-' . now()->format('Ymd-His'), $marc);
     }
 
     /** Toolbar filters: status, type, author, year (each also "__none__" = missing) and resources. */

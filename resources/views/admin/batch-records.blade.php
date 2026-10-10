@@ -42,7 +42,8 @@
         <div class="col-md-12">
             <div class="card">
                 <div class="card-body">
-                    <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+                      <div>
                         <h6 class="card-title mb-1">Batch #{{ $batch->id }} — Records</h6>
                         <div class="bt-meta">
                             <strong>{{ $batch->subject ?: 'No subject' }}</strong>
@@ -50,6 +51,8 @@
                             · {{ $filters['statuses']['published'] ?? 0 }} published
                             · {{ $filters['statuses']['onhold'] ?? 0 }} on hold
                         </div>
+                      </div>
+                      @include('admin.partials.catalog-bulk-toolbar', ['list' => 'batch'])
                     </div>
 
                     @include('admin.partials.catalog-list-filters', ['filters' => $filters])
@@ -58,6 +61,7 @@
                         <table id="tbl" class="table table-hover table-sm align-middle mb-0">
                             <thead>
                                 <tr>
+                                    <th class="bs-cell">@include('admin.partials.catalog-bulk-checkall')</th>
                                     <th style="width: 64px">ID</th>
                                     <th>Title</th>
                                     <th style="width: 120px">Type</th>
@@ -96,6 +100,7 @@
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/DataTables/DataTables-1.12.1/js/jquery.dataTables.min.js') }}"></script>
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/DataTables/DataTables-1.12.1/js/dataTables.bootstrap5.min.js') }}"></script>
 @include('admin.partials.catalog-list-filters-js')
+@include('admin.partials.catalog-bulk-js', ['list' => 'batch', 'batchId' => $batch->id])
 <script>
 var CSRF = '{{ csrf_token() }}';
 var CAN_PUBLISH_HOLD = @json(auth()->user()->can('publish-hold.catalog'));
@@ -123,16 +128,17 @@ function actionMenu(row) {
 }
 
 $(function () {
-    $('#tbl').DataTable({
+    var dt = $('#tbl').DataTable({
         processing: true,
         serverSide: true,
         autoWidth: false,
         pageLength: 25,
-        order: [[1, 'asc']],
+        order: [[2, 'asc']],   // col 0 = checkbox, 1 = ID, 2 = Title
         // Toolbar filters (status / type / author / year / resources) go with every request.
         ajax: { url: '{{ url("/admin/batch-records-json/" . $batch->id) }}', data: clFilters.params },
         language: { search: '', searchPlaceholder: 'Search title, author, type, year…' },
         columns: [
+            bulkSelect.column,
             { data: 'id', className: 'tbl-id text-nowrap',
               render: function (d, type) { return type === 'display' ? '#' + escapeHtml(d) : d; } },
             { data: 'title_statement',
@@ -167,10 +173,11 @@ $(function () {
               render: function (d, type, row) { return actionMenu(row); } },
         ]
     });
+    bulkSelect.init(dt);
 
     // Whole row -> View Details (except clicks on the Action menu / any control).
     $('#tbl').on('click', 'tbody tr', function (e) {
-        if ($(e.target).closest('a, button, .btn-group, .dropdown-menu').length) return;
+        if ($(e.target).closest('a, button, input, .bs-cell, .btn-group, .dropdown-menu').length) return;
         var row = $('#tbl').DataTable().row(this).data();
         if (row && row.id != null) viewRecord(row.id, row.title_statement);
     });

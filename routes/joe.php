@@ -120,6 +120,13 @@ Route::controller(CatalogingController::class, 'admin')->middleware('can:access.
     Route::get('/admin/on-hold-list', 'onholdList')->middleware('can:view.catalog.list');
     Route::get('/admin/record-list-json', 'recordListJson')->middleware('can:view.catalog.list');
     Route::get('/admin/onhold-list-json', 'onholdListJson')->middleware('can:view.catalog.list');
+    // Bulk actions on the selected rows of the Record List / On-Hold / batch records tables. The
+    // controller checks the list's view permission and each action's own permission.
+    Route::post('/admin/records/bulk', 'bulkRecords')->name('records-bulk')->middleware('throttle:30,1');
+    // Export = POST the selection for a 15-minute ticket, then a re-requestable GET download.
+    Route::post('/admin/records/bulk-export', 'bulkExportTicket')->name('records-bulk-export-ticket')->middleware('throttle:30,1');
+    Route::get('/admin/records/bulk-export/{token}/{format}', 'bulkExport')->name('records-bulk-export')
+        ->where(['token' => '[A-Za-z0-9]{40}', 'format' => 'mrc|xml'])->middleware('throttle:60,1');
 
     Route::middleware('can:publish-hold.catalog')->group(function () {
         Route::post('/admin/hold-all-published', 'holdAllPublished');

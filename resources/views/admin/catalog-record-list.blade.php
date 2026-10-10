@@ -62,20 +62,7 @@
                       <h6 class="card-title mb-1">Record List</h6>
                       <p class="text-muted mb-0" style="font-size: 12.5px;">Published records — these are visible in the OPAC.</p>
                     </div>
-                    <div class="btn-group btn-group-sm me-2">
-                      @can('publish-hold.catalog')<button class="btn btn-outline-warning btn-sm" onclick="holdAllPublished()">Hold All</button>@endcan
-                      <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">Export MARC</button>
-                      <ul class="dropdown-menu" aria-labelledby="exportDropdown">
-                          <li><h6 class="dropdown-header">Published list</h6></li>
-                          <li><a class="dropdown-item" href="{{ route('export-records', ['format' => 'mrc', 'status' => 'published']) }}">MARC21 binary (.mrc)</a></li>
-                          <li><a class="dropdown-item" href="{{ route('export-records', ['format' => 'xml', 'status' => 'published']) }}">MARCXML (.xml)</a></li>
-                          <li><hr class="dropdown-divider"></li>
-                          <li><h6 class="dropdown-header">Entire catalog</h6></li>
-                          <li><a class="dropdown-item" href="{{ route('export-records', ['format' => 'mrc']) }}">MARC21 binary (.mrc)</a></li>
-                          <li><a class="dropdown-item" href="{{ route('export-records', ['format' => 'xml']) }}">MARCXML (.xml)</a></li>
-                      </ul>
-                      <button class="btn btn-outline-info btn-sm" type="button" onclick="reindexAllForAi()" title="Queue all published records for AI (RAG) re-indexing">Re-index AI</button>
-                  </div>
+                    @include('admin.partials.catalog-bulk-toolbar', ['list' => 'published'])
 
                   </div>
                   @include('admin.partials.catalog-list-filters', ['filters' => $filters])
@@ -83,6 +70,7 @@
                       <table id="tbl" class="table table-hover table-sm align-middle mb-0">
                         <thead>
                           <tr>
+                            <th class="bs-cell">@include('admin.partials.catalog-bulk-checkall')</th>
                             <th style="width: 64px">ID</th>
                             <th>Title</th>
                             <th style="width: 120px">Type</th>
@@ -129,6 +117,7 @@
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/DataTables/buttons/js/buttons.html5.min.js') }}"></script>
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/DataTables/buttons/js/buttons.print.min.js') }}"></script>
 @include('admin.partials.catalog-list-filters-js')
+@include('admin.partials.catalog-bulk-js', ['list' => 'published'])
 
 <script>
 
@@ -165,6 +154,7 @@ $(document).ready(function(){
     // client-side (filtered) rebuild so both look and sort identically.
     function makeColumns() {
       return [
+        bulkSelect.column,
         { data: 'id', className: 'tbl-id text-nowrap',
           render: function (d, type) { return type === 'display' ? '#' + escapeHtml(d) : d; } },
         { data: 'title_statement',
@@ -199,21 +189,22 @@ $(document).ready(function(){
     }
 
     // Main table: server-side, default sort = Title (A → Z), other columns sortable.
-    $('#tbl').DataTable({
+    var dt = $('#tbl').DataTable({
         processing: true,
         serverSide: true,
         autoWidth: false,
         pageLength: 25,
-        order: [[1, 'asc']],
+        order: [[2, 'asc']],   // col 0 = checkbox, 1 = ID, 2 = Title
         // Toolbar filters (type / author / year / resources) are sent with every request.
         ajax: { url: '{{ url("/admin/record-list-json") }}', data: clFilters.params },
         columns: makeColumns(),
         language: { search: '', searchPlaceholder: 'Search title, author, type, year…' }
     });
+    bulkSelect.init(dt);
 
     // Whole row clickable -> View Details. Ignore clicks on the Action menu / any control.
     $('#tbl').on('click', 'tbody tr', function (e) {
-        if ($(e.target).closest('a, button, .btn-group, .dropdown-menu').length) return;
+        if ($(e.target).closest('a, button, input, .bs-cell, .btn-group, .dropdown-menu').length) return;
         var data = $('#tbl').DataTable().row(this).data();
         if (data && data.id != null) { viewRecord(data.id, data.title_statement); }
     });
@@ -236,91 +227,6 @@ function refreshAjax() {
     let table = $('#tbl').DataTable();
     table.ajax.reload(null, false); // Reload the table data without resetting the pagination
 }
-
-function reindexAllForAi() {
-  Swal.fire({
-      title: 'Re-index for AI?',
-      text: "All published records will be queued for AI (RAG) re-indexing.",
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'Yes, queue them',
-      cancelButtonText: 'Cancel',
-      reverseButtons: true
-    }).then((result) => {
-      if (result.value) {
-        $.ajax({
-          url: "{{ route('reindex-records') }}",
-          method: "POST",
-          data: { _token: "{{ csrf_token() }}", status: "published" },
-          success: function (response) {
-            Swal.fire({
-                title: 'Queued',
-                text: (response.queued || 0) + ' record(s) queued for AI re-indexing.',
-                icon: 'success',
-                timer: 1500,
-                showConfirmButton: false
-            });
-          },
-          error: function () {
-              Swal.fire('Error', 'Could not queue records for re-indexing.', 'error');
-          }
-        });
-      }
-    });
-}
-
-function holdAllPublished()
-{
-  Swal.fire({
-      title: 'Are you sure?',
-      text: "All items in the record list will be hold.",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonClass: 'me-2',
-      confirmButtonText: 'Yes',
-      cancelButtonText: 'No',
-      reverseButtons: true
-    }).then((result) => {
-      if (result.value) {
-        appBusy.show();
-        $.ajax({
-          url: "{{ url('/admin/hold-all-published') }}",
-          method: "POST",
-          data: {
-            _token: "{{ csrf_token() }}"
-          },
-          success: function (response) {
-            Swal.fire({
-                title: 'Success',
-                text: 'The record has been updated successfully!',
-                icon: 'success',
-                timer: 1000,
-                showConfirmButton: false
-            });
-            appBusy.hide();
-            refreshAjax();
-          },
-          error: function () {
-              appBusy.hide();
-              Swal.fire(
-                  'Error',
-                  'An error occurred while updating the record.',
-                  'error'
-              );
-          }
-        });
-      } else if (
-        result.dismiss === Swal.DismissReason.cancel
-      ) {
-        Swal.fire(
-          'Cancelled',
-          'No changes made!',
-          'error'
-        )
-      }
-    })
-}
-
 
 function holdMaterial(id)
 {
