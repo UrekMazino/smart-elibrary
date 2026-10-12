@@ -4,12 +4,17 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App;
 use Auth;
+use App\Models\Material;
+use App\Models\SavedRecord;
+use App\Models\ViewCatalog;
 use App\Services\AiSearchService;
+use App\Services\CatalogSearch;
+use App\Services\CatalogSearchParams;
 
 class ResultController extends Controller
 {
 
-    public function index(Request $request)
+    public function index(Request $request, CatalogSearch $search)
     {
         if(Auth::check() && Auth::user()->usertype == 'Administrator')
         {
@@ -37,83 +42,107 @@ class ResultController extends Controller
             ]);
         }
 
-        // The OPAC search form may omit any of these keys — guard them all so a
-        // partial/empty submission returns results instead of a 500.
-        $query     = $request->input('query');                       // null when absent
-        $layout    = $request->input('layout', 'grid');
-        $perPage   = ($layout == 'grid') ? 15 : 12;                  // grid = 3x5 rows per page
-        $seriesId  = $request->input('series_statement_id', 0);
-        $seachtype = (array) $request->input('seachtype', ['0']);    // always an array
-        $searhType = $seachtype;                                     // passed to the view
-        $allTypes  = count($seachtype) == 1 && $seachtype[0] == 0;   // "0" = all material types
-
-        if($seriesId != 0)
+        // Keyword search: the search page (filters with counts, see App\Services\CatalogSearch).
+        $p = CatalogSearchParams::fromRequest($request);
+        if($p->saved && ! Auth::check())
         {
-            // Browse by series
-            $result = App\Models\ViewCatalog::where('series_statement_id', $seriesId)
-                ->where('deleted_at', null)->where('is_published', 1)
-                ->orderBy('pub_year', 'DESC')->paginate($perPage);
-        }
-        elseif($request->has('seachtype') && $request->has('year1'))
-        {
-            // Type/year filtered search (year filtering itself was never wired up upstream)
-            $builder = App\Models\ViewCatalog::search($query ?? '');
-            if(! $allTypes)
-            {
-                count($seachtype) == 1
-                    ? $builder->where('material_type_id', $seachtype[0])
-                    : $builder->whereIn('material_type_id', $seachtype);
-            }
-            $result = $builder->where('deleted_at', null)->where('is_published', 1)
-                ->orderBy('pub_year', 'DESC')->paginate($perPage);
-        }
-        elseif(isset($query) && $query !== '')
-        {
-            // Keyword search (optionally narrowed by material type)
-            $builder = App\Models\ViewCatalog::search($query);
-            if(! $allTypes)
-            {
-                $builder->whereIn('material_type_id', $seachtype);
-            }
-            $result = $builder->where('deleted_at', null)->where('is_published', 1)
-                ->orderBy('pub_year', 'DESC')->paginate($perPage);
-        }
-        else
-        {
-            // No keyword: list by material type
-            $result = App\Models\ViewCatalog::whereIn('material_type_id', $seachtype)
-                ->where('deleted_at', null)->where('is_published', 1)
-                ->orderBy('pub_year', 'DESC')->paginate($perPage);
+            return redirect()->guest(route('login'));
         }
 
-        // The result Blade views read these keys straight from $_GET; guarantee
-        // they exist (the union operator preserves any values actually submitted)
-        // so a partial submission never throws "Undefined array key" while rendering.
-        $_GET += [
-            'query'               => $query ?? '',
-            'seachtype'           => $seachtype,
-            'series_statement_id' => $seriesId,
-            'layout'              => $layout,
-            'page'                => $request->input('page', 1),
+        $savedIds   = SavedRecord::idsFor(Auth::id());
+        $result     = $search->search($p, $savedIds);
+        $typeNames  = Material::pluck('name', 'id')->all();
+        $seriesName = $p->series ? getSeriesDesc($p->series) : null;
+
+        $data = [
+            'p'          => $p,
+            'result'     => $result,
+            'chips'      => $p->chips($typeNames, $seriesName),
+            'fixes'      => $result['ok'] && $result['total'] === 0 ? $search->fixes($p, $savedIds, $typeNames, $seriesName) : [],
+            'savedIds'   => $savedIds,
+            'aiEnabled'  => $ai->isEnabled(),
+            'advOpen'    => $request->boolean('advanced'),   // Advanced link from other pages
         ];
 
-        if($layout == 'list')
-            return view('opac.search-result-list', ['result' => $result, 'layout' => 'list', 'search_type' => $searhType]);
-        else
-            return view('opac.search-result-grid', ['result' => $result, 'layout' => 'grid', 'search_type' => $searhType]);
+        // The page's own script swaps just the results area (filters + list) without a reload.
+        if($request->boolean('partial'))
+        {
+            return view('opac.partials.search-results-main', $data);
+        }
+
+        return view('opac.search-results', $data);
+    }
+
+    /**
+     * "Find an author / subject / publisher" box in the filters: matching options with counts
+     * for the current search (JSON).
+     */
+    public function facetValues(Request $request, CatalogSearch $search)
+    {
+        $group = (string) $request->query('group', '');
+        $text  = mb_substr(trim((string) $request->query('term', '')), 0, 100);
+        $p     = CatalogSearchParams::fromRequest($request);
+
+        return response()->json([
+            'group'  => $group,
+            'values' => $text === '' ? [] : $search->facetValues($p, SavedRecord::idsFor(Auth::id()), $group, $text),
+        ]);
+    }
+
+    /** Citations (APA / MLA / Chicago) of a published record, for the Cite button (JSON). */
+    public function cite($catalogId)
+    {
+        $record = ViewCatalog::where('catalog_id', (int) $catalogId)->where('is_published', 1)->whereNull('deleted_at')->first();
+        abort_unless($record, 404);
+
+        return response()->json([
+            'title'     => $record->title_statement,
+            'citations' => buildCitations($record),
+        ]);
+    }
+
+    /** Save / unsave a record for the signed-in patron (the Save button). */
+    public function toggleSaved(Request $request)
+    {
+        $data = $request->validate(['catalog_id' => ['required', 'integer']]);
+        $published = ViewCatalog::where('catalog_id', $data['catalog_id'])->where('is_published', 1)->whereNull('deleted_at')->exists();
+        abort_unless($published, 404);
+
+        $existing = SavedRecord::where('user_id', Auth::id())->where('catalog_id', $data['catalog_id'])->first();
+        $existing ? $existing->delete() : SavedRecord::create(['user_id' => Auth::id(), 'catalog_id' => $data['catalog_id']]);
+
+        return response()->json([
+            'saved' => ! $existing,
+            'count' => SavedRecord::where('user_id', Auth::id())->count(),
+        ]);
     }
 
     /**
      * Instant-search JSON endpoint for the OPAC search-as-you-type overlay.
      * Meilisearch stays private; the browser only ever talks to this route.
      */
-    public function suggest(Request $request)
+    public function suggest(Request $request, CatalogSearch $search)
     {
         $q = trim((string) $request->input('q', ''));
 
         if($q === '')
         {
             return response()->json(['query' => '', 'total' => 0, 'hits' => []]);
+        }
+
+        // The search page's box: titles, authors and subjects in groups (?groups=1).
+        if($request->boolean('groups'))
+        {
+            $s = $search->suggest(mb_substr($q, 0, 100));
+            $link = fn (string $key, string $value) => url('/results') . '?' . http_build_query([$key => [$value]], '', '&', PHP_QUERY_RFC3986);
+
+            return response()->json([
+                'query'    => $q,
+                'titles'   => array_map(fn ($t) => ['title' => searchHighlight($t['title_hl']), 'year' => $t['year'], 'type' => $t['type'],
+                    'url' => recordUrl(['catalog_id' => $t['catalog_id'], 'title_statement' => $t['title']])], $s['titles']),
+                'authors'  => array_map(fn ($a) => $a + ['url' => $link('author', $a['value'])], $s['authors']),
+                'subjects' => array_map(fn ($a) => $a + ['url' => $link('subject', $a['value'])], $s['subjects']),
+            ]);
         }
 
         $type = $request->input('type');   // material_type_id, or null / 0 = all types

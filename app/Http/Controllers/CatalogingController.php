@@ -1086,6 +1086,7 @@ class CatalogingController extends Controller
                         'publisher' => isset($matchingPublisher['publisher']) ? $matchingPublisher['publisher'] : NULL,
                         'pub_year' => isset($matchingDateOfPublication['date_of_pub']) ? $matchingDateOfPublication['date_of_pub'] : NULL,
                         'joint_authors' => marcAuthors($fieldData),   // 100 + 110, else 700 + 710; " / "-separated
+                        'subjects' => marcSubjects($fieldData),        // 600/610/650/651/653 $a (Subject filter)
                         'call_number' => isset($matchingCallNumber['call_number']) ? $matchingCallNumber['call_number'] : NULL,
                         'created_by' => $user->id,
                         'updated_by' => $user->id,
@@ -1842,6 +1843,7 @@ class CatalogingController extends Controller
                 'publisher' => isset($matchingPublisher['publisher']) ? $matchingPublisher['publisher'] : NULL,
                 'pub_year' => isset($matchingDateOfPublication['date_of_pub']) ? $matchingDateOfPublication['date_of_pub'] : NULL,
                 'joint_authors' => marcAuthors($fieldData),   // 100 + 110, else 700 + 710; " / "-separated
+                'subjects' => marcSubjects($fieldData),        // 600/610/650/651/653 $a (Subject filter)
                 'created_by' => $user->id,
                 'updated_by' => $user->id,
             ]);
@@ -2114,8 +2116,18 @@ class CatalogingController extends Controller
                     'publisher' => isset($matchingPublisher['publisher']) ? $matchingPublisher['publisher'] : NULL,
                     'pub_year' => isset($matchingDateOfPublication['date_of_pub']) ? $matchingDateOfPublication['date_of_pub'] : NULL,
                     'joint_authors' => marcAuthors($fieldData),   // 100 + 110, else 700 + 710; " / "-separated
+                    'subjects' => json_encode(marcSubjects($fieldData), JSON_UNESCAPED_UNICODE),   // query-builder update: no casts
+                    'pub_year_num' => pubYearNumber($matchingDateOfPublication['date_of_pub'] ?? null),   // ...and no model hook
                     'updated_by' => $user->id,
                 ]);
+
+            // A query-builder update doesn't reach the search index: refresh this record's entry,
+            // or the OPAC keeps finding it by its old title, authors and subjects.
+            try {
+                ViewCatalog::where('catalog_id', $id)->searchable();
+            } catch (\Throwable $e) {
+                report($e);
+            }
             }
 
         clearHomeCache();

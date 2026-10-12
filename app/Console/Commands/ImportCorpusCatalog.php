@@ -214,6 +214,7 @@ class ImportCorpusCatalog extends Command
                 'general_note'     => $note ?: null,
                 'pub_year'         => $year,
                 'joint_authors'    => $rec['authors'] ?? null,
+                'subjects'         => marcSubjects($catalog->field_data),
                 'created_by'       => 'corpus-import',
                 'updated_by'       => 'corpus-import',
             ]);

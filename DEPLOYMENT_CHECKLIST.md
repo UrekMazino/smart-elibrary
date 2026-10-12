@@ -36,6 +36,7 @@ php artisan migrate:status          # confirm the baseline migrations show "Ran"
 php artisan migrate --force         # applies only NEW migrations
 
 # 3. search indexes
+php artisan scout:sync-index-settings                  # filters / sorts the OPAC search page uses (config/scout.php)
 php artisan scout:flush "App\Models\ViewCatalog"
 php artisan scout:import "App\Models\ViewCatalog"     # Meilisearch (keyword search)
 
@@ -58,6 +59,7 @@ php artisan permission:cache-reset                    # roles/permissions are ca
 | `APP_ENV` | `production` | — |
 | `APP_DEBUG` | **`false`** | currently `true` in dev; a debug-enabled public site leaks stack traces |
 | `APP_URL` | `https://<real-domain>` | canonical tags, sitemap URLs and OG tags are all built from it |
+| `SCOUT_DRIVER` | `meilisearch` | the OPAC search page (filters with counts, typo tolerance, highlighting) needs Meilisearch **v1.12+** |
 | `MEILISEARCH_*` | host/key | OPAC keyword search |
 | `HERMES_GATEWAY_URL` | `http://127.0.0.1:8090` | AI mode gateway |
 | `HERMES_GATEWAY_TOKEN` | shared secret | **must match** what `start-rag-api.ps1` uses |
@@ -114,6 +116,7 @@ These are real changes that a `git pull` will **not** give you. They must be app
 | Generated `sitemap*.xml` | `public/` | `php artisan sitemap:generate` (gitignored on purpose) |
 | Material Type repair for records saved via Create/Edit/Batch before the fix (Record History + Reports showed the LDR/06 type, e.g. "Language material") | `elibrarydb.catalogs` | `php artisan catalog:sync-material-types` (dry run, shows the changes) then `--apply`. Idempotent. |
 | Full MARC 245 titles for existing records (lists/OPAC/search/covers showed only `245$a`, e.g. "… monograph series :") | `elibrarydb.view_catalogs`, `copies`, covers | `php artisan migrate` first (widens title columns to TEXT), then `php artisan catalog:rebuild-titles` (dry run) and `--apply` — also re-syncs search, queues RAG, regenerates placeholder covers. Idempotent. |
+| OPAC search page: subjects (MARC 600/610/650/651/653) and numeric publication year for existing records, plus the new Meilisearch filters / sorts | `elibrarydb.view_catalogs`, Meilisearch index | `php artisan migrate` (adds `pub_year_num`, `subjects`, `saved_records`), then `php artisan catalog:rebuild-search-fields` (dry run) and `--apply` — also syncs the index settings and re-indexes every record. Idempotent. |
 | Authors from MARC 100 **and 110**, else **700 / 710**, for existing records (corporate or added-entry-only authors showed as no author) | `elibrarydb.view_catalogs` | `php artisan catalog:rebuild-authors` (dry run) then `--apply` — also re-syncs search, queues RAG, regenerates placeholder covers. Idempotent. |
 | `public/{thumb,pdf,fullpage,news_cover,marc_file,marc_file_uploaded}` links | `public/` → `storage/app/public/*` | `php artisan storage:link`. The link *targets* (uploaded covers, PDFs) live in `storage/app/public` and are per-server data — back them up. The app creates a missing target folder on first write. |
 

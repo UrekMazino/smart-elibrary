@@ -1271,6 +1271,76 @@ function marcAuthorGroups($fieldData): array
 	return $names;
 }
 
+/**
+ * Subject headings for view_catalogs.subjects and the search index: MARC 600, 610, 650, 651 and
+ * 653 $a, in record order, without duplicates (ignoring case). Each $a is one heading (653
+ * repeats $a for several keywords). See cleanSubject() for the punctuation clean-up.
+ *
+ * $fieldData: catalogs.field_data (JSON string or decoded array, the MarcEditor shape).
+ */
+function marcSubjects($fieldData): array
+{
+	$fields = is_array($fieldData) ? $fieldData : json_decode((string) $fieldData, true);
+	if (!is_array($fields)) return [];
+
+	$tags = ['600', '610', '650', '651', '653'];
+	$out  = [];
+	foreach ($fields as $f) {
+		$tag = is_array($f) ? (string) ($f['marctag']['code'] ?? '') : '';
+		if (!in_array($tag, $tags, true)) continue;
+		foreach (($f['subfield'] ?? []) as $s) {
+			$code = (string) ($s['code'] ?? '');
+			if (substr($code, strrpos($code, '$') === false ? 0 : strrpos($code, '$') + 1, 1) !== 'a') continue;
+			$v = cleanSubject($s['value'] ?? '');
+			if ($v !== '') $out[mb_strtolower($v)] ??= $v;
+		}
+	}
+	return array_values($out);
+}
+
+/**
+ * One subject heading without its ISBD punctuation, so "Nutrition," and "Nutrition" are the same
+ * subject. Brackets are dropped like in marcAuthors(); a closing "etc." keeps its period.
+ */
+function cleanSubject($value): string
+{
+	$v = trim(preg_replace('/\s+/u', ' ', str_replace(['[', ']'], '', (string) $value)));
+	if ($v === 'Enter value') return '';
+	$v = rtrim($v, " ,;:/=");
+	if (!preg_match('/\betc\.$/iu', $v)) $v = rtrim($v, '. ');
+	return trim($v);
+}
+
+/**
+ * The publication year as a number, from pub_year's free text ("[1960]", "c1978", "1978-1980"
+ * -> first year). Null when there is no plausible year (none, or later than next year).
+ */
+function pubYearNumber($pubYear): ?int
+{
+	if (!preg_match('/(?<!\d)(1[4-9]\d\d|20\d\d)(?!\d)/', (string) $pubYear, $m)) return null;
+	$year = (int) $m[1];
+	return $year <= (int) date('Y') + 1 ? $year : null;
+}
+
+/**
+ * A search result value with its matched words in <mark>. Meilisearch wraps matches in private-use
+ * markers (CatalogSearch::HL_PRE/HL_POST); the text is escaped first, then the markers become tags,
+ * so catalog text can never inject HTML.
+ */
+function searchHighlight($text): string
+{
+	return str_replace([\App\Services\CatalogSearch::HL_PRE, \App\Services\CatalogSearch::HL_POST], ['<mark>', '</mark>'], e((string) $text));
+}
+
+/** Sort key for "Title A–Z": lower case, without a leading "The", "A" or "An" or opening bracket. */
+function searchTitleSort($title): string
+{
+	$t = mb_strtolower(trim(strip_tags((string) $title)));
+	$t = preg_replace('/^[\s\[\("\'“‘]+/u', '', $t);
+	$t = preg_replace('/^(the|a|an)\s+/u', '', $t);
+	return mb_substr($t, 0, 200);
+}
+
 function seoTrimIsbd($text): string
 {
     $t = preg_replace('/\s+/u', ' ', trim(strip_tags((string) $text)));

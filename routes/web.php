@@ -26,6 +26,9 @@ require __DIR__.'/annarose.php';
 use App\Http\Controllers\ResultController;
 Route::get('/results', [ResultController::class, 'index']);
 Route::get('/search/suggest', [ResultController::class, 'suggest']);   // instant-search JSON (OPAC overlay)
+Route::get('/search/facet', [ResultController::class, 'facetValues'])->middleware('throttle:60,1');            // "Find an author" box
+Route::get('/search/cite/{catalogId}', [ResultController::class, 'cite'])->whereNumber('catalogId');           // Cite button
+Route::post('/search/saved', [ResultController::class, 'toggleSaved'])->middleware(['auth', 'throttle:60,1']); // Save button
 // AI mode answer (OPAC "Ask the Library").
 //  - ai.enabled : the admin kill switch (Settings). Off -> 404, feature genuinely gone.
 //  - throttle   : each real request will be a full generation on one GPU, so the edge

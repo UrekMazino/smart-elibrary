@@ -98,6 +98,18 @@
 					<a class="cmn-toggle-switch cmn-toggle-switch__htx open_close" href="#0"><span>Menu mobile</span></a>
 					<div class="main-menu">
 						<ul>
+							{{-- Optional breadcrumb before the bell / account menu (desktop only), e.g. the search
+							     page's "Home › Search Results". Pages without the section keep the header as is. --}}
+							@hasSection('header_breadcrumb')
+							<li class="hdr-crumb">@yield('header_breadcrumb')</li>
+							<style>
+								.main-menu > ul > li.hdr-crumb { vertical-align: top; padding: 6px 16px 17px 8px; margin-right: 8px; border-right: 1px solid #e3e8eb; font-size: 14px; color: #6b7680; }
+								.main-menu > ul > li.hdr-crumb a { display: inline; padding: 0; color: #00756b; font-weight: 500; }
+								.main-menu > ul > li.hdr-crumb a:hover { color: #e74e84; background: none; text-decoration: underline; }
+								.main-menu > ul > li.hdr-crumb [aria-hidden] { margin: 0 6px; }
+								@media (max-width: 991px) { .main-menu > ul > li.hdr-crumb { display: none !important; } }
+							</style>
+							@endif
 							@auth
 							@if(Auth::user()->usertype === 'Patron')
 							<li class="nfy-bell-li" style="position:relative; list-style:none;">
