@@ -8,10 +8,5 @@
         "role_id": 12,
         "model_type": "App\\Models\\User",
         "model_id": 13
-    },
-    {
-        "role_id": 17,
-        "model_type": "App\\Models\\User",
-        "model_id": 14
     }
 ]
