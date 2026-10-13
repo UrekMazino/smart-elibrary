@@ -1094,10 +1094,21 @@ function getHighestRated($limit = 10)
 }
 
 /**
+ * Whether the signed-in patron has saved this record (always false for guests).
+ * The homepage covers come from shared caches, so their star is filled in at render
+ * time; the patron's saved ids are looked up once per request.
+ */
+function isSavedRecord($catalogId): bool
+{
+	$saved = once(fn () => array_flip(App\Models\SavedRecord::idsFor(auth()->id())));
+	return isset($saved[(int) $catalogId]);
+}
+
+/**
  * Category shelves for the home-page shelf browser: one shelf per material type that
  * actually has published records (empty types are skipped, most-populated first).
  * Thumbnails only. Each shelf:
- *   ['key' => ..., 'label' => ..., 'items' => [ ['thumb','url','title'], ... ]].
+ *   ['key' => ..., 'label' => ..., 'items' => [ ['catalog_id','thumb','url','title'], ... ]].
  *
  * Every shelf is catalog-driven, so each item links to its record.
  */
@@ -1124,6 +1135,7 @@ function getShelves($limit = 45)
 
         $items = $rows->map(function ($r) {
             return [
+                'catalog_id' => $r->catalog_id,
                 'thumb' => getThumbnailLink($r->catalog_id),
                 'url'   => recordUrl($r),
                 'title' => $r->title_statement,

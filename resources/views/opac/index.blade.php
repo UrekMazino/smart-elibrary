@@ -31,6 +31,12 @@
 	margin-top: 14px; font-size: 13.5px; color: rgba(255,255,255,.92);
 	text-shadow: 0 1px 2px rgba(0,0,0,.25); max-width: 520px; margin-left: auto; margin-right: auto;
 }
+/* Guests: one quiet line under the search on what a free account adds (Register / log in). */
+.home-join { margin: 16px auto 0; max-width: 640px; font-size: 13.5px; line-height: 1.5; color: rgba(255,255,255,.92); text-shadow: 0 1px 2px rgba(0,0,0,.25); }
+.home-join svg { vertical-align: -2px; margin-right: 4px; }
+.home-join a { color: #fff; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+.home-join a:hover { text-decoration-thickness: 2px; color: #fff; }
+.home-join a:focus-visible { outline: 2px solid #fff; outline-offset: 2px; border-radius: 2px; }
 /* AI mode restyles the submit button so the mode is unmistakable */
 #custom-search-input.is-ai .btn_search { background-color: #00796b; }
 
@@ -86,8 +92,14 @@
 .home-tool .n { background: rgba(255,255,255,.25); border-radius: 999px; padding: 0 7px; font-size: 11.5px; font-variant-numeric: tabular-nums; }
 .home-tool:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 .home-tool[hidden] { display: none; }
+/* Opens by growing from 0 to its height (and fading in), so the page below slides instead of jumping.
+   Clipped only while it moves; once open, the card's shadow shows. */
+.home-adv-wrap { height: 0; overflow: hidden; opacity: 0; transition: height .32s cubic-bezier(.2, .7, .2, 1), opacity .22s ease; }
+.home-adv-wrap.is-open { opacity: 1; }
+.home-adv-wrap.is-settled { overflow: visible; }
+.home-adv-wrap[hidden] { display: none; }
+@media (prefers-reduced-motion: reduce) { .home-adv-wrap { transition: none; } }
 .home-adv { margin-top: 12px; background: #fff; color: #1d2433; text-align: left; text-shadow: none; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,.25); padding: 14px 16px; }
-.home-adv[hidden] { display: none; }
 .home-adv-head { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
 .home-adv-help { font-size: 12.5px; color: #5d6973; margin-bottom: 10px; }
 .home-adv-rows { display: grid; gap: 8px; }
@@ -135,8 +147,8 @@
 				<p>
 					<!-- Ridiculus sociosqu cursus neque cursus curae ante scelerisque vehicula. -->
 				</p>
+				{{-- A GET search: no @csrf, or the session token would land in every search address. --}}
 				<form method="get" action="{{ url('/results') }}" id="frm">
-					@csrf
 					<input type="hidden" name="page" value="1">
 					<input type="hidden" name="series_statement_id" value="0">
 					<input type="hidden" name="layout" value="grid">
@@ -179,11 +191,13 @@
 							@auth
 								<a class="home-tool" href="{{ url('/results') }}?saved=1">
 									<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z"/></svg>
-									Saved <span class="n">{{ \App\Models\SavedRecord::where('user_id', auth()->id())->count() }}</span>
+									Saved <span class="n" id="home-saved-n">{{ \App\Models\SavedRecord::where('user_id', auth()->id())->count() }}</span>
 								</a>
 							@endauth
 						</div>
-						<div class="home-adv" id="home-adv" hidden>
+						{{-- The wrapper animates open / closed; the card inside keeps its own look. --}}
+						<div class="home-adv-wrap" id="home-adv" hidden>
+						<div class="home-adv">
 							<div class="home-adv-head">Advanced search</div>
 							<div class="home-adv-help">Each row narrows or widens the results. Rows are combined from top to bottom, together with the words and types above.</div>
 							<div class="home-adv-rows" id="home-adv-rows">
@@ -194,6 +208,7 @@
 								<button type="button" class="add" id="home-adv-add">+ Add a row</button>
 								<button type="submit" class="go">Search</button>
 							</div>
+						</div>
 						</div>
 						<template id="home-adv-row-tpl">@include('opac.partials.search-adv-row', ['i' => 999, 'row' => ['join' => 'AND', 'field' => 'all', 'op' => 'contains', 'value' => '']])</template>
 
@@ -222,6 +237,15 @@
 							Ask a question in your own words &mdash; answers come from the library&rsquo;s
 							collection, with sources.
 						</div>
+
+						{{-- Guests: what a free account adds, with the way in. Signed-in patrons see their Saved pill instead. --}}
+						@guest
+						<p class="home-join">
+							<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z"/></svg>
+							{{ settingEnabled('ai_mode_enabled', false) ? 'Save materials, reserve copies and ask the AI librarian' : 'Save materials and reserve copies' }} with a free account.
+							<a href="{{ route('register') }}">Register</a> or <a href="{{ route('login') }}">log in</a>
+						</p>
+						@endguest
 
 					</div>
 				</form>
@@ -262,6 +286,29 @@
 			.cc-cover { position:relative; display:flex; align-items:flex-end; justify-content:center; height:178px; }
 			.cc-cover img { max-height:178px; max-width:100%; width:auto; border-radius:3px; box-shadow:0 2px 6px rgba(0,0,0,.22); transition:transform .14s ease, box-shadow .14s ease; }
 			.cc-cover:hover img { transform:translateY(-5px); box-shadow:0 10px 18px rgba(0,0,0,.28); }
+			/* Record covers: the figure hugs the image so the save star sits on its corner, and the
+			   whole figure (image + star) lifts on hover. News covers keep the plain link above. */
+			.cv-fig { position:relative; display:block; line-height:0; transition:transform .14s ease; }
+			.cv-link { display:block; }
+			.cv-fig img { max-width:132px; }
+			.cc-cover:hover .cv-fig { transform:translateY(-5px); }
+			.cc-cover:hover .cv-fig img { transform:none; }
+
+			/* Save star (opac.partials.save-star): upper-right corner of a record cover. An unsaved one
+			   shows on hover or keyboard focus (always on touch screens); a saved one (yellow) stays shown. */
+			.save-star { position:absolute; top:6px; right:6px; z-index:4; width:28px; height:28px; padding:0; border:0; border-radius:50%;
+				display:flex; align-items:center; justify-content:center; line-height:0; cursor:pointer;
+				background:rgba(255,255,255,.94); box-shadow:0 1px 4px rgba(0,0,0,.35);
+				opacity:0; transform:scale(.85); transition:opacity .16s ease, transform .16s ease; }
+			.save-star svg { width:16px; height:16px; fill:none; stroke:#4b5563; stroke-width:1.4; stroke-linejoin:round; transition:fill .16s ease, stroke .16s ease; }
+			.save-star:hover svg { stroke:#111827; }
+			.save-star.is-saved svg { fill:#ffc107; stroke:#d69e00; }
+			.cc-item:hover .save-star, .col-book:hover .save-star, .save-star:focus-visible, .save-star.is-saved { opacity:1; transform:none; }
+			.save-star:focus-visible { outline:2px solid #0a5f56; outline-offset:2px; }
+			.save-star.pop svg { animation:save-pop .32s ease; }
+			@keyframes save-pop { 50% { transform:scale(1.35); } }
+			@media (hover:none) { .save-star { opacity:1; transform:none; } }
+			@media (prefers-reduced-motion:reduce) { .save-star, .save-star svg { transition:none; } .save-star.pop svg { animation:none; } }
 			.cc-cap { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; margin-top:7px; font-size:12.5px; line-height:1.3; color:#0176d3; text-decoration:none; font-weight:600; }
 			.cc-cap:hover { text-decoration:underline; }
 			.cc-arrow { position:absolute; top:44%; transform:translateY(-50%); width:42px; height:42px; border-radius:50%; border:1px solid #d0d7de; background:#fff; color:#3f4079; font-size:22px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,.16); z-index:3; }
@@ -289,9 +336,14 @@
 				<div class="cc-track">
 					@foreach(getLatestMaterial() as $results)
 						<div class="cc-item">
-							<a class="cc-cover" href="{{ recordUrl($results) }}">
-								<img loading="lazy" src="{{ getThumbnailLink($results->catalog_id) }}" alt="{{ $results->title_statement }}">
-							</a>
+							<div class="cc-cover">
+								<span class="cv-fig">
+									<a class="cv-link" href="{{ recordUrl($results) }}">
+										<img loading="lazy" src="{{ getThumbnailLink($results->catalog_id) }}" alt="{{ $results->title_statement }}">
+									</a>
+									@include('opac.partials.save-star', ['id' => $results->catalog_id, 'title' => $results->title_statement])
+								</span>
+							</div>
 							<a class="cc-cap" href="{{ recordUrl($results) }}" title="{{ $results->title_statement }}">{{ $results->title_statement }}</a>
 						</div>
 					@endforeach
@@ -616,18 +668,65 @@
 // Advanced search under the home search box: rows of field + match + words (opac/partials/search-adv-row),
 // sent with the search words and types to /results. Keyword search only, so hidden in AI mode.
 (function () {
-	var form = document.getElementById('frm'), panel = document.getElementById('home-adv');
+	var form = document.getElementById('frm'), panel = document.getElementById('home-adv');   // the animated wrapper
 	var toggle = document.getElementById('home-adv-toggle'), rows = document.getElementById('home-adv-rows');
 	var mode = document.getElementById('search-mode');
 	if (!form || !panel || !toggle) return;
-	var seq = 100;
+	var seq = 100, isOpen = false, timer = null;
+	var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-	function setOpen(open) {
-		panel.hidden = !open;
-		toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-		if (open) { var first = rows.querySelector('input[type="text"]'); if (first) first.focus(); }
+	// The hero centres its content vertically (a table cell), so a growing panel would push the logo and
+	// search box UP by half its height. While the panel is open, pin the content where it stands and let
+	// the panel grow downward only; release it once the panel is closed again.
+	var cell = form.closest('.content');
+	function pin() {
+		if (!cell || cell.dataset.pinned || getComputedStyle(cell).display !== 'table-cell') return;
+		var first = cell.firstElementChild;
+		var top = first.getBoundingClientRect().top - cell.getBoundingClientRect().top;
+		var margin = parseFloat(getComputedStyle(first).marginTop) || 0;
+		cell.style.verticalAlign = 'top';
+		cell.style.paddingTop = Math.max(0, top - margin) + 'px';
+		cell.dataset.pinned = '1';
 	}
-	toggle.addEventListener('click', function () { setOpen(panel.hidden); });
+	function unpin() {
+		if (!cell || !cell.dataset.pinned) return;
+		cell.style.verticalAlign = ''; cell.style.paddingTop = ''; delete cell.dataset.pinned;
+	}
+
+	function afterMove(done) {
+		clearTimeout(timer);
+		if (reduceMotion) { done(); return; }
+		var finished = false;
+		var finish = function (e) { if ((e && e.propertyName !== 'height') || finished) return; finished = true; panel.removeEventListener('transitionend', finish); done(); };
+		panel.addEventListener('transitionend', finish);
+		timer = setTimeout(finish, 450);   // in case transitionend never fires
+	}
+	function setOpen(open) {
+		if (open === isOpen) return;
+		isOpen = open;
+		toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+		if (open) {
+			pin();
+			var from = panel.hidden ? 0 : panel.getBoundingClientRect().height;   // reopened mid-close: carry on from there
+			panel.hidden = false;
+			panel.classList.remove('is-settled');
+			panel.style.height = from + 'px';
+			void panel.offsetHeight;
+			panel.classList.add('is-open');
+			panel.style.height = panel.scrollHeight + 'px';
+			var first = rows.querySelector('input[type="text"]');
+			if (first) first.focus({ preventScroll: true });
+			afterMove(function () { if (!isOpen) return; panel.style.height = 'auto'; panel.classList.add('is-settled'); });
+		} else {
+			panel.classList.remove('is-settled');
+			panel.style.height = panel.getBoundingClientRect().height + 'px';  // from its current height...
+			void panel.offsetHeight;
+			panel.classList.remove('is-open');
+			panel.style.height = '0px';                      // ...down to 0
+			afterMove(function () { if (isOpen) return; panel.hidden = true; unpin(); });
+		}
+	}
+	toggle.addEventListener('click', function () { setOpen(!isOpen); });
 
 	document.getElementById('home-adv-add').addEventListener('click', function () {
 		if (rows.children.length >= 6) return;
@@ -655,11 +754,92 @@
 	form.addEventListener('submit', function () {
 		rows.querySelectorAll('.sr-adv-row').forEach(function (row) {
 			var text = row.querySelector('input[type="text"]');
-			var skip = panel.hidden || !text.value.trim();
+			var skip = !isOpen || !text.value.trim();
 			row.querySelectorAll('input, select').forEach(function (el) { el.disabled = skip; });
 		});
 		// Re-enable after the navigation starts, so Back shows the rows as they were.
 		setTimeout(function () { rows.querySelectorAll('input, select').forEach(function (el) { el.disabled = false; }); }, 0);
+	});
+})();
+</script>
+
+{{-- Save stars on the homepage covers (shelves, Top 10 lists, Recent Uploads). The same record can
+     appear in several places (and in the shelf clones), so every star for it changes together. --}}
+<script type="text/javascript">
+(function () {
+	var SAVE = @json(url('/search/saved'));
+	var isGuest = !@json(auth()->check());
+	var tokenMeta = document.querySelector('meta[name="csrf_token"]');
+	var busy = {};
+
+	function paint(id, on) {
+		document.querySelectorAll('.save-star[data-home-save="' + id + '"]').forEach(function (b) {
+			b.classList.toggle('is-saved', on);
+			b.setAttribute('aria-pressed', on ? 'true' : 'false');
+			b.title = on ? 'Saved (click to remove)' : 'Save to your list';
+		});
+	}
+	function toast(text, icon) {
+		if (!window.Swal) return;
+		Swal.fire({ toast: true, position: 'bottom', icon: icon || 'success', title: text, showConfirmButton: false, timer: 1800, timerProgressBar: false });
+	}
+	function promptLogin() {
+		if (!window.Swal) { window.location = "{{ url('/login') }}"; return; }
+		Swal.fire({
+			icon: 'info',
+			title: 'Sign in to save materials',
+			text: 'Saving materials to your list is available to registered members. Log in or create a free account to continue.',
+			showDenyButton: true,
+			showCancelButton: true,
+			confirmButtonText: 'Log in',
+			denyButtonText: 'Register',
+			cancelButtonText: 'Not now',
+			reverseButtons: true
+		}).then(function (r) {
+			if (r.isConfirmed) window.location = "{{ url('/login') }}";
+			else if (r.isDenied) window.location = "{{ url('/register') }}";
+		});
+	}
+
+	document.addEventListener('click', function (e) {
+		var star = e.target.closest('.save-star[data-home-save]');
+		if (!star) return;
+		e.preventDefault();
+		if (isGuest) { promptLogin(); return; }
+		var id = star.getAttribute('data-home-save');
+		if (busy[id]) return;
+		busy[id] = true;
+
+		var was = star.classList.contains('is-saved');
+		paint(id, !was);   // show it straight away; undone below if the request fails
+		fetch(SAVE, {
+			method: 'POST',
+			headers: { 'X-CSRF-TOKEN': tokenMeta ? tokenMeta.content : '', 'X-Requested-With': 'XMLHttpRequest',
+				'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' },
+			body: 'catalog_id=' + encodeURIComponent(id)
+		})
+			.then(function (r) {
+				if (r.status === 401 || r.status === 419) throw new Error('auth');
+				if (!r.ok) throw new Error();
+				return r.json();
+			})
+			.then(function (data) {
+				paint(id, data.saved);
+				if (data.saved) {
+					document.querySelectorAll('.save-star[data-home-save="' + id + '"]').forEach(function (b) {
+						b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop');
+					});
+				}
+				var n = document.getElementById('home-saved-n');
+				if (n) n.textContent = data.count;
+				toast(data.saved ? 'Saved to your list' : 'Removed from your list');
+			})
+			.catch(function (err) {
+				paint(id, was);
+				if (err.message === 'auth') promptLogin();   // signed out in another tab, or the page sat too long
+				else toast('That didn\u2019t save. Please try again.', 'error');
+			})
+			.finally(function () { busy[id] = false; });
 	});
 })();
 </script>
