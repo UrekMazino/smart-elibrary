@@ -198,8 +198,13 @@
     .sr-sheet-foot .sr-btn { flex: 1; justify-content: center; padding: 11px; font-size: 14px; }
 }
 @media (max-width: 767.98px) {
-    .sr-adv-row { grid-template-columns: 1fr 1fr; }
-    .sr-adv-row input[type="text"] { grid-column: 1 / 2; }
+    /* [join] [field] [x] / [match] [words] */
+    .sr-adv-row { grid-template-columns: 1fr 1fr 36px; }
+    .sr-adv-row > .sr-adv-where, .sr-adv-row > [name$="[join]"] { order: 1; }
+    .sr-adv-row > [name$="[field]"] { order: 2; }
+    .sr-adv-row > .sr-icon-btn { order: 3; }
+    .sr-adv-row > [name$="[op]"] { order: 4; }
+    .sr-adv-row > [name$="[value]"] { order: 5; grid-column: span 2; }
     .sr-item { grid-template-columns: 56px minmax(0, 1fr); gap: 12px; }
     .sr-acts { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; }
     .sr-count { flex-basis: 100%; }

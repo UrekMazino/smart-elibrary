@@ -73,6 +73,45 @@
 .section-nav a::after { content: attr(data-label); position: absolute; right: 24px; top: 50%; transform: translateY(-50%); white-space: nowrap; background: #a83e63; color: #fff; font-size: 12px; font-weight: 600; letter-spacing: .3px; padding: 4px 10px; border-radius: 6px; box-shadow: 0 3px 8px rgba(0,0,0,.2); opacity: 0; pointer-events: none; transition: opacity .18s ease; }
 .section-nav a:hover::after, .section-nav a.active::after { opacity: 1; }
 @media (max-width: 900px) { .section-nav { display: none; } }
+
+/* ---- Advanced search + Saved, under the search box (same pills as the mode toggle) ---- */
+.home-tools { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.home-tool {
+	display: inline-flex; align-items: center; gap: 6px; cursor: pointer; text-decoration: none;
+	border: 1px solid rgba(255,255,255,.45); background: rgba(255,255,255,.14); color: #fff;
+	border-radius: 30px; padding: 6px 14px; font-size: 13px; font-weight: 600; line-height: 1.2; backdrop-filter: blur(3px);
+}
+.home-tool:hover { background: rgba(255,255,255,.26); color: #fff; }
+.home-tool[aria-expanded="true"] { background: #fff; color: #00796b; border-color: #fff; }
+.home-tool .n { background: rgba(255,255,255,.25); border-radius: 999px; padding: 0 7px; font-size: 11.5px; font-variant-numeric: tabular-nums; }
+.home-tool:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.home-tool[hidden] { display: none; }
+.home-adv { margin-top: 12px; background: #fff; color: #1d2433; text-align: left; text-shadow: none; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,.25); padding: 14px 16px; }
+.home-adv[hidden] { display: none; }
+.home-adv-head { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+.home-adv-help { font-size: 12.5px; color: #5d6973; margin-bottom: 10px; }
+.home-adv-rows { display: grid; gap: 8px; }
+.home-adv .sr-adv-row { display: grid; grid-template-columns: 78px 132px 150px minmax(0, 1fr) 34px; gap: 8px; align-items: center; }
+.home-adv .sr-adv-row select, .home-adv .sr-adv-row input[type="text"] {
+	width: 100%; min-width: 0; height: 36px; border: 1px solid #dfe5e8; border-radius: 8px; padding: 0 9px; font-size: 13px; color: #1d2433; background: #fff;
+}
+.home-adv .sr-adv-where { font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: #5d6973; text-align: center; }
+.home-adv .sr-icon-btn { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid #dfe5e8; background: #fff; color: #5d6973; border-radius: 8px; padding: 0; }
+.home-adv .sr-icon-btn:hover { color: #b8345f; border-color: #b8345f; }
+.home-adv-actions { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+.home-adv-actions .add { border: 0; background: none; color: #00756b; font-weight: 600; font-size: 13px; padding: 0; }
+.home-adv-actions .add:hover { text-decoration: underline; }
+.home-adv-actions .go { margin-left: auto; border: 0; background: #00756b; color: #fff; border-radius: 8px; padding: 8px 18px; font-weight: 600; font-size: 13.5px; }
+.home-adv-actions .go:hover { background: #005f57; }
+@media (max-width: 767px) {
+	/* Phones: [join] [field] [x] / [match] [words] */
+	.home-adv .sr-adv-row { grid-template-columns: 1fr 1fr 34px; }
+	.home-adv .sr-adv-row > .sr-adv-where, .home-adv .sr-adv-row > [name$="[join]"] { order: 1; }
+	.home-adv .sr-adv-row > [name$="[field]"] { order: 2; }
+	.home-adv .sr-adv-row > .sr-icon-btn { order: 3; }
+	.home-adv .sr-adv-row > [name$="[op]"] { order: 4; }
+	.home-adv .sr-adv-row > [name$="[value]"] { order: 5; grid-column: span 2; }
+}
 </style>
 @endsection
 
@@ -129,6 +168,34 @@
 							<a href="#" class="instant-seeall"></a>
 						</div>
 						</div>
+
+						{{-- Advanced search (keyword search only, hidden in AI mode) and the patron's Saved list,
+						     as on the search results page. The rows go to /results with the search words and types. --}}
+						<div class="home-tools">
+							<button type="button" class="home-tool" id="home-adv-toggle" aria-expanded="false" aria-controls="home-adv">
+								<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" d="M2 4h12M4 8h8M6 12h4"/></svg>
+								Advanced search
+							</button>
+							@auth
+								<a class="home-tool" href="{{ url('/results') }}?saved=1">
+									<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z"/></svg>
+									Saved <span class="n">{{ \App\Models\SavedRecord::where('user_id', auth()->id())->count() }}</span>
+								</a>
+							@endauth
+						</div>
+						<div class="home-adv" id="home-adv" hidden>
+							<div class="home-adv-head">Advanced search</div>
+							<div class="home-adv-help">Each row narrows or widens the results. Rows are combined from top to bottom, together with the words and types above.</div>
+							<div class="home-adv-rows" id="home-adv-rows">
+								@include('opac.partials.search-adv-row', ['i' => 0, 'row' => ['join' => 'AND', 'field' => 'title', 'op' => 'contains', 'value' => '']])
+								@include('opac.partials.search-adv-row', ['i' => 1, 'row' => ['join' => 'AND', 'field' => 'subject', 'op' => 'contains', 'value' => '']])
+							</div>
+							<div class="home-adv-actions">
+								<button type="button" class="add" id="home-adv-add">+ Add a row</button>
+								<button type="submit" class="go">Search</button>
+							</div>
+						</div>
+						<template id="home-adv-row-tpl">@include('opac.partials.search-adv-row', ['i' => 999, 'row' => ['join' => 'AND', 'field' => 'all', 'op' => 'contains', 'value' => '']])</template>
 
 						{{-- Material-type filters only apply to keyword search; hidden in AI mode. --}}
 						<div id="type-filters">
@@ -544,5 +611,57 @@
 })();
 </script>
 @endif
+
+<script type="text/javascript">
+// Advanced search under the home search box: rows of field + match + words (opac/partials/search-adv-row),
+// sent with the search words and types to /results. Keyword search only, so hidden in AI mode.
+(function () {
+	var form = document.getElementById('frm'), panel = document.getElementById('home-adv');
+	var toggle = document.getElementById('home-adv-toggle'), rows = document.getElementById('home-adv-rows');
+	var mode = document.getElementById('search-mode');
+	if (!form || !panel || !toggle) return;
+	var seq = 100;
+
+	function setOpen(open) {
+		panel.hidden = !open;
+		toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+		if (open) { var first = rows.querySelector('input[type="text"]'); if (first) first.focus(); }
+	}
+	toggle.addEventListener('click', function () { setOpen(panel.hidden); });
+
+	document.getElementById('home-adv-add').addEventListener('click', function () {
+		if (rows.children.length >= 6) return;
+		var html = document.getElementById('home-adv-row-tpl').innerHTML.replace(/999/g, String(++seq));
+		rows.insertAdjacentHTML('beforeend', html);
+		rows.lastElementChild.querySelector('input[type="text"]').focus();
+	});
+	rows.addEventListener('click', function (e) {
+		var rm = e.target.closest('[data-adv-remove]');
+		if (!rm) return;
+		var row = rm.closest('.sr-adv-row');
+		if (rows.children.length > 1) row.remove(); else row.querySelector('input[type="text"]').value = '';
+	});
+
+	// AI mode is plain-language questions: no rows. Follow the mode toggle (and its remembered state).
+	function syncMode() {
+		var ai = mode && mode.value === 'ai';
+		toggle.hidden = ai;
+		if (ai) setOpen(false);
+	}
+	document.querySelectorAll('.mode-btn').forEach(function (b) { b.addEventListener('click', function () { setTimeout(syncMode, 0); }); });
+	syncMode();
+
+	// Send only the rows that have words, and none while the panel is closed.
+	form.addEventListener('submit', function () {
+		rows.querySelectorAll('.sr-adv-row').forEach(function (row) {
+			var text = row.querySelector('input[type="text"]');
+			var skip = panel.hidden || !text.value.trim();
+			row.querySelectorAll('input, select').forEach(function (el) { el.disabled = skip; });
+		});
+		// Re-enable after the navigation starts, so Back shows the rows as they were.
+		setTimeout(function () { rows.querySelectorAll('input, select').forEach(function (el) { el.disabled = false; }); }, 0);
+	});
+})();
+</script>
 
 @endsection
