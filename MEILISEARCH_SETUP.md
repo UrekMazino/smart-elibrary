@@ -12,7 +12,7 @@ the eLibrary's MySQL directly. Run one Meilisearch, for the eLibrary.
 | Machine | How | Start |
 |---|---|---|
 | Production / Windows | Docker Desktop, `docker-compose.yml` (v1.12, `127.0.0.1:7700`, master key from `.env` `MEILI_MASTER_KEY`, persistent volume, `restart: unless-stopped`) | `docker compose up -d` |
-| Linux without Docker (dev laptop) | the standalone program, same version: `meilisearch-linux-amd64` from the [v1.12.8 release](https://github.com/meilisearch/meilisearch/releases/tag/v1.12.8), kept in `~/meilisearch` with a `meili.sh` script (reads `MEILI_MASTER_KEY` from the project's `.env`; data in `~/meilisearch/data.ms`) | `~/meilisearch/meili.sh start` (`status`, `stop`) |
+| Linux without Docker (dev laptop) | the standalone program, same version: `meilisearch-linux-amd64` from the [v1.12.8 release](https://github.com/meilisearch/meilisearch/releases/tag/v1.12.8), kept in `~/meilisearch` with a `meili.sh` script (reads `MEILI_MASTER_KEY` from the project's `.env`; data in `~/meilisearch/data.ms`), run as a systemd user service (`~/.config/systemd/user/meilisearch.service`: `ExecStart=%h/meilisearch/meili.sh run`, `Restart=on-failure`, `WantedBy=default.target`) | starts at login; `systemctl --user enable --now meilisearch` once; `meili.sh status` / `restart` / `stop` |
 
 Health check: `curl http://127.0.0.1:7700/health` → `{"status":"available"}`.
 

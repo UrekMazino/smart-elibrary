@@ -94,6 +94,16 @@ Route::controller(ConfigurationController::class, 'admin')->group(function () {
     
 });
 
+// Administration → AI Sync Monitor — audit trail of catalog changes + AI-index sync state. The
+// Configuration module plus its own permission (Roles matrix); its per-row re-sync has its own
+// route here, so the page needs no Cataloging access.
+Route::controller(CatalogingController::class)->middleware(['can:access.configuration', 'can:access.ai.sync.monitor'])->group(function () {
+    Route::get('/admin/ai-sync-monitor', 'aiSyncMonitor')->name('ai-sync-monitor');
+    Route::get('/admin/ai-sync-monitor/json', 'aiSyncMonitorJson')->name('ai-sync-monitor-json');
+    Route::post('/admin/ai-sync-monitor/run', 'runSyncNow')->name('ai-sync-monitor-run');
+    Route::post('/admin/ai-sync-monitor/reindex/{id}', 'reindexRecord')->whereNumber('id')->name('ai-sync-monitor-reindex');
+});
+
 // Cataloging: the module needs access.cataloging; each action also needs its own permission
 // (the same ones that show/hide the buttons), so hiding a button is never the only guard.
 Route::controller(CatalogingController::class, 'admin')->middleware('can:access.cataloging')->group(function () {
@@ -107,10 +117,6 @@ Route::controller(CatalogingController::class, 'admin')->middleware('can:access.
     // Manual RAG re-index (human override for drift): single record + bulk.
     Route::post('/admin/reindex-record/{id}', 'reindexRecord')->name('reindex-record');
     Route::post('/admin/reindex-records', 'reindexRecords')->name('reindex-records');
-    // AI Sync Monitor — audit trail of catalog changes + AI-index sync state.
-    Route::get('/admin/ai-sync-monitor', 'aiSyncMonitor')->name('ai-sync-monitor');
-    Route::get('/admin/ai-sync-monitor/json', 'aiSyncMonitorJson')->name('ai-sync-monitor-json');
-    Route::post('/admin/ai-sync-monitor/run', 'runSyncNow')->name('ai-sync-monitor-run');
     Route::post('/admin/view-batch', 'viewBatch')->middleware('can:view.catalog.importlist');
     Route::get('/admin/batch-records/{id}', 'viewBatchRecords')->middleware('can:view.catalog.importlist');
     Route::get('/admin/batch-records-json/{id}', 'viewBatchRecordsJson')->middleware('can:view.catalog.importlist');

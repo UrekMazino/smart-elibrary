@@ -75,7 +75,8 @@ Route::controller(DownloadController::class)->group(function () {
 
 //SETTINGS
 use App\Http\Controllers\SettingController;
-Route::controller(SettingController::class)->middleware('can:access.configuration')->group(function () {
+// Administration → Settings: the Configuration module plus its own permission (Roles matrix).
+Route::controller(SettingController::class)->middleware(['can:access.configuration', 'can:access.settings'])->group(function () {
     Route::get('/admin/settings', 'index');
     Route::post('/admin/settings', 'update');
     // Drift scan (read-only: compares the index against the DB and reports the drift).

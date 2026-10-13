@@ -82,5 +82,33 @@
         "backup": null,
         "patrontypes_id": 0,
         "library_code": "2026-654733AMD54"
+    },
+    {
+        "id": 14,
+        "username": "kryztalhyn",
+        "name": "Kryztalhyn Mae Dilag",
+        "email": "sysadmin@test.com",
+        "contactnum": "09876543211",
+        "usertype": "Administrator",
+        "is_banned": 0,
+        "is_blocked": 0,
+        "birthdate": "10/01/1990",
+        "location": null,
+        "region_id": "13",
+        "position1": null,
+        "position2": null,
+        "position3": null,
+        "position4": null,
+        "sex": "Female",
+        "affiliation": null,
+        "email_verified_at": null,
+        "password": "$2y$10$wKOsedJnJNowu0/JVPPLe.ofZKJjr7xAx8epfv/vu6vpyvFsY4WL.",
+        "remember_token": null,
+        "created_at": "2026-10-13 09:32:52",
+        "updated_at": "2026-10-13 09:38:14",
+        "deleted_at": null,
+        "backup": null,
+        "patrontypes_id": 3,
+        "library_code": "2026-798654XDUWH"
     }
 ]
