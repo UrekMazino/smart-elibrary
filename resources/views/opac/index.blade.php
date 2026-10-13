@@ -34,6 +34,8 @@
 /* Guests: one quiet line under the search on what a free account adds (Register / log in). */
 .home-join { margin: 16px auto 0; max-width: 640px; font-size: 13.5px; line-height: 1.5; color: rgba(255,255,255,.92); text-shadow: 0 1px 2px rgba(0,0,0,.25); }
 .home-join svg { vertical-align: -2px; margin-right: 4px; }
+/* "Register or log in" never splits ("log" / "in" on separate lines): it wraps as one unit. */
+.home-join-cta { white-space: nowrap; }
 .home-join a { color: #fff; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
 .home-join a:hover { text-decoration-thickness: 2px; color: #fff; }
 .home-join a:focus-visible { outline: 2px solid #fff; outline-offset: 2px; border-radius: 2px; }
@@ -243,7 +245,7 @@
 						<p class="home-join">
 							<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z"/></svg>
 							{{ settingEnabled('ai_mode_enabled', false) ? 'Save materials, reserve copies and ask the AI librarian' : 'Save materials and reserve copies' }} with a free account.
-							<a href="{{ route('register') }}">Register</a> or <a href="{{ route('login') }}">log in</a>
+							<span class="home-join-cta"><a href="{{ route('register') }}">Register</a> or <a href="{{ route('login') }}">log in</a></span>
 						</p>
 						@endguest
 
