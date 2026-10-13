@@ -10,6 +10,7 @@ use App\Models\ViewCatalog;
 use App\Services\AiSearchService;
 use App\Services\CatalogSearch;
 use App\Services\CatalogSearchParams;
+use Illuminate\Support\Str;
 
 class ResultController extends Controller
 {
@@ -98,6 +99,34 @@ class ResultController extends Controller
         return response()->json([
             'title'     => $record->title_statement,
             'citations' => buildCitations($record),
+        ]);
+    }
+
+    /**
+     * Quick view button: a record's main details in a dialog over the results, so patrons can check
+     * a record without leaving the list. Returns an HTML fragment (opac.partials.quick-view).
+     */
+    public function quickView($catalogId)
+    {
+        $record = ViewCatalog::where('catalog_id', (int) $catalogId)->where('is_published', 1)->whereNull('deleted_at')->first();
+        abort_unless($record, 404);
+
+        $year      = $record->pub_year ? trim($record->pub_year, '[]. ') : '';
+        $publisher = seoTrimIsbd($record->publisher ?? '');
+        $physical  = collect(getFullRecordFields($record->catalog_id))->firstWhere('label', 'Physical Description');
+
+        return view('opac.partials.quick-view', [
+            'r'         => $record,
+            'url'       => recordUrl($record),
+            'authors'   => $record->authorList(),
+            'published' => implode(', ', array_filter([$publisher, $year])),
+            'physical'  => $physical['value'] ?? '',
+            'subjects'  => array_values($record->subjects ?? []),
+            'summary'   => Str::limit(trim((string) $record->summary), 600),
+            'read'      => getReadUrl($record->catalog_id),
+            'available' => checkStocks($record->catalog_id),
+            'rating'    => starRatingAve($record->catalog_id),
+            'saved'     => isSavedRecord($record->catalog_id),
         ]);
     }
 

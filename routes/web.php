@@ -28,6 +28,7 @@ Route::get('/results', [ResultController::class, 'index']);
 Route::get('/search/suggest', [ResultController::class, 'suggest']);   // instant-search JSON (OPAC overlay)
 Route::get('/search/facet', [ResultController::class, 'facetValues'])->middleware('throttle:60,1');            // "Find an author" box
 Route::get('/search/cite/{catalogId}', [ResultController::class, 'cite'])->whereNumber('catalogId');           // Cite button
+Route::get('/search/quick/{catalogId}', [ResultController::class, 'quickView'])->whereNumber('catalogId')->middleware('throttle:60,1'); // Quick view button
 Route::post('/search/saved', [ResultController::class, 'toggleSaved'])->middleware(['auth', 'throttle:60,1']); // Save button
 // AI mode answer (OPAC "Ask the Library").
 //  - ai.enabled : the admin kill switch (Settings). Off -> 404, feature genuinely gone.

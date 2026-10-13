@@ -290,6 +290,7 @@
                                 <button type="button" class="sr-act sr-act-main" data-read="{{ $read }}" data-id="{{ $h['catalog_id'] }}" data-title="{{ $h['title'] }}">Read</button>
                                 <button type="button" class="sr-act" data-download="{{ $h['catalog_id'] }}" title="Download the PDF (sign-in required)">Download</button>
                             @endif
+                            <button type="button" class="sr-act" data-quick="{{ $h['catalog_id'] }}" aria-haspopup="dialog" title="See the details without leaving the results">Quick view</button>
                             <button type="button" class="sr-act" data-cite="{{ $h['catalog_id'] }}">Cite</button>
                             @if($authed)
                                 <button type="button" class="sr-act" data-save="{{ $h['catalog_id'] }}" aria-pressed="{{ $saved ? 'true' : 'false' }}">{{ $saved ? 'Saved' : 'Save' }}</button>

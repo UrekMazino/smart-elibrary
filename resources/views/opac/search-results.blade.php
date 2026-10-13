@@ -1,7 +1,7 @@
 @extends('opac.layout.master')
 
 {{-- OPAC search results: field search with suggestions, filters with counts (type, year, subject,
-     author, publisher, full text), advanced rows, sort, list / grid, Cite and Save.
+     author, publisher, full text), advanced rows, sort, list / grid, Quick view, Cite and Save.
      Engine: App\Services\CatalogSearch (Meilisearch). The working area is
      opac/partials/search-results-main, which the script below swaps in place on every change. --}}
 
@@ -173,6 +173,23 @@
 .sr-cite h3 { display: flex; align-items: center; margin: 0 0 6px; font-size: 11.5px; text-transform: uppercase; letter-spacing: .7px; color: var(--sr-muted); font-weight: 600; }
 .sr-cite h3 .sr-act { margin-left: auto; text-transform: none; letter-spacing: 0; }
 .sr-cite p { margin: 0; padding-left: 1.6em; text-indent: -1.6em; font-size: 14.5px; line-height: 1.55; overflow-wrap: anywhere; }
+/* Quick view dialog (opac.partials.quick-view) */
+.sr-qv-cover { width: 72px; flex: none; border-radius: 4px; box-shadow: 0 2px 6px rgba(0,0,0,.18); }
+.sr-qv-head { flex: 1; min-width: 0; }
+.sr-qv-head h2 { margin: 0 0 8px; font-size: 17px; line-height: 1.35; font-weight: 600; overflow-wrap: anywhere; }
+.sr-qv-dl { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 8px 14px; margin: 6px 0 0; font-size: 13.5px; line-height: 1.5; }
+.sr-qv-dl dt { color: var(--sr-muted); font-weight: 500; }
+.sr-qv-dl dd { margin: 0; color: var(--sr-ink); overflow-wrap: anywhere; }
+.sr-qv-mono { font-family: var(--sr-mono); font-size: 12.5px; }
+.sr-qv-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.sr-qv-tags .sr-tag, .sr-qv-tags .sr-tag:hover { cursor: default; border-color: var(--sr-line); color: var(--sr-muted); }   /* labels here, not links */
+.sr-qv-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--sr-line); }
+.sr-qv-acts .sr-act { padding: 6px 14px; font-size: 13px; }
+@media (max-width: 575.98px) {
+    .sr-qv-cover { width: 56px; }
+    .sr-qv-dl { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+    .sr-qv-dl dd { margin-bottom: 8px; }
+}
 .sr-toast { position: fixed; z-index: 2100; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--sr-ink); color: #fff; border-radius: 10px; padding: 9px 16px; font-size: 13px; box-shadow: 0 8px 24px rgba(0,0,0,.25); max-width: calc(100vw - 32px); }
 
 /* Read overlay (PDF.js), as on the record page */
@@ -227,6 +244,9 @@
     <template id="sr-adv-row-tpl">@include('opac.partials.search-adv-row', ['i' => 999, 'row' => ['join' => 'AND', 'field' => 'all', 'op' => 'contains', 'value' => '']])</template>
     <div class="visually-hidden" id="sr-status" role="status" aria-live="polite"></div>
     <div class="sr-scrim" id="sr-scrim" hidden></div>
+    {{-- Moved to <body> on load: <main> is its own stacking layer (z-index 1), which kept the dialog
+         under the site header. The filter sheet keeps #sr-scrim, inside <main> with it. --}}
+    <div class="sr-scrim" id="sr-dialog-scrim" hidden></div>
     <div class="sr-dialog" id="sr-dialog" role="dialog" aria-modal="true" aria-labelledby="sr-dialog-title" hidden></div>
     <div class="sr-toast" id="sr-toast" role="status" hidden></div>
 </div>
@@ -255,6 +275,7 @@
     var SUGGEST = @json(url('/search/suggest'));
     var FACET   = @json(url('/search/facet'));
     var CITE    = @json(url('/search/cite'));
+    var QUICK   = @json(url('/search/quick'));
     var SAVE    = @json(url('/search/saved'));
     var LOGIN   = @json(route('login'));
     var CSRF    = @json(csrf_token());
@@ -433,7 +454,7 @@
     function closeSheet() {
         if (!document.body.classList.contains('sr-sheet-open')) return;
         document.body.classList.remove('sr-sheet-open');
-        if ($('sr-dialog').hidden) $('sr-scrim').hidden = true;
+        $('sr-scrim').hidden = true;
         var b = main.querySelector('[data-sheet-open]'); if (b) b.focus();
     }
     main.addEventListener('click', function (e) {
@@ -482,17 +503,18 @@
         load(RESULTS + '?' + qs.toString(), { scroll: true });
     });
 
-    /* ---------- Cite, Save, Read, Download ---------- */
+    /* ---------- Quick view, Cite, Save, Read, Download ---------- */
+    ['sr-dialog-scrim', 'sr-dialog', 'sr-toast'].forEach(function (id) { document.body.appendChild($(id)); });
     var lastFocus = null;
     function openDialog(html) {
-        lastFocus = document.activeElement;
         var d = $('sr-dialog');
-        d.innerHTML = html; d.hidden = false; $('sr-scrim').hidden = false;
+        if (d.hidden || !d.contains(document.activeElement)) lastFocus = document.activeElement;   // Cite from Quick view keeps the list button
+        d.innerHTML = html; d.hidden = false; $('sr-dialog-scrim').hidden = false;
         var c = d.querySelector('[data-dialog-close]'); if (c) c.focus();
     }
     function closeDialog() {
         $('sr-dialog').hidden = true;
-        if (!document.body.classList.contains('sr-sheet-open')) $('sr-scrim').hidden = true;
+        $('sr-dialog-scrim').hidden = true;
         if (lastFocus && document.contains(lastFocus)) lastFocus.focus();
     }
     var toastTimer = null;
@@ -506,7 +528,17 @@
     }
     var closeIcon = '<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M3 3l10 10M13 3L3 13"/></svg>';
 
-    main.addEventListener('click', function (e) {
+    // The result buttons, also used inside the Quick view dialog (which sits outside #sr-main).
+    function onAction(e) {
+        var quick = e.target.closest('[data-quick]');
+        if (quick) {
+            fetch(QUICK + '/' + encodeURIComponent(quick.dataset.quick), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(function (r) { if (!r.ok) throw new Error(); return r.text(); })
+                .then(openDialog)   // server-rendered (opac.partials.quick-view); values escaped there
+                .catch(function () { toast('The details could not be loaded. Please try again.'); });
+            return;
+        }
+
         var cite = e.target.closest('[data-cite]');
         if (cite) {
             fetch(CITE + '/' + encodeURIComponent(cite.dataset.cite), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
@@ -530,8 +562,11 @@
                 body: 'catalog_id=' + encodeURIComponent(save.dataset.save) })
                 .then(function (r) { if (r.status === 401 || r.status === 419) { location.href = LOGIN; throw new Error('auth'); } if (!r.ok) throw new Error(); return r.json(); })
                 .then(function (data) {
-                    save.setAttribute('aria-pressed', data.saved ? 'true' : 'false');
-                    save.textContent = data.saved ? 'Saved' : 'Save';
+                    // The same record's button in the list and in Quick view.
+                    document.querySelectorAll('[data-save="' + save.dataset.save + '"]').forEach(function (b) {
+                        b.setAttribute('aria-pressed', data.saved ? 'true' : 'false');
+                        b.textContent = data.saved ? 'Saved' : 'Save';
+                    });
                     var n = $('sr-saved-n'); if (n) n.textContent = data.count;
                     toast(data.saved ? 'Saved to your list' : 'Removed from your list');
                 })
@@ -550,13 +585,16 @@
 
         var dl = e.target.closest('[data-download]');
         if (dl) { $('sr-download-id').value = dl.dataset.download; $('sr-download').submit(); }
-    });
+    }
+    main.addEventListener('click', onAction);
     $('sr-dialog').addEventListener('click', function (e) {
         if (e.target.closest('[data-dialog-close]')) { closeDialog(); return; }
         var c = e.target.closest('[data-copy]');
-        if (c) { var p = $(c.dataset.copy); copy(p.textContent, p); }
+        if (c) { var p = $(c.dataset.copy); copy(p.textContent, p); return; }
+        onAction(e);
     });
-    $('sr-scrim').addEventListener('click', function () { if (!$('sr-dialog').hidden) closeDialog(); else closeSheet(); });
+    $('sr-scrim').addEventListener('click', closeSheet);
+    $('sr-dialog-scrim').addEventListener('click', closeDialog);
 
     function openReader(url, title) {
         $('sr-reader-frame').src = '/pdfjs/web/viewer.html?file=' + encodeURIComponent(url);
