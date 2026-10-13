@@ -28,8 +28,8 @@
 		.tx-status.s-checkout { background: #fff4e5; color: #b26a00; }
 		.tx-status.s-declined { background: #fdecea; color: #c0392b; }
 		.tx-status.s-complete { background: #e7f5f3; color: #00897b; }
-		.tx-msg-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: #fff; background: #00a496; border: 0; border-radius: 7px; padding: 7px 14px; cursor: pointer; transition: background .15s; white-space: nowrap; }
-		.tx-msg-btn:hover { background: #00897b; }
+		.tx-msg-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: #fff; background: #00857a; border: 0; border-radius: 7px; padding: 7px 14px; cursor: pointer; transition: background .15s; white-space: nowrap; }
+		.tx-msg-btn:hover { background: #006f65; }
 		.tx-msg-btn .tx-unread { background: #e5484d; color: #fff; font-size: 10px; font-weight: 700; border-radius: 20px; padding: 1px 6px; line-height: 1.4; }
 		.tx-empty { text-align: center; color: #8a94a6; padding: 48px 16px; background: #fff; border: 1px dashed #dfe3e8; border-radius: 10px; }
 		@media (max-width: 576px) {
@@ -145,7 +145,7 @@ function loadResChat() {
 			var mine = (obj.sender_role === 'patron');
 			var who = mine ? 'You' : 'Library';
 			var align = mine ? 'right' : 'left';
-			var bg = mine ? 'background:#00a496;color:#fff;' : 'background:#f0f2f5;color:#222;';
+			var bg = mine ? 'background:#00857a;color:#fff;' : 'background:#f0f2f5;color:#222;';
 			box.append(
 				'<div style="text-align:' + align + ';margin:8px 0;">' +
 					'<div style="display:inline-block;max-width:80%;text-align:left;border-radius:10px;padding:8px 12px;' + bg + '">' +

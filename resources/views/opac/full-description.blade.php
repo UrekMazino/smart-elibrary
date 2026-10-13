@@ -78,7 +78,7 @@
 			.fd-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; margin-bottom: 4px; }
 			.fd-actions form { margin: 0; display: flex; }
 			.fd-section { margin-top: 24px; }
-			.fd-section-title { font-size: 14px; font-weight: 700; color: #00a496; text-transform: uppercase; letter-spacing: .3px; margin-bottom: 12px; border-bottom: 2px solid #e6e9ec; padding-bottom: 6px; }
+			.fd-section-title { font-size: 14px; font-weight: 700; color: #00857a; text-transform: uppercase; letter-spacing: .3px; margin-bottom: 12px; border-bottom: 2px solid #e6e9ec; padding-bottom: 6px; }
 			.fd-section-title i { margin-right: 6px; vertical-align: middle; }
 			.fd-table { width: 100%; border-collapse: collapse; font-size: 14px; }
 			.fd-table th, .fd-table td { text-align: left; vertical-align: top; padding: 8px 12px; border-bottom: 1px solid #eef0f2; }
@@ -88,7 +88,7 @@
 			/* Catalogers format values as plain text (line breaks, "• " bullets, indentation): show them as written. */
 			.fd-table td.fd-val { white-space: pre-wrap; overflow-wrap: anywhere; }
 			.fd-citation { background: #f7f9fa; border: 1px solid #e6e9ec; border-radius: 4px; padding: 14px 16px; }
-			.fd-citation-style { display: inline-block; font-size: 11px; font-weight: 700; color: #fff; background: #00a496; border-radius: 3px; padding: 2px 8px; margin-bottom: 8px; }
+			.fd-citation-style { display: inline-block; font-size: 11px; font-weight: 700; color: #fff; background: #00857a; border-radius: 3px; padding: 2px 8px; margin-bottom: 8px; }
 			.fd-citation p { margin: 0; font-size: 14px; line-height: 1.55; color: #333; }
 			.fd-copy-btn { margin-top: 12px !important; font-size: 12px; padding: 5px 14px; background-color: #029978; }
 			.fd-copies { display: flex; gap: 12px; flex-wrap: wrap; }
@@ -177,7 +177,7 @@
 			@endif
 			<div class="row fd-layout">
 				<div class="col-xl-9 col-lg-8 order-2 fd-main">
-					<nav id="secondary_nav" style="background-color: #00a496;">
+					<nav id="secondary_nav" style="background-color: #00857a;">
 						<div class="container">
 							<ul class="clearfix">
 								<li><a href="#section_1" class="active">General info</a></li>
@@ -299,7 +299,7 @@
 					</figure>
 					@if(checkStocks($result->catalog_id))
 					<div class="box_general_3 booking">
-							<div class="title text-center" style="background-color: #00a496;">
+							<div class="title text-center" style="background-color: #00857a;">
 								<h3>Schedule Reservation</h3>
 								<small>Monday to Friday 08:00am-05:00pm</small>
 							</div>
@@ -353,7 +353,7 @@
 					</div>
 					@else
 					<div class="box_general_3 booking">
-						<div class="title text-center" style="background-color: #00a496;">
+						<div class="title text-center" style="background-color: #00857a;">
 							<h3>NOT AVAILABLE FOR BORROWING</h3>
 						</div>
 						<div class="row">
@@ -368,7 +368,7 @@
 					{{-- Ratings summary + submit review (moved from the reviews section) --}}
 					<div class="fd-side-rate">
 					<div class="box_general_3 booking fd-review-box">
-						<div id="review_summary" style="background-color: #00a496;">
+						<div id="review_summary" style="background-color: #00857a;">
 							<div class="fd-avg-num">{{ $ave }}</div>
 							<div class="fd-avg-meta">
 								<div class="rating"><i data-star="{{ $ave }}" style="font-size: 18px;"></i></div>
@@ -474,7 +474,7 @@ function inquire(holdingsid)
 				icon: 'warning',
 				title: 'Account blocked',
 				html: 'Your account is <strong>blocked</strong> from sending inquiries.<br>Please contact the library at <a href="mailto:' + libraryEmail + '"><strong>' + libraryEmail + '</strong></a>.',
-				confirmButtonColor: '#00a496'
+				confirmButtonColor: '#00857a'
 			});
 		} else {
 			alert('Your account is blocked from sending inquiries. Please contact the library at ' + libraryEmail + '.');
@@ -494,7 +494,7 @@ function inquire(holdingsid)
 				showCancelButton: true,
 				confirmButtonText: 'Email the library',
 				cancelButtonText: 'Close',
-				confirmButtonColor: '#00a496'
+				confirmButtonColor: '#00857a'
 			}).then(function (res) {
 				if (res.isConfirmed) { window.location.href = 'mailto:' + libraryEmail + '?subject=' + encodeURIComponent('Library Inquiry'); }
 			});

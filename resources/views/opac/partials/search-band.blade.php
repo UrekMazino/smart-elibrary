@@ -17,7 +17,7 @@
 @endphp
 <style>
 :root {
-    --sr-teal: #00a496; --sr-teal-ink: #00756b; --sr-teal-dark: #005f57; --sr-teal-soft: #e3f5f2; --sr-teal-line: #a7dcd5;
+    --sr-teal: #00857a;   /* darker than the brand #00a496 so the band's small white text reads (4.5:1) */ --sr-teal-ink: #00756b; --sr-teal-dark: #005f57; --sr-teal-soft: #e3f5f2; --sr-teal-line: #a7dcd5;
     --sr-indigo: #3f4079; --sr-indigo-soft: #ececf7; --sr-ink: #1d2433; --sr-muted: #5d6973; --sr-line: #e1e7ea; --sr-sunk: #f3f6f7;
     --sr-mark: #ffe9a8; --sr-rose: #b8345f; --sr-rose-soft: #fbe9ef; --sr-green: #1d6f42; --sr-green-soft: #e3f3e9;
     --sr-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
