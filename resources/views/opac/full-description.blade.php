@@ -102,6 +102,16 @@
 			.fd-btn:hover i { color: #029978; }
 			.fd-btn[disabled], .fd-btn:disabled { background: #f6f8f9 !important; color: #b4babf !important; border-color: #e9edf0 !important; cursor: not-allowed; opacity: 1 !important; }
 			.fd-btn[disabled] i, .fd-btn:disabled i { color: #c4cacf; }
+			/* Save: outline star; filled amber once the record is in the patron's list. */
+			/* Guest Save is a link: the theme's `a.btn_1 { display:inline-block }` outranks .fd-btn,
+			   which put the star beside the label. Restore the stacked icon-over-label tile. */
+			.fd-actions a.fd-btn { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; text-decoration: none;
+				font-size: 12px; font-weight: 600; line-height: 1.1; }
+			.fd-save-ico { width: 22px; height: 22px; fill: none; stroke: #029978; stroke-width: 1.25; stroke-linejoin: round; }
+			.fd-btn.is-saved { background: #fff8e6 !important; border-color: #e0a100 !important; color: #8a6200 !important; }
+			.fd-btn.is-saved .fd-save-ico { fill: #f5b301; stroke: #e0a100; }
+			.fd-btn.is-saved:hover { background: #fff2cc !important; }
+			.fd-btn.fd-save[aria-busy="true"] { opacity: .6; pointer-events: none; }
 			/* Read overlay (PDF.js) */
 			.ol-reader { position: fixed; inset: 0; z-index: 20000; background: rgba(18,20,24,.94); display: none; flex-direction: column; }
 			.ol-reader-bar { flex: 0 0 46px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; background: #1b1d21; color: #fff; }
@@ -156,10 +166,10 @@
 				.fd-title { font-size: 18px; }
 			}
 			@media (max-width: 575.98px) {
-				/* Action buttons: four equal tiles in one row. */
-				.fd-actions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+				/* Action buttons: five equal tiles in one row (Read, Download, Inquire, Share, Save). */
+				.fd-actions { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
 				.fd-actions form, .fd-actions form .fd-btn { width: 100%; }
-				.fd-btn { min-width: 0; padding: 10px 4px; font-size: 11.5px; }
+				.fd-btn, .fd-actions a.fd-btn { min-width: 0; padding: 10px 4px; font-size: 11.5px; }
 				/* Full Record: label above value (a two-column table leaves values one word wide). */
 				.fd-table, .fd-table tbody, .fd-table tr, .fd-table th, .fd-table td { display: block; width: auto; }
 				.fd-table tr { border-bottom: 1px solid #eef0f2; padding: 9px 0; }
@@ -214,6 +224,20 @@
 								@endif
 								<button type="button" class="btn_1 fd-btn" onclick="inquire('{{ $result->catalog_id }}')"><i class="icon-info-3"></i> Inquire</button>
 								<button type="button" class="btn_1 fd-btn" data-share-url="{{ recordUrl($result) }}" data-share-title="{{ $result->title_statement }}" onclick="shareRecord(this)" title="Copy link to this record"><i class="pe-7s-link"></i> Share</button>
+								{{-- Save to the patron's list (same toggle as the search results / homepage stars). --}}
+								@auth
+									@php $fdSaved = isSavedRecord($result->catalog_id); @endphp
+									<button type="button" class="btn_1 fd-btn fd-save{{ $fdSaved ? ' is-saved' : '' }}" data-fd-save="{{ $result->catalog_id }}"
+										aria-pressed="{{ $fdSaved ? 'true' : 'false' }}" title="{{ $fdSaved ? 'Saved — click to remove from your list' : 'Save to your list' }}" onclick="toggleFdSave(this)">
+										<svg class="fd-save-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z"/></svg>
+										<span class="fd-save-label">{{ $fdSaved ? 'Saved' : 'Save' }}</span>
+									</button>
+								@else
+									<a class="btn_1 fd-btn fd-save" href="{{ route('login') }}" title="Log in to save records">
+										<svg class="fd-save-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z"/></svg>
+										<span class="fd-save-label">Save</span>
+									</a>
+								@endauth
 							</div>
 						</div>
 						</div>
@@ -559,6 +583,37 @@ function closeReader()
 
 document.addEventListener('keydown', function(e){ if(e.key === 'Escape'){ closeReader(); } });
 window.addEventListener('resize', positionReader);
+
+// Save / unsave this record in the patron's list (POST /search/saved toggles it).
+function toggleFdSave(btn)
+{
+	if (btn.getAttribute('aria-busy') === 'true') return;
+	btn.setAttribute('aria-busy', 'true');
+	var token = (document.querySelector('meta[name="csrf_token"]') || {}).content || '';
+	fetch(@json(url('/search/saved')), {
+		method: 'POST',
+		headers: { 'X-CSRF-TOKEN': token, 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' },
+		body: 'catalog_id=' + encodeURIComponent(btn.getAttribute('data-fd-save'))
+	})
+	.then(function (r) {
+		if (r.status === 401 || r.status === 419) { location.href = @json(route('login')); throw new Error('auth'); }
+		if (!r.ok) throw new Error('failed');
+		return r.json();
+	})
+	.then(function (data) {
+		btn.classList.toggle('is-saved', !!data.saved);
+		btn.setAttribute('aria-pressed', data.saved ? 'true' : 'false');
+		btn.title = data.saved ? 'Saved — click to remove from your list' : 'Save to your list';
+		btn.querySelector('.fd-save-label').textContent = data.saved ? 'Saved' : 'Save';
+	})
+	.catch(function (err) {
+		if (err.message === 'auth') return;
+		var label = btn.querySelector('.fd-save-label');
+		label.textContent = 'Try again';
+		setTimeout(function () { label.textContent = btn.classList.contains('is-saved') ? 'Saved' : 'Save'; }, 1600);
+	})
+	.finally(function () { btn.removeAttribute('aria-busy'); });
+}
 
 function shareRecord(btn)
 {
