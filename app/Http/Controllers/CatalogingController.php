@@ -220,7 +220,14 @@ class CatalogingController extends Controller
 
         $citations = buildCitations(ViewCatalog::where('catalog_id', $catalogId)->first());
 
-        return view('admin.catalog-view-record', ['record' => $record, 'fullText' => $fullText, 'coverPage' => $coverPage, 'title' => $title, 'totalCopies' => $totalCopies, 'citations' => $citations]);
+        // Patron reviews for the Reviews tab (admin.partials.record-reviews), newest first.
+        $reviews = DB::table('ratings as r')
+            ->leftJoin('users as u', 'u.id', '=', 'r.user_id')
+            ->where('r.catalog_id', $catalogId)
+            ->orderByDesc('r.created_at')->orderByDesc('r.id')
+            ->get(['r.id', 'r.rating', 'r.remarks', 'r.created_at', 'u.name', 'u.email', 'u.is_banned', 'u.is_blocked']);
+
+        return view('admin.catalog-view-record', ['record' => $record, 'fullText' => $fullText, 'coverPage' => $coverPage, 'title' => $title, 'totalCopies' => $totalCopies, 'citations' => $citations, 'reviews' => $reviews]);
     }
 
     /**

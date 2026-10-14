@@ -44,6 +44,10 @@
         .delete-icon:hover {
             color: pink;
         }
+
+        /* Count beside a tab label (e.g. Reviews 4). */
+        .nav-tabs .tab-count { display: inline-block; min-width: 20px; margin-left: 4px; padding: 1px 6px; border-radius: 10px; background: #eef0f6; color: #5b6478; font-size: 11px; font-weight: 600; text-align: center; }
+        .nav-tabs .nav-link.active .tab-count { background: #eef0ff; color: #4b55d9; }
     </style>
     <link rel="stylesheet" href="{{ asset('assets/css/cropper.min.css') }}">
 @endsection
@@ -137,6 +141,11 @@
                         </li>
                         <li class="nav-item">
                             <a class="nav-link {{ isset($copyUpdate) ? 'active' : '' }}" id="physical-copy-tab" data-bs-toggle="tab" href="#physical-copy" role="tab" aria-controls="physical-copy" aria-selected="false">Physical Copy</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="reviews-tab" data-bs-toggle="tab" href="#reviews" role="tab" aria-controls="reviews" aria-selected="false">
+                                Reviews <span class="tab-count">{{ $reviews->count() }}</span>
+                            </a>
                         </li>
                     </ul>
                     <div class="tab-content border border-top-0 p-3" id="myTabContent">
@@ -427,6 +436,11 @@
                       </div>
                     </div>
 
+                    <!-- Reviews Tab -->
+                    <div class="tab-pane fade" id="reviews" role="tabpanel" aria-labelledby="reviews-tab">
+                        @include('admin.partials.record-reviews', ['reviews' => $reviews])
+                    </div>
+
                     <!-- Physical Copy Tab -->
                     <div class="tab-pane fade {{ isset($copyUpdate) ? 'show active' : '' }}" id="physical-copy" role="tabpanel" aria-labelledby="physical-copy-tab">
                         <div class="row">
@@ -513,7 +527,7 @@
 <form method="post" action="{{ url('/admin/hold-view-from-opac') }}" id="holdFrm">
 	@csrf
 	<input type="hidden" name="catalog_id" id="hold_catalog_id">
-</form>s
+</form>
 
 <form method="post" action="" id="delete_copy_frm">
 	@csrf
@@ -567,6 +581,22 @@ function viewCoverPhoto() {
 
 $(function () {
     if (window.feather) feather.replace();
+
+    // Tabs are linkable: /admin/view-record/{id}#reviews opens that tab, and switching tabs
+    // updates the hash so a reload (or a shared link) comes back to the same tab.
+    // This page is usually reached by a POST (record lists, uploads, copy edits), whose URL has no
+    // GET route — rewriting the address there and reloading gave a 405. So the address bar always
+    // shows the record's own GET URL; a reload then re-opens the record instead of re-posting.
+    var recordUrl = @json(parse_url(url('/admin/view-record/' . $record->id), PHP_URL_PATH));   // path only: always same-origin
+    function setAddress(hash) {
+        try { history.replaceState(null, '', recordUrl + (hash || '')); } catch (e) {}
+    }
+    setAddress(location.hash);
+    var tabs = document.querySelectorAll('#myTab a[data-bs-toggle="tab"]');
+    tabs.forEach(function (a) {
+        if (location.hash && a.getAttribute('href') === location.hash && window.bootstrap) bootstrap.Tab.getOrCreateInstance(a).show();
+        a.addEventListener('shown.bs.tab', function () { setAddress(a.getAttribute('href')); });
+    });
 });
 </script>
 <script type="text/javascript" src="{{ asset('assets/js/cropper.js') }}"></script>

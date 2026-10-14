@@ -211,7 +211,7 @@
                 </span>
                 <div class="dsh-feed-body">
                   @if($links['record'] && $r['catalog_id'])
-                    <a class="dsh-feed-title" href="{{ $links['record'] }}/{{ $r['catalog_id'] }}">{{ $r['title'] }}</a>
+                    <a class="dsh-feed-title" href="{{ $links['record'] }}/{{ $r['catalog_id'] }}#reviews">{{ $r['title'] }}</a>
                   @else
                     <span class="dsh-feed-title">{{ $r['title'] }}</span>
                   @endif
