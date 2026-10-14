@@ -45,7 +45,8 @@ Route::controller(HoldingController::class)->group(function () {
     Route::get('/full-description', 'index2');
     Route::get('/full-description/{holdingsid}', 'index2');
     Route::post('/read/view', 'recordView');
-    Route::get('/read/{catalog_id}', 'read')->whereNumber('catalog_id')->name('read');
+    // Reading is for signed-in patrons only; guests are sent to the login page.
+    Route::get('/read/{catalog_id}', 'read')->whereNumber('catalog_id')->name('read')->middleware('auth');
 });
 
 //OPAC

@@ -89,13 +89,15 @@ class HoldingController extends Controller
 
     /**
      * Guarded reader stream. The in-browser reader (PDF.js) loads the file through this
-     * route instead of the raw public path, so we can deny banned accounts the Read
-     * feature. Also enforces the same published/not-deleted rule as full-description.
+     * route instead of the raw public path, so we can deny guests (the route's `auth`
+     * middleware) and banned accounts the Read feature. Also enforces the same
+     * published/not-deleted rule as full-description.
      */
     public function read($catalog_id)
     {
-        // Banned accounts are not allowed to use the Read feature.
-        abort_if(Auth::check() && Auth::user()->is_banned, 403, 'Your account has been banned from reading materials.');
+        // Banned accounts are not allowed to use the Read feature (covers a session that was
+        // already signed in when the admin banned the account).
+        abort_if(Auth::user()->is_banned, 403, 'Your account has been banned from reading materials.');
 
         // Only public records may be read (published + not deleted).
         $result = App\Models\ViewCatalog::where('catalog_id',$catalog_id)

@@ -278,7 +278,9 @@
     var QUICK   = @json(url('/search/quick'));
     var SAVE    = @json(url('/search/saved'));
     var LOGIN   = @json(route('login'));
+    var REGISTER = @json(route('register'));
     var CSRF    = @json(csrf_token());
+    var AUTHED  = @json(auth()->check());
 
     var main = document.getElementById('sr-main');
     var advOpen = !document.getElementById('sr-adv').hidden;
@@ -577,6 +579,7 @@
 
         var read = e.target.closest('[data-read]');
         if (read) {
+            if (!AUTHED) { promptReadLogin(); return; }   // reading is for signed-in patrons only
             openReader(read.dataset.read, read.dataset.title);
             // Count this read as a view, like opening the record page.
             fetch('/read/view', { method: 'POST', headers: { 'X-CSRF-TOKEN': CSRF, 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'catalog_id=' + encodeURIComponent(read.dataset.id) }).catch(function () {});
@@ -596,6 +599,24 @@
     $('sr-scrim').addEventListener('click', closeSheet);
     $('sr-dialog-scrim').addEventListener('click', closeDialog);
 
+    function promptReadLogin() {
+        if (!window.Swal) { location.href = LOGIN; return; }
+        if (!$('sr-dialog').hidden) closeDialog();   // Quick view (z-index 2001) would cover the popup
+        Swal.fire({
+            icon: 'info',
+            title: 'Sign in to read',
+            text: 'Reading materials online is available to registered members. Log in or create a free account to continue.',
+            showDenyButton: true,
+            showCancelButton: true,
+            confirmButtonText: 'Log in',
+            denyButtonText: 'Register',
+            cancelButtonText: 'Not now',
+            reverseButtons: true
+        }).then(function (r) {
+            if (r.isConfirmed) location.href = LOGIN;
+            else if (r.isDenied) location.href = REGISTER;
+        });
+    }
     function openReader(url, title) {
         $('sr-reader-frame').src = '/pdfjs/web/viewer.html?file=' + encodeURIComponent(url);
         $('sr-reader-title').textContent = title || 'Reading';

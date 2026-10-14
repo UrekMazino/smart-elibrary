@@ -233,7 +233,7 @@
 										<span class="fd-save-label">{{ $fdSaved ? 'Saved' : 'Save' }}</span>
 									</button>
 								@else
-									<a class="btn_1 fd-btn fd-save" href="{{ route('login') }}" title="Log in to save records">
+									<a class="btn_1 fd-btn fd-save" href="{{ route('login') }}" title="Log in to save records" onclick="event.preventDefault(); promptGuestLogin('save')">
 										<svg class="fd-save-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z"/></svg>
 										<span class="fd-save-label">Save</span>
 									</a>
@@ -564,8 +564,43 @@ function positionReader()
 	reader.style.top = top + 'px';
 }
 
+// Read, Download and Save are for signed-in patrons only. Guests get the same sign-in popup
+// for each (the /read, /download and /search/saved routes also enforce this).
+var fdIsGuest = @json(! Auth::check());
+var guestPrompts = {
+	read:     ['Sign in to read',     'Reading materials online is available to registered members. Log in or create a free account to continue.'],
+	download: ['Sign in to download', 'Downloading materials is available to registered members. Log in or create a free account to continue.'],
+	save:     ['Sign in to save',     'Saving materials to your list is available to registered members. Log in or create a free account to continue.']
+};
+
+function promptGuestLogin(action)
+{
+	if (!window.Swal) { window.location = @json(route('login')); return; }
+	Swal.fire({
+		icon: 'info',
+		title: guestPrompts[action][0],
+		text: guestPrompts[action][1],
+		showDenyButton: true,
+		showCancelButton: true,
+		confirmButtonText: 'Log in',
+		denyButtonText: 'Register',
+		cancelButtonText: 'Not now',
+		reverseButtons: true
+	}).then(function (r) {
+		if (r.isConfirmed) window.location = @json(route('login'));
+		else if (r.isDenied) window.location = @json(route('register'));
+	});
+}
+
+var fdDownloadForm = document.getElementById('frm_download');
+if (fdIsGuest && fdDownloadForm) {
+	fdDownloadForm.addEventListener('submit', function (e) { e.preventDefault(); promptGuestLogin('download'); });
+}
+
 function openReader(pdfPath, title)
 {
+	if (fdIsGuest) { promptGuestLogin('read'); return; }
+
 	var viewer = '/pdfjs/web/viewer.html?file=' + encodeURIComponent(pdfPath);
 	document.getElementById('ol-reader-frame').src = viewer;
 	document.getElementById('ol-reader-title').textContent = title || 'Reading';
