@@ -15,11 +15,18 @@
 @endphp
 <div class="page-content dsh">
 
-  {{-- ============ Header: greeting + quick actions ============ --}}
+  {{-- ============ Header: greeting + live clock + quick actions ============
+       Server time (app timezone) is only the no-JS fallback: dashboard.js swaps in the
+       viewer's own time zone and keeps the date, clock and greeting running. --}}
   <header class="dsh-head">
     <div>
-      <p class="dsh-eyebrow">{{ now()->format('l, F j, Y') }}</p>
-      <h1 class="dsh-title">{{ $greeting }}{{ $firstName !== '' ? ', ' . $firstName : '' }}</h1>
+      <p class="dsh-eyebrow">
+        <time id="dsh-today" datetime="{{ now()->toDateString() }}">{{ now()->format('l, F j, Y') }}</time>
+        <span aria-hidden="true">·</span>
+        <time class="dsh-clock" id="dsh-clock" datetime="{{ now()->toIso8601String() }}">{{ now()->format('g:i:s A') }}</time>
+        <span class="dsh-tz" id="dsh-tz">GMT{{ now()->format('P') }}</span>
+      </p>
+      <h1 class="dsh-title"><span id="dsh-greeting">{{ $greeting }}</span>{{ $firstName !== '' ? ', ' . $firstName : '' }}</h1>
     </div>
     <div class="dsh-actions">
       @if($links['newRecord'])

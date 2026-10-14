@@ -1,4 +1,48 @@
-/* Admin dashboard — the Activity section (resources/views/admin/index.blade.php).
+/* Admin dashboard (resources/views/admin/index.blade.php): the header clock and the Activity section. */
+
+/* Header clock: date, time and greeting in the viewer's own time zone (the browser's), ticking every
+ * second. The server renders app-timezone values only as the no-JS fallback. Not aria-live: a
+ * clock announcing every second would drown out everything else. */
+(function () {
+  'use strict';
+
+  var dateEl = document.getElementById('dsh-today');
+  var timeEl = document.getElementById('dsh-clock');
+  var tzEl = document.getElementById('dsh-tz');
+  var greetEl = document.getElementById('dsh-greeting');
+  if (!timeEl || !window.Intl) return;
+
+  var dateFmt = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  var timeFmt = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit' });
+  var zoneFmt = new Intl.DateTimeFormat('en-US', { timeZoneName: 'short' });
+  var zone = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+  if (zone) tzEl.title = 'Your time zone: ' + zone;
+
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+
+  function tick() {
+    var now = new Date();
+    var ymd = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate());
+    var tz = zoneFmt.formatToParts(now).filter(function (p) { return p.type === 'timeZoneName'; })[0];
+    var h = now.getHours();
+
+    timeEl.textContent = timeFmt.format(now);
+    timeEl.setAttribute('datetime', now.toISOString());
+    if (dateEl.getAttribute('datetime') !== ymd) {
+      dateEl.textContent = dateFmt.format(now);
+      dateEl.setAttribute('datetime', ymd);
+    }
+    tzEl.textContent = tz ? tz.value : '';   // e.g. "GMT+8"; changes across daylight-saving switches
+    greetEl.textContent = h < 12 ? 'Good morning' : (h < 18 ? 'Good afternoon' : 'Good evening');
+
+    setTimeout(tick, 1000 - now.getMilliseconds());   // land on the next whole second
+  }
+
+  dateEl.removeAttribute('datetime');   // make the first tick replace the server's date
+  tick();
+})();
+
+/* Activity section.
  *
  * One request per date range: GET DASHBOARD.activityUrl?range=…[&from=…&to=…]
  * (AdminController@dashboardActivity -> DashboardService::activity). The KPI tiles are the tabs
