@@ -24,9 +24,7 @@ use App\Http\Controllers\ConfigurationController;
 
 //ADMIN
 Route::controller(AdminController::class, 'admin')->group(function () {
-    Route::get('/admin/count-dynamicdates/json', 'countdynamicdates')->middleware('can:access.dashboard');
-    Route::get('/admin/per-date-chart/json', 'perDateChartJson')->middleware('can:access.dashboard');
-    Route::get('/admin/views-traffic/json', 'viewsTrafficJson')->middleware('can:access.dashboard');
+    Route::get('/admin/dashboard/activity', 'dashboardActivity')->middleware('can:access.dashboard');
     Route::get('/admin/register', 'registerPatron')->name('register_patron')->middleware(['can:access.accounts', 'can:create.patron']);
     Route::get('/admin/profile/validate-email/', 'validateEmail');
     Route::get('/admin/profile', 'profile');
