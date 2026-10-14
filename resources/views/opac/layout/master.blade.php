@@ -125,6 +125,9 @@
 							<style>
 								.nfy-pop { display:none; position:absolute; right:0; top:100%; z-index:1050; background:#fff; border:1px solid #e5e8ee; border-radius:12px; box-shadow:0 12px 32px rgba(20,30,60,.16); overflow:hidden; margin-top:8px; }
 								.nfy-pop.open { display:block; }
+								/* The theme's menu links (.main-menu ul li a: display:block, padding:10px; on phones
+								   padding:15px !important) stack each item's icon above its text. Keep the panel's row layout. */
+								.main-menu .nfy-pop a.nfy-item { display:flex; padding:11px 16px !important; }
 							</style>
 							<script>
 							document.addEventListener('click', function (e) {
