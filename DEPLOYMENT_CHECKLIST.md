@@ -127,9 +127,25 @@ These are real changes that a `git pull` will **not** give you. They must be app
 
 ---
 
-## 5. Changes in this work cycle
+## 5. Changes by work cycle
 
-### smart-elibrary (14 commits, `37afbb8`…`8eb1a08`)
+### smart-elibrary — October 2026 (FNRI), `02fd6ed`…`39fc967`
+
+| Area | What changed | Deploy step |
+|---|---|---|
+| **OPAC search redesign** | `App\Services\CatalogSearch` (one Meilisearch multi-search): filters with counts, advanced rows, sort, grid/list, Cite, Save, Quick view (`GET /search/quick/{id}`) | `migrate`; `catalog:rebuild-search-fields --apply` (also syncs index settings) |
+| **Saved records** | `saved_records`; `POST /search/saved` from results, covers, Quick view, record page | `migrate` |
+| **Guests sign in to read** | `/read/{id}` requires login; Read / Download / Save show a sign-in popup to guests | — |
+| **Quick reviews** | popup after a download or a minute of reading; `GET|POST /review/quick` | — |
+| **Admin dashboard** | rebuilt on `DashboardService` + `GET /admin/dashboard/activity` (replaces the old JSON feeds, which errored) | — |
+| **Record view** | Reviews tab with summary, filters, sorting | — |
+| **Bulk catalogue actions** | selection + one Actions menu (publish, hold, export, re-index, delete); `POST /admin/records/bulk`; export ticket + GET download | — |
+| **Material Types utility** | Administration › Utilities; batch import maps types from a MARC field (`material_type_maps`) | `migrate`; `permission:cache-reset` |
+| **Titles / authors** | full MARC 245 titles; authors 100/110, else 700/710 | `catalog:rebuild-titles --apply`; `catalog:rebuild-authors --apply` |
+| **Permissions** | new `access.settings`, `access.ai.sync.monitor`, `manage.material.types` | `migrate`; `permission:cache-reset` |
+| **Banned login** | popup with an email link to `ADMIN_EMAIL` | set `ADMIN_EMAIL` (optional) |
+
+### smart-elibrary — July 2026 (14 commits, `37afbb8`…`8eb1a08`)
 
 | Area | Files |
 |---|---|
@@ -212,8 +228,28 @@ disappears.
 
 ## 7. Known gaps / follow-ups
 
-- **Logon scheduled tasks are not registered** — needs one elevated run of
-  `register-projecty-tasks.ps1`. Until then AI mode is down after every reboot.
+- ~~**Logon scheduled tasks are not registered**~~ — **done** (verified 30 Sep 2026): llama-server,
+  rag-api, sync worker, nginx proxy and the Discord gateway start at logon. The sync worker exits
+  if MySQL isn't up yet when it fires — start Laragon at logon, or restart it with
+  `schtasks /run /tn ProjectY-sync-worker`.
+- ~~**`php artisan test` would have wiped `elibrarydb`**~~ — **fixed 14 Oct 2026**: tests use their
+  own database (`DB_DATABASE=elibrarydb_test` in `phpunit.xml`, search sync off via
+  `SCOUT_DRIVER=null`), and `tests/TestCase.php` refuses any database not ending in `_test`.
+  **On each new machine create it once:**
+  `CREATE DATABASE elibrarydb_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`
+  The suite: 19 pass, 2 fail — `ExampleTest` expects `/` to return 200 (the app redirects to
+  `/home`) and `RegistrationTest` expects the stock starter-kit registration; both need updating.
+- ~~**`catalog:rebuild-search-fields --apply` pending on the development database**~~ — **done
+  14 Oct 2026** (8,852 records updated: 8,830 with subjects, 6,641 with a year; index rebuilt).
+- **Search page shows "0 results / unavailable" while Meilisearch is healthy** → the index
+  settings or fields are out of date and `CatalogSearch` hides the error. Check
+  `storage/logs/laravel.log`, then `scout:sync-index-settings` + `scout:import` (or
+  `catalog:rebuild-search-fields --apply`).
+- **Nightly reconcile not scheduled** — `rag_sync_worker.py --reconcile` then `--once` is built but
+  no task runs it; drift from missed events persists until someone does.
+- **Records catalogued after the corpus import may not be citable in AI mode** — the sync worker
+  stores their chunks as stem `catalog-{id}`, but `AiSearchService::resolveSources()` only resolves
+  stems via `accession_number`. Found by code review, not yet reproduced.
 - ~~**SEO workstream D (URL slugs)**~~ — **done**: record URLs are now
   `/full-description/{id}-{title-slug}`, with bare-id and stale-slug URLs 301ing to the canonical
   form. **Re-run `php artisan sitemap:generate` after deploying** so the sitemap carries slug URLs.
