@@ -581,13 +581,17 @@
         if (read) {
             if (!AUTHED) { promptReadLogin(); return; }   // reading is for signed-in patrons only
             openReader(read.dataset.read, read.dataset.title);
+            if (window.QuickReview) QuickReview.startRead(read.dataset.id, read.dataset.title);   // a minute or more asks for a review on close
             // Count this read as a view, like opening the record page.
             fetch('/read/view', { method: 'POST', headers: { 'X-CSRF-TOKEN': CSRF, 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'catalog_id=' + encodeURIComponent(read.dataset.id) }).catch(function () {});
             return;
         }
 
         var dl = e.target.closest('[data-download]');
-        if (dl) { $('sr-download-id').value = dl.dataset.download; $('sr-download').submit(); }
+        if (dl) {
+            $('sr-download-id').value = dl.dataset.download; $('sr-download').submit();
+            if (window.QuickReview) QuickReview.download(dl.dataset.download, dl.dataset.title);
+        }
     }
     main.addEventListener('click', onAction);
     $('sr-dialog').addEventListener('click', function (e) {
@@ -629,6 +633,7 @@
         $('sr-reader').style.display = 'none';
         $('sr-reader-frame').src = 'about:blank';
         document.body.style.overflow = '';
+        if (window.QuickReview) QuickReview.endRead();
     }
     $('sr-reader-close').addEventListener('click', closeReader);
 

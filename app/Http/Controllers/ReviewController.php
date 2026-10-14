@@ -37,6 +37,44 @@ class ReviewController extends Controller
               ->with('success', 'Thanks for your review!');
     }
 
+    /**
+     * Quick review popup (opac.partials.quick-review): has this patron already reviewed the
+     * material? The popup only opens when they haven't.
+     */
+    public function quickStatus($catalog_id)
+    {
+        $reviewed = App\Models\Rating::where('user_id', Auth::id())->where('catalog_id', $catalog_id)->exists();
+
+        return response()->json(['reviewed' => $reviewed]);
+    }
+
+    /** Save a review from the quick review popup (star rating + optional / templated remarks). */
+    public function quickStore(Request $request)
+    {
+        $data = $request->validate([
+            'catalog_id' => ['required', 'integer'],
+            'rating'     => ['required', 'integer', 'between:1,5'],
+            'remarks'    => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $published = App\Models\ViewCatalog::where('catalog_id', $data['catalog_id'])->where('is_published', 1)->whereNull('deleted_at')->exists();
+        abort_unless($published, 404);
+
+        // One review per patron per material (the To Review list drops it once rated).
+        if (App\Models\Rating::where('user_id', Auth::id())->where('catalog_id', $data['catalog_id'])->exists()) {
+            return response()->json(['ok' => false, 'message' => 'You have already reviewed this material.'], 409);
+        }
+
+        $review = new App\Models\Rating;
+        $review->catalog_id = $data['catalog_id'];
+        $review->user_id = Auth::id();
+        $review->rating = $data['rating'];
+        $review->remarks = trim((string) ($data['remarks'] ?? '')) ?: null;
+        $review->save();
+
+        return response()->json(['ok' => true]);
+    }
+
     // public function thanks()
     // {
     //    return view('opac.thank-you');

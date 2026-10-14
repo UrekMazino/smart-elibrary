@@ -126,6 +126,9 @@ use App\Http\Controllers\ReviewController;
 Route::controller(ReviewController::class)->group(function () {
     Route::post('/review', 'index');
     Route::post('/review/submit', 'create');
+    // Quick review popup (after a download, or after reading for a minute).
+    Route::get('/review/quick/{catalog_id}', 'quickStatus')->whereNumber('catalog_id');
+    Route::post('/review/quick', 'quickStore')->middleware('throttle:10,1');
 });
 
 

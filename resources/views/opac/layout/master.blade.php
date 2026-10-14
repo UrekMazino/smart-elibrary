@@ -329,6 +329,11 @@
 	<script src="{{ asset('opac/DataTables/DataTables-1.12.1/js/dataTables.bootstrap5.min.js') }}"></script>
 
 	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+	@auth
+		@if(Auth::user()->usertype === 'Patron')
+			@include('opac.partials.quick-review')
+		@endif
+	@endauth
 	<!-- CHATBOT -->
 	{{-- <script src="https://account.snatchbot.me/script.js"></script><script>window.sntchChat.Init(257292)</script>  --}}
 

@@ -36,7 +36,7 @@
     <a class="sr-act sr-act-main" href="{{ $url }}">View full record</a>
     @if($read)
         <button type="button" class="sr-act" data-read="{{ $read }}" data-id="{{ $r->catalog_id }}" data-title="{{ $r->title_statement }}">Read</button>
-        <button type="button" class="sr-act" data-download="{{ $r->catalog_id }}" title="Download the PDF (sign-in required)">Download</button>
+        <button type="button" class="sr-act" data-title="{{ $r->title_statement }}" data-download="{{ $r->catalog_id }}" title="Download the PDF (sign-in required)">Download</button>
     @endif
     <button type="button" class="sr-act" data-cite="{{ $r->catalog_id }}">Cite</button>
     @auth

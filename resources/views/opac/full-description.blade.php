@@ -592,10 +592,18 @@ function promptGuestLogin(action)
 	});
 }
 
+// Patrons get the quick review popup after a download, or after reading for a minute
+// (opac.partials.quick-review); a saved review reloads the page so it shows in Reviews.
+var fdCatalogId = @json((string) $result->catalog_id);
+var fdTitle = @json($result->title_statement);
+
 var fdDownloadForm = document.getElementById('frm_download');
 if (fdIsGuest && fdDownloadForm) {
 	fdDownloadForm.addEventListener('submit', function (e) { e.preventDefault(); promptGuestLogin('download'); });
+} else if (fdDownloadForm && window.QuickReview) {
+	fdDownloadForm.addEventListener('submit', function () { QuickReview.download(fdCatalogId, fdTitle); });
 }
+document.addEventListener('quickreview:saved', function () { location.reload(); });
 
 function openReader(pdfPath, title)
 {
@@ -607,6 +615,7 @@ function openReader(pdfPath, title)
 	document.getElementById('ol-reader').style.display = 'flex';
 	document.body.style.overflow = 'hidden';
 	positionReader();
+	if (window.QuickReview) QuickReview.startRead(fdCatalogId, fdTitle);
 }
 
 function closeReader()
@@ -614,6 +623,7 @@ function closeReader()
 	document.getElementById('ol-reader').style.display = 'none';
 	document.getElementById('ol-reader-frame').src = 'about:blank';
 	document.body.style.overflow = '';
+	if (window.QuickReview) QuickReview.endRead();
 }
 
 document.addEventListener('keydown', function(e){ if(e.key === 'Escape'){ closeReader(); } });
