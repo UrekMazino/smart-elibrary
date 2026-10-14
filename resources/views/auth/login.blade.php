@@ -33,5 +33,35 @@
 @endsection
 
 @section('js')
+@if (session('account_banned'))
+<script type="text/javascript">
+// Banned accounts cannot log in (AuthenticatedSessionController::store). Remind the patron of
+// the account's status, and that the ban is lifted only after they email the system admin.
+(function () {
+	var adminEmail = @json(config('app.admin_email'));
+	var accountEmail = @json(old('email', ''));
+	var mailto = 'mailto:' + adminEmail +
+		'?subject=' + encodeURIComponent('Request to lift account ban') +
+		'&body=' + encodeURIComponent('Hello,\n\nI would like to request that the ban on my eLibrary account be lifted.\n\nAccount email: ' + accountEmail + '\n\nThank you.');
 
+	if (window.Swal) {
+		Swal.fire({
+			icon: 'error',
+			title: 'Account banned',
+			html: 'Your account has been <strong>banned</strong> by the library administrator, so you cannot log in.<br><br>' +
+			      'If you want the ban lifted, please email the system administrator first at:<br>' +
+			      '<a href="' + mailto + '"><strong>' + adminEmail + '</strong></a>',
+			showCancelButton: true,
+			confirmButtonText: 'Email the administrator',
+			cancelButtonText: 'Close',
+			confirmButtonColor: '#00857a'
+		}).then(function (res) {
+			if (res.isConfirmed) { window.location.href = mailto; }
+		});
+	} else {
+		alert('Your account has been banned, so you cannot log in. If you want the ban lifted, please email the system administrator first at ' + adminEmail + '.');
+	}
+})();
+</script>
+@endif
 @endsection

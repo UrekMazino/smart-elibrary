@@ -30,14 +30,17 @@ class AuthenticatedSessionController extends Controller
     {
         $request->authenticate();
 
-        // Banned accounts are not allowed to log in.
+        // Banned accounts are not allowed to log in. The login page shows the patron a popup
+        // (keyed on the `account_banned` flash) telling them to email the system admin to have
+        // the ban lifted. Redirect to the login route rather than back(): the session was just
+        // invalidated, so back() would fall to the homepage whenever no Referer header is sent.
         if (Auth::user() && Auth::user()->is_banned) {
             Auth::guard('web')->logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
-            return back()->withErrors([
-                'email' => 'This account has been banned. Please contact the library.',
+            return redirect()->route('login')->with('account_banned', true)->withErrors([
+                'email' => 'This account has been banned. Please email the system administrator to have the ban lifted.',
             ])->onlyInput('email');
         }
 

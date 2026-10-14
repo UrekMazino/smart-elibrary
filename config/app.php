@@ -58,6 +58,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | System Administrator Email
+    |--------------------------------------------------------------------------
+    |
+    | Where patrons are told to write to the system admin, e.g. the popup a
+    | banned patron sees on the login page asking them to email to have the
+    | ban lifted. Defaults to the library's official email.
+    |
+    */
+
+    'admin_email' => env('ADMIN_EMAIL', 'info@fprdi.dost.gov.ph'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

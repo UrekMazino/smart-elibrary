@@ -42,4 +42,24 @@ class AuthenticationTest extends TestCase
 
         $this->assertGuest();
     }
+
+    public function test_banned_users_can_not_authenticate_and_see_the_banned_popup()
+    {
+        $user = User::factory()->create();
+        $user->is_banned = true;
+        $user->save();
+
+        $response = $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+
+        $this->assertGuest();
+        $response->assertRedirect(route('login'));
+        $response->assertSessionHas('account_banned', true);
+
+        $this->get('/login')
+            ->assertSee('Account banned')
+            ->assertSee(config('app.admin_email'));
+    }
 }
