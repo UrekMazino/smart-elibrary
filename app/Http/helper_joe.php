@@ -219,6 +219,22 @@ function releaseReservedCopies($circulationNumbers) {
 	return DB::table('copies')->whereIn('circulation_number', $numbers)->where('status', 2)->update(['status' => 1]);
 }
 
+// A reservation's visit, e.g. "Oct 20, 2026, 9:00 AM" (visit_date is a DATE, visit_time a TIME).
+function visitWhen($date, $time) {
+	$parts = array_filter([
+		$date ? Carbon\Carbon::parse($date)->format('M j, Y') : null,
+		$time ? Carbon\Carbon::parse($time)->format('g:i A') : null,
+	]);
+	return $parts ? implode(', ', $parts) : '—';
+}
+
+// The name of the staff account behind a *_by column (circulations.approved_by etc. hold user
+// ids). Deleted accounts still show their name.
+function staffName($userId, $default = 'Not found') {
+	if (! $userId) return $default;
+	return App\Models\User::withTrashed()->whereKey($userId)->value('name') ?? $default;
+}
+
 // Money posted by the check-out / check-in screens as a number, or null when blank. The screen
 // posts 'NaN' when an amount box is left empty.
 function fineAmount($value) {

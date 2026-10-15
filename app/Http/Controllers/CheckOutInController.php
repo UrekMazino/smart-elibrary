@@ -105,7 +105,7 @@ class CheckOutInController extends Controller
                 'due_date' => $request->duedate,
                 'transaction_code' => $transactionCode,
                 'released_at' => now(),
-                'released_by' => $adminUser->name,
+                'released_by' => $adminUser->id,
                 'user_library_code' => $request->patron_library_code,
                 'circulation_number' => $copy->circulation_number,
                 'catalog_id' => $copy->catalog_id,
@@ -155,7 +155,7 @@ class CheckOutInController extends Controller
                 'overdue_fine_rate' => fineAmount($request->overdue_fine_rate),
                 'status' => 3,
                 'released_at' => now(),
-                'released_by' => $adminUser->name,
+                'released_by' => $adminUser->id,
             ]);
 
             // The copy held for the reservation is now out on loan (reserved 2 -> borrowed 3).
@@ -192,7 +192,7 @@ class CheckOutInController extends Controller
 
             DB::table('circulations')->where('id', $ticket->id)->update([
                 'received_at' => now(),
-                'received_by' => $adminUser->name,
+                'received_by' => $adminUser->id,
                 'total_fine_paid' => fineAmount($request->total_fine),
                 'waived_amount' => fineAmount($request->waive_amount),
                 'status' => 5,
@@ -285,7 +285,7 @@ class CheckOutInController extends Controller
             'reservation_code' => checkIfFound($transaction, 'reservation_code') == "N/A" ? "Walk-in" : checkIfFound($transaction, 'reservation_code'),
             'due_date' => checkIfFound($transaction, 'due_date'),
             'released_date' => checkIfFound($transaction, 'released_at'),
-            'released_by' => checkIfFound($transaction, 'released_by'),
+            'released_by' => staffName($transaction->released_by ?? null),
             'overdue_fine_rate' => checkIfFoundInt($transaction, 'overdue_fine_rate'),
             'transaction_code' => checkIfFound($transaction, 'transaction_code'),
             'transaction_status' => checkIfFound($transaction, 'name'),
@@ -360,7 +360,7 @@ class CheckOutInController extends Controller
             'reservation_code' => checkIfFound($transaction, 'reservation_code') == "N/A" ? "Walk-in" : checkIfFound($transaction, 'reservation_code'),
             'due_date' => checkIfFound($transaction, 'due_date'),
             'released_date' => checkIfFound($transaction, 'released_at'),
-            'released_by' => checkIfFound($transaction, 'released_by'),
+            'released_by' => staffName($transaction->released_by ?? null),
             'overdue_fine_rate' => checkIfFoundInt($transaction, 'overdue_fine_rate'),
             'transaction_code' => checkIfFound($transaction, 'transaction_code'),
             'transaction_status' => checkIfFound($transaction, 'name'),

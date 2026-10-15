@@ -13,6 +13,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
+use Tests\SeedsReferenceData;
 use Tests\TestCase;
 
 /**
@@ -21,7 +22,7 @@ use Tests\TestCase;
  */
 class BatchImportReportTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, SeedsReferenceData;
 
     private User $staff;
     private int $material;
@@ -36,10 +37,7 @@ class BatchImportReportTest extends TestCase
         // No generated cover images in public/ from a test import.
         DB::table('settings')->updateOrInsert(['key' => 'enable_placeholder_covers'], ['value' => '0']);
         // The importer looks every tag, subfield and indicator up in the MARC 21 tables.
-        foreach (['marctags_loc', 'marctag_indicators_loc', 'marctag_subfields_loc'] as $table) {
-            $rows = json_decode(file_get_contents(database_path("seeders/data/$table.json")), true);
-            foreach (array_chunk($rows, 500) as $chunk) DB::table($table)->insert($chunk);
-        }
+        $this->seedReferenceData('marctags_loc', 'marctag_indicators_loc', 'marctag_subfields_loc');
     }
 
     /** One MARC21 record: [tag => control-field data | [subfield code => data]]. */

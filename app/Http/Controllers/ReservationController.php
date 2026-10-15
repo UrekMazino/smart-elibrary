@@ -49,7 +49,7 @@ class ReservationController extends Controller
                     DB::table('circulations')->where('id', $ticket->id)->update([
                         'circulation_number' => $request->circulation_number,
                         'approved_at' => now(),
-                        'approved_by' => $adminUser->name,
+                        'approved_by' => $adminUser->id,
                         'status' => 2,
                     ]);
                     return true;
@@ -68,7 +68,7 @@ class ReservationController extends Controller
 
                     DB::table('circulations')->where('id', $ticket->id)->update([
                         'declined_at' => now(),
-                        'declined_by' => $adminUser->name,
+                        'declined_by' => $adminUser->id,
                         'status' => 4,
                     ]);
                     releaseReservedCopies([$ticket->circulation_number]);
@@ -130,7 +130,7 @@ class ReservationController extends Controller
                     'reservation_code' => checkIfFound($transaction, 'reservation_code') == "N/A" ? "Walk-in" : checkIfFound($transaction, 'reservation_code'),
                     'due_date' => checkIfFound($transaction, 'due_date'),
                     'approved_at' => checkIfFound($transaction, 'approved_at'),
-                    'approved_by' => checkIfFound($transaction, 'approved_by'),
+                    'approved_by' => staffName($transaction->approved_by ?? null),
                     'transaction_code' => checkIfFound($transaction, 'transaction_code'),
                     'transaction_status' => checkIfFound($transaction, 'name'),
                     'transaction_status_order_no' => checkIfFound($transaction, 'order_no', 6),
@@ -239,7 +239,7 @@ class ReservationController extends Controller
                 "catalog_id" => $reservation->catalog_id,
                 "circulation_number" => $reservation->circulation_number,
                 "copy_id" => $reservation->copy_id,
-                'date_of_visit' => $reservation->visit_date . ", " . $reservation->visit_time,
+                'date_of_visit' => visitWhen($reservation->visit_date, $reservation->visit_time),
             );
          }
 
@@ -293,7 +293,7 @@ class ReservationController extends Controller
             'name' => checkIfFound($patron, 'name'),
             'email' => checkIfFound($patron, 'email'),
             'contact_no' => checkIfFound($patron, 'contactnum'),
-            'birthdate' => checkIfFound($patron, 'birthdate'),
+            'birthdate' => ! empty($patron->birthdate) ? Carbon::parse($patron->birthdate)->format('F j, Y') : 'Not found',
             'location' => checkIfFound($patron, 'location'),
             'position' => checkIfFound($patron, 'position1'),
             'sex' => checkIfFound($patron, 'sex'),
@@ -321,13 +321,13 @@ class ReservationController extends Controller
             'total_fine' => checkIfFound($transaction, 'total_fine'),
             'total_fine_paid' => checkIfFound($transaction, 'total_fine_paid'),
             'approved_at' => checkIfFound($transaction, 'approved_at'),
-            'approved_by' => checkIfFound($transaction, 'approved_by'),
+            'approved_by' => staffName($transaction->approved_by ?? null),
             'declined_at' => checkIfFound($transaction, 'declined_at'),
-            'declined_by' => checkIfFound($transaction, 'declined_by'),
+            'declined_by' => staffName($transaction->declined_by ?? null),
             'released_at' => checkIfFound($transaction, 'released_at'),
-            'released_by' => checkIfFound($transaction, 'released_by'),
+            'released_by' => staffName($transaction->released_by ?? null),
             'received_at' => checkIfFound($transaction, 'received_at'),
-            'received_by' => checkIfFound($transaction, 'received_by'),
+            'received_by' => staffName($transaction->received_by ?? null),
         );
 
         return response()->json($response); 
@@ -340,8 +340,8 @@ class ReservationController extends Controller
             ->first();
 
         $response = array(
-            'visit_date' => checkIfFound($reservation, 'visit_date'),
-            'visit_time' => checkIfFound($reservation, 'visit_time'),
+            'visit_date' => ! empty($reservation->visit_date) ? Carbon::parse($reservation->visit_date)->format('F j, Y') : 'Not found',
+            'visit_time' => ! empty($reservation->visit_time) ? Carbon::parse($reservation->visit_time)->format('g:i A') : 'Not found',
             'reservation_code' => checkIfFound($reservation, 'reservation_code'),
         );
 

@@ -330,15 +330,22 @@
 							@auth
 								<form method="post" action="{{ url('/request-reservation') }}" id="frm_reservation">
                                     @csrf
+                                    @if($errors->hasAny(['visit_scheddate', 'visit_schedtime', 'catalog_id']))
+                                        <div class="alert alert-danger py-2 small" role="alert">
+                                            @foreach(['visit_scheddate', 'visit_schedtime', 'catalog_id'] as $field)
+                                                @if($errors->has($field))<div>{{ $errors->first($field) }}</div>@endif
+                                            @endforeach
+                                        </div>
+                                    @endif
                                     <div class="row">
                                         <div class="col-6">
                                             <div class="form-group">
-                                                <input class="form-control" name="visit_scheddate" type="text" id="booking_date" data-lang="en" data-min-year="2020" data-max-year="2024" data-disabled-days="10/17/2017,11/18/2017" required>
+                                                <input class="form-control" name="visit_scheddate" type="text" id="booking_date" data-lang="en" data-min-year="{{ date('Y') }}" data-max-year="{{ date('Y') + 1 }}" value="{{ old('visit_scheddate') }}" required>
                                             </div>
                                         </div>
                                         <div class="col-6">
                                             <div class="form-group">
-                                                <input class="form-control" type="text" name="visit_schedtime" id="booking_time" value="9:00 am">
+                                                <input class="form-control" type="text" name="visit_schedtime" id="booking_time" value="{{ old('visit_schedtime', '9:00 am') }}">
                                             </div>
                                         </div>
                                     </div>

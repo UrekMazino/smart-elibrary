@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
+use Tests\SeedsReferenceData;
 use Tests\TestCase;
 
 /**
@@ -16,7 +17,7 @@ use Tests\TestCase;
  */
 class CirculationIntegrityTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, SeedsReferenceData;
 
     private User $staff;
     private int $catalogId;
@@ -24,6 +25,7 @@ class CirculationIntegrityTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->seedReferenceData('copies_status', 'circulation_status');
 
         $this->staff = User::factory()->create(['usertype' => 'Developer']);
         $this->staff->assignRole(Role::findOrCreate('developer'));
@@ -77,6 +79,18 @@ class CirculationIntegrityTest extends TestCase
         $this->reservationAction(1, 'B', 'C1')->assertSessionHas('header', 'Failed');
         $this->assertSame(1, $this->ticketStatus('B'));
         $this->assertSame('C1', DB::table('circulations')->where('transaction_code', 'T-A')->value('circulation_number'));
+    }
+
+    public function test_staff_are_recorded_by_account_and_shown_by_name()
+    {
+        $this->copy('C1', 1);
+        $this->ticket('A');
+
+        $this->reservationAction(1, 'A', 'C1');
+
+        $this->assertSame($this->staff->id, (int) DB::table('circulations')->where('transaction_code', 'T-A')->value('approved_by'));
+        $this->actingAs($this->staff)->getJson('/admin/reservation/transaction-json?transaction_code=T-A')
+            ->assertJson(['approved_by' => $this->staff->name, 'declined_by' => 'Not found']);
     }
 
     public function test_declining_an_approved_reservation_returns_its_copy()

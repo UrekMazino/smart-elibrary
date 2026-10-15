@@ -7,12 +7,19 @@ use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
+use Tests\SeedsReferenceData;
 use Tests\TestCase;
 
 /** Rules the database itself now enforces, and the inventory reports that depended on it. */
 class SchemaIntegrityTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, SeedsReferenceData;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->seedReferenceData('copies_status', 'circulation_status');
+    }
 
     private function catalog(): int
     {
@@ -55,6 +62,31 @@ class SchemaIntegrityTest extends TestCase
                 $this->assertSame('23000', $e->getCode());
             }
         }
+    }
+
+    public function test_a_status_must_be_in_its_vocabulary()
+    {
+        $catalogId = $this->catalog();
+        DB::table('copies')->insert(['catalog_id' => $catalogId, 'circulation_number' => 'B-1']);
+        $this->assertSame(4, (int) DB::table('copies')->value('status'));   // default: Not Available
+
+        $this->expectException(QueryException::class);
+        DB::table('copies')->insert(['catalog_id' => $catalogId, 'circulation_number' => 'B-2', 'status' => 9]);
+    }
+
+    public function test_a_birthdate_is_stored_as_a_date_whichever_form_sent_it()
+    {
+        $this->seedReferenceData('patrontypes');
+        $staff = User::factory()->create(['usertype' => 'Developer']);
+        $staff->assignRole(Role::findOrCreate('developer'));
+        $form = ['name' => $staff->name, 'email' => $staff->email, 'contactnum' => '09170000000', 'patron_type_id' => 1];
+
+        // The admin profile's date picker posts mm/dd/yyyy.
+        $this->actingAs($staff)->post('/admin/profile/update', $form + ['birthdate' => '12/06/1990'])->assertSessionHasNoErrors();
+        $this->assertSame('1990-12-06', DB::table('users')->where('id', $staff->id)->value('birthdate'));
+        $this->actingAs($staff)->get('/admin/profile')->assertSee('value="12/06/1990"', false);
+
+        $this->actingAs($staff)->post('/admin/profile/update', $form + ['birthdate' => 'someday'])->assertSessionHasErrors('birthdate');
     }
 
     public function test_inquiries_show_the_title_of_the_record_asked_about()

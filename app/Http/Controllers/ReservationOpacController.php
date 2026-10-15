@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 use App;
 use Auth;
 use App\Models\Circulation;
@@ -20,7 +21,24 @@ class ReservationOpacController extends Controller
     
     public function requestReservation(Request $request)
     {
-        $request->validate(['catalog_id' => ['required', 'integer', 'exists:catalogs,id']]);
+        // The booking pickers post e.g. "10/20/2026" and "9:00 am". The library takes visits
+        // Monday to Friday, 8 AM to 5 PM (as the form says).
+        $request->validate([
+            'catalog_id'      => ['required', 'integer', 'exists:catalogs,id'],
+            'visit_scheddate' => ['bail', 'required', 'date', 'after_or_equal:today', function ($attribute, $value, $fail) {
+                if (Carbon::parse($value)->isWeekend()) $fail('Visits are Monday to Friday. Please pick a weekday.');
+            }],
+            'visit_schedtime' => ['bail', 'required', function ($attribute, $value, $fail) {
+                $time = strtotime('2000-01-01 ' . $value);
+                if ($time === false) return $fail('Please pick a visit time.');
+                if (date('H:i', $time) < '08:00' || date('H:i', $time) > '17:00') $fail('Visits are between 8:00 AM and 5:00 PM.');
+            }],
+        ], [
+            'visit_scheddate.required'       => 'Please pick a visit date.',
+            'visit_scheddate.date'           => 'Please pick a visit date.',
+            'visit_scheddate.after_or_equal' => "The visit date can't be in the past.",
+            'visit_schedtime.required'       => 'Please pick a visit time.',
+        ]);
 
         $reservation_code = generateReservationCode();
         $transaction_code = generateTransactionCode();
@@ -44,8 +62,8 @@ class ReservationOpacController extends Controller
                 'location_id' => 1,
                 'requested_by' => $user->name,
                 'reservation_code' => $reservation_code,
-                'visit_date' => $request->visit_scheddate,
-                'visit_time' => $request->visit_schedtime,
+                'visit_date' => Carbon::parse($request->visit_scheddate)->toDateString(),
+                'visit_time' => date('H:i:s', strtotime('2000-01-01 ' . $request->visit_schedtime)),
                 'title_statement' => $request->title_statement,
             ]);
 
