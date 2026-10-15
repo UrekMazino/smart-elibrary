@@ -7,6 +7,11 @@ FPRDI/DOST agri-forestry catalog / OPAC (Laravel), built RAG-ready for the **Pro
 - **Deploying this app:** [`DEPLOYMENT_CHECKLIST.md`](DEPLOYMENT_CHECKLIST.md) — ordered deploy steps, required `.env`, out-of-git state, and the cross-repo change record.
 - **This repo's docs:** [`LARAVEL_UPGRADE_RUNBOOK.md`](LARAVEL_UPGRADE_RUNBOOK.md) · [`MEILISEARCH_SETUP.md`](MEILISEARCH_SETUP.md) · [`RAG_INTEGRATION_PLAN.md`](RAG_INTEGRATION_PLAN.md) · [`RAG_CATALOG_SYNC_PLAN.md`](RAG_CATALOG_SYNC_PLAN.md) · [`OPAC_SEO_PLAN.md`](OPAC_SEO_PLAN.md) · [`Z3950_SRU_INTEGRATION_PLAN.md`](Z3950_SRU_INTEGRATION_PLAN.md)
 
+**🔒 Security checks**
+- **On GitHub, every push and pull request:** [`.github/workflows/security.yml`](.github/workflows/security.yml) scans for secrets (gitleaks, full history), vulnerable PHP / npm packages (`composer audit`, `npm audit`) and risky code (Semgrep); [`tests.yml`](.github/workflows/tests.yml) runs PHPUnit against a throwaway MySQL. Dependabot ([`.github/dependabot.yml`](.github/dependabot.yml)) opens update PRs weekly.
+- **On your machine, before each commit:** run `git config core.hooksPath .githooks` once per clone, so [`.githooks/pre-commit`](.githooks/pre-commit) blocks commits that add a secret (needs [gitleaks](https://github.com/gitleaks/gitleaks/releases)).
+- **Never commit** `.env`, private keys or real password hashes. Seeded accounts get `SEED_USER_PASSWORD` from `.env`.
+
 ---
 
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400"></a></p>

@@ -1,0 +1,83 @@
+# Security checks — run on every push and pull request, and weekly (new advisories appear even
+# when the code doesn't change). Each job must pass; protect `main` in the repo settings
+# (Settings → Branches → require these status checks) so nothing merges while one is red.
+#
+#   Secrets       gitleaks over the full git history (a secret deleted later is still in old commits).
+#                 Known, already-revoked findings are listed in .gitleaksignore.
+#   Dependencies  composer audit (PHP) + npm audit. What ships to browsers (package.json
+#                 "dependencies") must be clean; build tooling ("devDependencies") fails only on
+#                 critical — its remaining issues come from Laravel Mix and go away with a Vite migration.
+#   Code scan     Semgrep's PHP, security-audit and secrets rules over our own code
+#                 (third-party code is excluded in .semgrepignore).
+#
+# Run the same checks locally before pushing:
+#   gitleaks git --redact .
+#   composer audit --locked && npm audit --omit=dev && npm audit --audit-level=critical
+#   semgrep scan --config p/php --config p/security-audit --config p/secrets --metrics=off --error .
+name: Security
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '0 1 * * 1'   # Mondays 09:00 Asia/Manila
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  secrets:
+    name: Secrets (gitleaks)
+    runs-on: ubuntu-latest
+    env:
+      GITLEAKS_VERSION: 8.30.1
+      GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Install gitleaks (checksum-verified)
+        run: |
+          curl -sSfL -o gitleaks.tgz "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  gitleaks.tgz" | sha256sum -c -
+          tar -xzf gitleaks.tgz gitleaks
+      - name: Scan the full history
+        run: ./gitleaks git --redact --verbose --no-banner .
+
+  dependencies:
+    name: Dependencies (composer audit, npm audit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        with:
+          php-version: '8.3'
+          tools: composer:v2
+          coverage: none
+      - name: PHP packages (composer.lock)
+        run: composer audit --locked --no-interaction
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '20'
+      - name: JS that ships to browsers (dependencies)
+        run: npm audit --omit=dev
+      - name: Build tooling (devDependencies) — fails on critical only
+        run: npm audit --audit-level=critical
+
+  code-scan:
+    name: Code scan (Semgrep)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+      - name: Install Semgrep
+        run: pip install --disable-pip-version-check "semgrep==1.178.0"
+      - name: Scan
+        run: semgrep scan --config p/php --config p/security-audit --config p/secrets --metrics=off --error .
