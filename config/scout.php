@@ -59,7 +59,9 @@ return [
     |
     */
 
-    'after_commit' => false,
+    // On: catalogue saves run in a transaction (record + OPAC row + AI outbox), so a save that
+    // rolls back must not have reached Meilisearch already.
+    'after_commit' => true,
 
     /*
     |--------------------------------------------------------------------------

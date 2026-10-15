@@ -86,10 +86,44 @@ class CheckOutInController extends Controller
 
         $adminUser = auth()->user();
 
-        //Update material status to "Borrowed"
-        DB::table('copies')->where('circulation_number', $request->circulation_number)->update(['status' => 3]);
+        // The patron's account, if one was found (the screen posts placeholder text otherwise).
+        $userId = User::whereKey((int) $request->user_id)->value('id');
 
-        $emailSent = NULL;
+        // Walk-in check-out: the copy is claimed (Available -> Borrowed) and the loan and its
+        // fine record are written in one transaction. The copy is locked first, so a copy that
+        // is reserved or already out can't be checked out again.
+        $checkedOut = DB::transaction(function () use ($request, $adminUser, $transactionCode, $userId) {
+            if (! $request->filled('circulation_number')) return false;
+            $copy = DB::table('copies')->where('circulation_number', $request->circulation_number)->lockForUpdate()->first();
+            if (! $copy || $copy->status != 1) return false;
+
+            //Update material status to "Borrowed"
+            DB::table('copies')->where('id', $copy->id)->update(['status' => 3]);
+
+            Circulation::create([
+                'overdue_fine_rate' => fineAmount($request->overdue_fine_rate),
+                'due_date' => $request->duedate,
+                'transaction_code' => $transactionCode,
+                'released_at' => now(),
+                'released_by' => $adminUser->name,
+                'user_library_code' => $request->patron_library_code,
+                'circulation_number' => $copy->circulation_number,
+                'catalog_id' => $copy->catalog_id,
+                'user_id' => $userId,
+                'copy_id' => $copy->id,
+                'status' => 3,
+            ]);
+
+            CirculationFineHistory::create([
+                'transaction_code' => $transactionCode,
+            ]);
+
+            return true;
+        });
+
+        if (! $checkedOut) {
+            return redirect()->route('checkoutin')->with(['error' => 'This copy is not available for check-out. A reserved copy is checked out from its reservation.']);
+        }
 
         if($request->patron_library_code != "N/A") {
             $user = DB::table('users')->where('library_code', $request->patron_library_code)->first();
@@ -102,42 +136,38 @@ class CheckOutInController extends Controller
             // $emailSent = Mail::to($user->email)->send($mailable);
         }
 
-        // if(is_null($emailSent)) {
-            $transaction = Circulation::create([
-                'overdue_fine_rate' => $request->overdue_fine_rate,
-                'due_date' => $request->duedate,
-                'transaction_code' => $transactionCode,
-                'released_at' => now(),
-                'released_by' => $adminUser->name,
-                'user_library_code' => $request->patron_library_code,
-                'circulation_number' => $request->circulation_number,
-                'catalog_id' =>  $request->catalog_id,
-                'user_id' => $request->user_id,
-                'copy_id' => $request->copy_id,
-                'status' => 3,
-            ]);
-
-            CirculationFineHistory::create([
-                'transaction_code' => $transactionCode,
-            ]);
-        // }  else {
-        //     return redirect()->route('checkoutin')->with(['error' => 'Error! Transaction failed.']);     
-        // }
         return redirect()->route('checkoutin')->with([
             'success' => '"Check-out complete! Please see your code below."!',
             'transactionCode' => $transactionCode]);
     }
 
+    // Check out an approved reservation (or change the terms of a loan that is already out).
     public function checkoutUpdate(Request $request) {
         $adminUser = auth()->user();
 
-        DB::table('circulations')->where('transaction_code', $request->transaction_code)->update([
-            'due_date' => $request->duedate,
-            'overdue_fine_rate' => $request->overdue_fine_rate,
-            'status' => 3,
-            'released_at' => now(),
-            'released_by' => $adminUser->name,
-        ]);
+        $updated = DB::transaction(function () use ($request, $adminUser) {
+            if (! $request->filled('transaction_code')) return false;
+            $ticket = DB::table('circulations')->where('transaction_code', $request->transaction_code)->lockForUpdate()->first();
+            if (! $ticket || ! in_array((int) $ticket->status, [2, 3])) return false;
+
+            DB::table('circulations')->where('id', $ticket->id)->update([
+                'due_date' => $request->duedate,
+                'overdue_fine_rate' => fineAmount($request->overdue_fine_rate),
+                'status' => 3,
+                'released_at' => now(),
+                'released_by' => $adminUser->name,
+            ]);
+
+            // The copy held for the reservation is now out on loan (reserved 2 -> borrowed 3).
+            if ($ticket->circulation_number) {
+                DB::table('copies')->where('circulation_number', $ticket->circulation_number)->where('status', 2)->update(['status' => 3]);
+            }
+            return true;
+        });
+
+        if (! $updated) {
+            return redirect()->route('checkoutin')->with(['error' => 'Only an approved reservation or an open loan can be checked out.']);
+        }
 
         return redirect()->route('checkoutin')->with([
             'success' => 'Check-out updated successfully!',
@@ -149,15 +179,49 @@ class CheckOutInController extends Controller
     {
         $adminUser = auth()->user();
 
-        DB::table('copies')->where('circulation_number', $request->circulation_code)->update(['status' => 1]);
+        // The return, the copy going back on the shelf and the fines are recorded together.
+        $received = DB::transaction(function () use ($request, $adminUser) {
+            if (! $request->filled('transaction_code')) return false;
+            $ticket = DB::table('circulations')->where('transaction_code', $request->transaction_code)->lockForUpdate()->first();
+            if (! $ticket) return false;
+
+            $copyNumber = $ticket->circulation_number ?: $request->circulation_code;
+            if ($copyNumber) {
+                DB::table('copies')->where('circulation_number', $copyNumber)->update(['status' => 1]);
+            }
+
+            DB::table('circulations')->where('id', $ticket->id)->update([
+                'received_at' => now(),
+                'received_by' => $adminUser->name,
+                'total_fine_paid' => fineAmount($request->total_fine),
+                'waived_amount' => fineAmount($request->waive_amount),
+                'status' => 5,
+            ]);
+
+            DB::table('circulation_fine_history')->where('transaction_code', $ticket->transaction_code)->update([
+                'overdue_fine_amount' => fineAmount($request->overdue_fine),
+                'overdue_total_hours' => is_numeric($request->total_hrs_overdue) ? max(0, (int) $request->total_hrs_overdue) : null,
+                'other_fine_amount' => fineAmount($request->other_fine),
+                // The screen posts its placeholder ("Select description...", or 0) when no reason was picked.
+                'circulation_fine_id' => DB::table('circulation_fines')->where('id', (int) $request->circulation_fine_id)->value('id'),
+                'other_fine_description' => $request->other_fine_desc,
+                'fine_note' => $request->fine_note,
+            ]);
+
+            return true;
+        });
+
+        if (! $received) {
+            return redirect()->route('checkoutin')->with(['error' => 'Transaction not found.']);
+        }
 
         if($request->library_code != "N/A") {
 
             $user = DB::table('users')->where('library_code', $request->library_code)->first();
 
-            // Notify the patron of the check-in. Best-effort only: a mail failure must not
-            // block recording the return. (Laravel 9+ removed Mailer::getSwiftMailer(); the
-            // old SwiftMailer failure listener no longer applies.)
+            // Notify the patron of the check-in, after the return is recorded. Best-effort only:
+            // a mail failure must not undo the return. (Laravel 9+ removed
+            // Mailer::getSwiftMailer(); the old SwiftMailer failure listener no longer applies.)
             if($user) {
                 try {
                     $mailable = new TransactionMail(['transaction_code' => $request->transaction_code, 'name' => $user->name, 'type' => 'checkin']);
@@ -167,25 +231,6 @@ class CheckOutInController extends Controller
                 }
             }
         }
-
-        // Record the return regardless of whether the notification email went out.
-        DB::table('circulations')->where('transaction_code', $request->transaction_code)->update([
-            'received_at' => now(),
-            'received_by' => $adminUser->name,
-            'total_fine_paid' => $request->total_fine,
-            'waived_amount' => $request->waive_amount,
-            'status' => 5,
-        ]);
-
-        DB::table('circulation_fine_history')->where('transaction_code', $request->transaction_code)->update([
-            'transaction_code' => $request->transaction_code,
-            'overdue_fine_amount' => $request->overdue_fine,
-            'overdue_total_hours' => $request->total_hrs_overdue,
-            'other_fine_amount' => $request->other_fine,
-            'circulation_fine_id' => $request->circulation_fine_id,
-            'other_fine_description' => $request->other_fine_desc,
-            'fine_note' => $request->fine_note,
-        ]);
 
         return redirect()->route('checkoutin')->with(['complete' => 'Transaction Complete!']);
     }

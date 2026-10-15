@@ -20,6 +20,8 @@ class ReviewController extends Controller
 
     public function create()
     {
+      request()->validate(['catalog_id' => ['required', 'integer', 'exists:catalogs,id']]);
+
       //SAVE REVIEW
        $review = new App\Models\Rating;
        $review->catalog_id = request()->catalog_id;

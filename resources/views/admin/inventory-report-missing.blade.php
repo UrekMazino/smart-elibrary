@@ -66,8 +66,8 @@ License: For each use you must have a valid license purchased only from above li
                         @foreach (getCopiesMissingList() as $item)
                             <tr>
                                 <td></td>
-                                <td>{{$item->catalog_id}}</td>
-                                <td>{{$item->CirculationNumber}}</td>
+                                <td>{{$item->accession_number}}</td>
+                                <td>{{$item->circulation_number}}</td>
                                 <td>{{$item->title}}</td>
                             </tr>
                         @endforeach

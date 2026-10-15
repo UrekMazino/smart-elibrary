@@ -209,6 +209,22 @@ function getReservationCount() {
 	return $totalRecords;
 }
 
+// Put copies held for an approved reservation (copies.status 2 = Reserved) back on the shelf
+// (1 = Available) when that ticket is declined, reverted or its patron banned. Without this the
+// copy stays Reserved for nobody. Copies in any other state are left alone.
+function releaseReservedCopies($circulationNumbers) {
+	$numbers = collect($circulationNumbers)->filter()->unique()->values();
+	if ($numbers->isEmpty()) return 0;
+
+	return DB::table('copies')->whereIn('circulation_number', $numbers)->where('status', 2)->update(['status' => 1]);
+}
+
+// Money posted by the check-out / check-in screens as a number, or null when blank. The screen
+// posts 'NaN' when an amount box is left empty.
+function fineAmount($value) {
+	return is_numeric($value) ? round((float) $value, 2) : null;
+}
+
 // Total unseen chat messages FROM patrons (drives the admin Reservation menu badge).
 function getReservationUnseenMsgCount() {
 	return DB::table('reservation_messages')

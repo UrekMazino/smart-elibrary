@@ -66,18 +66,34 @@ function getCopiesPresented()
 
 function getCopiesMissing()
 {
-    $total = count(App\Models\Holdingcopy::where('status',1)->get());
-    $presented = count(App\Models\Holdingscopypresented::get());
-
-    return number_format($total - $presented);
+    return number_format(copiesMissingQuery()->count());
 }
 
+// Copies scanned in the current inventory count, with the record's accession number and title.
+// (These lists used to read view_inventory_presented / view_inventory_missing, which were never
+// created in the database, so both report pages failed.)
 function getCopiesPresentedList()
 {
-    return App\Models\View_inventory_presented::get();
+    return DB::table('holdingscopypresenteds as p')
+        ->leftJoin('copies as c', 'c.circulation_number', '=', 'p.circulation_number')
+        ->leftJoin('catalogs as k', 'k.id', '=', 'p.catalog_id')
+        ->orderBy('p.created_at')
+        ->get(['p.id', 'p.catalog_id', 'k.accession_number', 'p.circulation_number', 'c.title', 'p.created_at']);
 }
 
+// Available copies not scanned yet in the current count.
 function getCopiesMissingList()
 {
-    return App\Models\View_inventory_missing::get();
+    return copiesMissingQuery()
+        ->leftJoin('catalogs as k', 'k.id', '=', 'c.catalog_id')
+        ->orderBy('c.circulation_number')
+        ->get(['c.id', 'c.catalog_id', 'k.accession_number', 'c.circulation_number', 'c.title']);
+}
+
+function copiesMissingQuery()
+{
+    return DB::table('copies as c')
+        ->where('c.status', 1)
+        ->whereNotExists(fn ($q) => $q->select(DB::raw(1))->from('holdingscopypresenteds as p')
+            ->whereColumn('p.circulation_number', 'c.circulation_number'));
 }
