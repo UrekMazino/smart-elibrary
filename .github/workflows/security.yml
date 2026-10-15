@@ -10,10 +10,8 @@
 #   Code scan     Semgrep's PHP, security-audit and secrets rules over our own code
 #                 (third-party code is excluded in .semgrepignore).
 #
-# Run the same checks locally before pushing:
-#   gitleaks git --redact .
-#   composer audit --locked && npm audit --omit=dev && npm audit --audit-level=critical
-#   semgrep scan --config p/php --config p/security-audit --config p/secrets --metrics=off --error .
+# The same checks run locally on every `git push` (.githooks/pre-push) or by hand with
+# `composer security` — both call scripts/security-check.sh. Keep the two in step.
 name: Security
 
 on:

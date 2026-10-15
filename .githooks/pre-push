@@ -1,0 +1,9 @@
+#!/bin/sh
+# Runs scripts/security-check.sh (the same checks as the GitHub workflows) before every `git push`;
+# a failing check stops the push. Takes about a minute.
+#
+# Enabled by the same setting as pre-commit:   git config core.hooksPath .githooks
+# Skip once (e.g. an urgent fix while MySQL is down):   git push --no-verify
+
+# Git passes the refs being pushed on stdin; the checks don't need them.
+exec "$(git rev-parse --show-toplevel)/scripts/security-check.sh" < /dev/null

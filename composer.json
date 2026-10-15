@@ -60,6 +60,10 @@
         ],
         "post-create-project-cmd": [
             "@php artisan key:generate --ansi"
+        ],
+        "security": [
+            "Composer\\Config::disableProcessTimeout",
+            "bash scripts/security-check.sh"
         ]
     },
     "extra": {

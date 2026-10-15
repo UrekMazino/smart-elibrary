@@ -9,7 +9,7 @@ FPRDI/DOST agri-forestry catalog / OPAC (Laravel), built RAG-ready for the **Pro
 
 **🔒 Security checks**
 - **On GitHub, every push and pull request:** [`.github/workflows/security.yml`](.github/workflows/security.yml) scans for secrets (gitleaks, full history), vulnerable PHP / npm packages (`composer audit`, `npm audit`) and risky code (Semgrep); [`tests.yml`](.github/workflows/tests.yml) runs PHPUnit against a throwaway MySQL. Dependabot ([`.github/dependabot.yml`](.github/dependabot.yml)) opens update PRs weekly.
-- **On your machine, before each commit:** run `git config core.hooksPath .githooks` once per clone, so [`.githooks/pre-commit`](.githooks/pre-commit) blocks commits that add a secret (needs [gitleaks](https://github.com/gitleaks/gitleaks/releases)).
+- **On your machine:** run `git config core.hooksPath .githooks` once per clone. Then [`.githooks/pre-commit`](.githooks/pre-commit) blocks commits that add a secret, and [`.githooks/pre-push`](.githooks/pre-push) runs the same checks as the workflows ([`scripts/security-check.sh`](scripts/security-check.sh), ~30 s) and stops a push if any fail. Run them by hand with `composer security` (`composer security -- --no-tests` skips PHPUnit). Needs [gitleaks](https://github.com/gitleaks/gitleaks/releases) and `semgrep` (`pip install semgrep==1.178.0`) on PATH or in `~/.local/bin`; tests need the `elibrarydb_test` database.
 - **Never commit** `.env`, private keys or real password hashes. Seeded accounts get `SEED_USER_PASSWORD` from `.env`.
 
 ---
