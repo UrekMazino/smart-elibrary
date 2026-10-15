@@ -4,7 +4,9 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class DatabaseSeeder extends Seeder
 {
@@ -17,6 +19,7 @@ class DatabaseSeeder extends Seeder
      * (developer, super admin, one patron), and `model_has_roles` to their role links.
      * Re-snapshot both from the live DB whenever an account you rely on changes —
      * seedTable() TRUNCATES, so anything absent from the JSON is gone after a reseed.
+     * Strip the `password` field when you do: seeded accounts get SEED_USER_PASSWORD instead.
      *
      * The seed runs AFTER every migration, so a migration that adds rows to one of these tables
      * (a new permission and its role grants, flags on materials, ...) must add the same rows to the
@@ -76,6 +79,10 @@ class DatabaseSeeder extends Seeder
 
         $rows = json_decode(file_get_contents($path), true) ?: [];
 
+        if ($table === 'users') {
+            $rows = $this->withSeedPassword($rows);
+        }
+
         DB::table($table)->truncate();
 
         // Chunked insert keeps the large MARC tables (2k+ rows) within packet limits.
@@ -84,5 +91,22 @@ class DatabaseSeeder extends Seeder
         }
 
         $this->command->info("  ✓ {$table}: " . count($rows) . " rows");
+    }
+
+    /**
+     * users.json carries no password hashes (real accounts' hashes in git can be cracked offline).
+     * Every seeded account gets SEED_USER_PASSWORD from .env, or a random password printed once —
+     * change it after logging in.
+     */
+    private function withSeedPassword(array $rows): array
+    {
+        $password = env('SEED_USER_PASSWORD');
+        if (! $password) {
+            $password = Str::password(16, symbols: false);
+            $this->command->warn("  ! users: no SEED_USER_PASSWORD in .env — seeded accounts' password is: {$password}");
+        }
+        $hash = Hash::make($password);
+
+        return array_map(fn ($row) => array_merge($row, ['password' => $hash, 'remember_token' => null]), $rows);
     }
 }
