@@ -50,6 +50,7 @@
                             · imported {{ optional($batch->created_at)->format('M j, Y') }}
                             · {{ $filters['statuses']['published'] ?? 0 }} published
                             · {{ $filters['statuses']['onhold'] ?? 0 }} on hold
+                            · <a href="{{ route('batch-report', ['id' => $batch->id]) }}">Import report</a>
                         </div>
                       </div>
                       @include('admin.partials.catalog-bulk-toolbar', ['list' => 'batch'])

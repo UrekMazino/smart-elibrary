@@ -65,7 +65,7 @@ function generateReservationCode() {
 	$combinedString = 'RSV-' . $randomString . $timestamp;
 	$matchCode = App\Models\Circulation::where('reservation_code', $combinedString)->first();
 	if(!is_null($matchCode)) {
-		$combinedString = generateTransactionCode();
+		$combinedString = generateReservationCode();
 	}
 	return $combinedString;
 

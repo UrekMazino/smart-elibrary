@@ -6,6 +6,7 @@ use App\Http\Requests\BatchUploadRequest;
 use App\Http\Requests\MarcFileUploadRequest;
 use App\Models\Catalog;
 use App\Models\CatalogImport;
+use App\Models\CatalogImportIssue;
 use App\Models\Download;
 // use App\Models\CatalogImportProgress;
 use App\Models\Frontpage;
@@ -18,11 +19,13 @@ use App\Models\Material;
 use App\Models\Multimedia;
 use App\Models\ViewCatalog;
 use App\Services\AiSearchService;
+use App\Services\CatalogRecordCheck;
 use App\Services\MarcExportService;
 use App\Services\MarcMaterialMapper;
 use App\Models\MaterialTypeMap;
 use App\Services\RagSync;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Scriptotek\Marc\Collection;
 use Scriptotek\Marc\Record;
@@ -227,7 +230,10 @@ class CatalogingController extends Controller
             ->orderByDesc('r.created_at')->orderByDesc('r.id')
             ->get(['r.id', 'r.rating', 'r.remarks', 'r.created_at', 'u.name', 'u.email', 'u.is_banned', 'u.is_blocked']);
 
-        return view('admin.catalog-view-record', ['record' => $record, 'fullText' => $fullText, 'coverPage' => $coverPage, 'title' => $title, 'totalCopies' => $totalCopies, 'citations' => $citations, 'reviews' => $reviews]);
+        // Flagged at import and not reviewed yet: shown above the record.
+        $importIssue = CatalogImportIssue::where('catalog_id', $catalogId)->where('outcome', 'imported')->whereNull('reviewed_at')->first();
+
+        return view('admin.catalog-view-record', ['record' => $record, 'fullText' => $fullText, 'coverPage' => $coverPage, 'title' => $title, 'totalCopies' => $totalCopies, 'citations' => $citations, 'reviews' => $reviews, 'importIssue' => $importIssue]);
     }
 
     /**
@@ -461,6 +467,67 @@ class CatalogingController extends Controller
         return $this->catalogListJson($request, null, (int) $id);
     }
 
+    /** Import report of a batch: the records skipped, and those imported but flagged for review. */
+    public function batchReport($id)
+    {
+        $batch = CatalogImport::whereNull('deleted_at')->findOrFail($id);
+
+        $issues = CatalogImportIssue::where('catalog_import_issues.catalog_import_id', $batch->id)
+            ->leftJoin('catalogs as k', 'k.id', '=', 'catalog_import_issues.catalog_id')
+            ->leftJoin('users as u', 'u.id', '=', 'catalog_import_issues.reviewed_by')
+            ->orderBy('catalog_import_issues.record_no')
+            ->get(['catalog_import_issues.id', 'catalog_import_issues.catalog_id', 'catalog_import_issues.record_no',
+                   'catalog_import_issues.control_number', 'catalog_import_issues.title', 'catalog_import_issues.outcome',
+                   'catalog_import_issues.problems', 'catalog_import_issues.reviewed_at', 'u.name as reviewer',
+                   'k.deleted_at as record_deleted_at', DB::raw('catalog_import_issues.raw_marc IS NOT NULL as has_marc')]);
+
+        return view('admin.batch-report', [
+            'batch'   => $batch,
+            'skipped' => $issues->where('outcome', 'skipped')->values(),
+            'review'  => $issues->where('outcome', 'imported')->values(),
+        ]);
+    }
+
+    /** The batch's skipped records as one MARC21 file, to fix in the source and import again. */
+    public function downloadSkippedRecords($id)
+    {
+        $batch = CatalogImport::whereNull('deleted_at')->findOrFail($id);
+        $records = CatalogImportIssue::where('catalog_import_id', $batch->id)->where('outcome', 'skipped')
+            ->whereNotNull('raw_marc')->orderBy('record_no')->pluck('raw_marc');
+        abort_if($records->isEmpty(), 404);
+
+        return response()->streamDownload(function () use ($records) {
+            foreach ($records as $record) echo $record;
+        }, "batch-{$batch->id}-skipped-records.mrc", ['Content-Type' => 'application/marc']);
+    }
+
+    /** Staff have looked at a flagged record and accept it as it is. */
+    public function markImportIssueReviewed(Request $request, CatalogImportIssue $issue)
+    {
+        abort_unless($issue->outcome === 'imported', 404);
+        if (! $issue->reviewed_at) {
+            $issue->update(['reviewed_at' => now(), 'reviewed_by' => Auth::id()]);
+        }
+
+        // Back to where the button was (the record page is reached by POST, so not back()).
+        return $request->input('return_to') === 'record'
+            ? redirect()->route('show-record', ['id' => $issue->catalog_id])
+            : redirect()->route('batch-report', ['id' => $issue->catalog_import_id]);
+    }
+
+    /**
+     * After an edit, check a record that was flagged at import again: the problems the edit fixed
+     * are cleared, and the flag is closed when none is left.
+     */
+    private function recheckImportIssue(int $catalogId, array $opacRow): void
+    {
+        $issue = CatalogImportIssue::where('catalog_id', $catalogId)->where('outcome', 'imported')->whereNull('reviewed_at')->first();
+        if (! $issue) return;
+
+        $left = CatalogRecordCheck::problems($opacRow, $catalogId);
+        $issue->update($left ? ['problems' => $left] : ['reviewed_at' => now(), 'reviewed_by' => Auth::id()]);
+    }
+
     public function storeBatch(BatchUploadRequest $request, MarcMaterialMapper $mapper)
     {
         $records = Collection::fromFile($request->file('batch_file'));
@@ -495,6 +562,7 @@ class CatalogingController extends Controller
         $catalogImport = CatalogImport::create([
             'no_of_records' => $totalRecords,
             'subject' => trim((string) $request->subject),
+            'file_name' => mb_substr((string) $request->file('batch_file')->getClientOriginalName(), 0, 255),
             'is_aanr' => isset($request->is_aanr) ? 1 : 0,
             'comment' => $request->comment,
             'material_type_id' => $request->material_type_id,   // the default type
@@ -508,12 +576,18 @@ class CatalogingController extends Controller
         // $task->total_records = $totalRecords;
         // $task->save();
 
+        // The import report: records imported, imported but flagged for review, and skipped.
+        $imported = $flagged = $skipped = 0;
+
         foreach($fields as $index => $f) {
             $marcTags = [];
 
             foreach($f as $c) {
                 $marcTags[] = $c->getTag();
             }
+
+            // What is wrong with this record, if anything (see CatalogRecordCheck).
+            $problems = [];
 
             try{
                 // LDR - LEADER
@@ -532,7 +606,12 @@ class CatalogingController extends Controller
                     "indicator" => "N"
                 ];
     
-                $l = str_split($leaders[$index]);
+                // A leader shorter than 24 characters is padded, not fatal (fixed-length field).
+                if (strlen($leaders[$index]) < 24) {
+                    $problems[] = CatalogRecordCheck::problem('short_leader', 'warning',
+                        'The leader is ' . strlen($leaders[$index]) . ' characters long, not 24; padded with blanks.');
+                }
+                $l = str_split(str_pad($leaders[$index], 24));
     
                 $subfieldArr[0] = [
                     "sub-index" => 1,
@@ -777,7 +856,13 @@ class CatalogingController extends Controller
     
     
                             if($marcTags[$w] == '008') {
-                            
+                                // Same for a short 008 (40 characters): pad, and flag it.
+                                if (strlen($string) < 40) {
+                                    $problems[] = CatalogRecordCheck::problem('short_008', 'warning',
+                                        'Field 008 is ' . strlen($string) . ' characters long, not 40; padded with blanks.');
+                                }
+                                $c = str_split(str_pad($string, 40));
+
                                 $subfieldArr[0] = [
                                     "sub-index" => 1,
                                     "id" => 2603,
@@ -1059,7 +1144,12 @@ class CatalogingController extends Controller
                     // the mapped type for this record's field value, else the batch default.
                     $mappedId = $mapper->materialFor($files[$index], $mapField, $materialMap);
                     $material = $this->resolveMaterial($mappedId ?? $request->material_type_id, $matchingRecordType['recordType'] ?? null);
-                    $materialCounts[$material->name] = ($materialCounts[$material->name] ?? 0) + 1;
+                    if ($mapField && $mappedId === null) {
+                        $values = $mapper->valuesOf($files[$index], $mapField);
+                        $problems[] = CatalogRecordCheck::problem('unmapped_material', 'warning',
+                            ($values ? 'Material type value "' . implode('", "', $values) . "\" ($mapField) isn't in the mapping" : "No $mapField value for the material mapping")
+                            . '; imported as ' . $material->name . '.');
+                    }
 
                     $material_type = $material->name;
                     $material_type_id = $material->id;
@@ -1097,17 +1187,41 @@ class CatalogingController extends Controller
                     'updated_by' => $user->id,
                 ];
 
-                // The record and its OPAC row are written together (one transaction per record,
-                // so the import progress stays visible while the batch runs).
-                $catalog = $this->createWithOpacRow($catalogRow, $opacRow);
+                // Too little to catalogue (no title, or only a title): skip it and report it.
+                $problems = array_merge($problems, CatalogRecordCheck::problems($opacRow));
+                if (CatalogRecordCheck::blocksImport($problems)) {
+                    $this->recordImportIssue($catalogImport->id, $index, $files[$index], $problems, $opacRow['title_statement']);
+                    $skipped++;
+                    continue;
+                }
+
+                // The record, its OPAC row and its flag (if any) are written together: one
+                // transaction per record, so the import progress stays visible while it runs.
+                $catalog = DB::transaction(function () use ($catalogRow, $opacRow, $catalogImport, $index, $files, $problems) {
+                    $catalog = $this->createWithOpacRow($catalogRow, $opacRow);
+                    if ($problems) {
+                        $this->recordImportIssue($catalogImport->id, $index, $files[$index], $problems, $opacRow['title_statement'], $catalog->id);
+                    }
+                    return $catalog;
+                });
+                $imported++;
+                if ($problems) $flagged++;
+                $materialCounts[$material->name] = ($materialCounts[$material->name] ?? 0) + 1;
+
                 ensurePlaceholderCover($catalog->id);
 
                 $formattedRecords = [];
-            } catch (Exception $e) {
-                dump("Error: $e->getMessage()");
+            } catch (\Throwable $e) {
+                // A record that can't be read is skipped and reported; the rest of the file goes on.
+                Log::warning('Batch import: record skipped', ['batch' => $catalogImport->id, 'record' => $index + 1, 'error' => $e->getMessage()]);
+                $problems[] = CatalogRecordCheck::problem('unreadable', 'error', 'The record could not be read: ' . Str::limit($e->getMessage(), 200));
+                $this->recordImportIssue($catalogImport->id, $index, $files[$index], $problems, null);
+                $skipped++;
             }
           
         }
+
+        $catalogImport->update(['imported_count' => $imported, 'skipped_count' => $skipped]);
         // CatalogImportProgress::truncate();
 
         clearHomeCache();
@@ -1120,12 +1234,49 @@ class CatalogingController extends Controller
             'imported'
         );
 
-        // Post/Redirect/Get, with what was imported under which type.
+        // Post/Redirect/Get, with what was imported under which type and what needs attention.
         arsort($materialCounts);
         $breakdown = collect($materialCounts)->map(fn ($n, $name) => "{$n} {$name}")->implode(', ');
+        $attention = array_filter([
+            $flagged ? $flagged . ' imported record(s) need review' : null,
+            $skipped ? $skipped . ' record(s) were skipped' : null,
+        ]);
 
-        return redirect('/admin/batch-list')->with('success',
-            'Imported ' . array_sum($materialCounts) . ' record(s)' . ($breakdown ? ': ' . $breakdown . '.' : '.'));
+        return redirect('/admin/batch-list')->with([
+            'success' => "Imported {$imported} of {$totalRecords} record(s)" . ($breakdown ? ': ' . $breakdown . '.' : '.')
+                . ($attention ? ' ' . ucfirst(implode('; ', $attention)) . '.' : ''),
+            'import_report' => $attention ? $catalogImport->id : null,
+        ]);
+    }
+
+    /** One row of the import report for a record with problems (catalog_import_issues). */
+    private function recordImportIssue(int $batchId, int $index, $marc, array $problems, ?string $title, ?int $catalogId = null): void
+    {
+        $skipped = $catalogId === null;
+
+        CatalogImportIssue::create([
+            'catalog_import_id' => $batchId,
+            'catalog_id'        => $catalogId,
+            'record_no'         => $index + 1,
+            'control_number'    => $this->marcValue($marc, '001'),
+            'title'             => Str::limit(trim(strip_tags((string) ($title ?? $this->marcValue($marc, '245', 'a')))), 490, '…') ?: null,
+            'outcome'           => $skipped ? 'skipped' : 'imported',
+            'problems'          => $problems,
+            // Kept so the skipped records can be downloaded, fixed and imported again.
+            'raw_marc'          => $skipped ? rescue(fn () => $marc->toRaw(), null, false) : null,
+        ]);
+    }
+
+    /** A control field's data, or the first $code subfield of a data field, read straight from the MARC. */
+    private function marcValue($marc, string $tag, ?string $code = null): ?string
+    {
+        return rescue(function () use ($marc, $tag, $code) {
+            $field = $marc->getField($tag);
+            if (! $field) return null;
+            if ($code === null) return mb_substr(trim((string) $field->getData()), 0, 50) ?: null;
+            $subfield = $field->getSubfield($code);
+            return $subfield ? trim((string) $subfield->getData()) : null;
+        }, null, false);
     }
 
     /**
@@ -1301,9 +1452,13 @@ class CatalogingController extends Controller
                 'catalog_imports.subject',
                 'catalog_imports.comment',
                 'catalog_imports.created_at',
-                \DB::raw('count(case when catalog_imports.id = catalogs.catalog_import_id and catalogs.deleted_at is null then 1 else null end) as current_no_of_records')
+                'catalog_imports.skipped_count',
+                \DB::raw('count(case when catalog_imports.id = catalogs.catalog_import_id and catalogs.deleted_at is null then 1 else null end) as current_no_of_records'),
+                // Imported records flagged at import and not reviewed yet (deleted ones don't count).
+                \DB::raw("(select count(*) from catalog_import_issues i join catalogs k on k.id = i.catalog_id where i.catalog_import_id = catalog_imports.id and i.outcome = 'imported' and i.reviewed_at is null and k.deleted_at is null) as review_open")
             )
-            ->join('catalogs', 'catalogs.catalog_import_id', '=', 'catalog_imports.id')
+            // Left join: a batch whose records were all skipped still has a report to show.
+            ->leftJoin('catalogs', 'catalogs.catalog_import_id', '=', 'catalog_imports.id')
             ->where(function ($query) use ($searchValue) {
                 $query->where('catalog_imports.no_of_records', 'like', '%' . $searchValue . '%')
                     ->orWhere('catalog_imports.comment', 'like', '%' . $searchValue . '%')
@@ -1311,7 +1466,7 @@ class CatalogingController extends Controller
                     ->orWhere('catalog_imports.created_at', 'like', '%' . $searchValue . '%');
             })
             ->where('catalog_imports.deleted_at', null)
-            ->groupBy('catalog_imports.id', 'catalog_imports.no_of_records', 'catalog_imports.subject', 'catalog_imports.comment', 'catalog_imports.created_at')
+            ->groupBy('catalog_imports.id', 'catalog_imports.no_of_records', 'catalog_imports.subject', 'catalog_imports.comment', 'catalog_imports.created_at', 'catalog_imports.skipped_count')
             ->orderBy($orderColumn, $columnSortOrder)
             ->skip($start)
             ->take($rowPerPage)
@@ -1324,6 +1479,8 @@ class CatalogingController extends Controller
                 "id" => $record->batch_id,
                 "init_no_of_records" => $record->no_of_records,
                 "current_no_of_records" => $record->current_no_of_records,
+                "skipped" => (int) $record->skipped_count,
+                "review_open" => (int) $record->review_open,
                 "subject" => $record->subject,
                 "comment" => $record->comment,
                 "created_at" => $record->created_at,
@@ -2160,6 +2317,8 @@ class CatalogingController extends Controller
             } catch (\Throwable $e) {
                 report($e);
             }
+
+            $this->recheckImportIssue((int) $id, $opacRow);
         }
 
         clearHomeCache();
@@ -2971,13 +3130,17 @@ class CatalogingController extends Controller
 
     public function updateCopy(Request $request)
     {
-        Holdingcopy::where('id',$request->copy_id)
-            ->update([
-                'circulation_number' => $request->circulation_number,
-                'source' => $request->source,
-                'location' => $request->location,
-                'status' => $request->status,
-            ]);
+        // Barcodes are unique: one that another copy already has is refused.
+        $taken = Holdingcopy::where('circulation_number', $request->circulation_number)->where('id', '!=', $request->copy_id)->exists();
+        if (! $taken) {
+            Holdingcopy::where('id',$request->copy_id)
+                ->update([
+                    'circulation_number' => $request->circulation_number,
+                    'source' => $request->source,
+                    'location' => $request->location,
+                    'status' => $request->status,
+                ]);
+        }
         $coverPage = Frontpage::where('catalog_id',$request->catalog_id)->whereNull('deleted_at')->first();
         $fullText = Multimedia::where('catalog_id',$request->catalog_id)->whereNull('deleted_at')->first();
         $record = Catalog::select('catalogs.*')
@@ -2985,7 +3148,8 @@ class CatalogingController extends Controller
             ->first();
         $totalCopies = Holdingcopy::where('catalog_id', $request->catalog_id)->count();
 
-        return view('admin.catalog-view-record', ['record' => $record, 'fullText' => $fullText, 'coverPage' => $coverPage, 'title' => $request->title, 'totalCopies' => $totalCopies, 'copyUpdate' => true]);
+        return view('admin.catalog-view-record', ['record' => $record, 'fullText' => $fullText, 'coverPage' => $coverPage, 'title' => $request->title, 'totalCopies' => $totalCopies, 'copyUpdate' => true,
+            'copyError' => $taken ? 'Barcode ' . $request->circulation_number . ' already belongs to another copy, so this copy was not changed.' : null]);
     }
 
     public function destroyCopy($id) 

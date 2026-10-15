@@ -94,6 +94,34 @@
         </div>
     </div>
 
+    {{-- Flagged at the batch import and not reviewed yet (CatalogRecordCheck). --}}
+    @if(!empty($importIssue))
+        <div class="alert alert-warning py-2 mb-3" style="font-size: 13px;" role="alert">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                <div>
+                    <i data-feather="alert-triangle" class="icon-sm me-1"></i>
+                    <strong>Flagged at import</strong> (batch #{{ $importIssue->catalog_import_id }}, record {{ $importIssue->record_no }} in the file).
+                    Saving an edit checks it again.
+                    <ul class="mb-0 mt-1 ps-4">
+                        @foreach($importIssue->problems as $p)<li>{{ $p['message'] }}</li>@endforeach
+                    </ul>
+                </div>
+                <div class="d-flex gap-2">
+                    @can('view.catalog.importlist')
+                        <a href="{{ route('batch-report', ['id' => $importIssue->catalog_import_id]) }}" class="btn btn-sm btn-outline-secondary">Import report</a>
+                    @endcan
+                    @can('edit.catalog')
+                        <form method="post" action="{{ route('import-issue-reviewed', ['issue' => $importIssue->id]) }}">
+                            @csrf
+                            <input type="hidden" name="return_to" value="record">
+                            <button type="submit" class="btn btn-sm btn-warning">Mark as reviewed</button>
+                        </form>
+                    @endcan
+                </div>
+            </div>
+        </div>
+    @endif
+
     @if(session('rag_reindexed'))
         <div class="alert alert-success alert-dismissible py-2 mb-3" style="font-size: 13px;" role="alert">
             <i data-feather="check-circle" class="icon-sm me-1"></i>
@@ -443,6 +471,9 @@
 
                     <!-- Physical Copy Tab -->
                     <div class="tab-pane fade {{ isset($copyUpdate) ? 'show active' : '' }}" id="physical-copy" role="tabpanel" aria-labelledby="physical-copy-tab">
+                        @if(!empty($copyError))
+                            <div class="alert alert-danger py-2" style="font-size: 13px;" role="alert">{{ $copyError }}</div>
+                        @endif
                         <div class="row">
                             <div class="col-md-12 stretch-card">
                                 <div class="card">

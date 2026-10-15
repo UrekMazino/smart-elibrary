@@ -39,6 +39,33 @@ class SchemaIntegrityTest extends TestCase
         DB::table('ratings')->insert(['catalog_id' => $catalogId + 1000, 'user_id' => $user->id, 'rating' => 5]);
     }
 
+    public function test_a_barcode_belongs_to_one_copy_and_a_patron_reviews_a_record_once()
+    {
+        $catalogId = $this->catalog();
+        $user = User::factory()->create();
+        DB::table('copies')->insert(['catalog_id' => $catalogId, 'circulation_number' => 'B-1']);
+        DB::table('ratings')->insert(['catalog_id' => $catalogId, 'user_id' => $user->id, 'rating' => 5]);
+
+        foreach ([fn () => DB::table('copies')->insert(['catalog_id' => $catalogId, 'circulation_number' => 'B-1']),
+                  fn () => DB::table('ratings')->insert(['catalog_id' => $catalogId, 'user_id' => $user->id, 'rating' => 4])] as $duplicate) {
+            try {
+                $duplicate();
+                $this->fail('A duplicate was accepted.');
+            } catch (QueryException $e) {
+                $this->assertSame('23000', $e->getCode());
+            }
+        }
+    }
+
+    public function test_inquiries_show_the_title_of_the_record_asked_about()
+    {
+        $catalogId = $this->catalog();
+        DB::table('view_catalogs')->insert(['catalog_id' => $catalogId, 'title_statement' => 'Rice farming']);
+        DB::table('inquiries')->insert(['catalog_id' => $catalogId, 'fullname' => 'Guest', 'message' => 'Is it available?']);
+
+        $this->assertSame('Rice farming', DB::table('view_inquiries')->value('title_statement'));
+    }
+
     public function test_page_views_survive_their_account_anonymised()
     {
         $catalogId = $this->catalog();

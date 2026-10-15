@@ -21,6 +21,12 @@ class ReviewController extends Controller
     public function create()
     {
       request()->validate(['catalog_id' => ['required', 'integer', 'exists:catalogs,id']]);
+      $record = App\Models\ViewCatalog::where('catalog_id', request()->catalog_id)->first();
+
+      // One review per patron per material (a unique key on ratings).
+      if (App\Models\Rating::where('user_id', Auth::id())->where('catalog_id', request()->catalog_id)->exists()) {
+          return redirect(recordUrl($record))->with('success', 'You have already reviewed this material. Thank you!');
+      }
 
       //SAVE REVIEW
        $review = new App\Models\Rating;
@@ -35,7 +41,7 @@ class ReviewController extends Controller
        //both the download and the read of that material.
 
        //Back to the reviewed material
-       return redirect(recordUrl(App\Models\ViewCatalog::where('catalog_id', request()->catalog_id)->first()))
+       return redirect(recordUrl($record))
               ->with('success', 'Thanks for your review!');
     }
 

@@ -119,6 +119,10 @@ Route::controller(CatalogingController::class, 'admin')->middleware('can:access.
     Route::get('/admin/batch-records/{id}', 'viewBatchRecords')->middleware('can:view.catalog.importlist');
     Route::get('/admin/batch-records-json/{id}', 'viewBatchRecordsJson')->middleware('can:view.catalog.importlist');
     Route::delete('/admin/delete-batch/{id}', 'destroyBatch')->name('delete-batch')->middleware('can:delete.catalog.import');
+    // Import report: records skipped or flagged for review, the skipped ones as MARC, "reviewed".
+    Route::get('/admin/batch-report/{id}', 'batchReport')->name('batch-report')->middleware('can:view.catalog.importlist');
+    Route::get('/admin/batch-report/{id}/skipped.mrc', 'downloadSkippedRecords')->name('batch-report-skipped')->middleware('can:view.catalog.importlist');
+    Route::post('/admin/import-issues/{issue}/reviewed', 'markImportIssueReviewed')->name('import-issue-reviewed')->middleware('can:edit.catalog');
 
     Route::get('/admin/record-list', 'recordList')->middleware('can:view.catalog.list');
     Route::get('/admin/on-hold-list', 'onholdList')->middleware('can:view.catalog.list');

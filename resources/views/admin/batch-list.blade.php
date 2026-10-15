@@ -18,6 +18,11 @@
       .bl-id { color: #a3adc2; font-size: 12px; }
       .bl-records { font-variant-numeric: tabular-nums; white-space: nowrap; }
       .bl-records .sep { color: #c4ccd8; margin: 0 4px; }
+      /* Import report badges: records skipped / flagged for review at import. */
+      .bl-issue { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 10px; font-size: 11px; font-weight: 600; text-decoration: none; }
+      .bl-issue.skip { background: #fdecea; color: #b42318; }
+      .bl-issue.review { background: #fff4e5; color: #a15c00; }
+      .bl-issue:hover { filter: brightness(.95); }
       /* #tbl prefix beats the template's `.badge { color:#fff }`. */
       .bl-subject { font-weight: 600; color: #22283b; overflow-wrap: anywhere; }
       .bl-comment {
@@ -60,7 +65,7 @@
                           <thead>
                             <tr>
                               <th style="width: 60px">ID</th>
-                              <th style="width: 130px">Initial / Current</th>
+                              <th style="width: 230px">Initial / Current</th>
                               <th style="width: 30%">Subject</th>
                               <th>Comment</th>
                               <th style="width: 120px">Date Imported</th>
@@ -115,6 +120,7 @@ $(document).ready(function(){
           '<button type="button" class="btn btn-info btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>' +
           '<div class="dropdown-menu dropdown-menu-end">' +
               '<a class="dropdown-item" href="#" onclick="viewRecord(' + row.id + ')">View Details</a>' +
+              '<a class="dropdown-item" href="{{ url("/admin/batch-report") }}/' + encodeURIComponent(row.id) + '">Import report</a>' +
               @can("publish-hold.catalog") '<a class="dropdown-item" href="#" onclick="togglePublishFrm(' + row.id + ',\'1\')">Publish All</a>' + @endcan
               @can("publish-hold.catalog") '<a class="dropdown-item" href="#" onclick="togglePublishFrm(' + row.id + ',\'2\')">Hold All</a>' + @endcan
               @can("delete.catalog.import") '<a class="dropdown-item text-danger" href="#" onclick="actionFrm(' + row.id + ',\'delete\')">Delete Batch</a>' + @endcan
@@ -136,9 +142,12 @@ $(document).ready(function(){
               render: function (d, type, row) {
                 var init = row.init_no_of_records, cur = row.current_no_of_records;
                 var curCls = (String(cur) !== String(init)) ? 'text-danger fw-semibold' : 'text-body';
+                var report = '{{ url("/admin/batch-report") }}/' + encodeURIComponent(row.id);
                 return '<span class="text-muted">' + esc(init) + '</span>' +
                        '<span class="sep">/</span>' +
-                       '<span class="' + curCls + '">' + esc(cur) + '</span>';
+                       '<span class="' + curCls + '">' + esc(cur) + '</span>' +
+                       (row.skipped > 0 ? '<a class="bl-issue skip" href="' + report + '" title="Not imported: see the import report">' + esc(row.skipped) + ' skipped</a>' : '') +
+                       (row.review_open > 0 ? '<a class="bl-issue review" href="' + report + '" title="Imported but flagged: see the import report">' + esc(row.review_open) + ' to review</a>' : '');
               } },
             { data: 'subject',
               render: function (d, type) {
@@ -265,8 +274,20 @@ function actionFrm(id,action)
 </script>
 @if(session('success'))
 <script>
-  // Result of a Batch Import (with the per-material breakdown).
-  $(function () { Swal.fire({ icon: 'success', title: 'Batch imported', text: @json(session('success')) }); });
+  // Result of a Batch Import (with the per-material breakdown). When records were skipped or
+  // flagged, offer the import report.
+  $(function () {
+    var report = @json(session('import_report') ? route('batch-report', ['id' => session('import_report')]) : null);
+    Swal.fire({
+      icon: report ? 'warning' : 'success',
+      title: report ? 'Batch imported, with issues' : 'Batch imported',
+      text: @json(session('success')),
+      showCancelButton: !!report,
+      confirmButtonText: report ? 'Open import report' : 'OK',
+      cancelButtonText: 'Close',
+      reverseButtons: true
+    }).then(function (r) { if (report && r.isConfirmed) window.location = report; });
+  });
 </script>
 @endif
 @endsection

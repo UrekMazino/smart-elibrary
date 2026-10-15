@@ -77,7 +77,7 @@
         "updated_at": "2026-07-15 08:00:36",
         "deleted_at": null,
         "backup": null,
-        "patrontypes_id": 0,
+        "patrontypes_id": null,
         "library_code": "2026-654733AMD54"
     }
 ]
