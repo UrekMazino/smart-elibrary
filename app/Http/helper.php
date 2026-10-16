@@ -821,9 +821,10 @@ function coverFitLines(array $lines, $max, $font, $size, $maxWidth)
 }
 
 /**
- * Ensure a newly-created record has a cover: if it has none and the "enable placeholder
- * coverpage" setting is on, generate a gen-* placeholder (image + thumbnail + Frontpage row).
- * Safe/idempotent — call it right after creating a record (batch, single, or parse).
+ * Ensure a record has a cover: if it has none, the "enable placeholder coverpage" setting is on
+ * and staff have not turned its placeholder off (catalogs.cover_placeholder), generate a gen-*
+ * placeholder (image + thumbnail + Frontpage row).
+ * Safe/idempotent — call it after creating a record (batch, single, or parse) or removing a cover.
  */
 function ensurePlaceholderCover($catalog_id)
 {
@@ -831,6 +832,7 @@ function ensurePlaceholderCover($catalog_id)
 	// successful save into an error page (which invites a retry and a duplicate record).
 	try {
 		if (!$catalog_id || !settingEnabled('enable_placeholder_covers')) return false;
+		if (!App\Models\Catalog::whereKey($catalog_id)->value('cover_placeholder')) return false;   // turned off for this record
 		if (App\Models\Frontpage::where('catalog_id', $catalog_id)->whereNull('deleted_at')->exists()) return false;
 
 		$vc = App\Models\ViewCatalog::where('catalog_id', $catalog_id)->first();
@@ -851,6 +853,23 @@ function ensurePlaceholderCover($catalog_id)
 		report($e);   // logged for the admin; the record itself is fine
 	}
 	return false;
+}
+
+/**
+ * Remove a record's generated placeholder cover: its Frontpage row(s) and image + thumbnail
+ * files. A placeholder can be regenerated at any time, so nothing is kept. Real covers are
+ * never touched. Returns how many placeholders were removed.
+ */
+function removePlaceholderCover($catalog_id)
+{
+	$removed = 0;
+	foreach (App\Models\Frontpage::withTrashed()->where('catalog_id', $catalog_id)->where('FrontPageName', 'like', 'gen-%')->get() as $fp) {
+		@unlink(public_path($fp->FrontPageLocation));
+		@unlink(public_path('thumb/'.basename((string) $fp->FrontPageLocation)));
+		$fp->forceDelete();
+		$removed++;
+	}
+	return $removed;
 }
 
 function getFrontpage($catalog_id)

@@ -2050,6 +2050,7 @@ class CatalogingController extends Controller
     public function destroyRecord(Request $request)
     {
         $user = Auth::user();
+        $wasPublished = (int) Catalog::whereKey($request->id)->value('is_published') === 1;
 
         // Record, OPAC row and RAG outbox entry change together. The outbox entry removes this
         // record's chunks from the AI index.
@@ -2075,6 +2076,11 @@ class CatalogingController extends Controller
         optional(ViewCatalog::where('catalog_id', $request->id)->first())->unsearchable();
 
         clearHomeCache();
+
+        // Deleted from its own page: go to the list it was in, not back to the deleted record.
+        if ($request->input('return_to') === 'list') {
+            return redirect($wasPublished ? '/admin/record-list' : '/admin/on-hold-list');
+        }
         return redirect()->back();
     }
 
@@ -2383,6 +2389,10 @@ class CatalogingController extends Controller
 
         $records = $query->select('view_catalogs.*')
             ->selectRaw('EXISTS (SELECT 1 FROM frontpages WHERE frontpages.catalog_id = view_catalogs.catalog_id AND frontpages.deleted_at IS NULL) AS has_coverpage')
+            // The cover is a generated placeholder (it counts as a cover; the list tags it).
+            ->selectRaw("EXISTS (SELECT 1 FROM frontpages WHERE frontpages.catalog_id = view_catalogs.catalog_id AND frontpages.deleted_at IS NULL AND frontpages.FrontPageName LIKE 'gen-%')
+                AND NOT EXISTS (SELECT 1 FROM frontpages WHERE frontpages.catalog_id = view_catalogs.catalog_id AND frontpages.deleted_at IS NULL
+                    AND (frontpages.FrontPageName IS NULL OR frontpages.FrontPageName NOT LIKE 'gen-%')) AS cover_placeholder")
             ->selectRaw('EXISTS (SELECT 1 FROM multimedia WHERE multimedia.catalog_id = view_catalogs.catalog_id AND multimedia.deleted_at IS NULL) AS has_multimedia')
             ->orderBy($columnName, $sortDir)
             ->orderBy('view_catalogs.catalog_id')
@@ -2401,6 +2411,7 @@ class CatalogingController extends Controller
                 'title_statement' => htmlspecialchars((string) $record->title_statement, ENT_QUOTES, 'UTF-8'),
                 'has_multimedia'  => (int) $record->has_multimedia,
                 'has_coverpage'   => (int) $record->has_coverpage,
+                'cover_placeholder' => (int) $record->cover_placeholder,
                 'is_published'    => (int) $record->is_published,
             ];
         }
@@ -2892,6 +2903,11 @@ class CatalogingController extends Controller
                     'FrontPageType' => $fileType
                 ]);
             } else {
+                // A replaced placeholder's generated image and thumbnail are not used any more.
+                if (str_starts_with((string) $coverPage->FrontPageName, 'gen-')) {
+                    @unlink(public_path($coverPage->FrontPageLocation));
+                    @unlink(public_path('thumb/'.basename((string) $coverPage->FrontPageLocation)));
+                }
                 // Through the model, so its hook re-indexes the record: replacing a generated
                 // placeholder ("gen-") with a real cover turns has_cover on. A query-builder
                 // update skipped the hook and left the search index saying "no cover".
@@ -2917,15 +2933,49 @@ class CatalogingController extends Controller
 
     public function destroyCoverPhoto(Request $request)
     {
-        
-        // Soft-delete through the model, so its hook re-indexes the record (has_cover off).
-        // A query-builder update skipped the hook and left the search index saying "has cover".
-        Frontpage::where('catalog_id', $request->catalog_id)->whereNull('deleted_at')->first()?->delete();
+        $cover = Frontpage::where('catalog_id', $request->catalog_id)->whereNull('deleted_at')->first();
+
+        if ($cover && str_starts_with((string) $cover->FrontPageName, 'gen-')) {
+            // Removing a placeholder is turning it off (the Resources tab switch does the same).
+            // Off is remembered, so the placeholder generators leave this record alone.
+            DB::table('catalogs')->where('id', $request->catalog_id)->update(['cover_placeholder' => 0]);
+            removePlaceholderCover($request->catalog_id);
+        } elseif ($cover) {
+            // Soft-delete through the model, so its hook re-indexes the record (has_cover off).
+            // A query-builder update skipped the hook and left the search index saying "has cover".
+            $cover->delete();
+            // With its placeholder on, the record shows a generated cover again.
+            ensurePlaceholderCover($request->catalog_id);
+        }
 
         // Removed cover must drop from the cached homepage carousels/shelves immediately.
         clearHomeCache();
 
         return $this->renderRecordView($request->catalog_id, $request->title, ['uploadStatus' => true]);
+    }
+
+    /**
+     * Resources tab switch: show a generated placeholder cover while the record has no real
+     * cover, or not. Off removes the placeholder and is remembered (catalogs.cover_placeholder),
+     * so the generators skip the record; on generates one now when the record has no cover.
+     */
+    public function toggleCoverPlaceholder(Request $request, $id)
+    {
+        abort_unless(Catalog::whereKey($id)->exists(), 404);
+        $on = $request->boolean('on');
+
+        DB::table('catalogs')->where('id', $id)->update(['cover_placeholder' => $on ? 1 : 0]);
+        $on ? ensurePlaceholderCover($id) : removePlaceholderCover($id);
+        clearHomeCache();   // the homepage shelves show cover thumbnails
+
+        $notice = $on
+            ? 'Placeholder cover on: shown whenever this record has no real cover.'
+            : 'Placeholder cover off: this record shows no cover until a real one is uploaded.';
+        if ($on && ! settingEnabled('enable_placeholder_covers')) {
+            $notice = 'Saved. Placeholder covers are turned off for all records in Settings, so none is shown.';
+        }
+
+        return $this->renderRecordView($id, $request->title, ['uploadStatus' => true, 'coverNotice' => $notice]);
     }
 
     public function uploadFullText(Request $request)

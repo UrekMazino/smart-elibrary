@@ -187,8 +187,11 @@ Effort: about 2 days, plus phase 0.
 1. Queue driver: database (recommended: no new service, tiny volume) or Laragon's Redis.
 2. Keep `SyncSearchIndex` synchronous instead of queued, if instant OPAC visibility after publishing matters more.
 3. Whether to do the F18 projector (phase 4) now or later.
-4. Admin cover filters (*cover photo only*, *without cover photo*) count generated `gen-` placeholders
-   as covers, while the search index does not. Decide which meaning staff need.
+4. ~~Admin cover filters count generated `gen-` placeholders as covers, while the search index does
+   not.~~ **Decided 2026-10-16:** in the admin a placeholder counts as a cover, tagged *Placeholder*
+   in the lists and *Placeholder on* on the record page, where a per-record switch
+   (`catalogs.cover_placeholder`) turns it on or off. The search index keeps `has_cover` for real
+   covers only.
 
 ## 9. References
 - `app/Http/Controllers/CatalogingController.php`, `app/Http/Controllers/MaterialTypeController.php`

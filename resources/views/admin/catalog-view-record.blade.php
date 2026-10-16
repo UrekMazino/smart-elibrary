@@ -73,21 +73,28 @@
             </ol>
         </nav>
         <div class="d-flex gap-2">
-            <div class="dropdown">
-                <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i data-feather="download" class="icon-sm"></i> Export MARC
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end">
-                    <li><a class="dropdown-item" href="{{ route('export-record', ['id' => $record->id, 'format' => 'mrc']) }}">MARC21 binary (.mrc)</a></li>
-                    <li><a class="dropdown-item" href="{{ route('export-record', ['id' => $record->id, 'format' => 'xml']) }}">MARCXML (.xml)</a></li>
-                </ul>
+            {{-- One Action menu, like each row of the Record List and On-Hold List. --}}
+            <div class="btn-group btn-group-sm" role="group">
+                <button type="button" class="btn btn-info btn-sm dropdown-toggle" id="recordActionBtn" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
+                <div class="dropdown-menu dropdown-menu-end" aria-labelledby="recordActionBtn">
+                    @can('publish-hold.catalog')
+                        <a class="dropdown-item" href="#" onclick="togglePublishOnhold({{ (int) $record->is_published }}, {{ $record->id }}); return false;">{{ $record->is_published ? 'Add to On-Hold list' : 'Add to Record list' }}</a>
+                    @endcan
+                    @can('edit.catalog')
+                        <a class="dropdown-item" href="#" onclick="actionFrm({{ $record->id }}, 'edit'); return false;">Edit</a>
+                    @endcan
+                    <div class="dropdown-divider"></div>
+                    <h6 class="dropdown-header">Export</h6>
+                    <a class="dropdown-item" href="{{ route('export-record', ['id' => $record->id, 'format' => 'mrc']) }}">MARC21 binary (.mrc)</a>
+                    <a class="dropdown-item" href="{{ route('export-record', ['id' => $record->id, 'format' => 'xml']) }}">MARCXML (.xml)</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="#" title="Queue this record for AI (RAG) re-indexing" onclick="document.getElementById('reindexFrm').submit(); return false;">Re-index for AI</a>
+                    @can('delete.catalog')
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item text-danger" href="#" onclick="deleteRecord(); return false;">Delete</a>
+                    @endcan
+                </div>
             </div>
-            <form method="POST" action="{{ route('reindex-record', ['id' => $record->id]) }}" class="d-inline">
-                @csrf
-                <button type="submit" class="btn btn-sm btn-outline-info" title="Queue this record for AI (RAG) re-indexing">
-                    <i data-feather="refresh-cw" class="icon-sm"></i> Re-index for AI
-                </button>
-            </form>
             <button type="button" class="btn btn-sm btn-outline-secondary" onclick="goBack()">
                 <i data-feather="arrow-left" class="icon-sm"></i> Back
             </button>
@@ -143,12 +150,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-baseline mb-4 mb-md-3">
                         <h6 class="card-title mb-0">Record Information</h6>
-                        <div>
-
-                            @can("edit.catalog")<button type="button" class="btn btn-sm btn-outline-info" onclick="actionFrm({{$record->id}},'edit')">Edit</button>@endcan
-                            @can("publish-hold.catalog")<button class="btn btn-sm {{ $record->is_published ? 'btn-outline-warning' : 'btn-outline-primary' }} " onclick="togglePublishOnhold({{$record->is_published}}, {{$record->id}})">{{ $record->is_published ? "Set on Hold" : "Publish now"  }}</button>@endcan
-                        </div>
-                        
+                        {{-- Edit and publish / hold are in the Action menu at the top of the page. --}}
                     </div>
                     <ul class="nav nav-tabs" id="myTab" role="tablist">
                         <li class="nav-item">
@@ -339,7 +341,7 @@
                                         <div class="d-flex justify-content-between align-items-center mb-1">
                                             <h6 class="card-title mb-0">COVER PHOTO</h6>
                                             @if($cvIsAuto)
-                                                <span class="badge res-badge-auto rounded-pill">Auto-generated</span>
+                                                <span class="badge res-badge-auto rounded-pill" title="Generated from the title">Placeholder on</span>
                                             @elseif($coverPage)
                                                 <span class="badge res-badge-ok rounded-pill">Attached</span>
                                             @else
@@ -349,9 +351,12 @@
                                         <p class="text-muted mb-3" style="font-size: 12.5px;">
                                             Shown on the OPAC and in listings.
                                             @if($cvIsAuto)
-                                                This one was generated from the title &mdash; upload a real cover to replace it.
+                                                This placeholder was generated from the title &mdash; upload a real cover to replace it.
                                             @endif
                                         </p>
+                                        @isset($coverNotice)
+                                            <div class="alert alert-success py-2" style="font-size: 12.5px;" role="status">{{ $coverNotice }}</div>
+                                        @endisset
 
                                         <div class="res-panel">
                                             <div class="res-thumb res-thumb-cover">
@@ -379,7 +384,7 @@
                                                                 <span class="text-danger">missing on disk</span>
                                                             @endif
                                                         </dd>
-                                                        <dt>Uploaded</dt>
+                                                        <dt>{{ $cvIsAuto ? 'Generated' : 'Uploaded' }}</dt>
                                                         <dd class="mb-0">{{ $coverPage->created_at ? \Carbon\Carbon::parse($coverPage->created_at)->format('d M Y, g:i a') : '—' }}</dd>
                                                     </dl>
                                                 @else
@@ -410,8 +415,37 @@
                                         @can('edit.catalog')
                                         <hr class="my-3">
 
+                                        @php
+                                            $placeholdersOn  = settingEnabled('enable_placeholder_covers');   // Settings: all records
+                                            $placeholderPref = (int) ($record->cover_placeholder ?? 1) === 1;  // this record
+                                            $hasRealCover    = $coverPage && ! $cvIsAuto;
+                                        @endphp
+                                        {{-- Placeholder switch: off is remembered, so no generator brings it back. --}}
+                                        <form method="POST" action="{{ route('cover-placeholder', ['id' => $record->id]) }}" id="placeholderFrm" class="mb-3">
+                                            @csrf
+                                            <input type="hidden" name="title" value="{{ $title }}">
+                                            <input type="hidden" name="on" id="placeholderOn" value="{{ $placeholderPref ? 1 : 0 }}">
+                                            <div class="form-check form-switch mb-0">
+                                                <input class="form-check-input" type="checkbox" role="switch" id="placeholderSwitch"
+                                                       @checked($placeholderPref) @disabled(! $placeholdersOn)
+                                                       onchange="document.getElementById('placeholderOn').value = this.checked ? 1 : 0; if (window.appBusy) appBusy.show(); this.form.submit();">
+                                                <label class="form-check-label" for="placeholderSwitch">Placeholder cover</label>
+                                            </div>
+                                            <div class="text-muted" style="font-size: 12px;">
+                                                @if(! $placeholdersOn)
+                                                    Placeholder covers are turned off for all records in Settings.
+                                                @elseif($hasRealCover)
+                                                    Not shown while a real cover is attached{{ $placeholderPref ? '; it comes back if that cover is removed' : '' }}.
+                                                @elseif($placeholderPref)
+                                                    A cover generated from the title is shown until a real one is uploaded.
+                                                @else
+                                                    Off: this record shows no cover until a real one is uploaded.
+                                                @endif
+                                            </div>
+                                        </form>
+
                                         <label class="res-label" for="coverUpload">
-                                            {{ $coverPage ? 'Replace image' : 'Upload image' }} <span class="text-muted">(JPG/PNG, max 10 MB)</span>
+                                            {{ $hasRealCover ? 'Replace image' : 'Upload image' }} <span class="text-muted">(JPG/PNG, max 10 MB)</span>
                                         </label>
                                         <form action="{{ route('upload-coverphoto') }}" method="POST" enctype="multipart/form-data">
                                             @csrf
@@ -424,7 +458,8 @@
                                             </button>
                                         </form>
 
-                                        @if(!is_null($coverPage))
+                                        {{-- A placeholder is turned off with the switch above; this removes a real cover. --}}
+                                        @if($hasRealCover)
                                             <form action="{{ route('delete-coverphoto') }}" method="POST" class="mt-2">
                                                 @csrf
                                                 @method('DELETE')
@@ -559,6 +594,17 @@
 	@csrf
 	<input type="hidden" name="catalog_id" id="hold_catalog_id">
 </form>
+{{-- Behind the Action menu's "Re-index for AI" and "Delete". --}}
+<form method="POST" action="{{ route('reindex-record', ['id' => $record->id]) }}" id="reindexFrm" class="d-none">
+	@csrf
+</form>
+@can('delete.catalog')
+<form method="POST" action="{{ route('delete-record', ['id' => $record->id]) }}" id="deleteRecordFrm" class="d-none">
+	@csrf
+	@method('DELETE')
+	<input type="hidden" name="return_to" value="list">
+</form>
+@endcan
 
 <form method="post" action="" id="delete_copy_frm">
 	@csrf
@@ -585,6 +631,26 @@ function goBack() {
     } else {
         window.location.href = "{{ url('/admin/record-list') }}";
     }
+}
+
+// Action menu > Delete. The record leaves the OPAC, the search index and the AI index; the
+// page then returns to the list the record was in.
+function deleteRecord() {
+    Swal.fire({
+        title: 'Delete this record?',
+        text: 'It is removed from the OPAC, the search index and the AI index.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonClass: 'me-2',
+        confirmButtonText: 'Delete',
+        cancelButtonText: 'Cancel',
+        reverseButtons: true
+    }).then(function (result) {
+        if (result.value) {
+            if (window.appBusy) appBusy.show();
+            document.getElementById('deleteRecordFrm').submit();
+        }
+    });
 }
 
 function copyCitation(id) {

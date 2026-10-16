@@ -26,8 +26,11 @@ class GenerateCovers extends Command
 
         // Materials that still have NO cover at all (real covers = cp-*, are preserved).
         $covered = Frontpage::whereNull('deleted_at')->pluck('catalog_id')->all();
+        // ...and whose placeholder staff have not turned off (record page, catalogs.cover_placeholder).
+        $turnedOff = \App\Models\Catalog::where('cover_placeholder', 0)->pluck('id')->all();
         $materials = ViewCatalog::where('is_published', 1)->whereNull('deleted_at')
             ->whereNotIn('catalog_id', $covered)
+            ->whereNotIn('catalog_id', $turnedOff)
             ->get();
 
         if ($materials->isEmpty()) {

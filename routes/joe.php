@@ -164,6 +164,7 @@ Route::controller(CatalogingController::class, 'admin')->middleware('can:access.
     Route::middleware('can:edit.catalog')->group(function () {
         Route::post('/admin/upload/cover-photo', 'uploadCoverPhoto')->name('upload-coverphoto');
         Route::delete('/admin/delete-cover-photo', 'destroyCoverPhoto')->name('delete-coverphoto');
+        Route::post('/admin/view-record/{id}/cover-placeholder', 'toggleCoverPlaceholder')->whereNumber('id')->name('cover-placeholder');
 
         Route::post('/admin/upload/full-text', 'uploadFullText')->name('upload-fulltext');
         Route::delete('/admin/delete-full-text', 'destroyFullText')->name('delete-fulltext');
