@@ -329,6 +329,12 @@
 	<script src="{{ asset('opac/DataTables/DataTables-1.12.1/js/dataTables.bootstrap5.min.js') }}"></script>
 
 	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.25"></script>
+	<script>
+		// While a popup is open SweetAlert hides the page's scrollbar and pads <body> by its width.
+		// These pages scroll on <html>, so the scrollbar stays and the padding only shifted the page
+		// 15px to the left (a gap at the right of the header). No padding for any popup.
+		if (window.Swal) window.Swal = Swal.mixin({ scrollbarPadding: false });
+	</script>
 	@auth
 		@if(Auth::user()->usertype === 'Patron')
 			@include('opac.partials.quick-review')
