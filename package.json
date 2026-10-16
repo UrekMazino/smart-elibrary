@@ -10,8 +10,8 @@
         "production": "mix --production"
     },
     "devDependencies": {
-        "@tailwindcss/forms": "^0.4.0",
-        "autoprefixer": "^10.4.2",
+        "@tailwindcss/forms": "^0.5.11",
+        "autoprefixer": "^10.6.1",
         "laravel-mix": "^6.0.6",
         "postcss": "^8.4.6",
         "postcss-import": "^14.0.2",
@@ -20,10 +20,10 @@
         "webpack-cli": "^5.1.4"
     },
     "dependencies": {
-        "@citation-js/core": "^0.6.8",
-        "alpinejs": "^3.4.2",
+        "@citation-js/core": "^0.9.0",
+        "alpinejs": "^3.17.4",
         "axios": "^1.20.0",
-        "citation-js": "^0.6.8",
+        "citation-js": "^0.9.0",
         "lodash": "^4.17.19"
     },
     "overrides": {
