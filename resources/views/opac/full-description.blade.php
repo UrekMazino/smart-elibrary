@@ -16,6 +16,21 @@
 <script type="application/ld+json">{!! seoRecordJsonLd($result) !!}</script>
 @endpush
 
+{{-- Breadcrumb, as on the search results page: in the site header on desktop, a slim strip under
+     it on smaller screens. "Search Results" goes back to the patron's own search when they came
+     from one (filters and scroll position kept), otherwise to the catalog search. --}}
+@php
+    $referer = (string) request()->headers->get('referer', '');
+    $crumbs  = [
+        ['Home', url('/home')],
+        ['Search Results', str_starts_with($referer, url('/results')) ? $referer : url('/results'), 'back' => true],
+        ['Description', null],
+    ];
+@endphp
+@section('header_breadcrumb')
+    @include('opac.partials.breadcrumb', ['crumbs' => $crumbs])
+@endsection
+
 @section('css')
     <!-- SPECIFIC CSS -->
     <link href="{{ asset('opac/css/date_picker.css') }}" rel="stylesheet">
@@ -46,41 +61,12 @@
 	@csrf
 	<input type="hidden" class="form-control" name="catalog_id" value="{{ $result->catalog_id }}">
 </form>
-		<div id="results" style="background-color: #00a496;">
-			<div class="container">
-				<div class="row align-items-center">
-					<div class="col-md-6">
-						<div id="breadcrumb" class="breadcrumb_inline">
-							<ul>
-								<li><a href="{{ url('/home') }}">Home</a></li>
-								<li><a href="{{ url('/home') }}#search" onclick="if(document.referrer){history.back();return false;}">Search Results</a></li>
-								<li>Description</li>
-							</ul>
-						</div>
-					</div>
-					<div class="col-md-6">
-						<form method="get" action="{{ url('/results') }}">
-							<div class="search_bar_list">
-								<input type="text" class="form-control js-instant" name="query" placeholder="Search a Material...">
-								<input type="hidden" name="series_statement_id" value="0">
-								<input type="hidden" name="page" value="1">
-								<input type="hidden" name="layout" value="grid">
-								<input type="hidden" name="seachtype[]" value="0">
-								<input type="submit" value="Search">
-							</div>
-						</form>
-					</div>
-				</div>
-			</div>
-		</div>
-		<!-- /results -->
+		@include('opac.partials.breadcrumb', ['crumbs' => $crumbs, 'variant' => 'strip'])
+		@include('opac.partials.search-band')
 
 		<style>
 			.fd-cover { margin: 0; }
 			.fd-cover img { box-shadow: 0 2px 10px rgba(0,0,0,.25); border-radius: 3px; max-width: 320px; width: 100%; }
-			/* Always-visible search bar; JS docks it just below the sticky header. */
-			#results { position: -webkit-sticky; position: sticky; top: 0; z-index: 1001; box-shadow: 0 3px 10px rgba(0,0,0,.15); }
-			#breadcrumb.breadcrumb_inline { background: transparent; padding: 0; }
 			/* General info reorganized layout */
 			#section_1 .box_general_3 { padding-top: 22px; }
             #section_1 { padding-bottom: 0px; }
@@ -92,7 +78,7 @@
 			.fd-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; margin-bottom: 4px; }
 			.fd-actions form { margin: 0; display: flex; }
 			.fd-section { margin-top: 24px; }
-			.fd-section-title { font-size: 14px; font-weight: 700; color: #00a496; text-transform: uppercase; letter-spacing: .3px; margin-bottom: 12px; border-bottom: 2px solid #e6e9ec; padding-bottom: 6px; }
+			.fd-section-title { font-size: 14px; font-weight: 700; color: #00857a; text-transform: uppercase; letter-spacing: .3px; margin-bottom: 12px; border-bottom: 2px solid #e6e9ec; padding-bottom: 6px; }
 			.fd-section-title i { margin-right: 6px; vertical-align: middle; }
 			.fd-table { width: 100%; border-collapse: collapse; font-size: 14px; }
 			.fd-table th, .fd-table td { text-align: left; vertical-align: top; padding: 8px 12px; border-bottom: 1px solid #eef0f2; }
@@ -102,7 +88,7 @@
 			/* Catalogers format values as plain text (line breaks, "• " bullets, indentation): show them as written. */
 			.fd-table td.fd-val { white-space: pre-wrap; overflow-wrap: anywhere; }
 			.fd-citation { background: #f7f9fa; border: 1px solid #e6e9ec; border-radius: 4px; padding: 14px 16px; }
-			.fd-citation-style { display: inline-block; font-size: 11px; font-weight: 700; color: #fff; background: #00a496; border-radius: 3px; padding: 2px 8px; margin-bottom: 8px; }
+			.fd-citation-style { display: inline-block; font-size: 11px; font-weight: 700; color: #fff; background: #00857a; border-radius: 3px; padding: 2px 8px; margin-bottom: 8px; }
 			.fd-citation p { margin: 0; font-size: 14px; line-height: 1.55; color: #333; }
 			.fd-copy-btn { margin-top: 12px !important; font-size: 12px; padding: 5px 14px; background-color: #029978; }
 			.fd-copies { display: flex; gap: 12px; flex-wrap: wrap; }
@@ -116,6 +102,16 @@
 			.fd-btn:hover i { color: #029978; }
 			.fd-btn[disabled], .fd-btn:disabled { background: #f6f8f9 !important; color: #b4babf !important; border-color: #e9edf0 !important; cursor: not-allowed; opacity: 1 !important; }
 			.fd-btn[disabled] i, .fd-btn:disabled i { color: #c4cacf; }
+			/* Save: outline star; filled amber once the record is in the patron's list. */
+			/* Guest Save is a link: the theme's `a.btn_1 { display:inline-block }` outranks .fd-btn,
+			   which put the star beside the label. Restore the stacked icon-over-label tile. */
+			.fd-actions a.fd-btn { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; text-decoration: none;
+				font-size: 12px; font-weight: 600; line-height: 1.1; }
+			.fd-save-ico { width: 22px; height: 22px; fill: none; stroke: #029978; stroke-width: 1.25; stroke-linejoin: round; }
+			.fd-btn.is-saved { background: #fff8e6 !important; border-color: #e0a100 !important; color: #8a6200 !important; }
+			.fd-btn.is-saved .fd-save-ico { fill: #f5b301; stroke: #e0a100; }
+			.fd-btn.is-saved:hover { background: #fff2cc !important; }
+			.fd-btn.fd-save[aria-busy="true"] { opacity: .6; pointer-events: none; }
 			/* Read overlay (PDF.js) */
 			.ol-reader { position: fixed; inset: 0; z-index: 20000; background: rgba(18,20,24,.94); display: none; flex-direction: column; }
 			.ol-reader-bar { flex: 0 0 46px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; background: #1b1d21; color: #fff; }
@@ -170,10 +166,10 @@
 				.fd-title { font-size: 18px; }
 			}
 			@media (max-width: 575.98px) {
-				/* Action buttons: four equal tiles in one row. */
-				.fd-actions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+				/* Action buttons: five equal tiles in one row (Read, Download, Inquire, Share, Save). */
+				.fd-actions { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
 				.fd-actions form, .fd-actions form .fd-btn { width: 100%; }
-				.fd-btn { min-width: 0; padding: 10px 4px; font-size: 11.5px; }
+				.fd-btn, .fd-actions a.fd-btn { min-width: 0; padding: 10px 4px; font-size: 11.5px; }
 				/* Full Record: label above value (a two-column table leaves values one word wide). */
 				.fd-table, .fd-table tbody, .fd-table tr, .fd-table th, .fd-table td { display: block; width: auto; }
 				.fd-table tr { border-bottom: 1px solid #eef0f2; padding: 9px 0; }
@@ -191,7 +187,7 @@
 			@endif
 			<div class="row fd-layout">
 				<div class="col-xl-9 col-lg-8 order-2 fd-main">
-					<nav id="secondary_nav" style="background-color: #00a496;">
+					<nav id="secondary_nav" style="background-color: #00857a;">
 						<div class="container">
 							<ul class="clearfix">
 								<li><a href="#section_1" class="active">General info</a></li>
@@ -228,6 +224,20 @@
 								@endif
 								<button type="button" class="btn_1 fd-btn" onclick="inquire('{{ $result->catalog_id }}')"><i class="icon-info-3"></i> Inquire</button>
 								<button type="button" class="btn_1 fd-btn" data-share-url="{{ recordUrl($result) }}" data-share-title="{{ $result->title_statement }}" onclick="shareRecord(this)" title="Copy link to this record"><i class="pe-7s-link"></i> Share</button>
+								{{-- Save to the patron's list (same toggle as the search results / homepage stars). --}}
+								@auth
+									@php $fdSaved = isSavedRecord($result->catalog_id); @endphp
+									<button type="button" class="btn_1 fd-btn fd-save{{ $fdSaved ? ' is-saved' : '' }}" data-fd-save="{{ $result->catalog_id }}"
+										aria-pressed="{{ $fdSaved ? 'true' : 'false' }}" title="{{ $fdSaved ? 'Saved — click to remove from your list' : 'Save to your list' }}" onclick="toggleFdSave(this)">
+										<svg class="fd-save-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z"/></svg>
+										<span class="fd-save-label">{{ $fdSaved ? 'Saved' : 'Save' }}</span>
+									</button>
+								@else
+									<a class="btn_1 fd-btn fd-save" href="{{ route('login') }}" title="Log in to save records" onclick="event.preventDefault(); promptGuestLogin('save')">
+										<svg class="fd-save-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z"/></svg>
+										<span class="fd-save-label">Save</span>
+									</a>
+								@endauth
 							</div>
 						</div>
 						</div>
@@ -313,22 +323,29 @@
 					</figure>
 					@if(checkStocks($result->catalog_id))
 					<div class="box_general_3 booking">
-							<div class="title text-center" style="background-color: #00a496;">
+							<div class="title text-center" style="background-color: #00857a;">
 								<h3>Schedule Reservation</h3>
 								<small>Monday to Friday 08:00am-05:00pm</small>
 							</div>
 							@auth
 								<form method="post" action="{{ url('/request-reservation') }}" id="frm_reservation">
                                     @csrf
+                                    @if($errors->hasAny(['visit_scheddate', 'visit_schedtime', 'catalog_id']))
+                                        <div class="alert alert-danger py-2 small" role="alert">
+                                            @foreach(['visit_scheddate', 'visit_schedtime', 'catalog_id'] as $field)
+                                                @if($errors->has($field))<div>{{ $errors->first($field) }}</div>@endif
+                                            @endforeach
+                                        </div>
+                                    @endif
                                     <div class="row">
                                         <div class="col-6">
                                             <div class="form-group">
-                                                <input class="form-control" name="visit_scheddate" type="text" id="booking_date" data-lang="en" data-min-year="2020" data-max-year="2024" data-disabled-days="10/17/2017,11/18/2017" required>
+                                                <input class="form-control" name="visit_scheddate" type="text" id="booking_date" data-lang="en" data-min-year="{{ date('Y') }}" data-max-year="{{ date('Y') + 1 }}" value="{{ old('visit_scheddate') }}" required>
                                             </div>
                                         </div>
                                         <div class="col-6">
                                             <div class="form-group">
-                                                <input class="form-control" type="text" name="visit_schedtime" id="booking_time" value="9:00 am">
+                                                <input class="form-control" type="text" name="visit_schedtime" id="booking_time" value="{{ old('visit_schedtime', '9:00 am') }}">
                                             </div>
                                         </div>
                                     </div>
@@ -367,7 +384,7 @@
 					</div>
 					@else
 					<div class="box_general_3 booking">
-						<div class="title text-center" style="background-color: #00a496;">
+						<div class="title text-center" style="background-color: #00857a;">
 							<h3>NOT AVAILABLE FOR BORROWING</h3>
 						</div>
 						<div class="row">
@@ -382,7 +399,7 @@
 					{{-- Ratings summary + submit review (moved from the reviews section) --}}
 					<div class="fd-side-rate">
 					<div class="box_general_3 booking fd-review-box">
-						<div id="review_summary" style="background-color: #00a496;">
+						<div id="review_summary" style="background-color: #00857a;">
 							<div class="fd-avg-num">{{ $ave }}</div>
 							<div class="fd-avg-meta">
 								<div class="rating"><i data-star="{{ $ave }}" style="font-size: 18px;"></i></div>
@@ -488,7 +505,7 @@ function inquire(holdingsid)
 				icon: 'warning',
 				title: 'Account blocked',
 				html: 'Your account is <strong>blocked</strong> from sending inquiries.<br>Please contact the library at <a href="mailto:' + libraryEmail + '"><strong>' + libraryEmail + '</strong></a>.',
-				confirmButtonColor: '#00a496'
+				confirmButtonColor: '#00857a'
 			});
 		} else {
 			alert('Your account is blocked from sending inquiries. Please contact the library at ' + libraryEmail + '.');
@@ -508,7 +525,7 @@ function inquire(holdingsid)
 				showCancelButton: true,
 				confirmButtonText: 'Email the library',
 				cancelButtonText: 'Close',
-				confirmButtonColor: '#00a496'
+				confirmButtonColor: '#00857a'
 			}).then(function (res) {
 				if (res.isConfirmed) { window.location.href = 'mailto:' + libraryEmail + '?subject=' + encodeURIComponent('Library Inquiry'); }
 			});
@@ -554,14 +571,58 @@ function positionReader()
 	reader.style.top = top + 'px';
 }
 
+// Read, Download and Save are for signed-in patrons only. Guests get the same sign-in popup
+// for each (the /read, /download and /search/saved routes also enforce this).
+var fdIsGuest = @json(! Auth::check());
+var guestPrompts = {
+	read:     ['Sign in to read',     'Reading materials online is available to registered members. Log in or create a free account to continue.'],
+	download: ['Sign in to download', 'Downloading materials is available to registered members. Log in or create a free account to continue.'],
+	save:     ['Sign in to save',     'Saving materials to your list is available to registered members. Log in or create a free account to continue.']
+};
+
+function promptGuestLogin(action)
+{
+	if (!window.Swal) { window.location = @json(route('login')); return; }
+	Swal.fire({
+		icon: 'info',
+		title: guestPrompts[action][0],
+		text: guestPrompts[action][1],
+		showDenyButton: true,
+		showCancelButton: true,
+		confirmButtonText: 'Log in',
+		denyButtonText: 'Register',
+		cancelButtonText: 'Not now',
+		reverseButtons: true
+	}).then(function (r) {
+		if (r.isConfirmed) window.location = @json(route('login'));
+		else if (r.isDenied) window.location = @json(route('register'));
+	});
+}
+
+// Patrons get the quick review popup after a download, or after reading for a minute
+// (opac.partials.quick-review); a saved review reloads the page so it shows in Reviews.
+var fdCatalogId = @json((string) $result->catalog_id);
+var fdTitle = @json($result->title_statement);
+
+var fdDownloadForm = document.getElementById('frm_download');
+if (fdIsGuest && fdDownloadForm) {
+	fdDownloadForm.addEventListener('submit', function (e) { e.preventDefault(); promptGuestLogin('download'); });
+} else if (fdDownloadForm && window.QuickReview) {
+	fdDownloadForm.addEventListener('submit', function () { QuickReview.download(fdCatalogId, fdTitle); });
+}
+document.addEventListener('quickreview:saved', function () { location.reload(); });
+
 function openReader(pdfPath, title)
 {
+	if (fdIsGuest) { promptGuestLogin('read'); return; }
+
 	var viewer = '/pdfjs/web/viewer.html?file=' + encodeURIComponent(pdfPath);
 	document.getElementById('ol-reader-frame').src = viewer;
 	document.getElementById('ol-reader-title').textContent = title || 'Reading';
 	document.getElementById('ol-reader').style.display = 'flex';
 	document.body.style.overflow = 'hidden';
 	positionReader();
+	if (window.QuickReview) QuickReview.startRead(fdCatalogId, fdTitle);
 }
 
 function closeReader()
@@ -569,10 +630,42 @@ function closeReader()
 	document.getElementById('ol-reader').style.display = 'none';
 	document.getElementById('ol-reader-frame').src = 'about:blank';
 	document.body.style.overflow = '';
+	if (window.QuickReview) QuickReview.endRead();
 }
 
 document.addEventListener('keydown', function(e){ if(e.key === 'Escape'){ closeReader(); } });
 window.addEventListener('resize', positionReader);
+
+// Save / unsave this record in the patron's list (POST /search/saved toggles it).
+function toggleFdSave(btn)
+{
+	if (btn.getAttribute('aria-busy') === 'true') return;
+	btn.setAttribute('aria-busy', 'true');
+	var token = (document.querySelector('meta[name="csrf_token"]') || {}).content || '';
+	fetch(@json(url('/search/saved')), {
+		method: 'POST',
+		headers: { 'X-CSRF-TOKEN': token, 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' },
+		body: 'catalog_id=' + encodeURIComponent(btn.getAttribute('data-fd-save'))
+	})
+	.then(function (r) {
+		if (r.status === 401 || r.status === 419) { location.href = @json(route('login')); throw new Error('auth'); }
+		if (!r.ok) throw new Error('failed');
+		return r.json();
+	})
+	.then(function (data) {
+		btn.classList.toggle('is-saved', !!data.saved);
+		btn.setAttribute('aria-pressed', data.saved ? 'true' : 'false');
+		btn.title = data.saved ? 'Saved — click to remove from your list' : 'Save to your list';
+		btn.querySelector('.fd-save-label').textContent = data.saved ? 'Saved' : 'Save';
+	})
+	.catch(function (err) {
+		if (err.message === 'auth') return;
+		var label = btn.querySelector('.fd-save-label');
+		label.textContent = 'Try again';
+		setTimeout(function () { label.textContent = btn.classList.contains('is-saved') ? 'Saved' : 'Save'; }, 1600);
+	})
+	.finally(function () { btn.removeAttribute('aria-busy'); });
+}
 
 function shareRecord(btn)
 {
@@ -645,5 +738,4 @@ function copyFdCitation(btn)
 }
 </script>
 
-@include('opac.partials.instant-search')
 @endsection

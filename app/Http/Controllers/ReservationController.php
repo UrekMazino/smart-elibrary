@@ -28,40 +28,51 @@ class ReservationController extends Controller
     public function reservation_action(Request $request) 
     {
         $adminUser = auth()->user();
+        $request->validate(['reservation_code' => ['required', 'string']]);
         switch($request->reservation_action)
         {
             case 1:
-                $material = DB::table('copies')->where('circulation_number', $request->circulation_number)->first();
+                // approved = 2, and the copy becomes reserved = 2. The copy is claimed with a
+                // conditional update (only while still Available), so two staff approving
+                // tickets for the same copy at the same moment can't both get it.
+                $approved = DB::transaction(function () use ($request, $adminUser) {
+                    $ticket = DB::table('circulations')->where('reservation_code', $request->reservation_code)->lockForUpdate()->first();
+                    if (! $ticket || $ticket->status != 1 || ! $ticket->catalog_id || ! $request->filled('circulation_number')) return false;
 
-                if($material->status == 1) {
-                    // approved =2
-                    DB::table('circulations')->where('reservation_code', $request->reservation_code)->update([
-                        'circulation_number' => $material->circulation_number,
+                    $claimed = DB::table('copies')
+                        ->where('circulation_number', $request->circulation_number)
+                        ->where('catalog_id', $ticket->catalog_id)
+                        ->where('status', 1)
+                        ->update(['status' => 2]);
+                    if (! $claimed) return false;
+
+                    DB::table('circulations')->where('id', $ticket->id)->update([
+                        'circulation_number' => $request->circulation_number,
                         'approved_at' => now(),
-                        'approved_by' => $adminUser->name,
+                        'approved_by' => $adminUser->id,
                         'status' => 2,
                     ]);
+                    return true;
+                });
 
-                    // reserved = 2
-                    DB::table('copies')->where('circulation_number', $request->circulation_number)->update([
-                        'status' => 2,
-                    ]);
-
-                    $message = "Request approved!";
-                    $header = 'Success';
-                } else {
-                    $message = "Material not available!";
-                    $header = 'Failed';
-                }
+                $message = $approved ? "Request approved!" : "Material not available!";
+                $header = $approved ? 'Success' : 'Failed';
 
                 break;
             case 2:
-                // declined =4 
-                DB::table('circulations')->where('reservation_code', $request->reservation_code)->update([
-                    'declined_at' => now(),
-                    'declined_by' => $adminUser->name,
-                    'status' => 4,
-                ]);
+                // declined = 4. Only a pending or approved ticket can be declined; an approved
+                // one gives its reserved copy back to the shelf.
+                DB::transaction(function () use ($request, $adminUser) {
+                    $ticket = DB::table('circulations')->where('reservation_code', $request->reservation_code)->lockForUpdate()->first();
+                    if (! $ticket || ! in_array((int) $ticket->status, [1, 2])) return;
+
+                    DB::table('circulations')->where('id', $ticket->id)->update([
+                        'declined_at' => now(),
+                        'declined_by' => $adminUser->id,
+                        'status' => 4,
+                    ]);
+                    releaseReservedCopies([$ticket->circulation_number]);
+                });
                 $message = "Request declined!";
                 $header = 'Done';
                 break;
@@ -119,7 +130,7 @@ class ReservationController extends Controller
                     'reservation_code' => checkIfFound($transaction, 'reservation_code') == "N/A" ? "Walk-in" : checkIfFound($transaction, 'reservation_code'),
                     'due_date' => checkIfFound($transaction, 'due_date'),
                     'approved_at' => checkIfFound($transaction, 'approved_at'),
-                    'approved_by' => checkIfFound($transaction, 'approved_by'),
+                    'approved_by' => staffName($transaction->approved_by ?? null),
                     'transaction_code' => checkIfFound($transaction, 'transaction_code'),
                     'transaction_status' => checkIfFound($transaction, 'name'),
                     'transaction_status_order_no' => checkIfFound($transaction, 'order_no', 6),
@@ -130,19 +141,21 @@ class ReservationController extends Controller
                 return view('admin.check-out-in', ['fineDescriptions' => $fineDescriptions, 'reservation' => $reservation]);
                 
                 break;
-            case 4: 
-                // for approval = 1
-                DB::table('circulations')->where('reservation_code', $request->reservation_code)->update([
-                    'circulation_number' => NULL,
-                    'approved_at' => NULL,
-                    'approved_by' => NULL,
-                    'status' => 1,
-                ]);
+            case 4:
+                // Revert an approval: the ticket goes back to for approval = 1 and the copy it
+                // held (read from the ticket, not the form) back to available = 1.
+                DB::transaction(function () use ($request) {
+                    $ticket = DB::table('circulations')->where('reservation_code', $request->reservation_code)->lockForUpdate()->first();
+                    if (! $ticket || $ticket->status != 2) return;
 
-                // available = 1
-                DB::table('copies')->where('circulation_number', $request->circulation_number)->update([
-                    'status' => 1,
-                ]);
+                    DB::table('circulations')->where('id', $ticket->id)->update([
+                        'circulation_number' => NULL,
+                        'approved_at' => NULL,
+                        'approved_by' => NULL,
+                        'status' => 1,
+                    ]);
+                    releaseReservedCopies([$ticket->circulation_number]);
+                });
 
                 $message = "Approval cancelled!";
                 $header = 'Done';
@@ -226,7 +239,7 @@ class ReservationController extends Controller
                 "catalog_id" => $reservation->catalog_id,
                 "circulation_number" => $reservation->circulation_number,
                 "copy_id" => $reservation->copy_id,
-                'date_of_visit' => $reservation->visit_date . ", " . $reservation->visit_time,
+                'date_of_visit' => visitWhen($reservation->visit_date, $reservation->visit_time),
             );
          }
 
@@ -280,7 +293,7 @@ class ReservationController extends Controller
             'name' => checkIfFound($patron, 'name'),
             'email' => checkIfFound($patron, 'email'),
             'contact_no' => checkIfFound($patron, 'contactnum'),
-            'birthdate' => checkIfFound($patron, 'birthdate'),
+            'birthdate' => ! empty($patron->birthdate) ? Carbon::parse($patron->birthdate)->format('F j, Y') : 'Not found',
             'location' => checkIfFound($patron, 'location'),
             'position' => checkIfFound($patron, 'position1'),
             'sex' => checkIfFound($patron, 'sex'),
@@ -308,13 +321,13 @@ class ReservationController extends Controller
             'total_fine' => checkIfFound($transaction, 'total_fine'),
             'total_fine_paid' => checkIfFound($transaction, 'total_fine_paid'),
             'approved_at' => checkIfFound($transaction, 'approved_at'),
-            'approved_by' => checkIfFound($transaction, 'approved_by'),
+            'approved_by' => staffName($transaction->approved_by ?? null),
             'declined_at' => checkIfFound($transaction, 'declined_at'),
-            'declined_by' => checkIfFound($transaction, 'declined_by'),
+            'declined_by' => staffName($transaction->declined_by ?? null),
             'released_at' => checkIfFound($transaction, 'released_at'),
-            'released_by' => checkIfFound($transaction, 'released_by'),
+            'released_by' => staffName($transaction->released_by ?? null),
             'received_at' => checkIfFound($transaction, 'received_at'),
-            'received_by' => checkIfFound($transaction, 'received_by'),
+            'received_by' => staffName($transaction->received_by ?? null),
         );
 
         return response()->json($response); 
@@ -327,8 +340,8 @@ class ReservationController extends Controller
             ->first();
 
         $response = array(
-            'visit_date' => checkIfFound($reservation, 'visit_date'),
-            'visit_time' => checkIfFound($reservation, 'visit_time'),
+            'visit_date' => ! empty($reservation->visit_date) ? Carbon::parse($reservation->visit_date)->format('F j, Y') : 'Not found',
+            'visit_time' => ! empty($reservation->visit_time) ? Carbon::parse($reservation->visit_time)->format('g:i A') : 'Not found',
             'reservation_code' => checkIfFound($reservation, 'reservation_code'),
         );
 

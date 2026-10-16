@@ -32,10 +32,13 @@ class InquiryController extends Controller
         $inq = new App\Models\Inquiry;
         $inq->subject = request()->inquiry_subject;
 
+        // The record asked about, if the form names a real one (general inquiries have none).
+        $catalogId = App\Models\Catalog::whereKey((int) request()->catalog_id_inquiry)->value('id');
+
         if(Auth::check())
         {
             $inq->user_id = Auth::user()->id;
-            $inq->catalog_id = request()->catalog_id_inquiry;
+            $inq->catalog_id = $catalogId;
             $inq->fullname = Auth::user()->name;
             $inq->contactnum = Auth::user()->contactnum;
             $inq->email = Auth::user()->email;
@@ -43,7 +46,7 @@ class InquiryController extends Controller
         }
         else
         {
-            $inq->catalog_id = request()->catalog_id_inquiry;
+            $inq->catalog_id = $catalogId;
             $inq->fullname = request()->inquiry_fullname;
             $inq->contactnum = request()->inquiry_contactnum;
             $inq->email = request()->inquiry_email;
@@ -96,6 +99,7 @@ class InquiryController extends Controller
         $user = Auth::user();
         abort_if(! $user, 403);
         if ($user->usertype !== 'Patron') {
+            abort_unless(App\Models\Inquiry::whereKey($inquiryId)->exists(), 404);
             return; // staff can access all inquiries
         }
         $owns = App\Models\Inquiry::where('id', $inquiryId)->where('user_id', $user->id)->exists();

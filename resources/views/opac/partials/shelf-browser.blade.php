@@ -46,6 +46,7 @@
 		background: linear-gradient(#ffba68 0, #79490a 45%, #5b3611 100%);
 		border-top: 2px solid #ffd5a7; box-shadow:0 2px 0 rgba(0,0,0,.35), 0 11px 13px -6px rgba(0,0,0,.62); }
 	.col-book { flex:0 0 auto; display:block; line-height:0; position:relative; z-index:1; transition:transform .14s ease; }
+	.col-link { display:block; }
 	/* natural proportions, capped -> heights vary a bit like a real shelf; bottoms align via flex-end */
 	.col-book img { display:block; width:auto; height:auto; max-height:186px; max-width:144px; border-radius:2px; background:#fff;
 		box-shadow:0 3px 4px rgba(0,0,0,.45), 0 15px 18px -9px rgba(0,0,0,.8); }
@@ -92,9 +93,14 @@
 								<div class="col-scroll">
 									<div class="col-row">
 										@foreach($rowItems as $it)
-											<a class="col-book{{ empty($it['url']) ? ' no-link' : '' }}" href="{{ $it['url'] ?? '#' }}" @if(empty($it['url'])) onclick="return false" @endif title="{{ $it['title'] }}">
-												<img loading="lazy" src="{{ $it['thumb'] }}" alt="{{ $it['title'] }}">
-											</a>
+											<div class="col-book{{ empty($it['url']) ? ' no-link' : '' }}">
+												<a class="col-link" href="{{ $it['url'] ?? '#' }}" @if(empty($it['url'])) onclick="return false" @endif title="{{ $it['title'] }}">
+													<img loading="lazy" src="{{ $it['thumb'] }}" alt="{{ $it['title'] }}">
+												</a>
+												@if(!empty($it['catalog_id']))
+													@include('opac.partials.save-star', ['id' => $it['catalog_id'], 'title' => $it['title']])
+												@endif
+											</div>
 										@endforeach
 									</div>
 								</div>

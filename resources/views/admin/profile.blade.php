@@ -118,7 +118,7 @@
                             <div class="col-md-6 mb-3">
                                 <label for="birthdate" class="form-label">Birthdate <span class="req">*</span></label>
                                 <input type="text" name="birthdate" id="birthdate" class="form-control datepicker"
-                                       placeholder="mm/dd/yyyy" value="{{ old('birthdate', $user->birthdate) }}" required autocomplete="off">
+                                       placeholder="mm/dd/yyyy" value="{{ old('birthdate', $user->birthdate ? \Carbon\Carbon::parse($user->birthdate)->format('m/d/Y') : '') }}" required autocomplete="off">
                             </div>
                         </div>
 

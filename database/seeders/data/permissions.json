@@ -293,7 +293,25 @@
         "guard_name": "web",
         "display_name": "Manage Material Types",
         "description": "Add, edit, hide, merge and delete Material Types (Administration → Utilities)",
-        "created_at": "2026-10-07 16:05:11",
-        "updated_at": "2026-10-07 16:05:11"
+        "created_at": "2026-10-07 18:57:46",
+        "updated_at": "2026-10-07 18:57:46"
+    },
+    {
+        "id": 39,
+        "name": "access.settings",
+        "guard_name": "web",
+        "display_name": "Settings",
+        "description": "Open Administration → Settings: feature switches, cache, search index and sitemap tools",
+        "created_at": "2026-10-13 09:44:25",
+        "updated_at": "2026-10-13 09:44:25"
+    },
+    {
+        "id": 40,
+        "name": "access.ai.sync.monitor",
+        "guard_name": "web",
+        "display_name": "AI Sync Monitor",
+        "description": "Open Administration → AI Sync Monitor: see AI-index sync status, run sync now and re-sync records",
+        "created_at": "2026-10-13 09:44:25",
+        "updated_at": "2026-10-13 09:44:25"
     }
 ]

@@ -59,7 +59,9 @@ return [
     |
     */
 
-    'after_commit' => false,
+    // On: catalogue saves run in a transaction (record + OPAC row + AI outbox), so a save that
+    // rolls back must not have reached Meilisearch already.
+    'after_commit' => true,
 
     /*
     |--------------------------------------------------------------------------
@@ -138,16 +140,17 @@ return [
         'host' => env('MEILISEARCH_HOST', 'http://localhost:7700'),
         'key' => env('MEILISEARCH_KEY', null),
         'index-settings' => [
-            // Index name = table name (view_catalogs). These attributes back the
-            // ResultController search filters (->whereIn('material_type_id'),
-            // ->where('is_published'), ->where('deleted_at', null), pub_year range)
-            // and the ->orderBy('pub_year') sort.
+            // Index name = table name (view_catalogs). Back the OPAC search page
+            // (App\Services\CatalogSearch): filters with counts, sorting and search in one field.
+            // After changing them: php artisan scout:sync-index-settings
             'view_catalogs' => [
                 // Search priority order (earlier = higher relevance weight).
                 'searchableAttributes' => [
                     'title_statement',
                     'joint_authors',
+                    'subjects',
                     'summary',
+                    'publisher',
                     'call_number',
                     'isbn',
                     'issn',
@@ -155,14 +158,34 @@ return [
                     'material_type',
                 ],
                 'filterableAttributes' => [
+                    'catalog_id',          // a patron's saved list
                     'material_type_id',
                     'is_published',
                     'series_statement_id',
                     'pub_year',
                     'deleted_at',
+                    'year',                // numeric pub_year (range filter + histogram)
+                    'authors',
+                    'subjects',
+                    'publisher',
+                    'has_fulltext',
+                    'has_cover',
                 ],
                 'sortableAttributes' => [
                     'pub_year',
+                    'year',
+                    'title_sort',
+                    'views',
+                ],
+                // Filter options are listed by how many records they have; enough values for
+                // every publication year (the histogram) and long author lists.
+                'faceting' => [
+                    'maxValuesPerFacet' => 500,
+                    'sortFacetValuesBy' => ['*' => 'count'],
+                ],
+                // Exact result counts for big result sets (the default caps them at 1,000).
+                'pagination' => [
+                    'maxTotalHits' => 20000,
                 ],
             ],
         ],

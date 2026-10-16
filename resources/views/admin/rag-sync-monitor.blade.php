@@ -23,7 +23,7 @@
 <div class="page-content">
     <nav class="page-breadcrumb">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ url('/admin/marc-templates') }}">Cataloging</a></li>
+            <li class="breadcrumb-item">Administration</li>
             <li class="breadcrumb-item active" aria-current="page">AI Sync Monitor</li>
         </ol>
     </nav>
@@ -182,7 +182,7 @@ $(document).ready(function () {
     $('#syncTbl').on('click', '.resync-btn', function () {
         var id = $(this).data('id');
         $.ajax({
-            url: '{{ url("/admin/reindex-record") }}/' + id,
+            url: '{{ url("/admin/ai-sync-monitor/reindex") }}/' + id,   // the monitor's own route (no Cataloging access needed)
             method: 'POST',
             data: { _token: '{{ csrf_token() }}' },
             success: function () {

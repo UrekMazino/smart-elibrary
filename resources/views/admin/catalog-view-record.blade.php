@@ -44,6 +44,10 @@
         .delete-icon:hover {
             color: pink;
         }
+
+        /* Count beside a tab label (e.g. Reviews 4). */
+        .nav-tabs .tab-count { display: inline-block; min-width: 20px; margin-left: 4px; padding: 1px 6px; border-radius: 10px; background: #eef0f6; color: #5b6478; font-size: 11px; font-weight: 600; text-align: center; }
+        .nav-tabs .nav-link.active .tab-count { background: #eef0ff; color: #4b55d9; }
     </style>
     <link rel="stylesheet" href="{{ asset('assets/css/cropper.min.css') }}">
 @endsection
@@ -89,6 +93,34 @@
             </button>
         </div>
     </div>
+
+    {{-- Flagged at the batch import and not reviewed yet (CatalogRecordCheck). --}}
+    @if(!empty($importIssue))
+        <div class="alert alert-warning py-2 mb-3" style="font-size: 13px;" role="alert">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                <div>
+                    <i data-feather="alert-triangle" class="icon-sm me-1"></i>
+                    <strong>Flagged at import</strong> (batch #{{ $importIssue->catalog_import_id }}, record {{ $importIssue->record_no }} in the file).
+                    Saving an edit checks it again.
+                    <ul class="mb-0 mt-1 ps-4">
+                        @foreach($importIssue->problems as $p)<li>{{ $p['message'] }}</li>@endforeach
+                    </ul>
+                </div>
+                <div class="d-flex gap-2">
+                    @can('view.catalog.importlist')
+                        <a href="{{ route('batch-report', ['id' => $importIssue->catalog_import_id]) }}" class="btn btn-sm btn-outline-secondary">Import report</a>
+                    @endcan
+                    @can('edit.catalog')
+                        <form method="post" action="{{ route('import-issue-reviewed', ['issue' => $importIssue->id]) }}">
+                            @csrf
+                            <input type="hidden" name="return_to" value="record">
+                            <button type="submit" class="btn btn-sm btn-warning">Mark as reviewed</button>
+                        </form>
+                    @endcan
+                </div>
+            </div>
+        </div>
+    @endif
 
     @if(session('rag_reindexed'))
         <div class="alert alert-success alert-dismissible py-2 mb-3" style="font-size: 13px;" role="alert">
@@ -137,6 +169,11 @@
                         </li>
                         <li class="nav-item">
                             <a class="nav-link {{ isset($copyUpdate) ? 'active' : '' }}" id="physical-copy-tab" data-bs-toggle="tab" href="#physical-copy" role="tab" aria-controls="physical-copy" aria-selected="false">Physical Copy</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="reviews-tab" data-bs-toggle="tab" href="#reviews" role="tab" aria-controls="reviews" aria-selected="false">
+                                Reviews <span class="tab-count">{{ $reviews->count() }}</span>
+                            </a>
                         </li>
                     </ul>
                     <div class="tab-content border border-top-0 p-3" id="myTabContent">
@@ -427,8 +464,16 @@
                       </div>
                     </div>
 
+                    <!-- Reviews Tab -->
+                    <div class="tab-pane fade" id="reviews" role="tabpanel" aria-labelledby="reviews-tab">
+                        @include('admin.partials.record-reviews', ['reviews' => $reviews])
+                    </div>
+
                     <!-- Physical Copy Tab -->
                     <div class="tab-pane fade {{ isset($copyUpdate) ? 'show active' : '' }}" id="physical-copy" role="tabpanel" aria-labelledby="physical-copy-tab">
+                        @if(!empty($copyError))
+                            <div class="alert alert-danger py-2" style="font-size: 13px;" role="alert">{{ $copyError }}</div>
+                        @endif
                         <div class="row">
                             <div class="col-md-12 stretch-card">
                                 <div class="card">
@@ -513,7 +558,7 @@
 <form method="post" action="{{ url('/admin/hold-view-from-opac') }}" id="holdFrm">
 	@csrf
 	<input type="hidden" name="catalog_id" id="hold_catalog_id">
-</form>s
+</form>
 
 <form method="post" action="" id="delete_copy_frm">
 	@csrf
@@ -567,6 +612,22 @@ function viewCoverPhoto() {
 
 $(function () {
     if (window.feather) feather.replace();
+
+    // Tabs are linkable: /admin/view-record/{id}#reviews opens that tab, and switching tabs
+    // updates the hash so a reload (or a shared link) comes back to the same tab.
+    // This page is usually reached by a POST (record lists, uploads, copy edits), whose URL has no
+    // GET route — rewriting the address there and reloading gave a 405. So the address bar always
+    // shows the record's own GET URL; a reload then re-opens the record instead of re-posting.
+    var recordUrl = @json(parse_url(url('/admin/view-record/' . $record->id), PHP_URL_PATH));   // path only: always same-origin
+    function setAddress(hash) {
+        try { history.replaceState(null, '', recordUrl + (hash || '')); } catch (e) {}
+    }
+    setAddress(location.hash);
+    var tabs = document.querySelectorAll('#myTab a[data-bs-toggle="tab"]');
+    tabs.forEach(function (a) {
+        if (location.hash && a.getAttribute('href') === location.hash && window.bootstrap) bootstrap.Tab.getOrCreateInstance(a).show();
+        a.addEventListener('shown.bs.tab', function () { setAddress(a.getAttribute('href')); });
+    });
 });
 </script>
 <script type="text/javascript" src="{{ asset('assets/js/cropper.js') }}"></script>

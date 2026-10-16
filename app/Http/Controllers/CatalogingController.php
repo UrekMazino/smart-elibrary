@@ -6,6 +6,7 @@ use App\Http\Requests\BatchUploadRequest;
 use App\Http\Requests\MarcFileUploadRequest;
 use App\Models\Catalog;
 use App\Models\CatalogImport;
+use App\Models\CatalogImportIssue;
 use App\Models\Download;
 // use App\Models\CatalogImportProgress;
 use App\Models\Frontpage;
@@ -18,11 +19,14 @@ use App\Models\Material;
 use App\Models\Multimedia;
 use App\Models\ViewCatalog;
 use App\Services\AiSearchService;
+use App\Services\CatalogRecordCheck;
 use App\Services\MarcExportService;
 use App\Services\MarcMaterialMapper;
 use App\Models\MaterialTypeMap;
 use App\Services\RagSync;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Scriptotek\Marc\Collection;
 use Scriptotek\Marc\Record;
 use ReflectionClass; 
@@ -219,7 +223,17 @@ class CatalogingController extends Controller
 
         $citations = buildCitations(ViewCatalog::where('catalog_id', $catalogId)->first());
 
-        return view('admin.catalog-view-record', ['record' => $record, 'fullText' => $fullText, 'coverPage' => $coverPage, 'title' => $title, 'totalCopies' => $totalCopies, 'citations' => $citations]);
+        // Patron reviews for the Reviews tab (admin.partials.record-reviews), newest first.
+        $reviews = DB::table('ratings as r')
+            ->leftJoin('users as u', 'u.id', '=', 'r.user_id')
+            ->where('r.catalog_id', $catalogId)
+            ->orderByDesc('r.created_at')->orderByDesc('r.id')
+            ->get(['r.id', 'r.rating', 'r.remarks', 'r.created_at', 'u.name', 'u.email', 'u.is_banned', 'u.is_blocked']);
+
+        // Flagged at import and not reviewed yet: shown above the record.
+        $importIssue = CatalogImportIssue::where('catalog_id', $catalogId)->where('outcome', 'imported')->whereNull('reviewed_at')->first();
+
+        return view('admin.catalog-view-record', ['record' => $record, 'fullText' => $fullText, 'coverPage' => $coverPage, 'title' => $title, 'totalCopies' => $totalCopies, 'citations' => $citations, 'reviews' => $reviews, 'importIssue' => $importIssue]);
     }
 
     /**
@@ -252,8 +266,6 @@ class CatalogingController extends Controller
      */
     public function exportRecords(Request $request, $format, MarcExportService $marc)
     {
-        error_reporting(error_reporting() & ~E_DEPRECATED);
-
         $status = $request->query('status');
         $build  = fn () => Catalog::whereNull('deleted_at')
             ->when($status === 'published', fn ($q) => $q->where('is_published', 1))
@@ -261,6 +273,14 @@ class CatalogingController extends Controller
             ->orderBy('id');
 
         $name = 'catalog' . ($status ? '-' . $status : '') . '-' . now()->format('Ymd-His');
+
+        return $this->streamMarcExport($build, $format, $name, $marc);
+    }
+
+    /** Stream the records from $build() (a query factory) as MARC21 binary or MARCXML, 200 at a time. */
+    private function streamMarcExport(\Closure $build, string $format, string $name, MarcExportService $marc)
+    {
+        error_reporting(error_reporting() & ~E_DEPRECATED);
 
         if ($format === 'xml') {
             return response()->stream(function () use ($build, $marc) {
@@ -447,6 +467,67 @@ class CatalogingController extends Controller
         return $this->catalogListJson($request, null, (int) $id);
     }
 
+    /** Import report of a batch: the records skipped, and those imported but flagged for review. */
+    public function batchReport($id)
+    {
+        $batch = CatalogImport::whereNull('deleted_at')->findOrFail($id);
+
+        $issues = CatalogImportIssue::where('catalog_import_issues.catalog_import_id', $batch->id)
+            ->leftJoin('catalogs as k', 'k.id', '=', 'catalog_import_issues.catalog_id')
+            ->leftJoin('users as u', 'u.id', '=', 'catalog_import_issues.reviewed_by')
+            ->orderBy('catalog_import_issues.record_no')
+            ->get(['catalog_import_issues.id', 'catalog_import_issues.catalog_id', 'catalog_import_issues.record_no',
+                   'catalog_import_issues.control_number', 'catalog_import_issues.title', 'catalog_import_issues.outcome',
+                   'catalog_import_issues.problems', 'catalog_import_issues.reviewed_at', 'u.name as reviewer',
+                   'k.deleted_at as record_deleted_at', DB::raw('catalog_import_issues.raw_marc IS NOT NULL as has_marc')]);
+
+        return view('admin.batch-report', [
+            'batch'   => $batch,
+            'skipped' => $issues->where('outcome', 'skipped')->values(),
+            'review'  => $issues->where('outcome', 'imported')->values(),
+        ]);
+    }
+
+    /** The batch's skipped records as one MARC21 file, to fix in the source and import again. */
+    public function downloadSkippedRecords($id)
+    {
+        $batch = CatalogImport::whereNull('deleted_at')->findOrFail($id);
+        $records = CatalogImportIssue::where('catalog_import_id', $batch->id)->where('outcome', 'skipped')
+            ->whereNotNull('raw_marc')->orderBy('record_no')->pluck('raw_marc');
+        abort_if($records->isEmpty(), 404);
+
+        return response()->streamDownload(function () use ($records) {
+            foreach ($records as $record) echo $record;
+        }, "batch-{$batch->id}-skipped-records.mrc", ['Content-Type' => 'application/marc']);
+    }
+
+    /** Staff have looked at a flagged record and accept it as it is. */
+    public function markImportIssueReviewed(Request $request, CatalogImportIssue $issue)
+    {
+        abort_unless($issue->outcome === 'imported', 404);
+        if (! $issue->reviewed_at) {
+            $issue->update(['reviewed_at' => now(), 'reviewed_by' => Auth::id()]);
+        }
+
+        // Back to where the button was (the record page is reached by POST, so not back()).
+        return $request->input('return_to') === 'record'
+            ? redirect()->route('show-record', ['id' => $issue->catalog_id])
+            : redirect()->route('batch-report', ['id' => $issue->catalog_import_id]);
+    }
+
+    /**
+     * After an edit, check a record that was flagged at import again: the problems the edit fixed
+     * are cleared, and the flag is closed when none is left.
+     */
+    private function recheckImportIssue(int $catalogId, array $opacRow): void
+    {
+        $issue = CatalogImportIssue::where('catalog_id', $catalogId)->where('outcome', 'imported')->whereNull('reviewed_at')->first();
+        if (! $issue) return;
+
+        $left = CatalogRecordCheck::problems($opacRow, $catalogId);
+        $issue->update($left ? ['problems' => $left] : ['reviewed_at' => now(), 'reviewed_by' => Auth::id()]);
+    }
+
     public function storeBatch(BatchUploadRequest $request, MarcMaterialMapper $mapper)
     {
         $records = Collection::fromFile($request->file('batch_file'));
@@ -481,6 +562,7 @@ class CatalogingController extends Controller
         $catalogImport = CatalogImport::create([
             'no_of_records' => $totalRecords,
             'subject' => trim((string) $request->subject),
+            'file_name' => mb_substr((string) $request->file('batch_file')->getClientOriginalName(), 0, 255),
             'is_aanr' => isset($request->is_aanr) ? 1 : 0,
             'comment' => $request->comment,
             'material_type_id' => $request->material_type_id,   // the default type
@@ -494,12 +576,18 @@ class CatalogingController extends Controller
         // $task->total_records = $totalRecords;
         // $task->save();
 
+        // The import report: records imported, imported but flagged for review, and skipped.
+        $imported = $flagged = $skipped = 0;
+
         foreach($fields as $index => $f) {
             $marcTags = [];
 
             foreach($f as $c) {
                 $marcTags[] = $c->getTag();
             }
+
+            // What is wrong with this record, if anything (see CatalogRecordCheck).
+            $problems = [];
 
             try{
                 // LDR - LEADER
@@ -518,7 +606,12 @@ class CatalogingController extends Controller
                     "indicator" => "N"
                 ];
     
-                $l = str_split($leaders[$index]);
+                // A leader shorter than 24 characters is padded, not fatal (fixed-length field).
+                if (strlen($leaders[$index]) < 24) {
+                    $problems[] = CatalogRecordCheck::problem('short_leader', 'warning',
+                        'The leader is ' . strlen($leaders[$index]) . ' characters long, not 24; padded with blanks.');
+                }
+                $l = str_split(str_pad($leaders[$index], 24));
     
                 $subfieldArr[0] = [
                     "sub-index" => 1,
@@ -763,7 +856,13 @@ class CatalogingController extends Controller
     
     
                             if($marcTags[$w] == '008') {
-                            
+                                // Same for a short 008 (40 characters): pad, and flag it.
+                                if (strlen($string) < 40) {
+                                    $problems[] = CatalogRecordCheck::problem('short_008', 'warning',
+                                        'Field 008 is ' . strlen($string) . ' characters long, not 40; padded with blanks.');
+                                }
+                                $c = str_split(str_pad($string, 40));
+
                                 $subfieldArr[0] = [
                                     "sub-index" => 1,
                                     "id" => 2603,
@@ -1045,7 +1144,12 @@ class CatalogingController extends Controller
                     // the mapped type for this record's field value, else the batch default.
                     $mappedId = $mapper->materialFor($files[$index], $mapField, $materialMap);
                     $material = $this->resolveMaterial($mappedId ?? $request->material_type_id, $matchingRecordType['recordType'] ?? null);
-                    $materialCounts[$material->name] = ($materialCounts[$material->name] ?? 0) + 1;
+                    if ($mapField && $mappedId === null) {
+                        $values = $mapper->valuesOf($files[$index], $mapField);
+                        $problems[] = CatalogRecordCheck::problem('unmapped_material', 'warning',
+                            ($values ? 'Material type value "' . implode('", "', $values) . "\" ($mapField) isn't in the mapping" : "No $mapField value for the material mapping")
+                            . '; imported as ' . $material->name . '.');
+                    }
 
                     $material_type = $material->name;
                     $material_type_id = $material->id;
@@ -1056,43 +1160,68 @@ class CatalogingController extends Controller
                     // $task->progress = $index+1;
                     // $task->save();
 
-                $catalog = Catalog::create([
+                $catalogRow = [
                     'material_type_id' => $material_type_id,
                     'field_data' => $fieldDataString,
                     'catalog_import_id' => $catalogImport->id,
                     'is_aanr' => $request->is_aanr ? 1 : 0,
                     'created_by' => $user->id,
                     'updated_by' => $user->id,
-                ]);
+                ];
 
-                if($catalog) {
-                    ViewCatalog::create([
-                        'catalog_id' => $catalog->id,
-                        'isbn' => isset($matchingISBN['isbn']) ? $matchingISBN['isbn'] : NULL,
-                        'issn' => isset($matchingISSN['issn']) ? $matchingISSN['issn'] : NULL,
-                        'material_type' => $viewCatMattype->name,
-                        'material_type_id'=> $viewCatMattype->id,
-                        'catalog_import_id' => $catalogImport->id,
-                        'title_statement' => marcTitle($fieldData) ?? ($matchingTitles['title'] ?? NULL),   // full 245 ($a $b $n $p $c ...), not just $a
-                        'summary' => isset($matchingSummary['summary']) ? $matchingSummary['summary'] : NULL,
-                        'general_note' => isset($matchingGeneralNote['general_note']) ? $matchingGeneralNote['general_note'] : NULL,
-                        'publisher' => isset($matchingPublisher['publisher']) ? $matchingPublisher['publisher'] : NULL,
-                        'pub_year' => isset($matchingDateOfPublication['date_of_pub']) ? $matchingDateOfPublication['date_of_pub'] : NULL,
-                        'joint_authors' => marcAuthors($fieldData),   // 100 + 110, else 700 + 710; " / "-separated
-                        'call_number' => isset($matchingCallNumber['call_number']) ? $matchingCallNumber['call_number'] : NULL,
-                        'created_by' => $user->id,
-                        'updated_by' => $user->id,
-                    ]);
+                $opacRow = [
+                    'isbn' => isset($matchingISBN['isbn']) ? $matchingISBN['isbn'] : NULL,
+                    'issn' => isset($matchingISSN['issn']) ? $matchingISSN['issn'] : NULL,
+                    'material_type' => $viewCatMattype->name,
+                    'material_type_id'=> $viewCatMattype->id,
+                    'catalog_import_id' => $catalogImport->id,
+                    'title_statement' => marcTitle($fieldData) ?? ($matchingTitles['title'] ?? NULL),   // full 245 ($a $b $n $p $c ...), not just $a
+                    'summary' => isset($matchingSummary['summary']) ? $matchingSummary['summary'] : NULL,
+                    'general_note' => isset($matchingGeneralNote['general_note']) ? $matchingGeneralNote['general_note'] : NULL,
+                    'publisher' => isset($matchingPublisher['publisher']) ? $matchingPublisher['publisher'] : NULL,
+                    'pub_year' => isset($matchingDateOfPublication['date_of_pub']) ? $matchingDateOfPublication['date_of_pub'] : NULL,
+                    'joint_authors' => marcAuthors($fieldData),   // 100 + 110, else 700 + 710; " / "-separated
+                    'subjects' => marcSubjects($fieldData),        // 600/610/650/651/653 $a (Subject filter)
+                    'call_number' => isset($matchingCallNumber['call_number']) ? $matchingCallNumber['call_number'] : NULL,
+                    'created_by' => $user->id,
+                    'updated_by' => $user->id,
+                ];
 
-                    ensurePlaceholderCover($catalog->id);
+                // Too little to catalogue (no title, or only a title): skip it and report it.
+                $problems = array_merge($problems, CatalogRecordCheck::problems($opacRow));
+                if (CatalogRecordCheck::blocksImport($problems)) {
+                    $this->recordImportIssue($catalogImport->id, $index, $files[$index], $problems, $opacRow['title_statement']);
+                    $skipped++;
+                    continue;
                 }
 
+                // The record, its OPAC row and its flag (if any) are written together: one
+                // transaction per record, so the import progress stays visible while it runs.
+                $catalog = DB::transaction(function () use ($catalogRow, $opacRow, $catalogImport, $index, $files, $problems) {
+                    $catalog = $this->createWithOpacRow($catalogRow, $opacRow);
+                    if ($problems) {
+                        $this->recordImportIssue($catalogImport->id, $index, $files[$index], $problems, $opacRow['title_statement'], $catalog->id);
+                    }
+                    return $catalog;
+                });
+                $imported++;
+                if ($problems) $flagged++;
+                $materialCounts[$material->name] = ($materialCounts[$material->name] ?? 0) + 1;
+
+                ensurePlaceholderCover($catalog->id);
+
                 $formattedRecords = [];
-            } catch (Exception $e) {
-                dump("Error: $e->getMessage()");
+            } catch (\Throwable $e) {
+                // A record that can't be read is skipped and reported; the rest of the file goes on.
+                Log::warning('Batch import: record skipped', ['batch' => $catalogImport->id, 'record' => $index + 1, 'error' => $e->getMessage()]);
+                $problems[] = CatalogRecordCheck::problem('unreadable', 'error', 'The record could not be read: ' . Str::limit($e->getMessage(), 200));
+                $this->recordImportIssue($catalogImport->id, $index, $files[$index], $problems, null);
+                $skipped++;
             }
           
         }
+
+        $catalogImport->update(['imported_count' => $imported, 'skipped_count' => $skipped]);
         // CatalogImportProgress::truncate();
 
         clearHomeCache();
@@ -1105,12 +1234,49 @@ class CatalogingController extends Controller
             'imported'
         );
 
-        // Post/Redirect/Get, with what was imported under which type.
+        // Post/Redirect/Get, with what was imported under which type and what needs attention.
         arsort($materialCounts);
         $breakdown = collect($materialCounts)->map(fn ($n, $name) => "{$n} {$name}")->implode(', ');
+        $attention = array_filter([
+            $flagged ? $flagged . ' imported record(s) need review' : null,
+            $skipped ? $skipped . ' record(s) were skipped' : null,
+        ]);
 
-        return redirect('/admin/batch-list')->with('success',
-            'Imported ' . array_sum($materialCounts) . ' record(s)' . ($breakdown ? ': ' . $breakdown . '.' : '.'));
+        return redirect('/admin/batch-list')->with([
+            'success' => "Imported {$imported} of {$totalRecords} record(s)" . ($breakdown ? ': ' . $breakdown . '.' : '.')
+                . ($attention ? ' ' . ucfirst(implode('; ', $attention)) . '.' : ''),
+            'import_report' => $attention ? $catalogImport->id : null,
+        ]);
+    }
+
+    /** One row of the import report for a record with problems (catalog_import_issues). */
+    private function recordImportIssue(int $batchId, int $index, $marc, array $problems, ?string $title, ?int $catalogId = null): void
+    {
+        $skipped = $catalogId === null;
+
+        CatalogImportIssue::create([
+            'catalog_import_id' => $batchId,
+            'catalog_id'        => $catalogId,
+            'record_no'         => $index + 1,
+            'control_number'    => $this->marcValue($marc, '001'),
+            'title'             => Str::limit(trim(strip_tags((string) ($title ?? $this->marcValue($marc, '245', 'a')))), 490, '…') ?: null,
+            'outcome'           => $skipped ? 'skipped' : 'imported',
+            'problems'          => $problems,
+            // Kept so the skipped records can be downloaded, fixed and imported again.
+            'raw_marc'          => $skipped ? rescue(fn () => $marc->toRaw(), null, false) : null,
+        ]);
+    }
+
+    /** A control field's data, or the first $code subfield of a data field, read straight from the MARC. */
+    private function marcValue($marc, string $tag, ?string $code = null): ?string
+    {
+        return rescue(function () use ($marc, $tag, $code) {
+            $field = $marc->getField($tag);
+            if (! $field) return null;
+            if ($code === null) return mb_substr(trim((string) $field->getData()), 0, 50) ?: null;
+            $subfield = $field->getSubfield($code);
+            return $subfield ? trim((string) $subfield->getData()) : null;
+        }, null, false);
     }
 
     /**
@@ -1208,30 +1374,32 @@ class CatalogingController extends Controller
         // Capture the batch's catalog ids before the soft-delete so we can drop them from RAG.
         $batchIds = Catalog::where('catalog_import_id', $request->id)->pluck('id');
 
-        CatalogImport::where('id',$request->id)
-            ->update([
-                    'deleted_at' => now(),
-                    'deleted_by' => $user->id
-                ]);
+        // The batch, its records, their OPAC rows and the RAG removal queue change together.
+        DB::transaction(function () use ($request, $user, $batchIds) {
+            CatalogImport::where('id',$request->id)
+                ->update([
+                        'deleted_at' => now(),
+                        'deleted_by' => $user->id
+                    ]);
 
-        Catalog::where('catalog_import_id',$request->id)
-            ->update([
-                    'deleted_at' => now(),
-                    'deleted_by' => $user->id
-                ]);
+            Catalog::where('catalog_import_id',$request->id)
+                ->update([
+                        'deleted_at' => now(),
+                        'deleted_by' => $user->id
+                    ]);
 
-        ViewCatalog::where('catalog_import_id',$request->id)
-            ->update([
-                    'deleted_at' => now(),
-                    'deleted_by' => $user->id
-                ]);
+            ViewCatalog::where('catalog_import_id',$request->id)
+                ->update([
+                        'deleted_at' => now(),
+                        'deleted_by' => $user->id
+                    ]);
+
+            RagSync::enqueueMany($batchIds, RagSync::DELETE, 'deleted');
+        });
 
         // Same as destroyRecord: the query-builder update bypasses Scout, so remove the
         // whole batch from the search index (else the docs linger with deleted_at = null).
         ViewCatalog::where('catalog_import_id', $request->id)->get()->unsearchable();
-
-        // Queue the whole batch for RAG sync removal.
-        RagSync::enqueueMany($batchIds, RagSync::DELETE, 'deleted');
 
         // Deleting a batch changes the collection -> bust the home caches (destroyRecord
         // already does this; batch delete was missing it and left a stale homepage).
@@ -1284,9 +1452,13 @@ class CatalogingController extends Controller
                 'catalog_imports.subject',
                 'catalog_imports.comment',
                 'catalog_imports.created_at',
-                \DB::raw('count(case when catalog_imports.id = catalogs.catalog_import_id and catalogs.deleted_at is null then 1 else null end) as current_no_of_records')
+                'catalog_imports.skipped_count',
+                \DB::raw('count(case when catalog_imports.id = catalogs.catalog_import_id and catalogs.deleted_at is null then 1 else null end) as current_no_of_records'),
+                // Imported records flagged at import and not reviewed yet (deleted ones don't count).
+                \DB::raw("(select count(*) from catalog_import_issues i join catalogs k on k.id = i.catalog_id where i.catalog_import_id = catalog_imports.id and i.outcome = 'imported' and i.reviewed_at is null and k.deleted_at is null) as review_open")
             )
-            ->join('catalogs', 'catalogs.catalog_import_id', '=', 'catalog_imports.id')
+            // Left join: a batch whose records were all skipped still has a report to show.
+            ->leftJoin('catalogs', 'catalogs.catalog_import_id', '=', 'catalog_imports.id')
             ->where(function ($query) use ($searchValue) {
                 $query->where('catalog_imports.no_of_records', 'like', '%' . $searchValue . '%')
                     ->orWhere('catalog_imports.comment', 'like', '%' . $searchValue . '%')
@@ -1294,7 +1466,7 @@ class CatalogingController extends Controller
                     ->orWhere('catalog_imports.created_at', 'like', '%' . $searchValue . '%');
             })
             ->where('catalog_imports.deleted_at', null)
-            ->groupBy('catalog_imports.id', 'catalog_imports.no_of_records', 'catalog_imports.subject', 'catalog_imports.comment', 'catalog_imports.created_at')
+            ->groupBy('catalog_imports.id', 'catalog_imports.no_of_records', 'catalog_imports.subject', 'catalog_imports.comment', 'catalog_imports.created_at', 'catalog_imports.skipped_count')
             ->orderBy($orderColumn, $columnSortOrder)
             ->skip($start)
             ->take($rowPerPage)
@@ -1307,6 +1479,8 @@ class CatalogingController extends Controller
                 "id" => $record->batch_id,
                 "init_no_of_records" => $record->no_of_records,
                 "current_no_of_records" => $record->current_no_of_records,
+                "skipped" => (int) $record->skipped_count,
+                "review_open" => (int) $record->review_open,
                 "subject" => $record->subject,
                 "comment" => $record->comment,
                 "created_at" => $record->created_at,
@@ -1630,6 +1804,19 @@ class CatalogingController extends Controller
             ?? $record->material_type_id;
     }
 
+    /**
+     * Create a catalogue record and its OPAC row (view_catalogs) in one transaction: either both
+     * exist or neither does. Scout indexes the OPAC row after the commit (scout.after_commit).
+     */
+    private function createWithOpacRow(array $catalogRow, array $opacRow): Catalog
+    {
+        return DB::transaction(function () use ($catalogRow, $opacRow) {
+            $catalog = Catalog::create($catalogRow);
+            ViewCatalog::create(['catalog_id' => $catalog->id] + $opacRow);
+            return $catalog;
+        });
+    }
+
     public function storeRecord(Request $request)
     {
         $user = Auth::user();
@@ -1809,7 +1996,7 @@ class CatalogingController extends Controller
 
             $viewCatMatType = $material;
 
-        $catalog = Catalog::create([
+        $catalogRow = [
             'material_type_id' => $material_type_id,
             'is_aanr' => isset($request->is_aanr) ? 1 : 0,
             'marc_class_sys_id' => 1,
@@ -1817,35 +2004,37 @@ class CatalogingController extends Controller
             'field_data' => $request->field_data,
             'created_by' => $user->id,
             'updated_by' => $user->id,
-        ]);
+        ];
 
+        $opacRow = [
+            'isbn' => isset($matchingISBN['isbn']) ? $matchingISBN['isbn'] : NULL,
+            'issn' => isset($matchingISSN['issn']) ? $matchingISSN['issn'] : NULL,
+            'accession_number' => $request->accession_number,
+            'material_type' => $viewCatMatType->name,
+            'material_type_id'=> $viewCatMatType->id,
+            'title_statement' => marcTitle($fieldData) ?? ($matchingTitles['title'] ?? NULL),   // full 245 ($a $b $n $p $c ...), not just $a
+            'summary' => isset($matchingSummary['summary']) ? $matchingSummary['summary'] : NULL,
+            'general_note' => isset($matchingGeneralNote['general_note']) ? $matchingGeneralNote['general_note'] : NULL,
+            'call_number' => isset($matchingCallNumber['call_number']) ? $matchingCallNumber['call_number'] : NULL,
+            'publisher' => isset($matchingPublisher['publisher']) ? $matchingPublisher['publisher'] : NULL,
+            'pub_year' => isset($matchingDateOfPublication['date_of_pub']) ? $matchingDateOfPublication['date_of_pub'] : NULL,
+            'joint_authors' => marcAuthors($fieldData),   // 100 + 110, else 700 + 710; " / "-separated
+            'subjects' => marcSubjects($fieldData),        // 600/610/650/651/653 $a (Subject filter)
+            'created_by' => $user->id,
+            'updated_by' => $user->id,
+        ];
 
-        if($catalog) {
-            ViewCatalog::create([
-                'catalog_id' => $catalog->id,
-                'isbn' => isset($matchingISBN['isbn']) ? $matchingISBN['isbn'] : NULL,
-                'issn' => isset($matchingISSN['issn']) ? $matchingISSN['issn'] : NULL,
-                'accession_number' => $request->accession_number,
-                'material_type' => $viewCatMatType->name,
-                'material_type_id'=> $viewCatMatType->id,
-                'title_statement' => marcTitle($fieldData) ?? ($matchingTitles['title'] ?? NULL),   // full 245 ($a $b $n $p $c ...), not just $a
-                'summary' => isset($matchingSummary['summary']) ? $matchingSummary['summary'] : NULL,
-                'general_note' => isset($matchingGeneralNote['general_note']) ? $matchingGeneralNote['general_note'] : NULL,
-                'call_number' => isset($matchingCallNumber['call_number']) ? $matchingCallNumber['call_number'] : NULL,
-                'publisher' => isset($matchingPublisher['publisher']) ? $matchingPublisher['publisher'] : NULL,
-                'pub_year' => isset($matchingDateOfPublication['date_of_pub']) ? $matchingDateOfPublication['date_of_pub'] : NULL,
-                'joint_authors' => marcAuthors($fieldData),   // 100 + 110, else 700 + 710; " / "-separated
-                'created_by' => $user->id,
-                'updated_by' => $user->id,
-            ]);
+        // The record, its OPAC row and its RAG outbox entry are written together. Queued for RAG
+        // sync because new records default to on-hold; the worker gates on is_published.
+        $catalog = DB::transaction(function () use ($catalogRow, $opacRow) {
+            $catalog = $this->createWithOpacRow($catalogRow, $opacRow);
+            RagSync::enqueue($catalog->id, RagSync::UPSERT, 'created');
+            return $catalog;
+        });
 
-            ensurePlaceholderCover($catalog->id);
-        }
+        ensurePlaceholderCover($catalog->id);
 
         clearHomeCache();
-
-        // Queue for RAG sync (new records default to on-hold; the worker gates on is_published).
-        RagSync::enqueue($catalog->id, RagSync::UPSERT, 'created');
 
         // Post/Redirect/Get: land on the new record's view page (a redirect, so a refresh
         // won't re-submit the form and create a duplicate).
@@ -1855,25 +2044,29 @@ class CatalogingController extends Controller
     public function destroyRecord(Request $request)
     {
         $user = Auth::user();
-        Catalog::where('id',$request->id)
-            ->update([
+
+        // Record, OPAC row and RAG outbox entry change together. The outbox entry removes this
+        // record's chunks from the AI index.
+        DB::transaction(function () use ($request, $user) {
+            Catalog::where('id',$request->id)
+                ->update([
+                        'deleted_at' => now(),
+                        'deleted_by' => $user->id
+                    ]);
+
+            ViewCatalog::where('catalog_id',$request->id)
+                ->update([
                     'deleted_at' => now(),
                     'deleted_by' => $user->id
                 ]);
 
-        ViewCatalog::where('catalog_id',$request->id)
-            ->update([
-                'deleted_at' => now(),
-                'deleted_by' => $user->id
-            ]);
+            RagSync::enqueue((int) $request->id, RagSync::DELETE, 'deleted');
+        });
 
         // Query-builder updates bypass Scout, so drop the record from the search index.
         // Otherwise its Meilisearch doc keeps deleted_at = null, still matches the OPAC's
         // "deleted_at IS NULL" filter, and inflates the result count vs what's shown.
         optional(ViewCatalog::where('catalog_id', $request->id)->first())->unsearchable();
-
-        // Queue for RAG sync — remove this record's chunks from the index.
-        RagSync::enqueue((int) $request->id, RagSync::DELETE, 'deleted');
 
         clearHomeCache();
         return redirect()->back();
@@ -2080,41 +2273,55 @@ class CatalogingController extends Controller
             $viewCatMatType = $material;
             
             
-            $catalog = Catalog::where('id', $id)
-                ->update([
-                    'material_type_id' => $material_type_id,
-                    'is_aanr' => isset($request->is_aanr) ? 1 : 0,
-                    'marc_class_sys_id' => 1,
-                    'accession_number'=> $request->accession_number,
-                    'field_data' => $request->field_data,
-                    'updated_by' => $user->id,
-                ]);
+            $catalogRow = [
+                'material_type_id' => $material_type_id,
+                'is_aanr' => isset($request->is_aanr) ? 1 : 0,
+                'marc_class_sys_id' => 1,
+                'accession_number'=> $request->accession_number,
+                'field_data' => $request->field_data,
+                'updated_by' => $user->id,
+            ];
 
+            $opacRow = [
+                'isbn' => isset($matchingISBN['isbn']) ? $matchingISBN['isbn'] : NULL,
+                'issn' => isset($matchingISSN['issn']) ? $matchingISSN['issn'] : NULL,
+                'accession_number' => $request->accession_number,
+                'material_type' => $viewCatMatType->name,
+                'material_type_id'=> $viewCatMatType->id,
+                'title_statement' => marcTitle($fieldData) ?? ($matchingTitles['title'] ?? NULL),   // full 245 ($a $b $n $p $c ...), not just $a
+                'summary' => isset($matchingSummary['summary']) ? $matchingSummary['summary'] : NULL,
+                'general_note' => isset($matchingGeneralNote['general_note']) ? $matchingGeneralNote['general_note'] : NULL,
+                'call_number' => isset($matchingCallNumber['call_number']) ? $matchingCallNumber['call_number'] : NULL,
+                'publisher' => isset($matchingPublisher['publisher']) ? $matchingPublisher['publisher'] : NULL,
+                'pub_year' => isset($matchingDateOfPublication['date_of_pub']) ? $matchingDateOfPublication['date_of_pub'] : NULL,
+                'joint_authors' => marcAuthors($fieldData),   // 100 + 110, else 700 + 710; " / "-separated
+                'subjects' => json_encode(marcSubjects($fieldData), JSON_UNESCAPED_UNICODE),   // query-builder update: no casts
+                'pub_year_num' => pubYearNumber($matchingDateOfPublication['date_of_pub'] ?? null),   // ...and no model hook
+                'updated_by' => $user->id,
+            ];
+
+        // Record, OPAC row and RAG outbox entry change together (the outbox entry because
+        // metadata and/or full text may have changed).
+        $catalog = DB::transaction(function () use ($id, $catalogRow, $opacRow) {
+            $changed = Catalog::where('id', $id)->update($catalogRow);
+            if ($changed) ViewCatalog::where('catalog_id', $id)->update($opacRow);
+            RagSync::enqueue((int) $id, RagSync::UPSERT, 'updated');
+            return $changed;
+        });
 
         if($catalog) {
-            ViewCatalog::where('catalog_id', $id) 
-                ->update([
-                    'catalog_id' => $id,
-                    'isbn' => isset($matchingISBN['isbn']) ? $matchingISBN['isbn'] : NULL,
-                    'issn' => isset($matchingISSN['issn']) ? $matchingISSN['issn'] : NULL,
-                    'accession_number' => $request->accession_number,
-                    'material_type' => $viewCatMatType->name,
-                    'material_type_id'=> $viewCatMatType->id,
-                    'title_statement' => marcTitle($fieldData) ?? ($matchingTitles['title'] ?? NULL),   // full 245 ($a $b $n $p $c ...), not just $a
-                    'summary' => isset($matchingSummary['summary']) ? $matchingSummary['summary'] : NULL,
-                    'general_note' => isset($matchingGeneralNote['general_note']) ? $matchingGeneralNote['general_note'] : NULL,
-                    'call_number' => isset($matchingCallNumber['call_number']) ? $matchingCallNumber['call_number'] : NULL,
-                    'publisher' => isset($matchingPublisher['publisher']) ? $matchingPublisher['publisher'] : NULL,
-                    'pub_year' => isset($matchingDateOfPublication['date_of_pub']) ? $matchingDateOfPublication['date_of_pub'] : NULL,
-                    'joint_authors' => marcAuthors($fieldData),   // 100 + 110, else 700 + 710; " / "-separated
-                    'updated_by' => $user->id,
-                ]);
+            // A query-builder update doesn't reach the search index: refresh this record's entry,
+            // or the OPAC keeps finding it by its old title, authors and subjects.
+            try {
+                ViewCatalog::where('catalog_id', $id)->searchable();
+            } catch (\Throwable $e) {
+                report($e);
             }
 
-        clearHomeCache();
+            $this->recheckImportIssue((int) $id, $opacRow);
+        }
 
-        // Queue for RAG sync — metadata and/or full text may have changed.
-        RagSync::enqueue((int) $id, RagSync::UPSERT, 'updated');
+        clearHomeCache();
 
         // Post/Redirect/Get: land on the record's view page after saving (same as create).
         return redirect()->route('show-record', ['id' => $id]);
@@ -2163,31 +2370,9 @@ class CatalogingController extends Controller
         $sortDir     = strtolower((string) $request->input('order.0.dir', 'asc')) === 'desc' ? 'desc' : 'asc';
         $searchValue = trim((string) $request->input('search.value', ''));
 
-        // Record List = published, On-Hold = not published, a batch = both (filter by Status).
-        $base = fn () => ViewCatalog::query()
-            ->whereNull('view_catalogs.deleted_at')
-            ->when($published !== null, fn ($q) => $q->where('view_catalogs.is_published', $published ? 1 : 0))
-            ->when($batchId !== null, fn ($q) => $q->where('view_catalogs.catalog_import_id', $batchId));
+        $totalRecords = $this->catalogListBase($published, $batchId)->count();   // the whole list, before filters / search
 
-        $totalRecords = $base()->count();   // the whole list, before filters / search
-
-        $query = $base();
-        $this->applyCatalogListFilters($query, $request);
-        if ($searchValue !== '') {
-            $query->where(function ($q) use ($searchValue) {
-                $like = '%' . $searchValue . '%';
-                $q->where('view_catalogs.material_type', 'like', $like)
-                    ->orWhere('view_catalogs.catalog_id', 'like', $like)
-                    ->orWhere('view_catalogs.accession_number', 'like', $like)
-                    ->orWhere('view_catalogs.title_statement', 'like', $like)
-                    ->orWhere('view_catalogs.isbn', 'like', $like)
-                    ->orWhere('view_catalogs.issn', 'like', $like)
-                    ->orWhere('view_catalogs.pub_year', 'like', $like)
-                    ->orWhere('view_catalogs.publisher', 'like', $like)
-                    ->orWhere('view_catalogs.joint_authors', 'like', $like)
-                    ->orWhere(DB::raw("DATE_FORMAT(view_catalogs.created_at, '%m/%d/%y')"), 'like', $like);
-            });
-        }
+        $query = $this->catalogListQuery($request, $published, $batchId, $searchValue);
         $totalRecordswithFilter = (clone $query)->count();
 
         $records = $query->select('view_catalogs.*')
@@ -2220,6 +2405,169 @@ class CatalogingController extends Controller
             'iTotalDisplayRecords' => $totalRecordswithFilter,
             'aaData'               => $resultArr,
         ]);
+    }
+
+    /** Record List = published, On-Hold = not published, a batch = both (filter by Status). */
+    private function catalogListBase(?bool $published, ?int $batchId = null)
+    {
+        return ViewCatalog::query()
+            ->whereNull('view_catalogs.deleted_at')
+            ->when($published !== null, fn ($q) => $q->where('view_catalogs.is_published', $published ? 1 : 0))
+            ->when($batchId !== null, fn ($q) => $q->where('view_catalogs.catalog_import_id', $batchId));
+    }
+
+    /**
+     * The rows a list shows, before paging: its scope + the toolbar filters + the search box.
+     * Shared by the table and by the bulk actions' "select all matching", so both act on the
+     * exact same set of records.
+     */
+    private function catalogListQuery(Request $request, ?bool $published, ?int $batchId, string $searchValue)
+    {
+        $query = $this->catalogListBase($published, $batchId);
+        $this->applyCatalogListFilters($query, $request);
+        if ($searchValue !== '') {
+            $query->where(function ($q) use ($searchValue) {
+                $like = '%' . $searchValue . '%';
+                $q->where('view_catalogs.material_type', 'like', $like)
+                    ->orWhere('view_catalogs.catalog_id', 'like', $like)
+                    ->orWhere('view_catalogs.accession_number', 'like', $like)
+                    ->orWhere('view_catalogs.title_statement', 'like', $like)
+                    ->orWhere('view_catalogs.isbn', 'like', $like)
+                    ->orWhere('view_catalogs.issn', 'like', $like)
+                    ->orWhere('view_catalogs.pub_year', 'like', $like)
+                    ->orWhere('view_catalogs.publisher', 'like', $like)
+                    ->orWhere('view_catalogs.joint_authors', 'like', $like)
+                    ->orWhere(DB::raw("DATE_FORMAT(view_catalogs.created_at, '%m/%d/%y')"), 'like', $like);
+            });
+        }
+        return $query;
+    }
+
+    /**
+     * The catalog ids a bulk action applies to. The client sends which list it is on
+     * (published / onhold / batch) and either explicit `ids[]` or scope=all (= every record
+     * matching the current filters + search, minus `excluded[]`). Explicit ids are re-checked
+     * against the list's scope, so a stale selection can't reach records outside that list.
+     */
+    private function bulkSelectionIds(Request $request): \Illuminate\Support\Collection
+    {
+        $request->validate([
+            'list'       => 'required|in:published,onhold,batch',
+            'scope'      => 'required|in:ids,all',
+            'batch_id'   => 'required_if:list,batch|integer|min:1',
+            'ids'        => 'required_if:scope,ids|array|max:20000',
+            'ids.*'      => 'integer|min:1',
+            'excluded'   => 'array',
+            'excluded.*' => 'integer|min:1',
+        ]);
+
+        $list    = $request->input('list');
+        $batchId = $list === 'batch' ? (int) $request->input('batch_id') : null;
+        $published = ['published' => true, 'onhold' => false, 'batch' => null][$list];
+
+        // Same view permission as the list page itself.
+        abort_unless(Auth::user()->can($list === 'batch' ? 'view.catalog.importlist' : 'view.catalog.list'), 403);
+
+        if ($request->input('scope') === 'all') {
+            $query = $this->catalogListQuery($request, $published, $batchId, trim((string) $request->input('search', '')));
+            $excluded = array_map('intval', (array) $request->input('excluded', []));
+            if ($excluded) $query->whereNotIn('view_catalogs.catalog_id', $excluded);
+        } else {
+            $query = $this->catalogListBase($published, $batchId)
+                ->whereIn('view_catalogs.catalog_id', array_map('intval', (array) $request->input('ids', [])));
+        }
+
+        return $query->orderBy('view_catalogs.catalog_id')->pluck('view_catalogs.catalog_id')->map(fn ($id) => (int) $id)->unique()->values();
+    }
+
+    /**
+     * Bulk action on the selected rows of the Record List / On-Hold / batch records tables:
+     * publish, hold, delete or re-index for AI. Each action needs the same permission as its
+     * single-record counterpart, and keeps Meilisearch, the RAG outbox and the home cache in step.
+     */
+    public function bulkRecords(Request $request)
+    {
+        $request->validate(['action' => 'required|in:publish,hold,delete,reindex']);
+        $action = $request->input('action');
+        $permission = ['publish' => 'publish-hold.catalog', 'hold' => 'publish-hold.catalog',
+                       'delete' => 'delete.catalog', 'reindex' => 'access.cataloging'][$action];
+        abort_unless(Auth::user()->can($permission), 403);
+
+        $ids     = $this->bulkSelectionIds($request);
+        $userId  = Auth::id();
+        $changed = 0;
+
+        foreach ($ids->chunk(500) as $chunk) {
+            $chunk = $chunk->values()->all();
+
+            if ($action === 'publish' || $action === 'hold') {
+                $to = $action === 'publish' ? 1 : 0;
+                // Only records whose state actually changes (a batch mixes published and on-hold).
+                $target = ViewCatalog::whereIn('catalog_id', $chunk)->where('is_published', '!=', $to)->pluck('catalog_id')->all();
+                if (! $target) continue;
+                $stamp = ['is_published' => $to, 'updated_at' => now(), 'updated_by' => $userId];
+                DB::transaction(function () use ($target, $stamp, $to) {
+                    Catalog::whereIn('id', $target)->update($stamp);
+                    ViewCatalog::whereIn('catalog_id', $target)->update($stamp);
+                    RagSync::enqueueMany($target, $to ? RagSync::UPSERT : RagSync::DELETE, $to ? 'published' : 'unpublished');
+                });
+                // Query-builder updates bypass Scout: re-index so OPAC search sees the new is_published.
+                ViewCatalog::whereIn('catalog_id', $target)->searchable();
+                $changed += count($target);
+            } elseif ($action === 'delete') {
+                // Drop from the search index first (same reason as destroyRecord), then soft-delete.
+                ViewCatalog::whereIn('catalog_id', $chunk)->get()->unsearchable();
+                $stamp = ['deleted_at' => now(), 'deleted_by' => $userId];
+                DB::transaction(function () use ($chunk, $stamp) {
+                    Catalog::whereIn('id', $chunk)->update($stamp);
+                    ViewCatalog::whereIn('catalog_id', $chunk)->update($stamp);
+                    RagSync::enqueueMany($chunk, RagSync::DELETE, 'deleted');
+                });
+                $changed += count($chunk);
+            } else {   // reindex: just queue; the worker gates on is_published as usual
+                RagSync::enqueueMany($chunk, RagSync::UPSERT, 'manual');
+                $changed += count($chunk);
+            }
+        }
+
+        if ($action !== 'reindex' && $changed) clearHomeCache();
+
+        return response()->json(['success' => true, 'action' => $action, 'selected' => $ids->count(), 'changed' => $changed]);
+    }
+
+    /**
+     * Step 1 of exporting the selected rows: resolve the selection (same rules as bulkRecords) and
+     * park the ids under a short-lived ticket. The download itself is a plain GET (step 2), because
+     * download managers (IDM etc.) and some browsers re-request a download URL with HEAD/GET — a
+     * POST-only download then fails with 405 even though the first response was fine.
+     */
+    public function bulkExportTicket(Request $request)
+    {
+        $ids = $this->bulkSelectionIds($request)->all();
+        abort_if(! $ids, 422, 'No records selected.');
+
+        $token = Str::random(40);
+        cache()->put('bulk-export:' . $token, ['user' => Auth::id(), 'ids' => $ids], now()->addMinutes(15));
+
+        return response()->json([
+            'count' => count($ids),
+            'urls'  => [
+                'mrc' => route('records-bulk-export', ['token' => $token, 'format' => 'mrc']),
+                'xml' => route('records-bulk-export', ['token' => $token, 'format' => 'xml']),
+            ],
+        ]);
+    }
+
+    /** Step 2: stream the ticket's records as MARC21 or MARCXML. Re-requestable until it expires. */
+    public function bulkExport($token, $format, MarcExportService $marc)
+    {
+        $ticket = cache()->get('bulk-export:' . $token);
+        abort_unless($ticket && (int) $ticket['user'] === (int) Auth::id(), 404, 'This export link has expired. Export the selection again.');
+
+        $ids   = $ticket['ids'];
+        $build = fn () => Catalog::whereNull('deleted_at')->whereIn('id', $ids)->orderBy('id');
+
+        return $this->streamMarcExport($build, $format, 'catalog-selection-' . count($ids) . '-' . now()->format('Ymd-His'), $marc);
     }
 
     /** Toolbar filters: status, type, author, year (each also "__none__" = missing) and resources. */
@@ -2339,28 +2687,31 @@ class CatalogingController extends Controller
     {
         $user = Auth::user();
 
-        // Capture the affected ids BEFORE the flip (they won't match is_published=1 after).
-        $affected = Catalog::where('is_published', 1)->pluck('id');
+        // Record flags, OPAC flags and the RAG outbox change together. All held -> queue for
+        // RAG sync to remove them from the index.
+        DB::transaction(function () use ($user) {
+            // Capture the affected ids BEFORE the flip (they won't match is_published=1 after).
+            $affected = Catalog::where('is_published', 1)->lockForUpdate()->pluck('id');
 
-        Catalog::where('is_published', 1)
-        ->update([
-            'is_published' => 0,
-            'updated_at' => now(),
-            'updated_by' => $user->id,
-        ]);
+            Catalog::where('is_published', 1)
+            ->update([
+                'is_published' => 0,
+                'updated_at' => now(),
+                'updated_by' => $user->id,
+            ]);
 
-        ViewCatalog::where('is_published', 1)
-        ->update([
-            'is_published' => 0,
-            'updated_at' => now(),
-            'updated_by' => $user->id,
-        ]);
+            ViewCatalog::where('is_published', 1)
+            ->update([
+                'is_published' => 0,
+                'updated_at' => now(),
+                'updated_by' => $user->id,
+            ]);
+
+            RagSync::enqueueMany($affected, RagSync::DELETE, 'unpublished');
+        });
 
         // Bulk change -> re-index so Meilisearch reflects the new is_published values.
         ViewCatalog::makeAllSearchable();
-
-        // All held -> queue for RAG sync to remove them from the index.
-        RagSync::enqueueMany($affected, RagSync::DELETE, 'unpublished');
 
         return response()->json(['success' => true]);
     }
@@ -2369,28 +2720,31 @@ class CatalogingController extends Controller
     {
         $user = Auth::user();
 
-        // Capture the affected ids BEFORE the flip (they won't match is_published=0 after).
-        $affected = Catalog::where('is_published', 0)->pluck('id');
+        // Record flags, OPAC flags and the RAG outbox change together. All published -> queue
+        // for RAG sync to index them.
+        DB::transaction(function () use ($user) {
+            // Capture the affected ids BEFORE the flip (they won't match is_published=0 after).
+            $affected = Catalog::where('is_published', 0)->lockForUpdate()->pluck('id');
 
-        Catalog::where('is_published', 0)
-        ->update([
-            'is_published' => 1,
-            'updated_at' => now(),
-            'updated_by' => $user->id,
-        ]);
+            Catalog::where('is_published', 0)
+            ->update([
+                'is_published' => 1,
+                'updated_at' => now(),
+                'updated_by' => $user->id,
+            ]);
 
-        ViewCatalog::where('is_published', 0)
-        ->update([
-            'is_published' => 1,
-            'updated_at' => now(),
-            'updated_by' => $user->id,
-        ]);
+            ViewCatalog::where('is_published', 0)
+            ->update([
+                'is_published' => 1,
+                'updated_at' => now(),
+                'updated_by' => $user->id,
+            ]);
+
+            RagSync::enqueueMany($affected, RagSync::UPSERT, 'published');
+        });
 
         // Bulk change -> re-index so Meilisearch reflects the new is_published values.
         ViewCatalog::makeAllSearchable();
-
-        // All published -> queue for RAG sync to index them.
-        RagSync::enqueueMany($affected, RagSync::UPSERT, 'published');
 
         return response()->json(['success' => true]);
     }
@@ -2398,26 +2752,30 @@ class CatalogingController extends Controller
     public function publishToOpac(Request $request)
     {
         $user = Auth::user();
-        Catalog::where('id', $request->catalog_id)
-        ->update([
-            'is_published' => 1,
-            'updated_at' => now(),
-            'updated_by' => $user->id,
-        ]);
 
-        ViewCatalog::where('catalog_id', $request->catalog_id)
-        ->update([
-            'is_published' => 1,
-            'updated_at' => now(),
-            'updated_by' => $user->id,
-        ]);
+        // Record flag, OPAC flag and the RAG outbox change together. Now published -> queue for
+        // RAG sync (worker will index it).
+        DB::transaction(function () use ($request, $user) {
+            Catalog::where('id', $request->catalog_id)
+            ->update([
+                'is_published' => 1,
+                'updated_at' => now(),
+                'updated_by' => $user->id,
+            ]);
+
+            ViewCatalog::where('catalog_id', $request->catalog_id)
+            ->update([
+                'is_published' => 1,
+                'updated_at' => now(),
+                'updated_by' => $user->id,
+            ]);
+
+            RagSync::enqueue((int) $request->catalog_id, RagSync::UPSERT, 'published');
+        });
 
         // Query-builder updates bypass Scout's observers, so re-index the record — else
         // Meilisearch keeps the stale is_published and the OPAC search filter hides it.
         optional(ViewCatalog::where('catalog_id', $request->catalog_id)->first())->searchable();
-
-        // Now published -> queue for RAG sync (worker will index it).
-        RagSync::enqueue((int) $request->catalog_id, RagSync::UPSERT, 'published');
 
         return response()->json(['success' => true]);
     }
@@ -2425,25 +2783,29 @@ class CatalogingController extends Controller
     public function holdViewFromOpac(Request $request)
     {
         $user = Auth::user();
-        Catalog::where('id', $request->catalog_id)
-        ->update([
-            'is_published' => 0,
-            'updated_at' => now(),
-            'updated_by' => $user->id,
-        ]);
 
-        ViewCatalog::where('catalog_id', $request->catalog_id)
-        ->update([
-            'is_published' => 0,
-            'updated_at' => now(),
-            'updated_by' => $user->id,
-        ]);
+        // Record flag, OPAC flag and the RAG outbox change together. Held -> queue for RAG sync
+        // (worker removes it from the index).
+        DB::transaction(function () use ($request, $user) {
+            Catalog::where('id', $request->catalog_id)
+            ->update([
+                'is_published' => 0,
+                'updated_at' => now(),
+                'updated_by' => $user->id,
+            ]);
+
+            ViewCatalog::where('catalog_id', $request->catalog_id)
+            ->update([
+                'is_published' => 0,
+                'updated_at' => now(),
+                'updated_by' => $user->id,
+            ]);
+
+            RagSync::enqueue((int) $request->catalog_id, RagSync::DELETE, 'unpublished');
+        });
 
         // Re-index so Meilisearch reflects is_published=0 (record hidden from OPAC search).
         optional(ViewCatalog::where('catalog_id', $request->catalog_id)->first())->searchable();
-
-        // Held -> queue for RAG sync (worker removes it from the index).
-        RagSync::enqueue((int) $request->catalog_id, RagSync::DELETE, 'unpublished');
 
         return response()->json(['success' => true]);
     }
@@ -2451,30 +2813,34 @@ class CatalogingController extends Controller
     public function togglePublishHoldMaterial(Request $request)
     {
         $user = Auth::user();
-        Catalog::where('catalog_import_id', $request->catalog_import_id)
-        ->update([
-            'is_published' => $request->action == 1 ? 1 : 0,
-            'updated_at' => now(),
-            'updated_by' => $user->id,
-        ]);
 
-        ViewCatalog::where('catalog_import_id', $request->catalog_import_id)
-        ->update([
-            'is_published' => $request->action == 1 ? 1 : 0,
-            'updated_at' => now(),
-            'updated_by' => $user->id,
-        ]);
+        // Record flags, OPAC flags and the RAG outbox change together: the whole batch is queued
+        // for RAG sync — publish -> index, hold -> remove.
+        DB::transaction(function () use ($request, $user) {
+            Catalog::where('catalog_import_id', $request->catalog_import_id)
+            ->update([
+                'is_published' => $request->action == 1 ? 1 : 0,
+                'updated_at' => now(),
+                'updated_by' => $user->id,
+            ]);
+
+            ViewCatalog::where('catalog_import_id', $request->catalog_import_id)
+            ->update([
+                'is_published' => $request->action == 1 ? 1 : 0,
+                'updated_at' => now(),
+                'updated_by' => $user->id,
+            ]);
+
+            $batchIds = Catalog::where('catalog_import_id', $request->catalog_import_id)->pluck('id');
+            RagSync::enqueueMany(
+                $batchIds,
+                $request->action == 1 ? RagSync::UPSERT : RagSync::DELETE,
+                $request->action == 1 ? 'published' : 'unpublished'
+            );
+        });
 
         // Re-index the batch so Meilisearch reflects the new is_published values.
         ViewCatalog::where('catalog_import_id', $request->catalog_import_id)->get()->each(fn($m) => $m->searchable());
-
-        // Queue the whole batch for RAG sync — publish -> index, hold -> remove.
-        $batchIds = Catalog::where('catalog_import_id', $request->catalog_import_id)->pluck('id');
-        RagSync::enqueueMany(
-            $batchIds,
-            $request->action == 1 ? RagSync::UPSERT : RagSync::DELETE,
-            $request->action == 1 ? 'published' : 'unpublished'
-        );
 
         return view('admin.batch-list');
     }
@@ -2764,13 +3130,17 @@ class CatalogingController extends Controller
 
     public function updateCopy(Request $request)
     {
-        Holdingcopy::where('id',$request->copy_id)
-            ->update([
-                'circulation_number' => $request->circulation_number,
-                'source' => $request->source,
-                'location' => $request->location,
-                'status' => $request->status,
-            ]);
+        // Barcodes are unique: one that another copy already has is refused.
+        $taken = Holdingcopy::where('circulation_number', $request->circulation_number)->where('id', '!=', $request->copy_id)->exists();
+        if (! $taken) {
+            Holdingcopy::where('id',$request->copy_id)
+                ->update([
+                    'circulation_number' => $request->circulation_number,
+                    'source' => $request->source,
+                    'location' => $request->location,
+                    'status' => $request->status,
+                ]);
+        }
         $coverPage = Frontpage::where('catalog_id',$request->catalog_id)->whereNull('deleted_at')->first();
         $fullText = Multimedia::where('catalog_id',$request->catalog_id)->whereNull('deleted_at')->first();
         $record = Catalog::select('catalogs.*')
@@ -2778,7 +3148,8 @@ class CatalogingController extends Controller
             ->first();
         $totalCopies = Holdingcopy::where('catalog_id', $request->catalog_id)->count();
 
-        return view('admin.catalog-view-record', ['record' => $record, 'fullText' => $fullText, 'coverPage' => $coverPage, 'title' => $request->title, 'totalCopies' => $totalCopies, 'copyUpdate' => true]);
+        return view('admin.catalog-view-record', ['record' => $record, 'fullText' => $fullText, 'coverPage' => $coverPage, 'title' => $request->title, 'totalCopies' => $totalCopies, 'copyUpdate' => true,
+            'copyError' => $taken ? 'Barcode ' . $request->circulation_number . ' already belongs to another copy, so this copy was not changed.' : null]);
     }
 
     public function destroyCopy($id) 

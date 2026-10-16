@@ -98,6 +98,18 @@
 					<a class="cmn-toggle-switch cmn-toggle-switch__htx open_close" href="#0"><span>Menu mobile</span></a>
 					<div class="main-menu">
 						<ul>
+							{{-- Optional breadcrumb before the bell / account menu (desktop only), e.g. the search
+							     page's "Home › Search Results". Pages without the section keep the header as is. --}}
+							@hasSection('header_breadcrumb')
+							<li class="hdr-crumb">@yield('header_breadcrumb')</li>
+							<style>
+								.main-menu > ul > li.hdr-crumb { vertical-align: top; padding: 6px 16px 17px 8px; margin-right: 8px; border-right: 1px solid #e3e8eb; font-size: 14px; color: #6b7680; }
+								.main-menu > ul > li.hdr-crumb a { display: inline; padding: 0; color: #00756b; font-weight: 500; }
+								.main-menu > ul > li.hdr-crumb a:hover { color: #e74e84; background: none; text-decoration: underline; }
+								.main-menu > ul > li.hdr-crumb [aria-hidden] { margin: 0 6px; }
+								@media (max-width: 991px) { .main-menu > ul > li.hdr-crumb { display: none !important; } }
+							</style>
+							@endif
 							@auth
 							@if(Auth::user()->usertype === 'Patron')
 							<li class="nfy-bell-li" style="position:relative; list-style:none;">
@@ -113,6 +125,9 @@
 							<style>
 								.nfy-pop { display:none; position:absolute; right:0; top:100%; z-index:1050; background:#fff; border:1px solid #e5e8ee; border-radius:12px; box-shadow:0 12px 32px rgba(20,30,60,.16); overflow:hidden; margin-top:8px; }
 								.nfy-pop.open { display:block; }
+								/* The theme's menu links (.main-menu ul li a: display:block, padding:10px; on phones
+								   padding:15px !important) stack each item's icon above its text. Keep the panel's row layout. */
+								.main-menu .nfy-pop a.nfy-item { display:flex; padding:11px 16px !important; }
 							</style>
 							<script>
 							document.addEventListener('click', function (e) {
@@ -139,9 +154,29 @@
 
 							</li>
 							@else
-							<li class="submenu">
-								<a href="{{ url('login') }}"><i class="pe-7s-user" style="font-size: 30px !important;vertical-align: middle;"></i>&nbsp&nbspLogin</a>
-							</li>
+							{{-- Guests: "Log in" as a plain link for returning members, "Register" as the one filled
+							     button for newcomers. In the phone menu they become two full-width buttons, Register first. --}}
+							<li class="acct-li acct-li-login"><a href="{{ route('login') }}" class="acct-login">Log in</a></li>
+							<li class="acct-li acct-li-register"><a href="{{ route('register') }}" class="acct-register">Register</a></li>
+							<style>
+								.main-menu > ul > li.acct-li { vertical-align: top; }
+								/* 30px lines keep the header as tall as the old icon "Login" (and the patrons' bell). */
+								.main-menu > ul > li > a.acct-login { color: #333; line-height: 30px; }
+								.main-menu > ul > li > a.acct-login:hover { color: #00756b; }
+								.main-menu > ul > li > a.acct-register { margin-left: 6px; padding: 0 18px; line-height: 30px; border-radius: 999px; background: #00857a; color: #fff; font-weight: 600; transition: background .15s ease; }
+								.main-menu > ul > li:hover > a.acct-register { background: #006f65; color: #fff; }
+								.main-menu > ul > li > a.acct-login:focus-visible, .main-menu > ul > li > a.acct-register:focus-visible { outline: 2px solid #00a496; outline-offset: 2px; }
+								@media (max-width: 991px) {
+									.main-menu > ul:has(> li.acct-li) { display: flex; flex-direction: column; gap: 10px; padding: 16px 15px; }
+									.main-menu > ul > li.acct-li { border: 0; }
+									.main-menu > ul > li.acct-li-register { order: -1; }
+									.main-menu > ul > li > a.acct-login, .main-menu > ul > li > a.acct-register { margin: 0; padding: 11px 15px !important; line-height: 1.4; border-radius: 8px; text-align: center; font-size: 15px; font-weight: 600; }
+									.main-menu > ul > li > a.acct-login { border: 1px solid #00857a; color: #00756b !important; }
+									.main-menu > ul > li > a.acct-login:hover { background-color: #eef8f6; color: #00756b !important; }
+									.main-menu > ul > li > a.acct-register { background: #00857a; color: #fff !important; }
+									.main-menu > ul > li > a.acct-register:hover { background-color: #006f65; color: #fff !important; }
+								}
+							</style>
 							@endauth
 						</ul>
 						{!! getNotif('overall') !!}
@@ -294,6 +329,11 @@
 	<script src="{{ asset('opac/DataTables/DataTables-1.12.1/js/dataTables.bootstrap5.min.js') }}"></script>
 
 	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+	@auth
+		@if(Auth::user()->usertype === 'Patron')
+			@include('opac.partials.quick-review')
+		@endif
+	@endauth
 	<!-- CHATBOT -->
 	{{-- <script src="https://account.snatchbot.me/script.js"></script><script>window.sntchChat.Init(257292)</script>  --}}
 

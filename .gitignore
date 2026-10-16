@@ -26,3 +26,14 @@ yarn-error.log
 # robots.txt stays tracked so a fresh deploy always has crawl rules before the first run.
 /public/sitemap.xml
 /public/sitemap-*.xml
+
+# Private keys and credentials never belong in the repo (gitleaks also blocks them; see .github/workflows/security.yml).
+/elibrary
+/elibrary.pub
+id_rsa*
+id_ecdsa*
+id_ed25519*
+*.pem
+*.ppk
+*.p12
+*.pfx

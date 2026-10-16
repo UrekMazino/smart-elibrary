@@ -24,9 +24,7 @@ use App\Http\Controllers\ConfigurationController;
 
 //ADMIN
 Route::controller(AdminController::class, 'admin')->group(function () {
-    Route::get('/admin/count-dynamicdates/json', 'countdynamicdates')->middleware('can:access.dashboard');
-    Route::get('/admin/per-date-chart/json', 'perDateChartJson')->middleware('can:access.dashboard');
-    Route::get('/admin/views-traffic/json', 'viewsTrafficJson')->middleware('can:access.dashboard');
+    Route::get('/admin/dashboard/activity', 'dashboardActivity')->middleware('can:access.dashboard');
     Route::get('/admin/register', 'registerPatron')->name('register_patron')->middleware(['can:access.accounts', 'can:create.patron']);
     Route::get('/admin/profile/validate-email/', 'validateEmail');
     Route::get('/admin/profile', 'profile');
@@ -94,6 +92,16 @@ Route::controller(ConfigurationController::class, 'admin')->group(function () {
     
 });
 
+// Administration → AI Sync Monitor — audit trail of catalog changes + AI-index sync state. The
+// Configuration module plus its own permission (Roles matrix); its per-row re-sync has its own
+// route here, so the page needs no Cataloging access.
+Route::controller(CatalogingController::class)->middleware(['can:access.configuration', 'can:access.ai.sync.monitor'])->group(function () {
+    Route::get('/admin/ai-sync-monitor', 'aiSyncMonitor')->name('ai-sync-monitor');
+    Route::get('/admin/ai-sync-monitor/json', 'aiSyncMonitorJson')->name('ai-sync-monitor-json');
+    Route::post('/admin/ai-sync-monitor/run', 'runSyncNow')->name('ai-sync-monitor-run');
+    Route::post('/admin/ai-sync-monitor/reindex/{id}', 'reindexRecord')->whereNumber('id')->name('ai-sync-monitor-reindex');
+});
+
 // Cataloging: the module needs access.cataloging; each action also needs its own permission
 // (the same ones that show/hide the buttons), so hiding a button is never the only guard.
 Route::controller(CatalogingController::class, 'admin')->middleware('can:access.cataloging')->group(function () {
@@ -107,19 +115,26 @@ Route::controller(CatalogingController::class, 'admin')->middleware('can:access.
     // Manual RAG re-index (human override for drift): single record + bulk.
     Route::post('/admin/reindex-record/{id}', 'reindexRecord')->name('reindex-record');
     Route::post('/admin/reindex-records', 'reindexRecords')->name('reindex-records');
-    // AI Sync Monitor — audit trail of catalog changes + AI-index sync state.
-    Route::get('/admin/ai-sync-monitor', 'aiSyncMonitor')->name('ai-sync-monitor');
-    Route::get('/admin/ai-sync-monitor/json', 'aiSyncMonitorJson')->name('ai-sync-monitor-json');
-    Route::post('/admin/ai-sync-monitor/run', 'runSyncNow')->name('ai-sync-monitor-run');
     Route::post('/admin/view-batch', 'viewBatch')->middleware('can:view.catalog.importlist');
     Route::get('/admin/batch-records/{id}', 'viewBatchRecords')->middleware('can:view.catalog.importlist');
     Route::get('/admin/batch-records-json/{id}', 'viewBatchRecordsJson')->middleware('can:view.catalog.importlist');
     Route::delete('/admin/delete-batch/{id}', 'destroyBatch')->name('delete-batch')->middleware('can:delete.catalog.import');
+    // Import report: records skipped or flagged for review, the skipped ones as MARC, "reviewed".
+    Route::get('/admin/batch-report/{id}', 'batchReport')->name('batch-report')->middleware('can:view.catalog.importlist');
+    Route::get('/admin/batch-report/{id}/skipped.mrc', 'downloadSkippedRecords')->name('batch-report-skipped')->middleware('can:view.catalog.importlist');
+    Route::post('/admin/import-issues/{issue}/reviewed', 'markImportIssueReviewed')->name('import-issue-reviewed')->middleware('can:edit.catalog');
 
     Route::get('/admin/record-list', 'recordList')->middleware('can:view.catalog.list');
     Route::get('/admin/on-hold-list', 'onholdList')->middleware('can:view.catalog.list');
     Route::get('/admin/record-list-json', 'recordListJson')->middleware('can:view.catalog.list');
     Route::get('/admin/onhold-list-json', 'onholdListJson')->middleware('can:view.catalog.list');
+    // Bulk actions on the selected rows of the Record List / On-Hold / batch records tables. The
+    // controller checks the list's view permission and each action's own permission.
+    Route::post('/admin/records/bulk', 'bulkRecords')->name('records-bulk')->middleware('throttle:30,1');
+    // Export = POST the selection for a 15-minute ticket, then a re-requestable GET download.
+    Route::post('/admin/records/bulk-export', 'bulkExportTicket')->name('records-bulk-export-ticket')->middleware('throttle:30,1');
+    Route::get('/admin/records/bulk-export/{token}/{format}', 'bulkExport')->name('records-bulk-export')
+        ->where(['token' => '[A-Za-z0-9]{40}', 'format' => 'mrc|xml'])->middleware('throttle:60,1');
 
     Route::middleware('can:publish-hold.catalog')->group(function () {
         Route::post('/admin/hold-all-published', 'holdAllPublished');

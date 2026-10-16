@@ -42,7 +42,7 @@
 		padding: 0 5px; margin: 0 1px; border-radius: 5px; background: #e4f1ef; color: #00796b;
 		font-size: 11px; font-weight: 700; text-decoration: none; vertical-align: 1px; transition: background .12s, color .12s;
 	}
-	.ai-cite:hover { background: #00a496; color: #fff; }
+	.ai-cite:hover { background: #00857a; color: #fff; }
 
 	.ai-foot { padding: 11px 18px; border-top: 1px solid #f0f2f4; background: #fbfcfd; font-size: 11.5px; color: #8a94a6; display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 
@@ -85,8 +85,8 @@
 	.ai-followup .input-group { box-shadow: 0 1px 3px rgba(0,0,0,.06); border-radius: 30px; overflow: hidden; border: 1px solid #dfe3e8; background: #fff; }
 	.ai-followup input { border: 0; padding: 13px 18px; font-size: 14px; flex: 1; outline: none; }
 	.ai-followup input:focus { outline: none; box-shadow: none; }
-	.ai-followup button { border: 0; background: #00a496; color: #fff; padding: 0 24px; font-size: 13.5px; font-weight: 600; cursor: pointer; transition: background .15s; }
-	.ai-followup button:hover { background: #00897b; }
+	.ai-followup button { border: 0; background: #00857a; color: #fff; padding: 0 24px; font-size: 13.5px; font-weight: 600; cursor: pointer; transition: background .15s; }
+	.ai-followup button:hover { background: #006f65; }
 	.ai-followup .hint { font-size: 11.5px; color: #a3adc2; text-align: center; margin-top: 9px; }
 
 	.ai-switch { text-align: center; margin-top: 22px; }
@@ -101,7 +101,7 @@
 @endsection
 
 @section('content')
-<div id="results" style="background-color: #00a496;">
+<div id="results" style="background-color: #00857a;">
 	<div class="container">
 		<div class="row align-items-center">
 			<div class="col-md-6">

@@ -14,8 +14,9 @@ class ExampleTest extends TestCase
      */
     public function test_example()
     {
-        $response = $this->get('/');
+        // The site root redirects to the OPAC home page (HomeController@index2).
+        $this->get('/')->assertRedirect('/home');
 
-        $response->assertStatus(200);
+        $this->get('/home')->assertStatus(200);
     }
 }

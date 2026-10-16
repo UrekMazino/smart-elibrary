@@ -53,7 +53,7 @@ class NewsController extends Controller
         $news->redirect_url = request()->news_url;
         $news->news_body = request()->news_body;
         $news->featured = request()->is_featured ? 'Yes' : 'No';
-        $news->created_by = Auth::user()->name;
+        $news->created_by = Auth::id();
         $news->save();
 
         // The homepage / sidebar news list is cached for 10 min — refresh it so the new
@@ -75,7 +75,6 @@ class NewsController extends Controller
         $article->redirect_url = request()->news_url;
         $article->news_body = request()->news_body;
         $article->featured = request()->is_featured ? 'Yes' : 'No';
-        $article->created_by = Auth::user()->name;
         
         // Check if a new cover image has been uploaded
         if ($request->hasFile('news_cover')) {
@@ -145,7 +144,7 @@ class NewsController extends Controller
             $id = $record->id;
             $news_title = $record->news_title;
             $featured = $record->featured;
-            $created_by = $record->created_by;
+            $created_by = staffName($record->created_by, '—');   // created_by holds the author's user id
             $created_at = $record->created_at;
             
  

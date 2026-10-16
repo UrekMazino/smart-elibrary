@@ -40,7 +40,7 @@ class OPACController extends Controller
             'name'           => ['required', 'string', 'max:255'],
             'email'          => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
             'contactnum'     => ['required', 'string', 'max:255'],
-            'birthdate'      => ['required', 'string', 'max:50'],
+            'birthdate'      => ['required', 'date', 'before:today'],   // 'Y-m-d' (OPAC) or 'm/d/Y' (admin picker)
             'affiliation'    => ['nullable', 'string', 'max:255'],
             'sex'            => ['nullable', Rule::in(['Male', 'Female'])],   // column is an enum
             'patron_type_id' => ['required', 'exists:patrontypes,id'],        // NOT NULL column
@@ -53,7 +53,7 @@ class OPACController extends Controller
             'contactnum'     => $data['contactnum'],
             'affiliation'    => $data['affiliation'] ?? null,
             'sex'            => $data['sex'] ?? null,
-            'birthdate'      => $data['birthdate'],
+            'birthdate'      => \Carbon\Carbon::parse($data['birthdate'])->toDateString(),
             'patrontypes_id' => $data['patron_type_id'],
             'region_id'      => $data['region_id'] ?? null,
             'email'          => $data['email'],

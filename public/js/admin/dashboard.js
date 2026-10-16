@@ -1,1737 +1,364 @@
-$(function() {
+/* Admin dashboard (resources/views/admin/index.blade.php): the header clock and the Activity section. */
+
+/* Header clock: date, time and greeting in the viewer's own time zone (the browser's), ticking every
+ * second. The server renders app-timezone values only as the no-JS fallback. Not aria-live: a
+ * clock announcing every second would drown out everything else. */
+(function () {
   'use strict';
 
-  var colors = {
-    primary        : "#6571ff",
-    secondary      : "#7987a1",
-    success        : "#05a34a",
-    info           : "#66d1d1",
-    warning        : "#fbbc06",
-    danger         : "#ff3366",
-    light          : "#e9ecef",
-    dark           : "#060c17",
-    muted          : "#7987a1",
-    gridBorder     : "rgba(77, 138, 240, .15)",
-    bodyColor      : "#000",
-    cardBg         : "#fff"
+  var dateEl = document.getElementById('dsh-today');
+  var timeEl = document.getElementById('dsh-clock');
+  var tzEl = document.getElementById('dsh-tz');
+  var greetEl = document.getElementById('dsh-greeting');
+  if (!timeEl || !window.Intl) return;
+
+  var dateFmt = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  var timeFmt = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit' });
+  var zoneFmt = new Intl.DateTimeFormat('en-US', { timeZoneName: 'short' });
+  var zone = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+  if (zone) tzEl.title = 'Your time zone: ' + zone;
+
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+
+  function tick() {
+    var now = new Date();
+    var ymd = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate());
+    var tz = zoneFmt.formatToParts(now).filter(function (p) { return p.type === 'timeZoneName'; })[0];
+    var h = now.getHours();
+
+    timeEl.textContent = timeFmt.format(now);
+    timeEl.setAttribute('datetime', now.toISOString());
+    if (dateEl.getAttribute('datetime') !== ymd) {
+      dateEl.textContent = dateFmt.format(now);
+      dateEl.setAttribute('datetime', ymd);
+    }
+    tzEl.textContent = tz ? tz.value : '';   // e.g. "GMT+8"; changes across daylight-saving switches
+    greetEl.textContent = h < 12 ? 'Good morning' : (h < 18 ? 'Good afternoon' : 'Good evening');
+
+    setTimeout(tick, 1000 - now.getMilliseconds());   // land on the next whole second
   }
 
-  var fontFamily = "'Roboto', Helvetica, sans-serif"
+  dateEl.removeAttribute('datetime');   // make the first tick replace the server's date
+  tick();
+})();
 
+/* Activity section.
+ *
+ * One request per date range: GET DASHBOARD.activityUrl?range=…[&from=…&to=…]
+ * (AdminController@dashboardActivity -> DashboardService::activity). The KPI tiles are the tabs
+ * of the trend chart; the trend overlays the previous period in gray and has a table view.
+ * The range and metric live in the URL (?range=30d&metric=downloads) so a view survives a reload.
+ */
+(function () {
+  'use strict';
 
+  var cfg = window.DASHBOARD || {};
+  var root = document.getElementById('dsh-activity');
+  if (!root) return;
 
-  // Website traffic — real per-month view counts (Guest vs Registered), lazy-loaded.
-  // The data is fetched (and the chart rendered) only when it scrolls into view, so
-  // it never adds to initial page-load cost. The endpoint itself is cached server-side.
-  if ($('#numberOfViewsChart').length) {
-    var viewsChartLoaded = false;
+  var ACCENT = '#6571ff', PREV = '#8a94a6', GRID = '#eceff4', MUTED = '#8a94a6';
+  var METRICS = {
+    views:     { title: 'Record views', noun: 'views' },
+    downloads: { title: 'Downloads', noun: 'downloads' },
+    reads:     { title: 'Online reads', noun: 'reads' },
+    patrons:   { title: 'New patrons', noun: 'new patrons' }
+  };
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var nf = new Intl.NumberFormat('en-US');
+  var compact = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 });
 
-    var renderViewsChart = function () {
-      if (viewsChartLoaded) return;
-      viewsChartLoaded = true;
+  var state = { range: '30d', from: null, to: null, metric: 'views', top: 'views', table: false };
+  var data = null, chart = null, request = 0;
 
-      $.ajax({
-        type: 'GET',
-        url: (typeof getViewsTrafficUrl !== 'undefined') ? getViewsTrafficUrl : '/admin/views-traffic/json',
-        dataType: 'json',
-        success: function (res) {
-          var lineChartOptions = {
-            chart: {
-              type: "line",
-              height: '320',
-              parentHeightOffset: 0,
-              foreColor: colors.bodyColor,
-              background: colors.cardBg,
-              toolbar: { show: false },
-            },
-            theme: { mode: 'light' },
-            tooltip: { theme: 'light' },
-            colors: [colors.primary, colors.warning],
-            grid: {
-              padding: { bottom: -4 },
-              borderColor: colors.gridBorder,
-              xaxis: { lines: { show: true } }
-            },
-            series: [
-              { name: "Registered User", data: res.registered || [] },
-              { name: "Guest", data: res.guest || [] }
-            ],
-            xaxis: {
-              type: "category",
-              categories: res.labels || [],
-              axisBorder: { color: colors.gridBorder },
-              axisTicks: { color: colors.gridBorder },
-            },
-            markers: { size: 3 },
-            legend: {
-              show: true,
-              position: "top",
-              horizontalAlign: 'center',
-              fontFamily: fontFamily,
-              itemMargin: { horizontal: 8, vertical: 0 },
-            },
-            stroke: { width: 3, curve: "smooth", lineCap: "round" },
-            noData: { text: 'No view data yet.' }
-          };
-          var apexLineChart = new ApexCharts(document.querySelector("#numberOfViewsChart"), lineChartOptions);
-          apexLineChart.render();
-        },
-        error: function () {
-          $('#numberOfViewsChart').html('<p class="text-muted text-center mb-0 py-5">Unable to load traffic data.</p>');
-        }
+  function $(id) { return document.getElementById(id); }
+  function fmt(n) { return n >= 10000 ? compact.format(n) : nf.format(n); }
+  function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
+  function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+  function longDate(ymd) { return new Date(ymd + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
+  function icon(name) { return window.feather && feather.icons[name] ? feather.icons[name].toSvg() : ''; }
+
+  // ---------- URL state ----------
+  (function readUrl() {
+    var q = new URLSearchParams(location.search);
+    var r = q.get('range');
+    if (r && (cfg.ranges[r] || r === 'custom')) state.range = r;
+    if (state.range === 'custom') {
+      state.from = q.get('from'); state.to = q.get('to');
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(state.from || '') || !/^\d{4}-\d{2}-\d{2}$/.test(state.to || '')) { state.range = '30d'; state.from = state.to = null; }
+    }
+    if (METRICS[q.get('metric')]) state.metric = q.get('metric');
+  })();
+
+  function writeUrl() {
+    var q = new URLSearchParams(location.search);
+    q.set('range', state.range);
+    if (state.range === 'custom') { q.set('from', state.from); q.set('to', state.to); } else { q.delete('from'); q.delete('to'); }
+    if (state.metric !== 'views') q.set('metric', state.metric); else q.delete('metric');
+    history.replaceState(null, '', location.pathname + '?' + q.toString());
+  }
+
+  // ---------- Data ----------
+  function load() {
+    var id = ++request;
+    root.classList.add('is-loading');
+    root.setAttribute('aria-busy', 'true');
+    $('dsh-error').hidden = true;
+
+    var q = new URLSearchParams({ range: state.range });
+    if (state.range === 'custom') { q.set('from', state.from); q.set('to', state.to); }
+
+    fetch(cfg.activityUrl + '?' + q.toString(), { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (d) { if (id === request) { data = d; render(); } })
+      .catch(function () { if (id === request) $('dsh-error').hidden = false; })
+      .finally(function () {
+        if (id !== request) return;
+        root.classList.remove('is-loading', 'is-first-load');
+        root.removeAttribute('aria-busy');
       });
-    };
-
-    // Lazy-load: render on first scroll-into-view; fall back to immediate render if unsupported.
-    if ('IntersectionObserver' in window) {
-      var viewsObserver = new IntersectionObserver(function (entries, obs) {
-        entries.forEach(function (entry) {
-          if (entry.isIntersecting) { renderViewsChart(); obs.disconnect(); }
-        });
-      }, { rootMargin: '150px' });
-      viewsObserver.observe(document.querySelector('#numberOfViewsChart'));
-    } else {
-      renderViewsChart();
-    }
   }
-  // Website traffic end
 
+  // ---------- Render ----------
+  function render() {
+    var r = data.range;
+    $('dsh-range-label').textContent = r.label;
+    $('dsh-compare').textContent = r.compare ? 'Compared with the ' + r.compare : 'All recorded activity since ' + longDate(r.from);
+    document.querySelectorAll('.dsh-range-opt').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.range === r.key ? 'true' : 'false'); });
+    var form = $('dsh-range-custom');
+    form.from.value = r.from; form.to.value = r.to;
 
+    Object.keys(METRICS).forEach(function (m) {
+      var tile = root.querySelector('.dsh-kpi[data-metric="' + m + '"]');
+      var k = data.kpis[m];
+      tile.querySelector('[data-kpi-value]').textContent = fmt(k.value);
+      renderDelta(tile.querySelector('[data-kpi-delta]'), k);
+      tile.querySelector('[data-kpi-foot]').textContent = foot(m);
+      spark(tile.querySelector('[data-kpi-spark]'), k.series);
+    });
 
-  // Apex Bar chart start
-  if ($('#aanrCollectionApexBar').length) 
-  {
-    var randomNumbers = [];
-    
-    for (var i = 0; i < 8; i++) {
-      var randomNumber = Math.floor(Math.random() * 100); // Generates a random number between 0 and 99
-      randomNumbers.push(randomNumber);
-    }
+    renderTrend();
+    renderTop();
+  }
 
-    var options = {
-      chart: {
-        type: 'bar',
-        height: '320',
-        parentHeightOffset: 0,
-        foreColor: colors.bodyColor,
-        background: colors.cardBg,
-        toolbar: {
-          show: false
-        },
-      },
-      theme: {
-        mode: 'light'
-      },
-      tooltip: {
-        theme: 'light'
-      },
-      colors: [colors.primary],    
-      grid: {
-        padding: {
-          bottom: -4
-        },
-        borderColor: colors.gridBorder,
-        xaxis: {
-          lines: {
-            show: true
-          }
-        }
-      },
-      series: [{
-        name: 'AANR material',
-        data: randomNumbers
-      }],
+  function foot(m) {
+    if (m === 'views') return data.guestShare === null ? 'No record views yet' : data.guestShare + '% by guests';
+    if (m === 'downloads') return 'PDFs downloaded by patrons';
+    if (m === 'reads') return 'First opens in the online reader';
+    return nf.format(cfg.patronsTotal || 0) + ' patrons in all';
+  }
+
+  // "+24% vs previous 30 days" — direction is carried by the arrow and the sign, not colour alone.
+  function renderDelta(el, k) {
+    el.className = 'dsh-kpi-delta';
+    el.textContent = '';
+    if (k.previous === null) { el.textContent = 'Whole history'; return; }
+    var diff = k.value - k.previous;
+    if (diff === 0) { el.textContent = 'No change vs ' + data.range.compare; return; }
+    var up = diff > 0;
+    el.classList.add(up ? 'is-up' : 'is-down');
+    var amount = k.previous ? Math.round(Math.abs(diff) / k.previous * 100) + '%' : nf.format(Math.abs(diff));
+    var strong = document.createElement('strong');
+    strong.innerHTML = icon(up ? 'arrow-up-right' : 'arrow-down-right');
+    strong.appendChild(document.createTextNode((up ? '+' : '−') + amount));
+    el.appendChild(strong);
+    el.appendChild(document.createTextNode(' vs ' + data.range.compare));
+  }
+
+  function spark(svg, values) {
+    var w = 120, h = 32, n = values.length;
+    if (n < 2) { svg.innerHTML = ''; return; }
+    var max = Math.max.apply(null, values.concat([1]));
+    var d = values.map(function (v, i) {
+      return (i ? 'L' : 'M') + (i / (n - 1) * w).toFixed(1) + ' ' + (h - 2 - v / max * (h - 4)).toFixed(1);
+    }).join(' ');
+    svg.innerHTML = '<path class="area" d="' + d + ' L' + w + ' ' + h + ' L0 ' + h + ' Z"/><path class="line" d="' + d + '"/>';
+  }
+
+  function renderTrend() {
+    var m = METRICS[state.metric], k = data.kpis[state.metric], r = data.range;
+    var hasPrev = !!k.prevSeries;
+    $('dsh-trend-title').textContent = m.title;
+    $('dsh-trend-sub').textContent = 'Per ' + r.bucket + ' · ' + r.label;
+    // A single series needs no legend — the title already names it.
+    $('dsh-legend').hidden = !hasPrev;
+    $('dsh-legend-current').textContent = r.label;
+    if (hasPrev) $('dsh-legend-prev').textContent = cap(r.compare);
+
+    $('dsh-trend-chart').hidden = state.table;
+    $('dsh-trend-table').hidden = !state.table;
+    if (state.table) renderTable(); else renderChart(k, hasPrev);
+  }
+
+  function renderChart(k, hasPrev) {
+    if (chart) { chart.destroy(); chart = null; }
+    if (!window.ApexCharts) { $('dsh-trend-chart').textContent = 'Charts are unavailable; use the table view.'; return; }
+    var n = data.labels.length;
+    var series = [{ name: data.range.label, type: 'area', data: k.series }];
+    if (hasPrev) series.push({ name: cap(data.range.compare), type: 'line', data: k.prevSeries });
+
+    chart = new ApexCharts($('dsh-trend-chart'), {
+      chart: { type: 'line', height: 330, fontFamily: 'inherit', parentHeightOffset: 0, toolbar: { show: false }, zoom: { enabled: false },
+               animations: { enabled: !reduceMotion, speed: 280, animateGradually: { enabled: false } } },
+      series: series,
+      colors: hasPrev ? [ACCENT, PREV] : [ACCENT],
+      stroke: { width: 2, curve: 'straight', lineCap: 'round' },
+      fill: { type: 'solid', opacity: hasPrev ? [0.1, 1] : [0.1] },
+      markers: { size: n === 1 ? 5 : 0, strokeWidth: 2, strokeColors: '#fff', hover: { size: 5 } },
+      dataLabels: { enabled: false },
+      legend: { show: false },
+      states: { hover: { filter: { type: 'none' } }, active: { filter: { type: 'none' } } },
+      grid: { borderColor: GRID, strokeDashArray: 0, padding: { left: 10, right: 12 }, xaxis: { lines: { show: false } } },
       xaxis: {
-        type: 'text',
-        categories: ['CORCARRD', 'CLAARRDEC', 'MAARRDEC', 'CVAARRDEC', 'VICARP', 'NOMCAARRD', 'SOXAARRDEC', 'CCAARRD'],
-        axisBorder: {
-          color: colors.gridBorder,
-        },
-        axisTicks: {
-          color: colors.gridBorder,
-        },
+        categories: data.labels,
+        tickAmount: n > 10 ? 7 : undefined,
+        labels: { rotate: 0, hideOverlappingLabels: true, style: { colors: MUTED, fontSize: '11px' } },
+        axisBorder: { color: '#dfe3eb' }, axisTicks: { show: false },
+        tooltip: { enabled: false },
+        crosshairs: { stroke: { color: '#c3c9d6', width: 1, dashArray: 0 } }
       },
-      legend: {
-        show: true,
-        position: "top",
-        horizontalAlign: 'center',
-        fontFamily: fontFamily,
-        itemMargin: {
-          horizontal: 8,
-          vertical: 0
-        },
+      yaxis: {
+        min: 0, max: function (max) { return max < 4 ? 4 : max; }, tickAmount: 4, forceNiceScale: true,
+        labels: { formatter: function (v) { return fmt(Math.round(v)); }, style: { colors: [MUTED], fontSize: '11px' } }
       },
-      stroke: {
-        width: 0
-      },
-      plotOptions: {
-        bar: {
-          borderRadius: 4
-        }
-      }
-    }
-    
-    var apexBarChartCatalog = new ApexCharts(document.querySelector("#aanrCollectionApexBar"), options);
-    apexBarChartCatalog.render();
+      tooltip: { shared: true, intersect: false, custom: tooltip }
+    });
+    chart.render();
   }
-  // Apex Bar chart end
 
-  $(document).ready(function() {
-    $('#date-range').on('change', function() {
-      let dates = $(this).val();
-      let newStart;
-      let newEnd;
-      
-      //This checks "dates" value either single date or range date 
-      if(dates.split(' - ').length == 1){
-    
-        let selectedTime =  new Date(dates);
-        // Set date time to midnight
-        selectedTime.setHours(0,0,0,0);
+  // One tooltip for both series; the value leads, the date follows.
+  function tooltip(o) {
+    var i = o.dataPointIndex, k = data.kpis[state.metric];
+    var html = '<div class="dsh-tip">' + esc(METRICS[state.metric].title) +
+      '<div class="dsh-tip-row"><span class="dsh-key dsh-key-current"></span><strong>' + nf.format(k.series[i]) + '</strong>' + esc(data.labels[i]) + '</div>';
+    if (k.prevSeries) {
+      html += '<div class="dsh-tip-row"><span class="dsh-key dsh-key-prev"></span><strong>' + nf.format(k.prevSeries[i]) + '</strong>' + esc(data.prevLabels[i]) + '</div>';
+    }
+    return html + '</div>';
+  }
 
-        // Calculate end time of the day (i.e., just before midnight)
-        let endTime = new Date(selectedTime.getTime() + 24 * 60 * 60 * 1000 - 1);
+  function renderTable() {
+    if (chart) { chart.destroy(); chart = null; }
+    var k = data.kpis[state.metric], hasPrev = !!k.prevSeries, b = cap(data.range.bucket);
+    var t = '<table class="dsh-table"><caption class="visually-hidden">' + esc(METRICS[state.metric].title + ', ' + data.range.label) + '</caption><thead><tr>' +
+      '<th scope="col">' + b + '</th><th scope="col" class="num">' + esc(METRICS[state.metric].title) + '</th>' +
+      (hasPrev ? '<th scope="col">Previous ' + esc(data.range.bucket) + '</th><th scope="col" class="num">Previous</th>' : '') + '</tr></thead><tbody>';
+    data.labels.forEach(function (label, i) {
+      t += '<tr><td>' + esc(label) + '</td><td class="num">' + nf.format(k.series[i]) + '</td>' +
+        (hasPrev ? '<td>' + esc(data.prevLabels[i]) + '</td><td class="num">' + nf.format(k.prevSeries[i]) + '</td>' : '') + '</tr>';
+    });
+    t += '</tbody><tfoot><tr><th scope="row">Total</th><td class="num"><strong>' + nf.format(k.value) + '</strong></td>' +
+      (hasPrev ? '<td></td><td class="num"><strong>' + nf.format(k.previous) + '</strong></td>' : '') + '</tr></tfoot></table>';
+    $('dsh-trend-table').innerHTML = t;
+  }
 
-        // Convert the date to a UTC string
-        let utcStringStart = selectedTime.toISOString();
-        let utcStringEnd = endTime.toISOString();
+  function renderTop() {
+    var list = data.top[state.top] || [], ol = $('dsh-top'), noun = METRICS[state.top].noun;
+    ol.textContent = '';
+    if (!list.length) {
+      var empty = document.createElement('li');
+      empty.className = 'dsh-empty';
+      empty.textContent = 'No ' + noun + ' in this period.';
+      ol.appendChild(empty);
+      return;
+    }
+    var max = list[0].count || 1;
+    list.forEach(function (it) {
+      var li = document.createElement('li');
+      var title = document.createElement(cfg.recordUrl ? 'a' : 'span');
+      title.className = 'dsh-top-title';
+      title.textContent = it.title;
+      title.title = it.by ? it.title + ' / ' + it.by : it.title;
+      if (cfg.recordUrl) title.href = cfg.recordUrl + '/' + it.id;
 
-        // Extract the date and time components
-        let dateStringStart = utcStringStart.slice(0, 10);
-        let timeStringStart = utcStringStart.slice(11, 19);
+      var n = document.createElement('span');
+      n.className = 'dsh-top-n';
+      n.textContent = fmt(it.count);
+      var sr = document.createElement('span');
+      sr.className = 'visually-hidden';
+      sr.textContent = ' ' + noun;
+      n.appendChild(sr);
 
-        let dateStringEnd = utcStringEnd.slice(0, 10);
-        let timeStringEnd = utcStringEnd.slice(11, 19);
-
-        // Format the date and time components as needed
-        newStart = dateStringStart + ' ' + timeStringStart;
-        newEnd = dateStringEnd + ' ' + timeStringEnd;
-      } else {
-        let startDate = dates.split(' - ')[0];  // return 2018-10-21
-        let startArray = startDate.split('/');
-        newStart = startArray[2] + '-' + startArray[0] + '-' + startArray[1];
-
-        let endDate = dates.split(' - ')[1];    // return 2018-10-23
-        let endArray = endDate.split('/');
-        newEnd = endArray[2] + '-' + endArray[0] + '-' + endArray[1];
+      li.appendChild(title);
+      li.appendChild(n);
+      if (it.by) {
+        var by = document.createElement('span');
+        by.className = 'dsh-top-by';
+        by.textContent = it.by;
+        li.appendChild(by);
       }
-      $.ajax({ 
-              type: 'GET', 
-              url: countDynamicDates, 
-              data: { filter: 'dates', start: newStart, end: newEnd}, 
-              dataType: 'json',
-              async:false,
-              success: function (res) {// HOLDINGS
-                  if(res.numHoldings.length) {
-                    $(".titleTotal").html(0);
-                    $.each(res.numHoldings, function(index, e) {
-                      $(".titleTotal#title-" + e.material_type_id + "-id").html(e.num_holdings.toLocaleString('en-US', {maximumFractionDigits: 2}));
-                    });
-                  } else {
-                    $(".titleTotal").html(0);
-                  }
-
-                  if(res.numHoldingsDownloads.length) {
-                    $(".downloadTitleTotal").html(0);
-                    $.each(res.numHoldingsDownloads, function(index, e) {
-                      $(".downloadTitleTotal#download-title-" + e.material_type_id + "-id").html(e.num_downloads.toLocaleString('en-US', {maximumFractionDigits: 2}));
-                    });
-                  } else {
-                    $(".downloadTitleTotal").html(0);
-                  }
-
-                  // PATRONS
-                  if(res.numPatrons.length) {
-                    $(".patronTotal").html(0);
-                    $.each(res.numPatrons, function(index, e) {
-                      $(".patronTotal#patron-" + e.patrontypes_id + "-id").html(e.num_users.toLocaleString('en-US', {maximumFractionDigits: 2}));
-                    });
-                  } else {
-                    $(".patronTotal").html(0);
-                  }
-
-                  if(res.numPatronsDownloads.length) {
-                    $(".downloadPatronTotal").html(0);
-                    $.each(res.numPatronsDownloads, function(index, e) {
-                      $(".downloadPatronTotal#download-patron-" + e.patrontypes_id + "-id").html(e.num_downloads.toLocaleString('en-US', {maximumFractionDigits: 2}));
-                    });
-                  } else {
-                    $(".downloadPatronTotal").html(0);
-                  }
-
-                  const patronCount = +res.patron;
-                  const downloadCount = +res.download;
-                  const titleCount = +res.title;
-                  const publicationCount = +res.publication;
-
-                  const patronFormatted = patronCount.toLocaleString('en-US', {maximumFractionDigits: 2});
-                  const downloadFormatted = downloadCount.toLocaleString('en-US', {maximumFractionDigits: 2});
-                  const titleFormatted = titleCount.toLocaleString('en-US', {maximumFractionDigits: 2});
-                  const publicationFormatted = publicationCount.toLocaleString('en-US', {maximumFractionDigits: 2});
-                  $('.patron-count-view').html(patronFormatted);
-                  $('.download-count-view').html(downloadFormatted);
-                  $('.publication-count-view').html(publicationFormatted);
-                  $('.titles-count-view').html(titleFormatted);   
-              }
-          });
+      var track = document.createElement('span');
+      track.className = 'dsh-top-track';
+      track.setAttribute('aria-hidden', 'true');
+      track.innerHTML = '<span style="width:' + Math.max(3, Math.round(it.count / max * 100)) + '%"></span>';
+      li.appendChild(track);
+      ol.appendChild(li);
     });
+  }
 
-    $('.dynamic-count').click(function() {
-      let id = $(this).attr('id');
-        if (!$(this).hasClass('btn-primary')) {
-          const $parent = $(this).parent();
-
-          // get all the siblings of the parent element
-          const $siblings = $parent.children().not($(this));
-
-          // check if any of the siblings have the class you are searching for
-          const classToSearch = 'btn-primary';
-          const $siblingsWithClass = $siblings.filter(`.${classToSearch}`);
-
-          // remove the class from the siblings that have it
-          $siblingsWithClass.removeClass(classToSearch);
-          $siblingsWithClass.addClass('btn-outline-primary');
-          
-          $(this).addClass('btn-primary');
-          $(this).removeClass('btn-outline-primary');
-        }
-          $.ajax({ 
-              type: 'GET', 
-              url: countDynamicDates, 
-              data: { filter: id }, 
-              dataType: 'json',
-              async:false,
-              success: function (res) {
-                // HOLDINGS
-                if(res.numHoldings.length) {
-                  $(".titleTotal").html(0);
-                  $.each(res.numHoldings, function(index, e) {
-                    $(".titleTotal#title-" + e.material_type_id + "-id").html(e.num_holdings.toLocaleString('en-US', {maximumFractionDigits: 2}));
-                  });
-                } else {
-                  $(".titleTotal").html(0);
-                }
-
-                if(res.numHoldingsDownloads.length) {
-                  $(".downloadTitleTotal").html(0);
-                  $.each(res.numHoldingsDownloads, function(index, e) {
-                    $(".downloadTitleTotal#download-title-" + e.material_type_id + "-id").html(e.num_downloads.toLocaleString('en-US', {maximumFractionDigits: 2}));
-                  });
-                } else {
-                  $(".downloadTitleTotal").html(0);
-                }
-
-                // PATRONS
-                if(res.numPatrons.length) {
-                  $(".patronTotal").html(0);
-                  $.each(res.numPatrons, function(index, e) {
-                    $(".patronTotal#patron-" + e.patrontypes_id + "-id").html(e.num_users.toLocaleString('en-US', {maximumFractionDigits: 2}));
-                  });
-                } else {
-                  $(".patronTotal").html(0);
-                }
-
-                if(res.numPatronsDownloads.length) {
-                  $(".downloadPatronTotal").html(0);
-                  $.each(res.numPatronsDownloads, function(index, e) {
-                    $(".downloadPatronTotal#download-patron-" + e.patrontypes_id + "-id").html(e.num_downloads.toLocaleString('en-US', {maximumFractionDigits: 2}));
-                  });
-                } else {
-                  $(".downloadPatronTotal").html(0);
-                }
-
-                  const patronCount = +res.patron;
-                  const downloadCount = +res.download;
-                  const titleCount = +res.title;
-                  const publicationCount = +res.publication;
-
-                  const patronFormatted = patronCount.toLocaleString('en-US', {maximumFractionDigits: 2});
-                  const downloadFormatted = downloadCount.toLocaleString('en-US', {maximumFractionDigits: 2});
-                  const titleFormatted = titleCount.toLocaleString('en-US', {maximumFractionDigits: 2});
-                  const publicationFormatted = publicationCount.toLocaleString('en-US', {maximumFractionDigits: 2});
-                  $('.patron-count-view').html(patronFormatted);
-                  $('.download-count-view').html(downloadFormatted);
-                  $('.publication-count-view').html(publicationFormatted);
-                  $('.titles-count-view').html(titleFormatted); 
-              }
-          });
+  // ---------- Controls ----------
+  var tabs = Array.prototype.slice.call(root.querySelectorAll('.dsh-kpi'));
+  function selectMetric(m, focus, initial) {
+    state.metric = m;
+    tabs.forEach(function (t) {
+      var on = t.dataset.metric === m;
+      t.setAttribute('aria-selected', on ? 'true' : 'false');
+      t.tabIndex = on ? 0 : -1;
+      if (on && focus) t.focus();
     });
-
+    if (!initial) writeUrl();
+    if (data) renderTrend();
+  }
+  tabs.forEach(function (t, i) {
+    t.addEventListener('click', function () { selectMetric(t.dataset.metric); });
+    t.addEventListener('keydown', function (e) {
+      var step = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0;
+      if (!step) return;
+      e.preventDefault();
+      selectMetric(tabs[(i + step + tabs.length) % tabs.length].dataset.metric, true);
+    });
   });
 
-  // Title Chart
-  if($('#titlesChart').length) {
-    let titleDatesArr;
-    let titleTotalPerDateArr;
-    let selectedDate;
-    $(document).on('click', '.dynamic-count#year, .dynamic-count#total', function() {
-      let selectedDate = 'years';
-      let chart = new ApexCharts(document.querySelector("#titlesChart"), {
-        chart: {
-          type: "bar",
-          height: 60,
-          sparkline: {
-            enabled: !0
-          }
-        },
-        plotOptions: {
-          bar: {
-            borderRadius: 2,
-            columnWidth: "60%"
-          }
-        },
-        colors: [colors.primary],
-        series: [{
-          name: '',
-          data: []
-        }],
-        xaxis: {
-          type: 'year',
-          categories: []
-        },
-      });
-      chart.render();
-    
-      $.ajax({ 
-        type: 'GET', 
-        url: getPerDateChartUrl,
-        data: { filter: 'titleChart', selection: selectedDate }, 
-        dataType: 'json',
-        success: function (res) {
-          if(!res[0].length){
-            $("#title-no-record").html('<h6>No new title/s these last years.</h6>');
-            $("#title-no-record").attr('class', 'text-center');
-          } else {
-            $("#title-no-record").html("");
-          }
-
-          titleDatesArr = res[0];
-          titleTotalPerDateArr = res[1];
-          // Update chart data and categories
-          chart.updateSeries([{
-            name: 'Total',
-            data: titleTotalPerDateArr
-          }]);
-          chart.updateOptions({
-            xaxis: {
-              categories: titleDatesArr
-            }
-          });
-        },
-        error: function() {
-          chart.showNoData();
-        }
-      });
-        chart.render();
+  root.querySelectorAll('[data-top]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      state.top = b.dataset.top;
+      root.querySelectorAll('[data-top]').forEach(function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+      if (data) renderTop();
     });
+  });
 
-    $(document).on('click', '.dynamic-count#month', function() {
-      let selectedDate = 'months';
-      let chart = new ApexCharts(document.querySelector("#titlesChart"), {
-        chart: {
-          type: "bar",
-          height: 60,
-          sparkline: {
-            enabled: !0
-          }
-        },
-        plotOptions: {
-          bar: {
-            borderRadius: 2,
-            columnWidth: "60%"
-          }
-        },
-        colors: [colors.primary],
-        series: [{
-          name: '',
-          data: []
-        }],
-        xaxis: {
-          type: 'month',
-          categories: []
-        },
-      });
-      
-      chart.render();
-      $.ajax({ 
-        type: 'GET', 
-        url: getPerDateChartUrl,
-        data: { filter: 'titleChart', selection: selectedDate }, 
-        dataType: 'json',
-        success: function (res) {
-          if(!res[0].length){
-            $("#title-no-record").html('<h6>No new title/s these months.</h6>');
-            $("#title-no-record").attr('class', 'text-center');
-          } else {
-            $("#title-no-record").html("");
-          }
-          titleDatesArr = res[0];
-          titleTotalPerDateArr = res[1];
-          // Update chart data and categories
-          chart.updateSeries([{
-            data: titleTotalPerDateArr
-          }]);
-          chart.updateOptions({
-            xaxis: {
-              categories: titleDatesArr
-            }
-          });
-        },
-        error: function() {
-              //Show error here 
-        }
-      });
-      chart.render();
-    });
+  var toggle = $('dsh-table-toggle');
+  toggle.addEventListener('click', function () {
+    state.table = !state.table;
+    var label = state.table ? 'Show as a chart' : 'Show as a table';
+    toggle.setAttribute('aria-pressed', state.table ? 'true' : 'false');
+    toggle.title = label;
+    toggle.innerHTML = icon(state.table ? 'trending-up' : 'list') + '<span class="visually-hidden">' + label + '</span>';
+    if (data) renderTrend();
+  });
 
-    $(document).on('click', '.dynamic-count#today', function() {
-      let selectedDate = 'days';
-      let chart = new ApexCharts(document.querySelector("#titlesChart"), {
-        chart: {
-          type: "bar",
-          height: 60,
-          sparkline: {
-            enabled: !0
-          }
-        },
-        plotOptions: {
-          bar: {
-            borderRadius: 2,
-            columnWidth: "60%"
-          }
-        },
-        colors: [colors.primary],
-        series: [{
-          name: '',
-          data: []
-        }],
-        xaxis: {
-          type: 'day',
-          categories: []
-        },
-      });
-      chart.render();
-      $.ajax({ 
-        type: 'GET', 
-        url: getPerDateChartUrl,
-        data: { filter: 'titleChart', selection: selectedDate }, 
-        dataType: 'json',
-        success: function (res) {
-          if(!res[0].length){
-            $("#title-no-record").html('<h6>No new title/s this week.</h6>');
-            $("#title-no-record").attr('class', 'text-center');
-          } else {
-            $("#title-no-record").html("");
-          }
-          titleDatesArr = res[0];
-          titleTotalPerDateArr = res[1];
-          // Update chart data and categories
-          chart.updateSeries([{
-            data: titleTotalPerDateArr
-          }]);
-          chart.updateOptions({
-            xaxis: {
-              categories: titleDatesArr
-            }
-          });
-        },
-        error: function() {
-        }
-      });
-      chart.render();
-    });
-
-    $(document).ready(function() {
-      let selectedDate = 'years'
-      let chart = new ApexCharts(document.querySelector("#titlesChart"), {
-        chart: {
-          type: "bar",
-          height: 60,
-          sparkline: {
-            enabled: !0
-          }
-        },
-        plotOptions: {
-          bar: {
-            borderRadius: 2,
-            columnWidth: "60%"
-          }
-        },
-        colors: [colors.primary],
-        series: [{
-          name: '',
-          data: []
-        }],
-        xaxis: {
-          type: 'year',
-          categories: []
-        },
-      });
-      chart.render();
-      $.ajax({ 
-        type: 'GET', 
-        url: getPerDateChartUrl,
-        data: { filter: 'titleChart', selection: selectedDate }, 
-        dataType: 'json',
-        success: function (res) {
-          let titleDatesArr = res[0];
-          let titleTotalPerDateArr = res[1];
-          // Update chart data and categories
-          chart.updateSeries([{
-            data: titleTotalPerDateArr
-          }]);
-          chart.updateOptions({
-            xaxis: {
-              categories: titleDatesArr
-            }
-          });
-          // chart.hideLoading();
-        },
-        error: function() {
-          // Show error here
-        }
-      });
-    });
-
-
+  function closeMenu() {
+    var btn = $('dsh-range-btn');
+    if (window.bootstrap && bootstrap.Dropdown) bootstrap.Dropdown.getOrCreateInstance(btn).hide();
+    btn.focus();
   }
-  // Title Chart - END
-  // Patron Chart
-  if($('#patronsChart').length) {
-    let patronDatesArr;
-    let patronTotalPerDateArr;
-    let selectedDate;
-    $(document).on('click', '.dynamic-count#year, .dynamic-count#total', function() {
-      let selectedDate = 'years'
-      let chart = new ApexCharts(document.querySelector("#patronsChart"), {
-        chart: {
-          type: "bar",
-          height: 60,
-          sparkline: {
-            enabled: !0
-          }
-        },
-        plotOptions: {
-          bar: {
-            borderRadius: 2,
-            columnWidth: "60%"
-          }
-        },
-        colors: [colors.primary],
-        series: [{
-          name: '',
-          data: []
-        }],
-        xaxis: {
-          type: 'year',
-          categories: []
-        },
-      });
-      chart.render();
-    
-      $.ajax({ 
-        type: 'GET', 
-        url: getPerDateChartUrl,
-        data: { filter: 'patronsChart', selection: selectedDate }, 
-        dataType: 'json',
-        success: function (res) {
-          if(!res[0].length){
-            $("#patron-no-record").html('<h6>No new patron/s these last years.</h6>');
-            $("#patron-no-record").attr('class', 'text-center');
-          } else {
-            $("#patron-no-record").html("");
-          }
-          let patronDatesArr = res[0];
-          let patronTotalPerDateArr = res[1];
-          // Update chart data and categories
-          chart.updateSeries([{
-            data: patronTotalPerDateArr
-          }]);
-          chart.updateOptions({
-            xaxis: {
-              categories: patronDatesArr
-            }
-          });
-        },
-        error: function() {
-        }
-      });
-        chart.render();
+  root.querySelectorAll('.dsh-range-opt').forEach(function (b) {
+    b.addEventListener('click', function () {
+      state.range = b.dataset.range; state.from = state.to = null;
+      closeMenu(); writeUrl(); load();
     });
+  });
+  $('dsh-range-custom').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var f = this.from.value, t = this.to.value;
+    if (!f || !t) return;
+    if (f > t) { var x = f; f = t; t = x; }
+    state.range = 'custom'; state.from = f; state.to = t;
+    closeMenu(); writeUrl(); load();
+  });
+  $('dsh-retry').addEventListener('click', load);
 
-    $(document).on('click', '.dynamic-count#month', function() {
-      let selectedDate = 'months'
-      let chart = new ApexCharts(document.querySelector("#patronsChart"), {
-        chart: {
-          type: "bar",
-          height: 60,
-          sparkline: {
-            enabled: !0
-          }
-        },
-        plotOptions: {
-          bar: {
-            borderRadius: 2,
-            columnWidth: "60%"
-          }
-        },
-        colors: [colors.primary],
-        series: [{
-          name: '',
-          data: []
-        }],
-        xaxis: {
-          type: 'month',
-          categories: []
-        },
-      });
-      chart.render();
-      $.ajax({ 
-        type: 'GET', 
-        url: getPerDateChartUrl,
-        data: { filter: 'patronsChart', selection: selectedDate }, 
-        dataType: 'json',
-        success: function (res) {
-          if(!res[0].length){
-            $("#patron-no-record").html('<h6>No new patron/s these last months.</h6>');
-            $("#patron-no-record").attr('class', 'text-center');
-          } else {
-            $("#patron-no-record").html("");
-          }
-          let patronDatesArr = res[0];
-          let patronTotalPerDateArr = res[1];
-          // Update chart data and categories
-          chart.updateSeries([{
-            data: patronTotalPerDateArr
-          }]);
-          chart.updateOptions({
-            xaxis: {
-              categories: patronDatesArr
-            }
-          });
-        },
-        error: function() {
-        }
-      });
-        chart.render();
-    });
-
-    $(document).on('click', '.dynamic-count#today', function() {
-      let selectedDate = 'days'
-      let chart = new ApexCharts(document.querySelector("#patronsChart"), {
-        chart: {
-          type: "bar",
-          height: 60,
-          sparkline: {
-            enabled: !0
-          }
-        },
-        plotOptions: {
-          bar: {
-            borderRadius: 2,
-            columnWidth: "60%"
-          }
-        },
-        colors: [colors.primary],
-        series: [{
-          name: '',
-          data: []
-        }],
-        xaxis: {
-          type: 'day',
-          categories: []
-        },
-      });
-      chart.render();
-    
-      $.ajax({ 
-        type: 'GET', 
-        url: getPerDateChartUrl,
-        data: { filter: 'patronsChart', selection: selectedDate }, 
-        dataType: 'json',
-        success: function (res) {
-          if(!res[0].length){
-            $("#patron-no-record").html('<h6>No new patron/s this week.</h6>');
-            $("#patron-no-record").attr('class', 'text-center');
-          } else {
-            $("#patron-no-record").html("");
-          }
-          let patronDatesArr = res[0];
-          let patronTotalPerDateArr = res[1];
-          // Update chart data and categories
-          chart.updateSeries([{
-            data: patronTotalPerDateArr
-          }]);
-          chart.updateOptions({
-            xaxis: {
-              categories: patronDatesArr
-            }
-          });
-        },
-        error: function() {
-        }
-      });
-      chart.render();
-    });
-
-    $(document).ready(function() {
-      let selectedDate = 'years'
-      let chart = new ApexCharts(document.querySelector("#patronsChart"), {
-        chart: {
-          type: "bar",
-          height: 60,
-          sparkline: {
-            enabled: !0
-          }
-        },
-        plotOptions: {
-          bar: {
-            borderRadius: 2,
-            columnWidth: "60%"
-          }
-        },
-        colors: [colors.primary],
-        series: [{
-          name: '',
-          data: []
-        }],
-        xaxis: {
-          type: 'year',
-          categories: []
-        },
-      });
-      chart.render();
-      $.ajax({ 
-        type: 'GET', 
-        url: getPerDateChartUrl,
-        data: { filter: 'patronsChart', selection: selectedDate }, 
-        dataType: 'json',
-        success: function (res) {
-          if(!res[0].length){
-            $("#patron-no-record").html('<h6>No new patron/s these last years.</h6>');
-            $("#patron-no-record").attr('class', 'text-center');
-          } else {
-            $("#patron-no-record").html("");
-          }
-          let patronDatesArr = res[0];
-          let patronTotalPerDateArr = res[1];
-          // Update chart data and categories
-          chart.updateSeries([{
-            data: patronTotalPerDateArr
-          }]);
-          chart.updateOptions({
-            xaxis: {
-              categories: patronDatesArr
-            }
-          });
-        },
-        error: function() {
-          // chart.hideLoading();
-          chart.showNoData();
-        }
-      });
-      chart.render();
-    });
-
-  }
-  // Patron Chart - END
-  // Downloads Chart
-  if($('#downloadsChart').length) {
-    let downloadDatesArr;
-    let downloadTotalPerDateArr;
-    let selectedDate;
-    $(document).on('click', '.dynamic-count#year, .dynamic-count#total', function() {
-      let selectedDate = 'years'
-      let chart = new ApexCharts(document.querySelector("#downloadsChart"), {
-        chart: {
-          type: "bar",
-          height: 60,
-          sparkline: {
-            enabled: !0
-          }
-        },
-        plotOptions: {
-          bar: {
-            borderRadius: 2,
-            columnWidth: "60%"
-          }
-        },
-        colors: [colors.primary],
-        series: [{
-          name: '',
-          data: []
-        }],
-        xaxis: {
-          type: 'year',
-          categories: []
-        },
-      });
-      chart.render();
-    
-      $.ajax({ 
-        type: 'GET', 
-        url: getPerDateChartUrl,
-        data: { filter: 'downloadsChart', selection: selectedDate }, 
-        dataType: 'json',
-        success: function (res) {
-          if(!res[0].length){
-            $("#download-no-record").html('<h6>No new download/s these last years.</h6>');
-            $("#download-no-record").attr('class', 'text-center');
-          } else {
-            $("#download-no-record").html("");
-          }
-          let downloadDatesArr = res[0];
-          let downloadTotalPerDateArr = res[1];
-          // Update chart data and categories
-          chart.updateSeries([{
-            data: downloadTotalPerDateArr
-          }]);
-          chart.updateOptions({
-            xaxis: {
-              categories: downloadDatesArr
-            }
-          });
-        },
-        error: function() {
-
-        }
-      });
-      chart.render();
-    });
-
-    $(document).on('click', '.dynamic-count#month', function() {
-      let selectedDate = 'months'
-      let chart = new ApexCharts(document.querySelector("#downloadsChart"), {
-        chart: {
-          type: "bar",
-          height: 60,
-          sparkline: {
-            enabled: !0
-          }
-        },
-        plotOptions: {
-          bar: {
-            borderRadius: 2,
-            columnWidth: "60%"
-          }
-        },
-        colors: [colors.primary],
-        series: [{
-          name: '',
-          data: []
-        }],
-        xaxis: {
-          type: 'month',
-          categories: []
-        },
-      });
-      chart.render();
-      $.ajax({ 
-        type: 'GET', 
-        url: getPerDateChartUrl,
-        data: { filter: 'downloadsChart', selection: selectedDate }, 
-        dataType: 'json',
-        success: function (res) {
-          if(!res[0].length){
-            $("#download-no-record").html('<h6>No new download/s these months.</h6>');
-            $("#download-no-record").attr('class', 'text-center');
-          } else {
-            $("#download-no-record").html("");
-          }
-          let downloadDatesArr = res[0];
-          let downloadTotalPerDateArr = res[1];
-          // Update chart data and categories
-          chart.updateSeries([{
-            data: downloadTotalPerDateArr
-          }]);
-          chart.updateOptions({
-            xaxis: {
-              categories: downloadDatesArr
-            }
-          });
-        },
-        error: function() {
-
-        }
-      });
-      chart.render();
-    });
-
-    $(document).on('click', '.dynamic-count#today', function() {
-      let selectedDate = 'days'
-      let chart = new ApexCharts(document.querySelector("#downloadsChart"), {
-        chart: {
-          type: "bar",
-          height: 60,
-          sparkline: {
-            enabled: !0
-          }
-        },
-        plotOptions: {
-          bar: {
-            borderRadius: 2,
-            columnWidth: "60%"
-          }
-        },
-        colors: [colors.primary],
-        series: [{
-          name: '',
-          data: []
-        }],
-        xaxis: {
-          type: 'day',
-          categories: []
-        },
-      });
-      chart.render();
-      $.ajax({ 
-        type: 'GET', 
-        url: getPerDateChartUrl,
-        data: { filter: 'downloadsChart', selection: selectedDate }, 
-        dataType: 'json',
-        success: function (res) {
-          if(!res[0].length){
-            $("#download-no-record").html('<h6>No new download/s this week.</h6>');
-            $("#download-no-record").attr('class', 'text-center');
-          } else {
-            $("#download-no-record").html("");
-          }
-          let downloadDatesArr = res[0];
-          let downloadTotalPerDateArr = res[1];
-          // Update chart data and categories
-          chart.updateSeries([{
-            data: downloadTotalPerDateArr
-          }]);
-          chart.updateOptions({
-            xaxis: {
-              categories: downloadDatesArr
-            }
-          });
-        },
-        error: function() {
-        }
-      });
-      chart.render();
-    });
-
-    $(document).ready(function() {
-      let selectedDate = 'years'
-      let chart = new ApexCharts(document.querySelector("#downloadsChart"), {
-        chart: {
-          type: "bar",
-          height: 60,
-          sparkline: {
-            enabled: !0
-          }
-        },
-        plotOptions: {
-          bar: {
-            borderRadius: 2,
-            columnWidth: "60%"
-          }
-        },
-        colors: [colors.primary],
-        series: [{
-          name: '',
-          data: []
-        }],
-        xaxis: {
-          type: 'year',
-          categories: []
-        },
-      });
-      chart.render();
-    
-      $.ajax({ 
-        type: 'GET', 
-        url: getPerDateChartUrl,
-        data: { filter: 'downloadsChart', selection: selectedDate }, 
-        dataType: 'json',
-        success: function (res) {
-          if(!res[0].length){
-            $("#download-no-record").html('<h6>No new download/s these last years.</h6>');
-            $("#download-no-record").attr('class', 'text-center');
-          } else {
-            $("#download-no-record").html("");
-          }
-          let downloadDatesArr = res[0];
-          let downloadTotalPerDateArr = res[1];
-          // Update chart data and categories
-          chart.updateSeries([{
-            data: downloadTotalPerDateArr
-          }]);
-          chart.updateOptions({
-            xaxis: {
-              categories: downloadDatesArr
-            }
-          });
-        },
-        error: function() {
-
-        }
-      });
-      chart.render();
-    });
-  }
-  // Downloads Chart - END
-  // New Publications Chart
-    if($('#publicationsChart').length) {
-    let publicationDatesArr;
-    let publicationTotalPerDateArr;
-    let selectedDate;
-    $(document).on('click', '.dynamic-count#year, .dynamic-count#total', function() {
-      let selectedDate = 'years'
-      let chart = new ApexCharts(document.querySelector("#publicationsChart"), {
-        chart: {
-          type: "bar",
-          height: 60,
-          sparkline: {
-            enabled: !0
-          }
-        },
-        plotOptions: {
-          bar: {
-            borderRadius: 2,
-            columnWidth: "60%"
-          }
-        },
-        colors: [colors.primary],
-        series: [{
-          name: '',
-          data: []
-        }],
-        xaxis: {
-          type: 'year',
-          categories: []
-        },
-      });
-      chart.render();
-      $.ajax({ 
-        type: 'GET', 
-        url: getPerDateChartUrl,
-        data: { filter: 'publicationsChart', selection: selectedDate }, 
-        dataType: 'json',
-        success: function (res) {
-          if(!res[0].length){
-            $("#publication-no-record").html('<h6>No new publication/s these last years.</h6>');
-            $("#publication-no-record").attr('class', 'text-center');
-          } else {
-            $("#publication-no-record").html("");
-          }
-          let publicationDatesArr = res[0];
-          let publicationTotalPerDateArr = res[1];
-          // Update chart data and categories
-          chart.updateSeries([{
-            data: publicationTotalPerDateArr
-          }]);
-          chart.updateOptions({
-            xaxis: {
-              categories: publicationDatesArr
-            }
-          });
-        },
-        error: function() {
-
-        }
-      });
-      chart.render();
-    });
-
-    $(document).on('click', '.dynamic-count#month', function() {
-      let selectedDate = 'months'
-      let chart = new ApexCharts(document.querySelector("#publicationsChart"), {
-        chart: {
-          type: "bar",
-          height: 60,
-          sparkline: {
-            enabled: !0
-          }
-        },
-        plotOptions: {
-          bar: {
-            borderRadius: 2,
-            columnWidth: "60%"
-          }
-        },
-        colors: [colors.primary],
-        series: [{
-          name: '',
-          data: []
-        }],
-        xaxis: {
-          type: 'month',
-          categories: []
-        },
-      });
-      chart.render();
-      $.ajax({ 
-        type: 'GET', 
-        url: getPerDateChartUrl,
-        data: { filter: 'publicationsChart', selection: selectedDate }, 
-        dataType: 'json',
-        success: function (res) {
-          if(!res[0].length){
-            $("#publication-no-record").html('<h6>No new publication/s these last months.</h6>');
-            $("#publication-no-record").attr('class', 'text-center');
-          } else {
-            $("#publication-no-record").html("");
-          }
-          let publicationDatesArr = res[0];
-          let publicationTotalPerDateArr = res[1];
-          // Update chart data and categories
-          chart.updateSeries([{
-            data: publicationTotalPerDateArr
-          }]);
-          chart.updateOptions({
-            xaxis: {
-              categories: publicationDatesArr
-            }
-          });
-        },
-        error: function() {
-          chart.showNoData();
-        }
-      });
-        chart.render();
-    });
-
-    $(document).on('click', '.dynamic-count#today', function() {
-      let selectedDate = 'days';
-      let chart = new ApexCharts(document.querySelector("#publicationsChart"), {
-        chart: {
-          type: "bar",
-          height: 60,
-          sparkline: {
-            enabled: !0
-          }
-        },
-        plotOptions: {
-          bar: {
-            borderRadius: 2,
-            columnWidth: "60%"
-          }
-        },
-        colors: [colors.primary],
-        series: [{
-          name: '',
-          data: []
-        }],
-        xaxis: {
-          type: 'day',
-          categories: []
-        },
-      });
-      chart.render();
-    
-      $.ajax({ 
-        type: 'GET', 
-        url: getPerDateChartUrl,
-        data: { filter: 'publicationsChart', selection: selectedDate }, 
-        dataType: 'json',
-        success: function (res) {
-          if(!res[0].length){
-            $("#publication-no-record").html('<h6>No new publication/s this week.</h6>');
-            $("#publication-no-record").attr('class', 'text-center');
-          } else {
-            $("#publication-no-record").html("");
-          }
-          let publicationDatesArr = res[0];
-          let publicationTotalPerDateArr = res[1];
-          // Update chart data and categories
-          chart.updateSeries([{
-            data: publicationTotalPerDateArr
-          }]);
-          chart.updateOptions({
-            xaxis: {
-              categories: publicationDatesArr
-            }
-          });
-        },
-        error: function(e) {
-        }
-      });
-      chart.render();
-    });
-
-    $(document).ready(function() {
-      let selectedDate = 'years'
-      let chart = new ApexCharts(document.querySelector("#publicationsChart"), {
-        chart: {
-          type: "bar",
-          height: 60,
-          sparkline: {
-            enabled: !0
-          }
-        },
-        plotOptions: {
-          bar: {
-            borderRadius: 2,
-            columnWidth: "60%"
-          }
-        },
-        colors: [colors.primary],
-        series: [{
-          name: '',
-          data: []
-        }],
-        xaxis: {
-          type: 'year',
-          categories: []
-        },
-      });
-      chart.render();
-    
-      $.ajax({ 
-        type: 'GET', 
-        url: getPerDateChartUrl,
-        data: { filter: 'publicationsChart', selection: selectedDate }, 
-        dataType: 'json',
-        success: function (res) {
-          if(!res[0].length){
-            $("#publication-no-record").html('<h6>No new publication/s these last years.</h6>');
-            $("#publication-no-record").attr('class', 'text-center');
-          } else {
-            $("#publication-no-record").html("");
-          }
-          let publicationDatesArr = res[0];
-          let publicationTotalPerDateArr = res[1];
-          // Update chart data and categories
-          chart.updateSeries([{
-            data: publicationTotalPerDateArr
-          }]);
-          chart.updateOptions({
-            xaxis: {
-              categories: publicationDatesArr
-            }
-          });
-        },
-        error: function() {
-
-        }
-      });
-      chart.render();
-    });
-  }
-  // New Publications Chart - END
-
-  // Responsiveness chart start
-  if ($('#responsivenessChart').length) {
-
-    let countArr = [0,0,0,0,0];
-    let labelVal = ["Poor", "Unsatisfactory", "Satisfactory", "Very Satisfactory", "Outstanding"];
-    let colorVal = [colors.secondary, colors.danger, colors.warning, colors.info, colors.primary];
-    $.ajax({ 
-        type: 'GET', 
-        url: getRatingsUrl, 
-        data: { rating: 'rating1' }, 
-        dataType: 'json',
-        async:false,
-        success: function (res) { 
-            $.each(res, function(index, e) {
-              countArr[e.rating1-1] = e.rating_sum;
-            });
-        }
-    });
-    var options = {
-      chart: {
-        height: 300,
-        type: "donut",
-        foreColor: colors.bodyColor,
-        background: colors.cardBg,
-        toolbar: {
-          show: false
-        },
-      },
-      theme: {
-        mode: 'light'
-      },
-      tooltip: {
-        theme: 'light'
-      },
-      stroke: {
-        colors: ['rgba(0,0,0,0)']
-      },
-      colors: colorVal,
-      legend: {
-        show: true,
-        position: "top",
-        horizontalAlign: 'center',
-        fontFamily: fontFamily,
-        itemMargin: {
-          horizontal: 8,
-          vertical: 0
-        },
-      },
-      dataLabels: {
-        enabled: false
-      },
-        series: countArr,
-        labels: labelVal
-    };
-
-    var chart = new ApexCharts(document.querySelector("#responsivenessChart"), options);
-    chart.render();
-  }
-  // Responsiveness chart end
-
-  // Reliability chart start
-  if ($('#reliabilityChart').length) {
-
-    let countArr = [0,0,0,0,0];
-    let labelVal = ["Poor", "Unsatisfactory", "Satisfactory", "Very Satisfactory", "Outstanding"];
-    let colorVal = [colors.secondary, colors.danger, colors.warning, colors.info, colors.primary];
-    $.ajax({ 
-        type: 'GET', 
-        url: getRatingsUrl, 
-        data: { rating: 'rating2' }, 
-        dataType: 'json',
-        async:false,
-        success: function (res) {
-            $.each(res, function(index, e) {
-              countArr[e.rating2-1] = e.rating_sum;
-            });
-        }
-    });
-    var options = {
-      chart: {
-        height: 300,
-        type: "donut",
-        foreColor: colors.bodyColor,
-        background: colors.cardBg,
-        toolbar: {
-          show: false
-        },
-      },
-      theme: {
-        mode: 'light'
-      },
-      tooltip: {
-        theme: 'light'
-      },
-      stroke: {
-        colors: ['rgba(0,0,0,0)']
-      },
-      colors: colorVal,
-      legend: {
-        show: true,
-        position: "top",
-        horizontalAlign: 'center',
-        fontFamily: fontFamily,
-        itemMargin: {
-          horizontal: 8,
-          vertical: 0
-        },
-      },
-      dataLabels: {
-        enabled: false
-      },
-        series: countArr,
-        labels: labelVal
-    };
-
-    var chart = new ApexCharts(document.querySelector("#reliabilityChart"), options);
-    chart.render();
-  }
-  // Reliability chart end
-
-  // Access & Facilities chart start
-  if ($('#accessAndFacilitiesChart').length) {
-
-    let countArr = [0,0,0,0,0];
-    let labelVal = ["Poor", "Unsatisfactory", "Satisfactory", "Very Satisfactory", "Outstanding"];
-    let colorVal = [colors.secondary, colors.danger, colors.warning, colors.info, colors.primary];
-    $.ajax({ 
-        type: 'GET', 
-        url: getRatingsUrl, 
-        data: { rating: 'rating3' }, 
-        dataType: 'json',
-        async:false,
-        success: function (res) {
-            $.each(res, function(index, e) {
-              countArr[e.rating3-1] = e.rating_sum;
-            });
-        }
-    });
-    var options = {
-      chart: {
-        height: 300,
-        type: "donut",
-        foreColor: colors.bodyColor,
-        background: colors.cardBg,
-        toolbar: {
-          show: false
-        },
-      },
-      theme: {
-        mode: 'light'
-      },
-      tooltip: {
-        theme: 'light'
-      },
-      stroke: {
-        colors: ['rgba(0,0,0,0)']
-      },
-      colors: colorVal,
-      legend: {
-        show: true,
-        position: "top",
-        horizontalAlign: 'center',
-        fontFamily: fontFamily,
-        itemMargin: {
-          horizontal: 8,
-          vertical: 0
-        },
-      },
-      dataLabels: {
-        enabled: false
-      },
-        series: countArr,
-        labels: labelVal
-    };
-
-    var chart = new ApexCharts(document.querySelector("#accessAndFacilitiesChart"), options);
-    chart.render();
-  }
-  // Access & Facilities chart end
-
-  // Communication chart start
-  if ($('#communicationChart').length) {
-
-    let countArr = [0,0,0,0,0];
-    let labelVal = ["Poor", "Unsatisfactory", "Satisfactory", "Very Satisfactory", "Outstanding"];
-    let colorVal = [colors.secondary, colors.danger, colors.warning, colors.info, colors.primary];
-    $.ajax({ 
-        type: 'GET', 
-        url: getRatingsUrl, 
-        data: { rating: 'rating4' }, 
-        dataType: 'json',
-        async:false,
-        success: function (res) {
-            $.each(res, function(index, e) {
-              countArr[e.rating4-1] = e.rating_sum;
-            });
-        }
-    });
-    var options = {
-      chart: {
-        height: 300,
-        type: "donut",
-        foreColor: colors.bodyColor,
-        background: colors.cardBg,
-        toolbar: {
-          show: false
-        },
-      },
-      theme: {
-        mode: 'light'
-      },
-      tooltip: {
-        theme: 'light'
-      },
-      stroke: {
-        colors: ['rgba(0,0,0,0)']
-      },
-      colors: colorVal,
-      legend: {
-        show: true,
-        position: "top",
-        horizontalAlign: 'center',
-        fontFamily: fontFamily,
-        itemMargin: {
-          horizontal: 8,
-          vertical: 0
-        },
-      },
-      dataLabels: {
-        enabled: false
-      },
-        series: countArr,
-        labels: labelVal
-    };
-
-    var chart = new ApexCharts(document.querySelector("#communicationChart"), options);
-    chart.render();
-  }
-  // Communication chart end
-
-    // Integrity chart start
-    if ($('#integrityChart').length) {
-
-      let countArr = [0,0,0,0,0];
-      let labelVal = ["Poor", "Unsatisfactory", "Satisfactory", "Very Satisfactory", "Outstanding"];
-      let colorVal = [colors.secondary, colors.danger, colors.warning, colors.info, colors.primary];
-      $.ajax({ 
-          type: 'GET', 
-          url: getRatingsUrl, 
-          data: { rating: 'rating5' }, 
-          dataType: 'json',
-          async:false,
-          success: function (res) {
-              $.each(res, function(index, e) {
-                countArr[e.rating5-1] = e.rating_sum;
-              });
-          }
-      });
-      var options = {
-        chart: {
-          height: 300,
-          type: "donut",
-          foreColor: colors.bodyColor,
-          background: colors.cardBg,
-          toolbar: {
-            show: false
-          },
-        },
-        theme: {
-          mode: 'light'
-        },
-        tooltip: {
-          theme: 'light'
-        },
-        stroke: {
-          colors: ['rgba(0,0,0,0)']
-        },
-        colors: colorVal,
-        legend: {
-          show: true,
-          position: "top",
-          horizontalAlign: 'center',
-          fontFamily: fontFamily,
-          itemMargin: {
-            horizontal: 8,
-            vertical: 0
-          },
-        },
-        dataLabels: {
-          enabled: false
-        },
-          series: countArr,
-          labels: labelVal
-      };
-  
-      var chart = new ApexCharts(document.querySelector("#integrityChart"), options);
-      chart.render();
-    }
-    // Integrity chart end
-
-    // Assurance chart start
-    if ($('#assuranceChart').length) {
-
-      let countArr = [0,0,0,0,0];
-      let labelVal = ["Poor", "Unsatisfactory", "Satisfactory", "Very Satisfactory", "Outstanding"];
-      let colorVal = [colors.secondary, colors.danger, colors.warning, colors.info, colors.primary];
-      $.ajax({ 
-          type: 'GET', 
-          url: getRatingsUrl, 
-          data: { rating: 'rating6' }, 
-          dataType: 'json',
-          async:false,
-          success: function (res) {
-              $.each(res, function(index, e) {
-                countArr[e.rating6-1] = e.rating_sum;
-              });
-          }
-      });
-      var options = {
-        chart: {
-          height: 300,
-          type: "donut",
-          foreColor: colors.bodyColor,
-          background: colors.cardBg,
-          toolbar: {
-            show: false
-          },
-        },
-        theme: {
-          mode: 'light'
-        },
-        tooltip: {
-          theme: 'light'
-        },
-        stroke: {
-          colors: ['rgba(0,0,0,0)']
-        },
-        colors: colorVal,
-        legend: {
-          show: true,
-          position: "top",
-          horizontalAlign: 'center',
-          fontFamily: fontFamily,
-          itemMargin: {
-            horizontal: 8,
-            vertical: 0
-          },
-        },
-        dataLabels: {
-          enabled: false
-        },
-          series: countArr,
-          labels: labelVal
-      };
-  
-      var chart = new ApexCharts(document.querySelector("#assuranceChart"), options);
-      chart.render();
-    }
-    // Assurance chart end
-
-    // Outcome chart start
-    if ($('#outcomeChart').length) {
-
-      let countArr = [0,0,0,0,0];
-      let labelVal = ["Poor", "Unsatisfactory", "Satisfactory", "Very Satisfactory", "Outstanding"];
-      let colorVal = [colors.secondary, colors.danger, colors.warning, colors.info, colors.primary];
-
-      $.ajax({ 
-          type: 'GET', 
-          url: getRatingsUrl, 
-          data: { rating: 'rating7' }, 
-          dataType: 'json',
-          async:false,
-          success: function (res) {
-              $.each(res, function(index, e) {
-                countArr[e.rating7-1] = e.rating_sum;
-              });
-          }
-      });
-      var options = {
-        chart: {
-          height: 300,
-          type: "donut",
-          foreColor: colors.bodyColor,
-          background: colors.cardBg,
-          toolbar: {
-            show: false
-          },
-        },
-        theme: {
-          mode: 'light'
-        },
-        tooltip: {
-          theme: 'light'
-        },
-        stroke: {
-          colors: ['rgba(0,0,0,0)']
-        },
-        colors: colorVal,
-        legend: {
-          show: true,
-          position: "top",
-          horizontalAlign: 'center',
-          fontFamily: fontFamily,
-          itemMargin: {
-            horizontal: 8,
-            vertical: 0
-          },
-        },
-        dataLabels: {
-          enabled: false
-        },
-          series: countArr,
-          labels: labelVal
-      };
-  
-      var chart = new ApexCharts(document.querySelector("#outcomeChart"), options);
-      chart.render();
-    }
-    // Outcome chart end
-});
+  // ---------- Start ----------
+  root.classList.add('is-first-load');
+  selectMetric(state.metric, false, true);
+  load();
+})();

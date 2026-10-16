@@ -36,6 +36,7 @@ php artisan migrate:status          # confirm the baseline migrations show "Ran"
 php artisan migrate --force         # applies only NEW migrations
 
 # 3. search indexes
+php artisan scout:sync-index-settings                  # filters / sorts the OPAC search page uses (config/scout.php)
 php artisan scout:flush "App\Models\ViewCatalog"
 php artisan scout:import "App\Models\ViewCatalog"     # Meilisearch (keyword search)
 
@@ -58,6 +59,7 @@ php artisan permission:cache-reset                    # roles/permissions are ca
 | `APP_ENV` | `production` | — |
 | `APP_DEBUG` | **`false`** | currently `true` in dev; a debug-enabled public site leaks stack traces |
 | `APP_URL` | `https://<real-domain>` | canonical tags, sitemap URLs and OG tags are all built from it |
+| `SCOUT_DRIVER` | `meilisearch` | the OPAC search page (filters with counts, typo tolerance, highlighting) needs Meilisearch **v1.12+** |
 | `MEILISEARCH_*` | host/key | OPAC keyword search |
 | `HERMES_GATEWAY_URL` | `http://127.0.0.1:8090` | AI mode gateway |
 | `HERMES_GATEWAY_TOKEN` | shared secret | **must match** what `start-rag-api.ps1` uses |
@@ -114,6 +116,8 @@ These are real changes that a `git pull` will **not** give you. They must be app
 | Generated `sitemap*.xml` | `public/` | `php artisan sitemap:generate` (gitignored on purpose) |
 | Material Type repair for records saved via Create/Edit/Batch before the fix (Record History + Reports showed the LDR/06 type, e.g. "Language material") | `elibrarydb.catalogs` | `php artisan catalog:sync-material-types` (dry run, shows the changes) then `--apply`. Idempotent. |
 | Full MARC 245 titles for existing records (lists/OPAC/search/covers showed only `245$a`, e.g. "… monograph series :") | `elibrarydb.view_catalogs`, `copies`, covers | `php artisan migrate` first (widens title columns to TEXT), then `php artisan catalog:rebuild-titles` (dry run) and `--apply` — also re-syncs search, queues RAG, regenerates placeholder covers. Idempotent. |
+| Settings and AI Sync Monitor permissions (`access.settings`, `access.ai.sync.monitor`; Roles → Configuration) | `elibrarydb.permissions`, `role_has_permissions` | `php artisan migrate`: creates both and grants them to the roles that could open those pages before (Settings: Configuration access; AI Sync Monitor: Configuration + Cataloging access), then `php artisan permission:cache-reset`. Review the Roles matrix afterwards. |
+| OPAC search page: subjects (MARC 600/610/650/651/653) and numeric publication year for existing records, plus the new Meilisearch filters / sorts | `elibrarydb.view_catalogs`, Meilisearch index | `php artisan migrate` (adds `pub_year_num`, `subjects`, `saved_records`), then `php artisan catalog:rebuild-search-fields` (dry run) and `--apply` — also syncs the index settings and re-indexes every record. Idempotent. |
 | Authors from MARC 100 **and 110**, else **700 / 710**, for existing records (corporate or added-entry-only authors showed as no author) | `elibrarydb.view_catalogs` | `php artisan catalog:rebuild-authors` (dry run) then `--apply` — also re-syncs search, queues RAG, regenerates placeholder covers. Idempotent. |
 | `public/{thumb,pdf,fullpage,news_cover,marc_file,marc_file_uploaded}` links | `public/` → `storage/app/public/*` | `php artisan storage:link`. The link *targets* (uploaded covers, PDFs) live in `storage/app/public` and are per-server data — back them up. The app creates a missing target folder on first write. |
 
@@ -123,9 +127,25 @@ These are real changes that a `git pull` will **not** give you. They must be app
 
 ---
 
-## 5. Changes in this work cycle
+## 5. Changes by work cycle
 
-### smart-elibrary (14 commits, `37afbb8`…`8eb1a08`)
+### smart-elibrary — October 2026 (FNRI), `02fd6ed`…`39fc967`
+
+| Area | What changed | Deploy step |
+|---|---|---|
+| **OPAC search redesign** | `App\Services\CatalogSearch` (one Meilisearch multi-search): filters with counts, advanced rows, sort, grid/list, Cite, Save, Quick view (`GET /search/quick/{id}`) | `migrate`; `catalog:rebuild-search-fields --apply` (also syncs index settings) |
+| **Saved records** | `saved_records`; `POST /search/saved` from results, covers, Quick view, record page | `migrate` |
+| **Guests sign in to read** | `/read/{id}` requires login; Read / Download / Save show a sign-in popup to guests | — |
+| **Quick reviews** | popup after a download or a minute of reading; `GET|POST /review/quick` | — |
+| **Admin dashboard** | rebuilt on `DashboardService` + `GET /admin/dashboard/activity` (replaces the old JSON feeds, which errored) | — |
+| **Record view** | Reviews tab with summary, filters, sorting | — |
+| **Bulk catalogue actions** | selection + one Actions menu (publish, hold, export, re-index, delete); `POST /admin/records/bulk`; export ticket + GET download | — |
+| **Material Types utility** | Administration › Utilities; batch import maps types from a MARC field (`material_type_maps`) | `migrate`; `permission:cache-reset` |
+| **Titles / authors** | full MARC 245 titles; authors 100/110, else 700/710 | `catalog:rebuild-titles --apply`; `catalog:rebuild-authors --apply` |
+| **Permissions** | new `access.settings`, `access.ai.sync.monitor`, `manage.material.types` | `migrate`; `permission:cache-reset` |
+| **Banned login** | popup with an email link to `ADMIN_EMAIL` | set `ADMIN_EMAIL` (optional) |
+
+### smart-elibrary — July 2026 (14 commits, `37afbb8`…`8eb1a08`)
 
 | Area | Files |
 |---|---|
@@ -208,8 +228,28 @@ disappears.
 
 ## 7. Known gaps / follow-ups
 
-- **Logon scheduled tasks are not registered** — needs one elevated run of
-  `register-projecty-tasks.ps1`. Until then AI mode is down after every reboot.
+- ~~**Logon scheduled tasks are not registered**~~ — **done** (verified 30 Sep 2026): llama-server,
+  rag-api, sync worker, nginx proxy and the Discord gateway start at logon. The sync worker exits
+  if MySQL isn't up yet when it fires — start Laragon at logon, or restart it with
+  `schtasks /run /tn ProjectY-sync-worker`.
+- ~~**`php artisan test` would have wiped `elibrarydb`**~~ — **fixed 14 Oct 2026**: tests use their
+  own database (`DB_DATABASE=elibrarydb_test` in `phpunit.xml`, search sync off via
+  `SCOUT_DRIVER=null`), and `tests/TestCase.php` refuses any database not ending in `_test`.
+  **On each new machine create it once:**
+  `CREATE DATABASE elibrarydb_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`
+  The suite: 19 pass, 2 fail — `ExampleTest` expects `/` to return 200 (the app redirects to
+  `/home`) and `RegistrationTest` expects the stock starter-kit registration; both need updating.
+- ~~**`catalog:rebuild-search-fields --apply` pending on the development database**~~ — **done
+  14 Oct 2026** (8,852 records updated: 8,830 with subjects, 6,641 with a year; index rebuilt).
+- **Search page shows "0 results / unavailable" while Meilisearch is healthy** → the index
+  settings or fields are out of date and `CatalogSearch` hides the error. Check
+  `storage/logs/laravel.log`, then `scout:sync-index-settings` + `scout:import` (or
+  `catalog:rebuild-search-fields --apply`).
+- **Nightly reconcile not scheduled** — `rag_sync_worker.py --reconcile` then `--once` is built but
+  no task runs it; drift from missed events persists until someone does.
+- **Records catalogued after the corpus import may not be citable in AI mode** — the sync worker
+  stores their chunks as stem `catalog-{id}`, but `AiSearchService::resolveSources()` only resolves
+  stems via `accession_number`. Found by code review, not yet reproduced.
 - ~~**SEO workstream D (URL slugs)**~~ — **done**: record URLs are now
   `/full-description/{id}-{title-slug}`, with bare-id and stale-slug URLs 301ing to the canonical
   form. **Re-run `php artisan sitemap:generate` after deploying** so the sitemap carries slug URLs.

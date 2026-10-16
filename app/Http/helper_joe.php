@@ -65,7 +65,7 @@ function generateReservationCode() {
 	$combinedString = 'RSV-' . $randomString . $timestamp;
 	$matchCode = App\Models\Circulation::where('reservation_code', $combinedString)->first();
 	if(!is_null($matchCode)) {
-		$combinedString = generateTransactionCode();
+		$combinedString = generateReservationCode();
 	}
 	return $combinedString;
 
@@ -207,6 +207,38 @@ function getReservationCount() {
 	$totalRecords = App\Models\Circulation::whereIn('status', [1, 2])->count();
 
 	return $totalRecords;
+}
+
+// Put copies held for an approved reservation (copies.status 2 = Reserved) back on the shelf
+// (1 = Available) when that ticket is declined, reverted or its patron banned. Without this the
+// copy stays Reserved for nobody. Copies in any other state are left alone.
+function releaseReservedCopies($circulationNumbers) {
+	$numbers = collect($circulationNumbers)->filter()->unique()->values();
+	if ($numbers->isEmpty()) return 0;
+
+	return DB::table('copies')->whereIn('circulation_number', $numbers)->where('status', 2)->update(['status' => 1]);
+}
+
+// A reservation's visit, e.g. "Oct 20, 2026, 9:00 AM" (visit_date is a DATE, visit_time a TIME).
+function visitWhen($date, $time) {
+	$parts = array_filter([
+		$date ? Carbon\Carbon::parse($date)->format('M j, Y') : null,
+		$time ? Carbon\Carbon::parse($time)->format('g:i A') : null,
+	]);
+	return $parts ? implode(', ', $parts) : '—';
+}
+
+// The name of the staff account behind a *_by column (circulations.approved_by etc. hold user
+// ids). Deleted accounts still show their name.
+function staffName($userId, $default = 'Not found') {
+	if (! $userId) return $default;
+	return App\Models\User::withTrashed()->whereKey($userId)->value('name') ?? $default;
+}
+
+// Money posted by the check-out / check-in screens as a number, or null when blank. The screen
+// posts 'NaN' when an amount box is left empty.
+function fineAmount($value) {
+	return is_numeric($value) ? round((float) $value, 2) : null;
 }
 
 // Total unseen chat messages FROM patrons (drives the admin Reservation menu badge).

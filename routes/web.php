@@ -26,6 +26,10 @@ require __DIR__.'/annarose.php';
 use App\Http\Controllers\ResultController;
 Route::get('/results', [ResultController::class, 'index']);
 Route::get('/search/suggest', [ResultController::class, 'suggest']);   // instant-search JSON (OPAC overlay)
+Route::get('/search/facet', [ResultController::class, 'facetValues'])->middleware('throttle:60,1');            // "Find an author" box
+Route::get('/search/cite/{catalogId}', [ResultController::class, 'cite'])->whereNumber('catalogId');           // Cite button
+Route::get('/search/quick/{catalogId}', [ResultController::class, 'quickView'])->whereNumber('catalogId')->middleware('throttle:60,1'); // Quick view button
+Route::post('/search/saved', [ResultController::class, 'toggleSaved'])->middleware(['auth', 'throttle:60,1']); // Save button
 // AI mode answer (OPAC "Ask the Library").
 //  - ai.enabled : the admin kill switch (Settings). Off -> 404, feature genuinely gone.
 //  - throttle   : each real request will be a full generation on one GPU, so the edge
@@ -41,7 +45,8 @@ Route::controller(HoldingController::class)->group(function () {
     Route::get('/full-description', 'index2');
     Route::get('/full-description/{holdingsid}', 'index2');
     Route::post('/read/view', 'recordView');
-    Route::get('/read/{catalog_id}', 'read')->whereNumber('catalog_id')->name('read');
+    // Reading is for signed-in patrons only; guests are sent to the login page.
+    Route::get('/read/{catalog_id}', 'read')->whereNumber('catalog_id')->name('read')->middleware('auth');
 });
 
 //OPAC
@@ -72,7 +77,8 @@ Route::controller(DownloadController::class)->group(function () {
 
 //SETTINGS
 use App\Http\Controllers\SettingController;
-Route::controller(SettingController::class)->middleware('can:access.configuration')->group(function () {
+// Administration → Settings: the Configuration module plus its own permission (Roles matrix).
+Route::controller(SettingController::class)->middleware(['can:access.configuration', 'can:access.settings'])->group(function () {
     Route::get('/admin/settings', 'index');
     Route::post('/admin/settings', 'update');
     // Drift scan (read-only: compares the index against the DB and reports the drift).
@@ -120,6 +126,9 @@ use App\Http\Controllers\ReviewController;
 Route::controller(ReviewController::class)->group(function () {
     Route::post('/review', 'index');
     Route::post('/review/submit', 'create');
+    // Quick review popup (after a download, or after reading for a minute).
+    Route::get('/review/quick/{catalog_id}', 'quickStatus')->whereNumber('catalog_id');
+    Route::post('/review/quick', 'quickStore')->middleware('throttle:10,1');
 });
 
 

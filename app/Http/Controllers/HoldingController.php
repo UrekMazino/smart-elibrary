@@ -79,7 +79,9 @@ class HoldingController extends Controller
      */
     public function recordView(Request $request)
     {
-        if($request->filled('catalog_id'))
+        // Only a real record is counted (views.catalog_id is a foreign key to catalogs).
+        if($request->filled('catalog_id') && ctype_digit((string) $request->catalog_id)
+            && App\Models\Catalog::whereKey($request->catalog_id)->exists())
         {
             saveView($request->catalog_id);
         }
@@ -89,13 +91,15 @@ class HoldingController extends Controller
 
     /**
      * Guarded reader stream. The in-browser reader (PDF.js) loads the file through this
-     * route instead of the raw public path, so we can deny banned accounts the Read
-     * feature. Also enforces the same published/not-deleted rule as full-description.
+     * route instead of the raw public path, so we can deny guests (the route's `auth`
+     * middleware) and banned accounts the Read feature. Also enforces the same
+     * published/not-deleted rule as full-description.
      */
     public function read($catalog_id)
     {
-        // Banned accounts are not allowed to use the Read feature.
-        abort_if(Auth::check() && Auth::user()->is_banned, 403, 'Your account has been banned from reading materials.');
+        // Banned accounts are not allowed to use the Read feature (covers a session that was
+        // already signed in when the admin banned the account).
+        abort_if(Auth::user()->is_banned, 403, 'Your account has been banned from reading materials.');
 
         // Only public records may be read (published + not deleted).
         $result = App\Models\ViewCatalog::where('catalog_id',$catalog_id)
@@ -112,18 +116,16 @@ class HoldingController extends Controller
         abort_if($loc === '' || !is_file($path), 404);
 
         // A logged-in patron reading a material adds it to their "To Review" list — the
-        // same as downloading. Recorded once per user + material (idempotent across the
-        // range requests PDF.js makes while paging).
+        // same as downloading. Recorded once per user + material: PDF.js sends several range
+        // requests at once, so rely on the unique (user_id, catalog_id) key rather than a
+        // check-then-insert that two of them could pass together.
         if (Auth::check()) {
-            $already = \DB::table('reads')->where('user_id', Auth::id())->where('catalog_id', $catalog_id)->exists();
-            if (! $already) {
-                \DB::table('reads')->insert([
-                    'user_id'    => Auth::id(),
-                    'catalog_id' => $catalog_id,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
+            \DB::table('reads')->insertOrIgnore([
+                'user_id'    => Auth::id(),
+                'catalog_id' => $result->catalog_id,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
         }
 
         // Inline stream (supports range requests) so PDF.js can page through it.

@@ -21,8 +21,8 @@
 	.tx-msg .q { color: #00a496; font-weight: 700; margin-right: 4px; }
 	.tx-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: #8a94a6; }
 	.tx-aside { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; justify-content: center; gap: 10px; }
-	.tx-msg-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: #fff; background: #00a496; border: 0; border-radius: 7px; padding: 8px 16px; cursor: pointer; transition: background .15s; white-space: nowrap; }
-	.tx-msg-btn:hover { background: #00897b; }
+	.tx-msg-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: #fff; background: #00857a; border: 0; border-radius: 7px; padding: 8px 16px; cursor: pointer; transition: background .15s; white-space: nowrap; }
+	.tx-msg-btn:hover { background: #006f65; }
 	.tx-msg-btn .tx-unread { background: #e5484d; color: #fff; font-size: 10px; font-weight: 700; border-radius: 20px; padding: 1px 6px; line-height: 1.4; }
 	.tx-empty { text-align: center; color: #8a94a6; padding: 48px 16px; background: #fff; border: 1px dashed #dfe3e8; border-radius: 10px; }
 	.tx-pagination { margin-top: 18px; }
@@ -34,9 +34,9 @@
 	/* Thread bubbles inside the shared inquiry modal */
 	.container-msg-reply { border: 1px solid #e2e6ec; background-color: #f4f6f9; color: #222; border-radius: 10px; padding: 10px 14px; margin: 8px 0; }
 	.container-msg-reply p { margin: 0 0 4px; }
-	.container-msg-reply.darker { border-color: #00a496; background-color: #00a496; color: #fff; }
+	.container-msg-reply.darker { border-color: #00857a; background-color: #00857a; color: #fff; }
 	.seen-row-patron { display: flex; justify-content: flex-end; margin-top: 4px; padding-right: 2px; }
-	.seen-ava-lib { width: 22px; height: 22px; border-radius: 50%; background: #00a496; color: #fff; font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 0 0 2px #fff; cursor: default; }
+	.seen-ava-lib { width: 22px; height: 22px; border-radius: 50%; background: #00857a; color: #fff; font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 0 0 2px #fff; cursor: default; }
 	.time-right { display: block; text-align: right; color: rgba(255,255,255,.85); font-size: 11px; }
 	.time-left  { display: block; text-align: left;  color: #8a94a6; font-size: 11px; }
 </style>

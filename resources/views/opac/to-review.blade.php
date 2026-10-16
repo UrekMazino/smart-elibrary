@@ -22,8 +22,8 @@
 		.tx-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: #8a94a6; }
 		.tx-meta .rating { line-height: 1; }
 		.tx-aside { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; justify-content: center; gap: 10px; }
-		.tx-review-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: #fff; background: #00a496; border: 0; border-radius: 7px; padding: 8px 16px; cursor: pointer; transition: background .15s; white-space: nowrap; }
-		.tx-review-btn:hover { background: #00897b; }
+		.tx-review-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: #fff; background: #00857a; border: 0; border-radius: 7px; padding: 8px 16px; cursor: pointer; transition: background .15s; white-space: nowrap; }
+		.tx-review-btn:hover { background: #006f65; }
 		.tx-empty { text-align: center; color: #8a94a6; padding: 48px 16px; background: #fff; border: 1px dashed #dfe3e8; border-radius: 10px; }
 		.tx-pagination { margin-top: 18px; }
 		@media (max-width: 576px) {

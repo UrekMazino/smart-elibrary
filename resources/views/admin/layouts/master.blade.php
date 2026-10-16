@@ -223,12 +223,14 @@ License: For each use you must have a valid license purchased only from above li
           @can('access.configuration')
             <li class="nav-item nav-category">Administration</li>
 
+            @can('access.settings')
             <li class="nav-item">
               <a href="{{ url('/admin/settings') }}" class="nav-link">
                 <i class="link-icon" data-feather="settings"></i>
                 <span class="link-title">Settings</span>
               </a>
             </li>
+            @endcan
 
             {{-- Utilities hub: shown when the admin can use at least one utility. --}}
             @canany(['manage.material.types'])
@@ -249,9 +251,7 @@ License: For each use you must have a valid license purchased only from above li
               </li>
             @endcan
 
-            {{-- Shown under Administration, but needs cataloging access: it re-syncs catalog data
-                 via the access.cataloging reindex routes. --}}
-            @can('access.cataloging')
+            @can('access.ai.sync.monitor')
               <li class="nav-item">
                 <a href="{{ url('/admin/ai-sync-monitor') }}" class="nav-link">
                   <i class="link-icon" data-feather="cpu"></i>
@@ -371,7 +371,7 @@ License: For each use you must have a valid license purchased only from above li
 							Every public page is served as <code>noindex</code>, so this catalogue will not
 							appear in Google. Intended for staging &mdash; turn it off before launch.
 						</span>
-						@can('access.configuration')
+						@can(['access.configuration', 'access.settings'])
 							<a href="{{ url('/admin/settings') }}" class="btn btn-sm btn-outline-dark">Settings</a>
 						@endcan
 					</div>
