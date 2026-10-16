@@ -149,6 +149,23 @@ class SchemaIntegrityTest extends TestCase
             ->assertOk()->assertSee('MISSING-1')->assertSee('Title of MISSING-1')->assertDontSee('SCANNED-1');
     }
 
+    public function test_a_patron_region_is_stored_as_the_region_id()
+    {
+        $this->seedReferenceData('patrontypes', 'regions');
+        $ncr = (int) DB::table('regions')->where('regCode', '13')->value('id');   // id 14: not the code
+        $patron = User::factory()->create(['usertype' => 'Patron']);
+        $form = ['name' => $patron->name, 'email' => $patron->email, 'contactnum' => '09170000000',
+                 'birthdate' => '1990-12-06', 'patron_type_id' => 1];
+
+        $this->actingAs($patron)->post("/patron/profile/update/{$patron->id}", $form + ['region_id' => $ncr])->assertSessionHasNoErrors();
+        $this->assertSame($ncr, (int) DB::table('users')->where('id', $patron->id)->value('region_id'));
+        $this->actingAs($patron)->get('/patron/profile')->assertSee('value="' . $ncr . '" selected', false);
+
+        $this->actingAs($patron)->post("/patron/profile/update/{$patron->id}", $form + ['region_id' => 999])->assertSessionHasErrors('region_id');
+        $this->expectException(QueryException::class);
+        DB::table('users')->where('id', $patron->id)->update(['region_id' => 999]);
+    }
+
     public function test_every_table_is_innodb_with_one_collation()
     {
         $odd = DB::table('information_schema.tables')->where('table_schema', DB::getDatabaseName())

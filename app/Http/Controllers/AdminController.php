@@ -78,7 +78,7 @@ class AdminController extends Controller
             'affiliation'    => ['nullable', 'string', 'max:255'],
             'sex'            => ['nullable', Rule::in(['Male', 'Female'])],   // column is an enum
             'patron_type_id' => ['required', 'exists:patrontypes,id'],        // NOT NULL column
-            'region_id'      => ['nullable', 'string', 'max:10', 'exists:regions,regCode'],
+            'region_id'      => ['nullable', 'integer', 'exists:regions,id'],
             'address'        => ['nullable', 'string', 'max:1000'],
         ]);
 

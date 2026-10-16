@@ -175,7 +175,7 @@
                                 <select class="form-select" name="region_id" id="region_id">
                                     <option value="">Select region…</option>
                                     @foreach (getRegion() as $item)
-                                        <option value="{{ $item->regCode }}" @selected(old('region_id', $user->region_id) == $item->regCode)>
+                                        <option value="{{ $item->id }}" @selected(old('region_id', $user->region_id) == $item->id)>
                                             {{ $item->desc }}
                                         </option>
                                     @endforeach
