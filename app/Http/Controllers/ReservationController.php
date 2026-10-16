@@ -173,34 +173,48 @@ class ReservationController extends Controller
         $start = $request->get("start");
         $rowPerPage = $request->get("length"); // Rows display per page
 
-        $columnIndex_arr = $request->get('order');
-        $columnName_arr = $request->get('columns');
-        $order_arr = $request->get('order');
-        $search_arr = $request->get('search');
+        $columnIndex = $request->input('order.0.column');
+        $columnName = $request->input("columns.$columnIndex.data");
+        $columnSortOrder = strtolower((string) $request->input('order.0.dir')) === 'desc' ? 'desc' : 'asc';
+        $searchValue = (string) $request->input('search.value', '');
 
-        $columnIndex = $columnIndex_arr[0]['column']; // Column index
-        $columnName = $columnName_arr[$columnIndex]['data']; // Column name
-        $columnSortOrder = $order_arr[0]['dir']; // asc or desc
-        $searchValue = $search_arr['value']; // Search value
+        // circulations and circulation_reservations share id, user_id, reservation_code and the
+        // timestamps, so every column is qualified: an unqualified one is "ambiguous" to MySQL,
+        // and SELECT * silently took the reservation's copy. Only these table columns sort; the
+        // rest (email, actions) are computed per row.
+        $sortable = [
+            'id'               => 'circulation_reservations.id',
+            'title_statement'  => 'circulation_reservations.title_statement',
+            'requested_by'     => 'circulation_reservations.requested_by',
+            'status'           => 'circulations.status',
+            'reservation_code' => 'circulations.reservation_code',
+            'date_of_visit'    => 'circulation_reservations.visit_date',
+        ];
+        $sortColumn = $sortable[$columnName] ?? 'circulation_reservations.id';
 
-        // Total records
-        $totalRecords = Circulation::whereIn('status', [1, 2, 3])->count();
+        $active = Circulation::join('circulation_reservations', 'circulation_reservations.reservation_code', '=', 'circulations.reservation_code')
+            ->whereIn('circulations.status', [1, 2, 3]);
+        $filtered = (clone $active)->where(function ($query) use ($searchValue) {
+            $query->where('circulation_reservations.title_statement', 'like', '%' . $searchValue . '%')
+                ->orWhere('circulation_reservations.requested_by', 'like', '%' . $searchValue . '%')
+                ->orWhere('circulation_reservations.visit_date', 'like', '%' . $searchValue . '%')
+                ->orWhere('circulation_reservations.reservation_code', 'like', '%' . $searchValue . '%')
+                ->orWhere('circulations.circulation_number', 'like', '%' . $searchValue . '%');
+        });
 
-        $totalRecordswithFilter = CirculationReservation::select(DB::raw('count(*) as allcount'))->where('title_statement', 'like', '%' . $searchValue . '%')->count();
+        // Both totals count the rows the table shows (the filtered one used to count every
+        // reservation title, whatever its status, so the pager was wrong).
+        $totalRecords = (clone $active)->count();
+        $totalRecordswithFilter = (clone $filtered)->count();
 
-        // Fetch records
-        $reservations = Circulation::orderBy($columnName, $columnSortOrder)
-            ->join('circulation_reservations', 'circulation_reservations.reservation_code', '=', 'circulations.reservation_code')
-            ->whereIn('status', [1, 2, 3])
-            ->where(function ($query) use ($searchValue) {
-                $query->where('title_statement', 'like', '%' . $searchValue . '%')
-                    ->orWhere('circulation_reservations.requested_by', 'like', '%' . $searchValue . '%')
-                    ->orWhere('circulation_reservations.visit_date', 'like', '%' . $searchValue . '%')
-                    ->orWhere('circulation_reservations.reservation_code', 'like', '%' . $searchValue . '%')
-                    ->orWhere('circulations.circulation_number', 'like', '%' . $searchValue . '%');
-            })
-            ->skip($start)
-            ->take($rowPerPage)
+        $reservations = $filtered
+            ->select('circulations.*', 'circulation_reservations.id as id', 'circulation_reservations.user_id as user_id',
+                'circulation_reservations.requested_by', 'circulation_reservations.title_statement',
+                'circulation_reservations.visit_date', 'circulation_reservations.visit_time')
+            ->orderBy($sortColumn, $columnSortOrder)
+            ->when($sortColumn === 'circulation_reservations.visit_date', fn ($q) => $q->orderBy('circulation_reservations.visit_time', $columnSortOrder))
+            ->skip((int) $start)
+            ->take((int) $rowPerPage)
             ->get();
     
         // Patron email + ban/block state, keyed by user id (kept out of the join above to
