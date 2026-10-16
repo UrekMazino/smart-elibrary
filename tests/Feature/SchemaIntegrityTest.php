@@ -94,7 +94,8 @@ class SchemaIntegrityTest extends TestCase
     {
         $catalogId = $this->catalog();
         DB::table('view_catalogs')->insert(['catalog_id' => $catalogId, 'title_statement' => 'Rice farming']);
-        DB::table('inquiries')->insert(['catalog_id' => $catalogId, 'fullname' => 'Guest', 'message' => 'Is it available?']);
+        $patron = User::factory()->create();
+        DB::table('inquiries')->insert(['catalog_id' => $catalogId, 'user_id' => $patron->id, 'message' => 'Is it available?']);
 
         $this->assertSame('Rice farming', DB::table('view_inquiries')->value('title_statement'));
     }

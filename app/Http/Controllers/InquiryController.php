@@ -35,23 +35,12 @@ class InquiryController extends Controller
         // The record asked about, if the form names a real one (general inquiries have none).
         $catalogId = App\Models\Catalog::whereKey((int) request()->catalog_id_inquiry)->value('id');
 
-        if(Auth::check())
-        {
-            $inq->user_id = Auth::user()->id;
-            $inq->catalog_id = $catalogId;
-            $inq->fullname = Auth::user()->name;
-            $inq->contactnum = Auth::user()->contactnum;
-            $inq->email = Auth::user()->email;
-            $inq->message = request()->inquiry_message;
-        }
-        else
-        {
-            $inq->catalog_id = $catalogId;
-            $inq->fullname = request()->inquiry_fullname;
-            $inq->contactnum = request()->inquiry_contactnum;
-            $inq->email = request()->inquiry_email;
-            $inq->message = request()->inquiry_message;
-        }
+        // Signed-in users only (route middleware). The sender's name, phone and email are read
+        // from their account (view_inquiries), not copied here, so a correction or erasure is
+        // made in one place.
+        $inq->user_id = Auth::id();
+        $inq->catalog_id = $catalogId;
+        $inq->message = request()->inquiry_message;
 
         $inq->save();
         

@@ -111,7 +111,8 @@ Route::controller(MaterialTypeController::class)->middleware('can:access.configu
 //INQUIRY
 use App\Http\Controllers\InquiryController;
 Route::controller(InquiryController::class)->group(function () {
-    Route::post('/inquiry/submit', 'create')->middleware('throttle:5,1'); // max 5 inquiry submits/min
+    // Signed-in users only (the form is shown only to them); the sender's details come from their account.
+    Route::post('/inquiry/submit', 'create')->middleware(['auth', 'throttle:5,1']); // max 5 inquiry submits/min
     // Reply + thread endpoints require auth; ownership is enforced in the controller.
     Route::post('/inquiry/reply', 'reply')->middleware(['auth', 'throttle:20,1']);
     Route::get('/inquiry/json/{id}', 'json2')->middleware('auth');

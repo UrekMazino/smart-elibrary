@@ -210,7 +210,8 @@ function isCrawler($agent = null): bool
 
 /**
  * Record a view of a material. Crawler hits are deliberately NOT recorded — see isCrawler().
- * The agent is stored so a mis-classification can be audited later.
+ * The visitor's IP address and browser string are not stored: nothing used them, and the Data
+ * Privacy Act's proportionality principle (RA 10173, s. 11) says not to keep what is not needed.
  */
 function saveView($id)
 {
@@ -219,8 +220,6 @@ function saveView($id)
 	}
 
 	$view = new App\Models\View;
-	$view->ip_view = request()->ip();
-	$view->user_agent = substr((string) request()->userAgent(), 0, 512);
 
     if(Auth::check())
     {
