@@ -25,7 +25,6 @@ use App\Models\Patrontype;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\ViewCatalog;
-use App\Models\View_holding_uncatalog;
 use App\Services\DashboardService;
 
 class AdminController extends Controller
@@ -562,32 +561,6 @@ class AdminController extends Controller
             'new_admin_password' => $password,
             'user_library_code'  => $libraryCode,
         ]);
-    }
-
-    public function assignMaterialToPatron()
-    {
-        //print_r(request()->catalog_id); 
-        foreach (request()->catalog_id as $key => $value) {
-
-            $holdings = App\Models\Holding::where('id',$value)->first();
-            
-            $user = App\Models\User::where('id',request()->userid)->first();
-
-            $borrow = new App\Models\Barrowed_book;
-            $borrow->user_id = $user['id'];
-            $borrow->fullname = $user['name'];
-            $borrow->contactnum = $user['contactnum'];
-            $borrow->email = $user['email'];
-            $borrow->status = 'Borrowed';
-            $borrow->approved_at = date('Y-m-d H:i:s');
-            $borrow->approved_by = Auth::user()->name;
-            $borrow->catalog_id = $holdings['catalog_id'];
-            $borrow->created_at = date('Y-m-d H:i:s');
-            // $borrow->consortia_id = $consortia_id;
-            $borrow->save();
-        }
-
-        return redirect('admin/borrowed');
     }
 
     /*

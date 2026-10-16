@@ -16,7 +16,7 @@ use Illuminate\Validation\Rule;
  *
  * The hub lists the utilities this admin can use; Material Types is the first one. Material
  * types are referenced by records (catalogs + the OPAC's view_catalogs, which also stores the
- * NAME), batches, mapping presets and legacy holdings — so:
+ * NAME), batches and mapping presets — so:
  *   - a type in use can't be deleted: merge it into another type (moves everything) or hide it;
  *   - a rename is pushed to every record's stored name + the search index;
  *   - MARC record-type entries (LDR/06 codes) are protected: never deleted; "Move records to…"
@@ -134,7 +134,6 @@ class MaterialTypeController extends Controller
             DB::table('view_catalogs')->where('material_type_id', $source->id)
                 ->update(['material_type_id' => $target->id, 'material_type' => $target->name]);
             DB::table('catalog_imports')->where('material_type_id', $source->id)->update(['material_type_id' => $target->id]);
-            DB::table('holdings')->where('material_type_id', $source->id)->update(['material_type_id' => $target->id]);
 
             // Mapping presets: their default and every value mapped to the source.
             foreach (MaterialTypeMap::all() as $preset) {
@@ -200,7 +199,6 @@ class MaterialTypeController extends Controller
             'records'  => $count('catalogs'),
             'opac'     => $count('view_catalogs'),
             'batches'  => $count('catalog_imports'),
-            'holdings' => $count('holdings'),
             'presets'  => $presets,
         ];
     }

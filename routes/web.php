@@ -152,7 +152,6 @@ Route::controller(AdminController::class)->group(function () {
     Route::post('/admin/print-report', 'reportprint')->middleware('can:access.reports');
     Route::post('/admin/report-preview', 'reportPreview')->middleware('can:access.reports');
 
-    Route::post('/admin/patron-borrow', 'assignMaterialToPatron')->middleware('can:access.accounts');
 
     // Patron account actions — each gated by its own permission (UI hides what you can't do).
     Route::post('/admin/patron/{id}/reset-password', 'resetPatronPassword')->whereNumber('id')->middleware(['can:access.accounts', 'can:edit.patron']);
@@ -165,30 +164,9 @@ Route::controller(AdminController::class)->group(function () {
 });
 
 //ADMIN
-use App\Http\Controllers\AcquisitionController;
-Route::controller(AcquisitionController::class)->middleware('can:access.cataloging')->group(function () {
-
-    Route::get('/admin/new-acquisition', 'index2');
-    Route::post('/admin/acquisition/create', 'create');
-    Route::post('/admin/edit-acquisition-view', 'editview');
-    Route::get('/admin/edit-acquisition-view-get/{id}', 'editviewGet');
-    Route::post('/admin/delete-acquisition', 'delete');
-    Route::post('/admin/set-as-acquisition', 'setas');
-
-    Route::post('/admin/update-acquisition', 'update');
-
-    Route::get('/admin/catalog', 'index');
-    Route::get('/admin/catalog/json', 'catalogjson');
-
-    Route::get('/admin/uncat', 'uncatalog');
-    Route::get('/admin/uncatalog/json', 'uncatalogjson');
-
-});
-
 use App\Http\Controllers\BorrowController;
 Route::controller(BorrowController::class)->middleware(['can:access.circulation', 'can:access.circulation.transaction'])->group(function () {
     Route::get('/admin/borrowed/json', 'json');
-    Route::post('/admin/borrowed/action', 'action');
 
 });
 

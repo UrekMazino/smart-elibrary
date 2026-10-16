@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Spatie\Permission\Models\Role;
 use Tests\SeedsReferenceData;
 use Tests\TestCase;
@@ -146,5 +147,49 @@ class SchemaIntegrityTest extends TestCase
             ->assertOk()->assertSee('SCANNED-1')->assertSee('ACC-0001')->assertDontSee('MISSING-1');
         $this->actingAs($staff)->get('/admin/inventory/reportmissing')
             ->assertOk()->assertSee('MISSING-1')->assertSee('Title of MISSING-1')->assertDontSee('SCANNED-1');
+    }
+
+    public function test_every_table_is_innodb_with_one_collation()
+    {
+        $odd = DB::table('information_schema.tables')->where('table_schema', DB::getDatabaseName())
+            ->where('table_type', 'BASE TABLE')
+            ->where(fn ($q) => $q->where('engine', '<>', 'InnoDB')->orWhere('table_collation', '<>', 'utf8mb4_unicode_ci'))
+            ->pluck('table_name');
+        $this->assertSame([], $odd->all());
+
+        $columns = DB::table('information_schema.columns')->where('table_schema', DB::getDatabaseName())
+            ->whereNotNull('collation_name')->where('collation_name', '<>', 'utf8mb4_unicode_ci')
+            ->whereNotIn('table_name', DB::table('information_schema.views')->where('table_schema', DB::getDatabaseName())->select('table_name'))
+            ->pluck('column_name');
+        $this->assertSame([], $columns->all());
+    }
+
+    public function test_formerly_latin1_tables_keep_text_in_any_script()
+    {
+        $id = DB::table('materials')->insertGetId(['name' => 'Aklat — 本 — Книга']);
+
+        $this->assertSame('Aklat — 本 — Книга', DB::table('materials')->where('id', $id)->value('name'));
+    }
+
+    public function test_a_malformed_marc_record_is_refused()
+    {
+        $catalogId = $this->catalog();
+        DB::table('catalogs')->where('id', $catalogId)->update(['field_data' => '[{"marctag":{"code":"245"}}]']);
+
+        $this->expectException(QueryException::class);
+        DB::table('catalogs')->where('id', $catalogId)->update(['field_data' => '[{"marctag":']);
+    }
+
+    public function test_the_pre_marc_tables_and_their_screens_are_gone()
+    {
+        foreach (['holdings', 'authors', 'corporate_authors', 'barrowed_books', 'view_holdings', 'view_borrowed_books'] as $legacy) {
+            $this->assertFalse(Schema::hasTable($legacy), "$legacy still exists");
+        }
+
+        $staff = User::factory()->create(['usertype' => 'Developer']);
+        $staff->assignRole(Role::findOrCreate('developer'));
+        foreach (['/admin/catalog', '/admin/uncat', '/admin/new-acquisition'] as $url) {
+            $this->actingAs($staff)->get($url)->assertNotFound();
+        }
     }
 }

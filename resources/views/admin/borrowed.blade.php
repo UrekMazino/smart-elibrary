@@ -57,11 +57,6 @@
 <!--View reservation Modal -->
 @include('admin.modals.view-reservation-modal')
 
-<form method="post" action="{{ url('/admin/borrowed/action') }}" id="frm">
-	@csrf
-	<input type="hidden" class="form-control" name="borrowed_id" id="borrowed_id" value="">
-  <input type="hidden" class="form-control" name="borrowed_action" id="borrowed_action" value="">
-</form>
 @endsection
 
 @section('js')
@@ -118,14 +113,6 @@ $('#tbl').DataTable({
     ]
 });
 
-
-function approvedBorrowed(status,id)
-{
-  $("#borrowed_id").val(id);
-  $("#borrowed_action").val(status);
-
-  $("#frm").submit();
-}
 
 </script>
 @endsection

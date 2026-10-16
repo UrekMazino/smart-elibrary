@@ -37,12 +37,6 @@ function formatText($txt)
 	return $txt;
 }
 
-function getRandomImage()
-{
-	$thumb = App\Models\Thumbnail::all()->random(1)->first();
-	return $thumb['filename'];
-}
-
 function getRandomRating()
 {
 	$rate = rand(0,5);
@@ -69,18 +63,6 @@ function getRandomRating()
 		$txt .= '</span>';
 
 	return $txt;
-}
-
-function getRandomFullImage()
-{
-	$full = App\Models\View_holding_frontpage::where('material_type_id','!=',3)->limit(5)->get()->random(5);
-	return $full;
-}
-
-function getRandomSingleFullImage()
-{
-	$full = App\Models\Fullpage::all()->random(1)->first();;
-	return $full['filename'];
 }
 
 function randomNum()
