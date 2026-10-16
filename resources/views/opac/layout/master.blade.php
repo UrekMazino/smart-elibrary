@@ -328,7 +328,7 @@
 	<script src="{{ asset('opac/DataTables/DataTables-1.12.1/js/jquery.dataTables.min.js') }}"></script>
 	<script src="{{ asset('opac/DataTables/DataTables-1.12.1/js/dataTables.bootstrap5.min.js') }}"></script>
 
-	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.25"></script>
 	@auth
 		@if(Auth::user()->usertype === 'Patron')
 			@include('opac.partials.quick-review')

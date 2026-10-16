@@ -51,7 +51,7 @@ class NewsController extends Controller
 
         $news->news_title = request()->news_title;
         $news->redirect_url = request()->news_url;
-        $news->news_body = request()->news_body;
+        $news->news_body = cleanNewsHtml(request()->news_body);
         $news->featured = request()->is_featured ? 'Yes' : 'No';
         $news->created_by = Auth::id();
         $news->save();
@@ -73,7 +73,7 @@ class NewsController extends Controller
         $article = News::findOrFail($id);
         $article->news_title = request()->news_title;
         $article->redirect_url = request()->news_url;
-        $article->news_body = request()->news_body;
+        $article->news_body = cleanNewsHtml(request()->news_body);
         $article->featured = request()->is_featured ? 'Yes' : 'No';
         
         // Check if a new cover image has been uploaded

@@ -62,7 +62,7 @@
 @section('js')
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net/jquery.dataTables.js') }}"></script>
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net-bs5/dataTables.bootstrap5.js') }}"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.31.0/min/moment.min.js"></script>
 <script src="{{ asset('js/admin/view-modals.js') }}"></script>
 <script> 
   let viewMaterialUrl = '{{ url("/admin/reservation/material-json") }}';

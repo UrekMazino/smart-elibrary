@@ -241,6 +241,27 @@ function fineAmount($value) {
 	return is_numeric($value) ? round((float) $value, 2) : null;
 }
 
+// A news article's body as the editor may hold it: the formatting the TinyMCE toolbar produces
+// (headings, lists, links, images, tables, alignment) and nothing else. Scripts, event handlers,
+// iframes, embedded media, comments and TinyMCE's own data-mce-* / mce:protected markup are
+// dropped: those are how the known TinyMCE 6 XSS advisories reach a staff member's browser when
+// a crafted body is opened in the editor. Applied on save and again when the editor loads.
+function cleanNewsHtml(?string $html): string {
+	static $sanitizer = null;
+	$sanitizer ??= new Symfony\Component\HtmlSanitizer\HtmlSanitizer(
+		(new Symfony\Component\HtmlSanitizer\HtmlSanitizerConfig())
+			->allowSafeElements()
+			->allowLinkSchemes(['http', 'https', 'mailto'])
+			->allowMediaSchemes(['http', 'https'])
+			->allowRelativeLinks()
+			->allowRelativeMedias()
+			->allowAttribute('style', ['p', 'div', 'span', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'img', 'table', 'td', 'th', 'li'])
+			->forceAttribute('a', 'rel', 'noopener noreferrer')
+			->withMaxInputLength(200000)
+	);
+	return $sanitizer->sanitize((string) $html);
+}
+
 // Total unseen chat messages FROM patrons (drives the admin Reservation menu badge).
 function getReservationUnseenMsgCount() {
 	return DB::table('reservation_messages')
