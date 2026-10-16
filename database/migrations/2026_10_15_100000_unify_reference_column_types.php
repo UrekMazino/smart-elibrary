@@ -20,12 +20,16 @@ use Illuminate\Support\Facades\DB;
  *    (utf8mb4_general_ci, not utf8mb4_unicode_ci): the inventory reports join the two, and MySQL
  *    refuses "=" between columns of different collations.
  *
- * Empty strings and 0 in nullable reference columns mean "none" and become NULL. Anything else
- * that is not a whole number stops the migration before a column is changed, because MySQL
- * would otherwise turn it into 0 without complaint.
+ * Empty strings and 0 in nullable reference columns mean "none" and become NULL, as do the
+ * SYSTEM_MARKERS that console imports wrote into the text audit columns in place of a user id.
+ * Anything else that is not a whole number stops the migration before a column is changed,
+ * because MySQL would otherwise turn it into 0 without complaint.
  */
 return new class extends Migration
 {
+    /** Written by catalog:import-corpus instead of a user id: no account did the work. */
+    private const SYSTEM_MARKERS = ['corpus-import'];
+
     /** [table, column, new definition, original definition] */
     private const COLUMNS = [
         // Catalogue references -> catalogs.id
@@ -74,10 +78,12 @@ return new class extends Migration
     public function up(): void
     {
         $bad = [];
-        foreach (self::COLUMNS as [$table, $column, $type]) {
+        foreach (self::COLUMNS as [$table, $column, $type, $original]) {
             $nullable = ! str_contains($type, 'NOT NULL');
+            $markers = $nullable && str_starts_with($original, 'VARCHAR');
             $count = DB::table($table)->whereNotNull($column)
                 ->when($nullable, fn ($q) => $q->whereRaw("TRIM(`$column`) NOT IN ('', '0')"))
+                ->when($markers, fn ($q) => $q->whereNotIn($column, self::SYSTEM_MARKERS))
                 ->whereRaw("CAST(`$column` AS CHAR) NOT REGEXP '^[0-9]+$'")
                 ->count();
             if ($count) $bad[] = "$table.$column ($count)";
@@ -87,9 +93,12 @@ return new class extends Migration
                 . '. Correct or clear those rows, then migrate again.');
         }
 
-        foreach (self::COLUMNS as [$table, $column, $type]) {
+        foreach (self::COLUMNS as [$table, $column, $type, $original]) {
             $nullable = ! str_contains($type, 'NOT NULL');
             if ($nullable) DB::table($table)->whereRaw("TRIM(`$column`) = ''")->update([$column => null]);
+            if ($nullable && str_starts_with($original, 'VARCHAR')) {
+                DB::table($table)->whereIn($column, self::SYSTEM_MARKERS)->update([$column => null]);
+            }
             DB::statement("ALTER TABLE `$table` MODIFY `$column` $type");
             // After the change: a column that was NOT NULL (patrontypes_id) can only now hold NULL.
             if ($nullable) DB::table($table)->where($column, 0)->update([$column => null]);

@@ -196,8 +196,8 @@ class ImportCorpusCatalog extends Command
                 'accession_number'  => $rec['stem'],
                 'field_data'        => $this->fieldData($rec, $title, $note),
                 'is_published'      => $hold ? 0 : 1,
-                'created_by'        => 'corpus-import',
-                'updated_by'        => 'corpus-import',
+                'created_by'        => null,   // no account: a console import
+                'updated_by'        => null,
             ]);
 
             $view = ViewCatalog::create([
@@ -215,8 +215,8 @@ class ImportCorpusCatalog extends Command
                 'pub_year'         => $year,
                 'joint_authors'    => $rec['authors'] ?? null,
                 'subjects'         => marcSubjects($catalog->field_data),
-                'created_by'       => 'corpus-import',
-                'updated_by'       => 'corpus-import',
+                'created_by'       => null,
+                'updated_by'       => null,
             ]);
 
             // is_published is NOT in ViewCatalog's $fillable — passing it to create() above
