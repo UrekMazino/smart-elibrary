@@ -428,6 +428,8 @@ License: For each use you must have a valid license purchased only from above li
 	<!-- endinject -->
 
   <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/sweetalert2/sweetalert2.min.js') }}"></script>
+  {{-- data-confirm on a form, link or button: ask before a delete / remove. --}}
+  @include('admin.partials.confirm-js')
 
 
 	<!-- Custom js for this page -->

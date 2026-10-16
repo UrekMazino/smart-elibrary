@@ -319,7 +319,9 @@
                                         </form>
 
                                         @if(!is_null($fullText))
-                                            <form action="{{ route('delete-fulltext') }}" method="POST" class="mt-2">
+                                            <form action="{{ route('delete-fulltext') }}" method="POST" class="mt-2"
+                                                  data-confirm-title="Remove the full text?" data-confirm-button="Remove"
+                                                  data-confirm="Patrons can no longer read or download this PDF, and the AI search drops its text. The file is kept on the server.">
                                                 @csrf
                                                 @method('DELETE')
                                                 <input type="hidden" value="{{$record->id}}" name="catalog_id">
@@ -460,7 +462,9 @@
 
                                         {{-- A placeholder is turned off with the switch above; this removes a real cover. --}}
                                         @if($hasRealCover)
-                                            <form action="{{ route('delete-coverphoto') }}" method="POST" class="mt-2">
+                                            <form action="{{ route('delete-coverphoto') }}" method="POST" class="mt-2"
+                                                  data-confirm-title="Remove the cover photo?" data-confirm-button="Remove"
+                                                  data-confirm="{{ $placeholdersOn && $placeholderPref ? 'The record shows its generated placeholder cover instead.' : 'The record shows no cover until a new one is uploaded.' }}">
                                                 @csrf
                                                 @method('DELETE')
                                                 <input type="hidden" value="{{$record->id}}" name="catalog_id">

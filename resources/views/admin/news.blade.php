@@ -91,7 +91,7 @@
 								<button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">Action</button>
 								<div class="dropdown-menu dropdown-menu-end">
 									<a class="dropdown-item" href="${editUrl}"><i data-feather="edit-2" class="icon-sm me-2"></i>Edit</a>
-									<form method="POST" action="${deleteUrl}" onsubmit="return confirm('Delete this news article? This cannot be undone.');">
+									<form method="POST" action="${deleteUrl}" data-confirm-title="Delete this news article?" data-confirm="This cannot be undone.">
 										<input type="hidden" name="_method" value="DELETE">
 										<input type="hidden" name="_token" value="${csrfToken}">
 										<button type="submit" class="dropdown-item text-danger"><i data-feather="trash-2" class="icon-sm me-2"></i>Delete</button>
