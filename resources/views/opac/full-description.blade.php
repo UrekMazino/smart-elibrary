@@ -491,6 +491,7 @@
 @endsection
 
 @section('js')
+@include('opac.partials.guest-login-js')
 <script type="text/javascript">
 var inquiryIsGuest = {{ Auth::check() ? 'false' : 'true' }};
 var inquiryIsBlocked = {{ Auth::check() && Auth::user()->is_blocked ? 'true' : 'false' }};
@@ -572,32 +573,9 @@ function positionReader()
 }
 
 // Read, Download and Save are for signed-in patrons only. Guests get the same sign-in popup
-// for each (the /read, /download and /search/saved routes also enforce this).
+// for each (promptGuestLogin: opac.partials.guest-login-js, shared with the search results;
+// the /read, /download and /search/saved routes also enforce this).
 var fdIsGuest = @json(! Auth::check());
-var guestPrompts = {
-	read:     ['Sign in to read',     'Reading materials online is available to registered members. Log in or create a free account to continue.'],
-	download: ['Sign in to download', 'Downloading materials is available to registered members. Log in or create a free account to continue.'],
-	save:     ['Sign in to save',     'Saving materials to your list is available to registered members. Log in or create a free account to continue.']
-};
-
-function promptGuestLogin(action)
-{
-	if (!window.Swal) { window.location = @json(route('login')); return; }
-	Swal.fire({
-		icon: 'info',
-		title: guestPrompts[action][0],
-		text: guestPrompts[action][1],
-		showDenyButton: true,
-		showCancelButton: true,
-		confirmButtonText: 'Log in',
-		denyButtonText: 'Register',
-		cancelButtonText: 'Not now',
-		reverseButtons: true
-	}).then(function (r) {
-		if (r.isConfirmed) window.location = @json(route('login'));
-		else if (r.isDenied) window.location = @json(route('register'));
-	});
-}
 
 // Patrons get the quick review popup after a download, or after reading for a minute
 // (opac.partials.quick-review); a saved review reloads the page so it shows in Reviews.
