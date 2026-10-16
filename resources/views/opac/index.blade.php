@@ -133,7 +133,7 @@
 	<nav class="section-nav" aria-label="Page sections">
 		<a href="#sec-search"  data-label="Search"  class="active"><i></i></a>
 		<a href="#sec-shelves" data-label="Shelves"><i></i></a>
-		<a href="#sec-misc"    data-label="Recent"><i></i></a>
+		<a href="#sec-misc"    data-label="Highlights"><i></i></a>
 	</nav>
 {{-- @if(Auth::user() && !checkCSF()) {{ session(['message' => 'Hello! Can we have a minute of your time to answer our CSF form. Thank you!']); }} @endif --}}
 		@if (session('message'))
@@ -275,7 +275,7 @@
 
 		<div id="sec-shelves">@include('opac.partials.shelf-browser')</div>
 		<style>
-			/* Recent section — compact, minimalist carousels (Recent Uploads / Top lists / News) */
+			/* Highlights section — compact, minimalist carousels (Recent Uploads / Top lists / News) */
 			#sec-misc { padding:20px 0 36px; }
 			.cover-carousel { max-width:1680px; margin:0 auto; padding:4px 24px 2px; }
 			.cover-carousel .main_title { text-align:center; margin-bottom:6px; }
