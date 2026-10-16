@@ -28,7 +28,7 @@ They share **one MySQL database** (`elibrarydb`) and the eLibrary **`.env`** —
 # 1. code + dependencies
 git pull
 composer install --no-dev --optimize-autoloader
-npm install && npm run prod                           # there is no "build" script (Laravel Mix)
+npm ci && npm run build                               # Vite -> public/build (also committed, so optional)
 php artisan storage:link                              # public/thumb, pdf, news_cover, ... -> storage/app/public
 
 # 2. database  — see the landmine note below before running this
