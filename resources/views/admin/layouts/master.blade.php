@@ -48,6 +48,13 @@ License: For each use you must have a valid license purchased only from above li
   <!-- Layout styles -->  
 	<link rel="stylesheet" href="{{ asset('admintemplate/nobleui/template/assets/css/demo1/style.css') }}">
   <!-- End layout styles -->
+  <style>
+    /* NobleUI's template.js adds .overflow-hidden to <body> while the pointer is over the sidebar,
+       to stop the page scrolling under it. That hid the page scrollbar, so the whole page widened
+       and narrowed by its 15px every time the pointer crossed between the sidebar and the content
+       (and the page could not be scrolled from over the sidebar). Leave the page's overflow alone. */
+    body.overflow-hidden { overflow: visible !important; }
+  </style>
 
   	<!-- Favicons-->
 	<link rel="shortcut icon" href="{{ asset('assets/images/elibrary-02.png') }}">

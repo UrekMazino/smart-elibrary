@@ -421,6 +421,7 @@
 @endsection
 
 @section('js')
+@include('opac.partials.guest-login-js')
 <script type="text/javascript">
 	// ---- Minimalist section nav: smooth-scroll (offset for the sticky header) + scrollspy ----
 	(function () {
@@ -630,24 +631,7 @@
 	var isGuest = !@json(auth()->check());
 
 	function promptLogin() {
-		if (window.Swal) {
-			Swal.fire({
-				icon: 'info',
-				title: 'Sign in to use AI mode',
-				text: 'Asking the library’s AI is available to registered members. Log in or create a free account to continue.',
-				showDenyButton: true,
-				showCancelButton: true,
-				confirmButtonText: 'Log in',
-				denyButtonText: 'Register',
-				cancelButtonText: 'Not now',
-				reverseButtons: true
-			}).then(function (r) {
-				if (r.isConfirmed) window.location = "{{ url('/login') }}";
-				else if (r.isDenied) window.location = "{{ url('/register') }}";
-			});
-		} else {
-			window.location = "{{ url('/login') }}";
-		}
+		promptGuestLogin('ai');   // opac.partials.guest-login-js, the same popup as Read / Download / Save
 	}
 
 	$('.mode-btn').on('click', function () {
@@ -786,21 +770,7 @@
 		Swal.fire({ toast: true, position: 'bottom', icon: icon || 'success', title: text, showConfirmButton: false, timer: 1800, timerProgressBar: false });
 	}
 	function promptLogin() {
-		if (!window.Swal) { window.location = "{{ url('/login') }}"; return; }
-		Swal.fire({
-			icon: 'info',
-			title: 'Sign in to save materials',
-			text: 'Saving materials to your list is available to registered members. Log in or create a free account to continue.',
-			showDenyButton: true,
-			showCancelButton: true,
-			confirmButtonText: 'Log in',
-			denyButtonText: 'Register',
-			cancelButtonText: 'Not now',
-			reverseButtons: true
-		}).then(function (r) {
-			if (r.isConfirmed) window.location = "{{ url('/login') }}";
-			else if (r.isDenied) window.location = "{{ url('/register') }}";
-		});
+		promptGuestLogin('save');   // opac.partials.guest-login-js, the same popup as the search results
 	}
 
 	document.addEventListener('click', function (e) {
