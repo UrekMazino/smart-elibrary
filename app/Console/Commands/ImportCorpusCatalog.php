@@ -7,6 +7,7 @@ use App\Models\Frontpage;
 use App\Models\Material;
 use App\Models\Multimedia;
 use App\Models\ViewCatalog;
+use App\Services\SearchIndex;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -97,6 +98,9 @@ class ImportCorpusCatalog extends Command
         $fh = fopen($file, 'r');
         $n = 0;
 
+        // Search-index updates go out in chunks of 500 as the import runs (SearchIndex).
+        SearchIndex::hold();
+
         while (($line = fgets($fh)) !== false) {
             $line = trim($line);
             if ($line === '') {
@@ -137,6 +141,7 @@ class ImportCorpusCatalog extends Command
         }
 
         fclose($fh);
+        SearchIndex::release();
 
         $this->newLine();
         $this->info(($dry ? 'Would import' : 'Imported') . ": {$stats['imported']}");
@@ -152,7 +157,7 @@ class ImportCorpusCatalog extends Command
         if (! $dry && $stats['imported'] > 0) {
             clearHomeCache();
             $this->newLine();
-            $this->comment('Next: php artisan scout:import "App\Models\ViewCatalog"  (make them searchable)');
+            $this->comment('Search index: the imported records were added as they were imported.');
         }
 
         return self::SUCCESS;
@@ -227,6 +232,7 @@ class ImportCorpusCatalog extends Command
             // become mass-assignable app-wide.
             $view->is_published = $hold ? 0 : 1;
             $view->save();
+            SearchIndex::refresh($catalog->id);
 
             // Full text: copy the PDF in the way the app expects (public/pdf + multimedia).
             if (! empty($rec['pdf']) && is_file($rec['pdf'])) {

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\SearchIndex;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -19,12 +20,8 @@ class Multimedia extends Model
 
     public function syncSearchIndex(): void
     {
-        if (! $this->catalog_id) return;
-        try {
-            ViewCatalog::where('catalog_id', $this->catalog_id)->searchable();
-        } catch (\Throwable $e) {
-            report($e);   // search engine down: the upload itself must still succeed
-        }
+        // Sent after the change commits; a search engine that is down never fails the upload.
+        SearchIndex::refresh($this->catalog_id);
     }
 
     protected $fillable = [

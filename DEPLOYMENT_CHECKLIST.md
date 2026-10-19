@@ -64,8 +64,16 @@ php artisan permission:cache-reset                    # roles/permissions are ca
 | `HERMES_GATEWAY_URL` | `http://127.0.0.1:8090` | AI mode gateway |
 | `HERMES_GATEWAY_TOKEN` | shared secret | **must match** what `start-rag-api.ps1` uses |
 
-Also: HTTPS + force-https, one canonical host (www **or** apex, 301 the other), and a cron entry for
-the scheduler — `* * * * * php artisan schedule:run` — or the daily sitemap refresh never happens.
+Also: HTTPS + force-https, one canonical host (www **or** apex, 301 the other).
+
+### The scheduler (required)
+Without it nothing in `app/Console/Kernel.php` runs: the sitemap is never regenerated (03:30) and the
+nightly search-index reconcile never happens (03:45; it also keeps the *Most viewed* sort current).
+- **Windows (Laragon):** run once `powershell -ExecutionPolicy Bypass -File scripts\register-scheduler-task.ps1`
+  (add `-Php "<path to php.exe>"` if PHP is not on PATH). It registers the `eLibrary-scheduler` logon
+  task, which keeps `php artisan schedule:work` running.
+- **Linux:** a cron entry, `* * * * * cd /path/to/elibrary && php artisan schedule:run >> /dev/null 2>&1`.
+- Check: `php artisan schedule:list` shows what runs when.
 
 ---
 

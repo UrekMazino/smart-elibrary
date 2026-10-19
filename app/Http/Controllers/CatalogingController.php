@@ -24,6 +24,7 @@ use App\Services\MarcExportService;
 use App\Services\MarcMaterialMapper;
 use App\Models\MaterialTypeMap;
 use App\Services\RagSync;
+use App\Services\SearchIndex;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -584,6 +585,9 @@ class CatalogingController extends Controller
 
         // The import report: records imported, imported but flagged for review, and skipped.
         $imported = $flagged = $skipped = 0;
+
+        // The file's search-index updates go out in chunks of 500, not one call per record.
+        SearchIndex::hold();
 
         foreach($fields as $index => $f) {
             $marcTags = [];
@@ -1227,6 +1231,8 @@ class CatalogingController extends Controller
           
         }
 
+        SearchIndex::release();
+
         $catalogImport->update(['imported_count' => $imported, 'skipped_count' => $skipped]);
         // CatalogImportProgress::truncate();
 
@@ -1403,9 +1409,8 @@ class CatalogingController extends Controller
             RagSync::enqueueMany($batchIds, RagSync::DELETE, 'deleted');
         });
 
-        // Same as destroyRecord: the query-builder update bypasses Scout, so remove the
-        // whole batch from the search index (else the docs linger with deleted_at = null).
-        ViewCatalog::where('catalog_import_id', $request->id)->get()->unsearchable();
+        // Remove the whole batch from the search index (deleted records leave it).
+        SearchIndex::refresh($batchIds);
 
         // Deleting a batch changes the collection -> bust the home caches (destroyRecord
         // already does this; batch delete was missing it and left a stale homepage).
@@ -1812,13 +1817,14 @@ class CatalogingController extends Controller
 
     /**
      * Create a catalogue record and its OPAC row (view_catalogs) in one transaction: either both
-     * exist or neither does. Scout indexes the OPAC row after the commit (scout.after_commit).
+     * exist or neither does. The search index gets the record after the commit (SearchIndex).
      */
     private function createWithOpacRow(array $catalogRow, array $opacRow): Catalog
     {
         return DB::transaction(function () use ($catalogRow, $opacRow) {
             $catalog = Catalog::create($catalogRow);
             ViewCatalog::create(['catalog_id' => $catalog->id] + $opacRow);
+            SearchIndex::refresh($catalog->id);
             return $catalog;
         });
     }
@@ -2070,10 +2076,9 @@ class CatalogingController extends Controller
             RagSync::enqueue((int) $request->id, RagSync::DELETE, 'deleted');
         });
 
-        // Query-builder updates bypass Scout, so drop the record from the search index.
-        // Otherwise its Meilisearch doc keeps deleted_at = null, still matches the OPAC's
-        // "deleted_at IS NULL" filter, and inflates the result count vs what's shown.
-        optional(ViewCatalog::where('catalog_id', $request->id)->first())->unsearchable();
+        // Drop the record from the search index. Otherwise its document keeps deleted_at = null,
+        // still matches the OPAC's "deleted_at IS NULL" filter, and inflates the result count.
+        SearchIndex::refresh((int) $request->id);
 
         clearHomeCache();
 
@@ -2322,13 +2327,9 @@ class CatalogingController extends Controller
         });
 
         if($catalog) {
-            // A query-builder update doesn't reach the search index: refresh this record's entry,
-            // or the OPAC keeps finding it by its old title, authors and subjects.
-            try {
-                ViewCatalog::where('catalog_id', $id)->searchable();
-            } catch (\Throwable $e) {
-                report($e);
-            }
+            // Refresh this record's search entry, or the OPAC keeps finding it by its old title,
+            // authors and subjects.
+            SearchIndex::refresh((int) $id);
 
             $this->recheckImportIssue((int) $id, $opacRow);
         }
@@ -2528,18 +2529,18 @@ class CatalogingController extends Controller
                     ViewCatalog::whereIn('catalog_id', $target)->update($stamp);
                     RagSync::enqueueMany($target, $to ? RagSync::UPSERT : RagSync::DELETE, $to ? 'published' : 'unpublished');
                 });
-                // Query-builder updates bypass Scout: re-index so OPAC search sees the new is_published.
-                ViewCatalog::whereIn('catalog_id', $target)->searchable();
+                // Re-index so OPAC search sees the new is_published.
+                SearchIndex::refresh($target);
                 $changed += count($target);
             } elseif ($action === 'delete') {
-                // Drop from the search index first (same reason as destroyRecord), then soft-delete.
-                ViewCatalog::whereIn('catalog_id', $chunk)->get()->unsearchable();
                 $stamp = ['deleted_at' => now(), 'deleted_by' => $userId];
                 DB::transaction(function () use ($chunk, $stamp) {
                     Catalog::whereIn('id', $chunk)->update($stamp);
                     ViewCatalog::whereIn('catalog_id', $chunk)->update($stamp);
                     RagSync::enqueueMany($chunk, RagSync::DELETE, 'deleted');
                 });
+                // Drop them from the search index (same reason as destroyRecord).
+                SearchIndex::refresh($chunk);
                 $changed += count($chunk);
             } else {   // reindex: just queue; the worker gates on is_published as usual
                 RagSync::enqueueMany($chunk, RagSync::UPSERT, 'manual');
@@ -2700,72 +2701,6 @@ class CatalogingController extends Controller
         ];
     }
 
-    public function holdAllPublished()
-    {
-        $user = Auth::user();
-
-        // Record flags, OPAC flags and the RAG outbox change together. All held -> queue for
-        // RAG sync to remove them from the index.
-        DB::transaction(function () use ($user) {
-            // Capture the affected ids BEFORE the flip (they won't match is_published=1 after).
-            $affected = Catalog::where('is_published', 1)->lockForUpdate()->pluck('id');
-
-            Catalog::where('is_published', 1)
-            ->update([
-                'is_published' => 0,
-                'updated_at' => now(),
-                'updated_by' => $user->id,
-            ]);
-
-            ViewCatalog::where('is_published', 1)
-            ->update([
-                'is_published' => 0,
-                'updated_at' => now(),
-                'updated_by' => $user->id,
-            ]);
-
-            RagSync::enqueueMany($affected, RagSync::DELETE, 'unpublished');
-        });
-
-        // Bulk change -> re-index so Meilisearch reflects the new is_published values.
-        ViewCatalog::makeAllSearchable();
-
-        return response()->json(['success' => true]);
-    }
-
-    public function publishAllOnhold(Request $request)
-    {
-        $user = Auth::user();
-
-        // Record flags, OPAC flags and the RAG outbox change together. All published -> queue
-        // for RAG sync to index them.
-        DB::transaction(function () use ($user) {
-            // Capture the affected ids BEFORE the flip (they won't match is_published=0 after).
-            $affected = Catalog::where('is_published', 0)->lockForUpdate()->pluck('id');
-
-            Catalog::where('is_published', 0)
-            ->update([
-                'is_published' => 1,
-                'updated_at' => now(),
-                'updated_by' => $user->id,
-            ]);
-
-            ViewCatalog::where('is_published', 0)
-            ->update([
-                'is_published' => 1,
-                'updated_at' => now(),
-                'updated_by' => $user->id,
-            ]);
-
-            RagSync::enqueueMany($affected, RagSync::UPSERT, 'published');
-        });
-
-        // Bulk change -> re-index so Meilisearch reflects the new is_published values.
-        ViewCatalog::makeAllSearchable();
-
-        return response()->json(['success' => true]);
-    }
-
     public function publishToOpac(Request $request)
     {
         $user = Auth::user();
@@ -2790,9 +2725,9 @@ class CatalogingController extends Controller
             RagSync::enqueue((int) $request->catalog_id, RagSync::UPSERT, 'published');
         });
 
-        // Query-builder updates bypass Scout's observers, so re-index the record — else
-        // Meilisearch keeps the stale is_published and the OPAC search filter hides it.
-        optional(ViewCatalog::where('catalog_id', $request->catalog_id)->first())->searchable();
+        // Re-index the record, else the search index keeps the stale is_published and the OPAC
+        // search filter hides it.
+        SearchIndex::refresh((int) $request->catalog_id);
 
         // The homepage shelves list published records (10-min cache): show it there now.
         clearHomeCache();
@@ -2824,8 +2759,8 @@ class CatalogingController extends Controller
             RagSync::enqueue((int) $request->catalog_id, RagSync::DELETE, 'unpublished');
         });
 
-        // Re-index so Meilisearch reflects is_published=0 (record hidden from OPAC search).
-        optional(ViewCatalog::where('catalog_id', $request->catalog_id)->first())->searchable();
+        // Re-index so the search index reflects is_published=0 (record hidden from OPAC search).
+        SearchIndex::refresh((int) $request->catalog_id);
 
         // ...and drop it from the cached homepage shelves now, not after their 10-min TTL.
         clearHomeCache();
@@ -2839,7 +2774,7 @@ class CatalogingController extends Controller
 
         // Record flags, OPAC flags and the RAG outbox change together: the whole batch is queued
         // for RAG sync — publish -> index, hold -> remove.
-        DB::transaction(function () use ($request, $user) {
+        $batchIds = DB::transaction(function () use ($request, $user) {
             Catalog::where('catalog_import_id', $request->catalog_import_id)
             ->update([
                 'is_published' => $request->action == 1 ? 1 : 0,
@@ -2860,10 +2795,11 @@ class CatalogingController extends Controller
                 $request->action == 1 ? RagSync::UPSERT : RagSync::DELETE,
                 $request->action == 1 ? 'published' : 'unpublished'
             );
+            return $batchIds;
         });
 
-        // Re-index the batch so Meilisearch reflects the new is_published values.
-        ViewCatalog::where('catalog_import_id', $request->catalog_import_id)->get()->each(fn($m) => $m->searchable());
+        // Re-index the batch (in chunks) so the search index reflects the new is_published values.
+        SearchIndex::refresh($batchIds);
 
         // The homepage shelves list published records (10-min cache): reflect the batch now.
         clearHomeCache();

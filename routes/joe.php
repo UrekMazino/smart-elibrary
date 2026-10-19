@@ -137,8 +137,6 @@ Route::controller(CatalogingController::class, 'admin')->middleware('can:access.
         ->where(['token' => '[A-Za-z0-9]{40}', 'format' => 'mrc|xml'])->middleware('throttle:60,1');
 
     Route::middleware('can:publish-hold.catalog')->group(function () {
-        Route::post('/admin/hold-all-published', 'holdAllPublished');
-        Route::post('/admin/publish-all-onhold', 'publishAllOnhold');
         Route::post('/admin/publish-to-opac', 'publishToOpac');
         Route::post('/admin/hold-view-from-opac', 'holdViewFromOpac');
         Route::post('/admin/batch-publish', 'togglePublishHoldMaterial');

@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Frontpage;
 use App\Models\ViewCatalog;
 use App\Services\RagSync;
+use App\Services\SearchIndex;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -71,9 +72,7 @@ class RebuildCatalogAuthors extends Command
         });
         $this->info('Updated ' . count($changes) . ' record(s).');
 
-        foreach (array_chunk($ids, 500) as $chunk) {
-            ViewCatalog::whereIn('catalog_id', $chunk)->searchable();
-        }
+        SearchIndex::refresh($ids);
         RagSync::enqueueMany($ids, RagSync::UPSERT, 'authors-rebuild');
 
         $regenerated = 0;

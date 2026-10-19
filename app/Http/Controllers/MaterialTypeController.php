@@ -4,8 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Material;
 use App\Models\MaterialTypeMap;
-use App\Models\ViewCatalog;
-use App\Services\RagSync;
+use App\Services\SearchIndex;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -170,15 +169,14 @@ class MaterialTypeController extends Controller
         return response()->json(['message' => '“' . $m->name . '” deleted.']);
     }
 
-    /** Re-index the records of a type (search + AI) and refresh cached OPAC pages. */
+    /**
+     * Re-index the records of a type in OPAC search and refresh cached OPAC pages. The AI index is
+     * left alone: it never reads material types, and queuing the type's records re-embedded every
+     * one of them (about 40 minutes per 2,000 records) for unchanged text.
+     */
     private function resync(int $materialId): void
     {
-        ViewCatalog::where('material_type_id', $materialId)->searchable();
-        RagSync::enqueueMany(
-            DB::table('view_catalogs')->where('material_type_id', $materialId)->pluck('catalog_id'),
-            RagSync::UPSERT,
-            'material-type-change'
-        );
+        SearchIndex::refresh(DB::table('view_catalogs')->where('material_type_id', $materialId)->pluck('catalog_id'));
         clearHomeCache();
     }
 

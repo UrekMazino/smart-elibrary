@@ -27,5 +27,7 @@ class MaterialTypeMergeTest extends TestCase
         $this->assertSame($into, (int) DB::table('catalogs')->where('id', $catalogId)->value('material_type_id'));
         $this->assertSame('Book', DB::table('view_catalogs')->where('catalog_id', $catalogId)->value('material_type'));
         $this->assertFalse(DB::table('materials')->where('id', $from)->exists());
+        // The AI index never reads material types: a merge must not queue its records for re-embedding.
+        $this->assertSame(0, DB::table('rag_sync_queue')->count());
     }
 }

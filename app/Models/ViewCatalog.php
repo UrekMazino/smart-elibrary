@@ -53,6 +53,11 @@ class ViewCatalog extends Model
 
     protected static function booted(): void
     {
+        // The search index is updated by App\Services\SearchIndex only, never by Scout's automatic
+        // model syncing: most writes use the query builder, which it never sees, and a document
+        // also depends on full texts, covers and views. One owner, so nothing is indexed twice.
+        static::disableSearchSyncing();
+
         // pub_year is free text ("[1960]", "c1978"); keep its numeric year in step on every save.
         static::saving(function (ViewCatalog $vc) {
             if (! $vc->exists || $vc->isDirty('pub_year')) {
