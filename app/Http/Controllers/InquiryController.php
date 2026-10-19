@@ -10,6 +10,13 @@ class InquiryController extends Controller
 {
     public function create()
     {
+        // Inquiries come from patrons. Staff browsing the OPAC see the button disabled; this
+        // refuses a direct post too (staff answer inquiries from the admin, through reply()).
+        if(Auth::check() && Auth::user()->isStaff())
+        {
+            return redirect()->back()->with('error', 'Inquiries are sent by patrons. You are signed in as staff.');
+        }
+
         // Blocked accounts cannot use chat / inquiry.
         if(Auth::check() && Auth::user()->is_blocked)
         {
@@ -43,11 +50,8 @@ class InquiryController extends Controller
         $inq->message = request()->inquiry_message;
 
         $inq->save();
-        
-        if(Auth::check() && in_array(Auth::user()->usertype, ['Administrator','Developer']))
-            return redirect('/admin/inquiry');
-        else
-            return view('opac.thank-you',['message' => 'Thank You!<br/>We will contact you as soon as possible!']);
+
+        return view('opac.thank-you',['message' => 'Thank You!<br/>We will contact you as soon as possible!']);
     }
 
     public function reply()

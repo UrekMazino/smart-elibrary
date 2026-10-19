@@ -65,6 +65,16 @@ class User extends Authenticatable
         'is_blocked' => 'boolean',
     ];
 
+    /**
+     * A staff account: it can open the admin panel. Staff can also browse the OPAC (search, read,
+     * download, share, save), but not as a patron: no profile, notifications, inquiries,
+     * reservations or reviews, and their views, reads and downloads are not counted in the statistics.
+     */
+    public function isStaff(): bool
+    {
+        return in_array($this->usertype, ['Administrator', 'Developer'], true);
+    }
+
     // public function patrontypes()
     // {
     //     return $this->hasMany(Patrontype::class);

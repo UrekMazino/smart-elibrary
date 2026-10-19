@@ -138,7 +138,7 @@
 {{-- @if(Auth::user() && !checkCSF()) {{ session(['message' => 'Hello! Can we have a minute of your time to answer our CSF form. Thank you!']); }} @endif --}}
 		@if (session('message'))
 			<div class="alert @if(!checkCSF())alert-warning @else alert-success @endif text-center" style="margin-bottom:0; padding: 10px 1rem;" role="alert">
-				{{ session('message') }} @if(!checkCSF()) <a href="{{ url('/csf/system-review') }}"><u>Go to CSF</u></a> @endif
+				{{ session('message') }} @if(!checkCSF() && ! (Auth::check() && Auth::user()->isStaff())) <a href="{{ url('/csf/system-review') }}"><u>Go to CSF</u></a> @endif
 			</div>
 			@php session()->forget('message'); @endphp
 		@endif
@@ -462,7 +462,8 @@
       });
 
 </script>
-@if(!checkCSF() && Auth::user())
+{{-- The client satisfaction survey is for patrons, not staff browsing the OPAC. --}}
+@if(Auth::user() && ! Auth::user()->isStaff() && !checkCSF())
 <script type="text/javascript">
 
     $(window).on('load', function() {

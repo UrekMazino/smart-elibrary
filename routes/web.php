@@ -17,6 +17,11 @@ use App\Http\Controllers\HomeController;
 
 Route::get('/home', [HomeController::class, 'index']);
 Route::get('/', [HomeController::class, 'index2']);
+// Staff open the OPAC from the admin navbar, and come back with its "Return to admin" button.
+Route::middleware(['auth', 'admin'])->group(function () {
+    Route::get('/admin/opac', [HomeController::class, 'openOpac'])->name('admin.opac');
+    Route::get('/admin/opac/return', [HomeController::class, 'returnToAdmin'])->name('admin.return');
+});
 
 require __DIR__.'/auth.php';
 require __DIR__.'/joe.php';

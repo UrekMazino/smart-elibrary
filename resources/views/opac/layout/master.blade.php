@@ -137,6 +137,11 @@
 							});
 							</script>
 							@endif
+							@if(Auth::user()->isStaff())
+							{{-- Staff browsing the OPAC from the admin: no patron menu (profile, reservations,
+							     inquiries, reviews), just the way back to the admin page they came from. --}}
+							<li class="acct-li acct-li-register"><a href="{{ route('admin.return') }}" class="acct-register">Return to admin</a></li>
+							@else
 							<li class="submenu">
 								<a href="#0" class="show-submenu">Welcome, {{Auth::user()->name}} <i class="icon-down-open-mini"></i></a>
 								<ul>
@@ -153,11 +158,14 @@
 								</ul>
 
 							</li>
+							@endif
 							@else
 							{{-- Guests: "Log in" as a plain link for returning members, "Register" as the one filled
 							     button for newcomers. In the phone menu they become two full-width buttons, Register first. --}}
 							<li class="acct-li acct-li-login"><a href="{{ route('login') }}" class="acct-login">Log in</a></li>
 							<li class="acct-li acct-li-register"><a href="{{ route('register') }}" class="acct-register">Register</a></li>
+							@endauth
+							{{-- Account buttons: guests' "Log in" / "Register", staff's "Return to admin". --}}
 							<style>
 								.main-menu > ul > li.acct-li { vertical-align: top; }
 								/* 30px lines keep the header as tall as the old icon "Login" (and the patrons' bell). */
@@ -177,9 +185,8 @@
 									.main-menu > ul > li > a.acct-register:hover { background-color: #006f65; color: #fff !important; }
 								}
 							</style>
-							@endauth
 						</ul>
-						{!! getNotif('overall') !!}
+						@unless(Auth::check() && Auth::user()->isStaff()) {!! getNotif('overall') !!} @endunless
 					</div>
 					<!-- /main-menu -->
 

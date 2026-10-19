@@ -8,24 +8,47 @@ use Auth;
 
 class HomeController extends Controller
 {
+    /** The OPAC home, for guests, patrons and staff alike (staff open it from the admin navbar). */
     public function index()
     {
-        if(!Auth::user())
-        {
-            return view('opac.index');
-        }
-        else
-        {
-            if(Auth::user()->usertype == 'Patron')
-            {
-                return view('opac.index');
-            }
-            else
-            {
-                return redirect(self::adminLandingUrl(Auth::user()));
-            }
+        return view('opac.index');
+    }
+
+    /**
+     * Where a signed-in user belongs when nothing else is asked for (after login, for example):
+     * staff in the admin, everyone else on the OPAC home.
+     */
+    public static function landingUrl($user): string
+    {
+        return $user && $user->isStaff() ? self::adminLandingUrl($user) : url(RouteServiceProvider::HOME);
+    }
+
+    /** Admin navbar "OPAC": remember the admin page it was opened from, then show the OPAC. */
+    public function openOpac()
+    {
+        $from = url()->previous();
+        if (str_starts_with($from, url('/admin')) && self::opensWithGet($from)) {
+            session(['opac.return_to' => $from]);
         }
 
+        return redirect('/home');
+    }
+
+    /** OPAC "Return to admin": back to the admin page the OPAC was opened from. */
+    public function returnToAdmin()
+    {
+        return redirect(session()->pull('opac.return_to') ?: self::adminLandingUrl(Auth::user()));
+    }
+
+    /** Some admin pages are shown by a POST (the record page, a batch's details): not one to return to. */
+    private static function opensWithGet(string $url): bool
+    {
+        try {
+            app('router')->getRoutes()->match(Request::create($url, 'GET'));
+            return true;
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     /**

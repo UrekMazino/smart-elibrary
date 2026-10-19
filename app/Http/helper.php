@@ -215,7 +215,8 @@ function isCrawler($agent = null): bool
  */
 function saveView($id)
 {
-	if (isCrawler()) {
+	// Crawlers, and staff checking a record from the admin, don't count as views.
+	if (isCrawler() || (Auth::check() && Auth::user()->isStaff())) {
 		return;
 	}
 

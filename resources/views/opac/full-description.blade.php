@@ -102,6 +102,8 @@
 			.fd-btn:hover i { color: #029978; }
 			.fd-btn[disabled], .fd-btn:disabled { background: #f6f8f9 !important; color: #b4babf !important; border-color: #e9edf0 !important; cursor: not-allowed; opacity: 1 !important; }
 			.fd-btn[disabled] i, .fd-btn:disabled i { color: #c4cacf; }
+			/* Reservation and review, disabled for staff: grey out their buttons like the tiles above. */
+			#frm_reservation fieldset:disabled .btn_1, .btn_1.fd-staff-off:disabled { background: #f6f8f9 !important; color: #b4babf !important; cursor: not-allowed; box-shadow: none; }
 			/* Save: outline star; filled amber once the record is in the patron's list. */
 			/* Guest Save is a link: the theme's `a.btn_1 { display:inline-block }` outranks .fd-btn,
 			   which put the star beside the label. Restore the stacked icon-over-label tile. */
@@ -222,7 +224,12 @@
 									<button type="button" class="btn_1 fd-btn" disabled title="No file available to read"><i class="icon-book"></i> Read</button>
 									<button type="button" class="btn_1 fd-btn" disabled title="No file available to download"><i class="icon-download"></i> Download</button>
 								@endif
+								@if(Auth::check() && Auth::user()->isStaff())
+								{{-- Staff browsing the OPAC: inquiries come from patrons. --}}
+								<button type="button" class="btn_1 fd-btn" disabled title="Inquiries are sent by patrons. You are signed in as staff."><i class="icon-info-3"></i> Inquire</button>
+								@else
 								<button type="button" class="btn_1 fd-btn" onclick="inquire('{{ $result->catalog_id }}')"><i class="icon-info-3"></i> Inquire</button>
+								@endif
 								<button type="button" class="btn_1 fd-btn" data-share-url="{{ recordUrl($result) }}" data-share-title="{{ $result->title_statement }}" onclick="shareRecord(this)" title="Copy link to this record"><i class="pe-7s-link"></i> Share</button>
 								{{-- Save to the patron's list (same toggle as the search results / homepage stars). --}}
 								@auth
@@ -328,8 +335,14 @@
 								<small>Monday to Friday 08:00am-05:00pm</small>
 							</div>
 							@auth
+								@php $staffView = Auth::user()->isStaff(); @endphp
 								<form method="post" action="{{ url('/request-reservation') }}" id="frm_reservation">
                                     @csrf
+                                    @if($staffView)
+                                        {{-- Staff browsing the OPAC: reservations come from patrons. --}}
+                                        <p class="small text-muted text-center mb-2">Reservations are made by patrons. You are signed in as staff.</p>
+                                    @endif
+                                    <fieldset @disabled($staffView)>
                                     @if($errors->hasAny(['visit_scheddate', 'visit_schedtime', 'catalog_id']))
                                         <div class="alert alert-danger py-2 small" role="alert">
                                             @foreach(['visit_scheddate', 'visit_schedtime', 'catalog_id'] as $field)
@@ -370,6 +383,7 @@
 
                                             <button type="button" class="btn_1 full-width" onclick="confirmReservation()">Send Request</button>
                                     </div>
+                                    </fieldset>
 								</form>
 							@else
 
@@ -420,7 +434,12 @@
 							</div>
 							@endforeach
 						</div>
+						@if(Auth::check() && Auth::user()->isStaff())
+						{{-- Staff browsing the OPAC: reviews come from patrons. --}}
+						<button type="button" class="btn_1 full-width text-center fd-staff-off" disabled title="Reviews are written by patrons. You are signed in as staff.">Submit review</button>
+						@else
 						<a href="#" class="btn_1 full-width text-center" onclick="getElementById('frm_review').submit()">Submit review</a>
+						@endif
 					</div>
 					</div>
 				</aside>
