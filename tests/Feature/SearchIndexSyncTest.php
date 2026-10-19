@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Laravel\Scout\EngineManager;
 use Laravel\Scout\Engines\NullEngine;
 use Spatie\Permission\Models\Role;
@@ -27,10 +28,20 @@ class SearchIndexSyncTest extends TestCase
 
     private User $staff;
     private int $catalogId;
+    private string $public;
 
     protected function setUp(): void
     {
         parent::setUp();
+
+        // Uploading and removing covers and full texts writes and deletes files: keep them in a
+        // folder of the test's own. Test record ids repeat real ones (gen-1138.jpg, for example),
+        // so the app's own public/ folder would lose real covers.
+        $this->public = sys_get_temp_dir() . '/search-index-sync-' . uniqid();
+        foreach (['frontpages', 'thumb', 'pdf', 'js/admin'] as $dir) File::ensureDirectoryExists("{$this->public}/$dir");
+        // The record page stamps its script with filemtime(public_path(...)): bring it along.
+        File::copy(public_path('js/admin/catalog-view-record.js'), "{$this->public}/js/admin/catalog-view-record.js");
+        $this->app->usePublicPath($this->public);
 
         $this->index = new class extends NullEngine {
             public array $documents = [];
@@ -53,6 +64,12 @@ class SearchIndexSyncTest extends TestCase
         $this->catalogId = DB::table('catalogs')->insertGetId(['material_type_id' => $material, 'field_data' => '[]', 'is_published' => 1]);
         DB::table('view_catalogs')->insert(['catalog_id' => $this->catalogId, 'title_statement' => 'Rice farming',
             'material_type_id' => $material, 'is_published' => 1]);
+    }
+
+    protected function tearDown(): void
+    {
+        File::deleteDirectory($this->public);
+        parent::tearDown();
     }
 
     /** The last document the index received for the record. */
@@ -93,21 +110,11 @@ class SearchIndexSyncTest extends TestCase
             'FrontPageLocation' => "frontpages/gen-{$this->catalogId}.jpg", 'FrontPageType' => 'jpg']);
         $this->index->documents = [];
 
-        try {
-            $this->actingAs($this->staff)->post('/admin/upload/cover-photo', [
-                'catalog_id' => $this->catalogId, 'coverImage' => UploadedFile::fake()->image('cover.jpg', 300, 400),
-            ])->assertOk();
+        $this->actingAs($this->staff)->post('/admin/upload/cover-photo', [
+            'catalog_id' => $this->catalogId, 'coverImage' => UploadedFile::fake()->image('cover.jpg', 300, 400),
+        ])->assertOk();
 
-            $this->assertTrue($this->indexed()['has_cover']);
-        } finally {
-            // The controller stores the upload under public/ itself: remove what the test created.
-            foreach (Frontpage::where('catalog_id', $this->catalogId)->pluck('FrontPageName') as $name) {
-                if (str_starts_with($name, 'cp-')) {
-                    @unlink(public_path("frontpages/$name"));
-                    @unlink(public_path("thumb/$name"));
-                }
-            }
-        }
+        $this->assertTrue($this->indexed()['has_cover']);
     }
 
     public function test_publishing_or_holding_refreshes_the_homepage_shelves()
