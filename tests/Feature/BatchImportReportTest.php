@@ -97,6 +97,31 @@ class BatchImportReportTest extends TestCase
         $this->assertSame([2, 3, 4, 5], $issues->pluck('record_no')->values()->all());
     }
 
+    public function test_the_marc_tables_are_asked_each_question_once_per_import()
+    {
+        $record = fn ($i) => $this->marc(['001' => "M$i", '020' => ['a' => "97897100$i"], '100' => ['a' => 'Cruz, Juan.'],
+            '245' => ['a' => "Title $i"], '260' => ['b' => 'PCAARRD,', 'c' => '2001.']]);
+        $asked = 0;
+        DB::listen(function ($query) use (&$asked) {
+            if (str_contains($query->sql, 'from `marctag')) $asked++;
+        });
+        $import = function (int $records) use (&$asked, $record) {
+            app()->forgetInstance('marc.lookups');   // a new request starts with nothing remembered
+            $asked = 0;
+            $this->actingAs($this->staff)->post('/admin/create-batch/store', [
+                'batch_file' => UploadedFile::fake()->createWithContent('records.mrc', implode('', array_map($record, range(1, $records)))),
+                'subject' => 'Test batch', 'material_type_id' => $this->material,
+            ])->assertRedirect('/admin/batch-list');
+            return $asked;
+        };
+
+        $one = $import(1);
+        $ten = $import(10);
+
+        $this->assertSame($one, $ten, 'Ten records of the same shape asked the MARC tables more than one did.');
+        $this->assertLessThan(100, $one);
+    }
+
     public function test_an_unreadable_record_is_skipped_and_the_rest_of_the_file_still_imports()
     {
         // Without the "tag not found" entry, a tag missing from the MARC 21 table can't be read.
