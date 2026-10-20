@@ -71,6 +71,15 @@
   let viewReservationUrl = '{{ url("/admin/reservation/view-json") }}';
 </script>
 <script>
+// Values go into the table as text: patron names and titles are not trusted markup.
+function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+}
+// An argument inside onclick="f(...)": a JS string literal, escaped again for the attribute.
+function jsArg(s) { return esc(JSON.stringify(s == null ? '' : String(s))); }
+
 $('#tbl').DataTable({
     processing: true,
     serverSide: true,
@@ -79,18 +88,18 @@ $('#tbl').DataTable({
     columns: [
         { data: 'title_statement',
             render: function(data, type, row) {
-                return '<a href="#" onclick="viewMaterial(\'' + row.catalog_id + '\', \'' + row.circulation_number + '\', 0)" >' + data + '</a>';
+                return '<a href="#" onclick="viewMaterial(' + jsArg(row.catalog_id) + ', ' + jsArg(row.circulation_number) + ', 0)" >' + esc(data) + '</a>';
             }
         
         },
         { data: 'patron_name',
             render: function(data, type, row) {
-                return '<a href="#" onclick="viewPatron( \''+row.user_id+'\')" >' + data + '</a>';
+                return '<a href="#" onclick="viewPatron(' + jsArg(row.user_id) + ')" >' + esc(data) + '</a>';
             }
         },
         { data: 'transaction_code',
             render: function(data, type, row) {
-                return '<a href="#" onclick="viewTransaction( \''+row.transaction_code+'\')" >' + data + '</a>';
+                return '<a href="#" onclick="viewTransaction(' + jsArg(row.transaction_code) + ')" >' + esc(data) + '</a>';
             } 
         },
        
@@ -98,13 +107,13 @@ $('#tbl').DataTable({
         { data: 'reservation_code',
             render: function(data, type, row) {
                 if(data == 'Walk-in') {
-                  return data;
+                  return esc(data);
                 } else {
-                  return '<a href="#" onclick="viewReservation( \''+row.reservation_code+'\')" >' + data + '</a>';
+                  return '<a href="#" onclick="viewReservation(' + jsArg(row.reservation_code) + ')" >' + esc(data) + '</a>';
                 }
 
             } },
-        { data: 'status' },
+        { data: 'status', render: function (d, type) { return type === 'display' ? esc(d) : d; } },
         { data: 'created_at',
             render: function(data, type, row) {
               let humanReadableDate = moment(data).format('MMMM Do, YYYY h:mm:ss A');

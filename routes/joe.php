@@ -222,7 +222,6 @@ Route::controller(CsfController::class)->group(function () {
     
     Route::get('/csf', 'index');
     Route::get('/csf/system-review', 'create');
-    Route::get('/csf/get-ratings/json', 'getRatings');
     Route::post('/csf/store', 'store');
     
 });

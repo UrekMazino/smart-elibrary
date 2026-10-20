@@ -228,7 +228,12 @@ class CatalogingController extends Controller
 
         $fullText = Multimedia::where('catalog_id', $catalogId)->whereNull('deleted_at')->first();
 
-        $citations = buildCitations(ViewCatalog::where('catalog_id', $catalogId)->first());
+        $viewCatalog = ViewCatalog::where('catalog_id', $catalogId)->first();
+        $citations = buildCitations($viewCatalog);
+        // The heading shows the catalogue's title. The lists post the clicked row's title too,
+        // HTML-escaped from their JSON; that copy is only the fallback for a record with no
+        // OPAC row (the page escapes it on output, so it can't add markup).
+        $title = $viewCatalog->title_statement ?? html_entity_decode((string) $title, ENT_QUOTES, 'UTF-8');
 
         // Patron reviews for the Reviews tab (admin.partials.record-reviews), newest first.
         $reviews = DB::table('ratings as r')
@@ -2813,12 +2818,14 @@ class CatalogingController extends Controller
 
             $uploadedFile = $request->file('coverImage');
 
-            // Cover photo limit: JPG/PNG/WEBP image, max 10 MB.
-            if(!in_array(strtolower($uploadedFile->getClientOriginalExtension()), ['jpg','jpeg','png','webp']) || $uploadedFile->getSize() > 10 * 1024 * 1024) {
+            // Cover photo limit: JPG/PNG/WEBP image, max 10 MB. Both the name it was sent with and
+            // what the file really is (read from its content) must be one of those.
+            $allowed = ['jpg','jpeg','png','webp'];
+            if(!in_array(strtolower($uploadedFile->getClientOriginalExtension()), $allowed) || !in_array($uploadedFile->extension(), $allowed) || $uploadedFile->getSize() > 10 * 1024 * 1024) {
                 return $this->renderRecordView($request->catalog_id, $request->title, ['uploadStatus' => true, 'uploadError' => 'The cover photo must be a JPG, PNG, or WEBP image no larger than 10 MB.']);
             }
 
-            $fileType = $uploadedFile->getClientOriginalExtension();
+            $fileType = $uploadedFile->extension();
             $newFileName = 'cp-'. uniqid() . '.' . $fileType;
             $filePath = 'frontpages/' . $newFileName;
 

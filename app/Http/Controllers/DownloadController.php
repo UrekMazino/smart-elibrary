@@ -24,9 +24,16 @@ class DownloadController extends Controller
         abort_unless($user->usertype === 'Patron' || $user->isStaff(), 403);
         abort_if($user->is_banned, 403, 'Your account has been banned from downloading materials.');
 
+        // Only public records may be downloaded (published + not deleted), the same rule as Read:
+        // an unpublished, held or deleted record's full text is not for patrons.
+        $catalogId = request()->holdings_download_id;
+        $public = ctype_digit((string) $catalogId) && App\Models\ViewCatalog::where('catalog_id', $catalogId)
+            ->where('is_published', 1)->whereNull('deleted_at')->exists();
+        abort_unless($public, 404);
+
         try
         {
-            $file = App\Models\Multimedia::where('catalog_id',request()->holdings_download_id)->first();
+            $file = App\Models\Multimedia::where('catalog_id',$catalogId)->first();
 
             //https://www.nicesnippets.com/blog/laravel-response-download-file-from-storage-example
 
@@ -37,7 +44,7 @@ class DownloadController extends Controller
             //COUNT DOWNLOAD (patrons only: staff checking a record don't add to the statistics)
             if (! $user->isStaff()) {
                 $download = new App\Models\Download;
-                $download->catalog_id = request()->holdings_download_id;
+                $download->catalog_id = $catalogId;
                 $download->user_id = $user->id;
                 $download->save();
             }

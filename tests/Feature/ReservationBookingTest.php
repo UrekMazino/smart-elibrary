@@ -24,7 +24,10 @@ class ReservationBookingTest extends TestCase
         $this->seedReferenceData('circulation_status');
         $this->patron = User::factory()->create(['usertype' => 'Patron']);
         $material = DB::table('materials')->insertGetId(['name' => 'Book']);
-        $this->catalogId = DB::table('catalogs')->insertGetId(['material_type_id' => $material, 'field_data' => '[]']);
+        $this->catalogId = DB::table('catalogs')->insertGetId(['material_type_id' => $material, 'field_data' => '[]', 'is_published' => 1]);
+        // Only public records can be reserved, and the reservation keeps the catalogue's title.
+        DB::table('view_catalogs')->insert(['catalog_id' => $this->catalogId, 'title_statement' => 'A title',
+            'material_type_id' => $material, 'is_published' => 1]);
     }
 
     /** What the booking pickers post: "10/19/2026" and "9:00 am". */

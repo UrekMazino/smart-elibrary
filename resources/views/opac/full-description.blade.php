@@ -201,7 +201,7 @@
 						{{-- Header card: title, authors, rating, stats, actions. Its own card so phones can show it first. --}}
 						<div class="box_general_3 fd-head">
 							<div class="profile fd-info">
-							<h5 class="fd-title">{!! $result->title_statement !!}</h5>
+							<h5 class="fd-title">{{ $result->title_statement }}</h5>
 							@if($result->joint_authors)
 								<div class="fd-authors">{{ str_replace('/', '; ', trim($result->joint_authors, ' /')) }}</div>
 							@endif
@@ -306,7 +306,7 @@
 										<div class="rev-content">
 											<i data-star="{{ $reviews->rating }}"></i>
 											<div class="rev-info">
-												{!! $reviews->name.'&nbsp&nbsp&nbsp'.date('M d, Y',strtotime($reviews->created_at)) !!}
+												{{ $reviews->name }}&nbsp;&nbsp;&nbsp;{{ date('M d, Y',strtotime($reviews->created_at)) }}
 											</div>
 											<div class="rev-text">
 												<p>{{ $reviews->remarks }}</p>

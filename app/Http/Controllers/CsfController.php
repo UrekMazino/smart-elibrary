@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use App\Models\Csf;
 use Auth;
 
@@ -49,16 +48,5 @@ class CsfController extends Controller
         $csf->save();
 
         return view('opac.thank-you',['message' => 'Thanks for your feedback!']);
-    }
-
-    public function getRatings(Request $request)
-    {
-        $ratingsByCategories = DB::table('csfs')
-        ->select($request->rating, DB::raw('COUNT(*) as rating_sum'))
-        ->groupBy($request->rating)
-        ->orderByDesc('rating_sum')
-        ->get();
-        
-        return response()->json($ratingsByCategories);
     }
 }

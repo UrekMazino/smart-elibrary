@@ -63,8 +63,18 @@ php artisan permission:cache-reset                    # roles/permissions are ca
 | `MEILISEARCH_*` | host/key | OPAC keyword search |
 | `HERMES_GATEWAY_URL` | `http://127.0.0.1:8090` | AI mode gateway |
 | `HERMES_GATEWAY_TOKEN` | shared secret | **must match** what `start-rag-api.ps1` uses |
+| `SESSION_SECURE_COOKIE` | `true` | the sign-in cookie is only ever sent over HTTPS |
 
 Also: HTTPS + force-https, one canonical host (www **or** apex, 301 the other).
+
+### Web server
+- **Folder listings off.** `public/pdf` holds the full texts; a listing would hand out every file
+  name and skip the sign-in that Read and Download require. Apache: `Options -Indexes` in the
+  vhost (`public/.htaccess` only turns it off when `mod_negotiation` is loaded). nginx: `autoindex off` (the default).
+- **Only `index.php` runs.** `public/.htaccess` refuses any other `.php` under `public/` (an upload
+  folder, say). nginx: pass only `index.php` to PHP-FPM, never `~ \.php$`.
+- **`mod_headers` on** (Apache), so static files get `X-Content-Type-Options: nosniff`.
+- `composer install --no-dev` (above) also keeps the Ignition debug pages off the server.
 
 ### The scheduler (required)
 Without it nothing in `app/Console/Kernel.php` runs: the sitemap is never regenerated (03:30) and the

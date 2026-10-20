@@ -62,7 +62,7 @@
 								<img src="{{ url('/' . $cover) }}" alt="cover">
 							</div>
 							<div class="tx-body">
-								<h3 class="tx-title"><a href="{{ recordUrl($lists->catalog_id, $holdings['title_statement']) }}">{!! $holdings['title_statement'] !!}</a></h3>
+								<h3 class="tx-title"><a href="{{ recordUrl($lists->catalog_id, $holdings['title_statement']) }}">{{ $holdings['title_statement'] }}</a></h3>
 								<div class="tx-msg"><span class="q">Q:</span>{{ $lists->message }}</div>
 								<div class="tx-meta">
 									<span>{{ \Carbon\Carbon::parse($lists->created_at)->format('M d, Y') }}</span>
