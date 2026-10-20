@@ -628,55 +628,219 @@ function getReadUrl($catalog_id)
 }
 
 /**
- * Build formatted citations (APA / MLA / Chicago) from a catalog record.
- * Dependency-free and reusable — intended to also back a future citation API so the
- * Project Y RAG can cite eLibrary materials in the same formats. $record needs:
- * title_statement, joint_authors, publisher, pub_year, edition.
+ * Formatted citations of a catalog record, as a book's entry in a reference list:
+ *   APA 7     Author, A. A., & Author, B. B. (Year). Title in sentence case (Edition). Publisher.
+ *   MLA 9     Author, First, and First Last. Title in Title Case. Edition, Publisher, Year.
+ *   Chicago   Author, First, and First Last. Title in Title Case. Edition. Place: Publisher, Year.
+ * (Chicago is the notes-and-bibliography style's bibliography entry.)
+ *
+ * An organisation that is both author and publisher is named once: APA leaves out the publisher,
+ * MLA the author; Chicago keeps both. Titles stay in the catalogue's sentence case for APA and get
+ * headline capitals for MLA and Chicago when the record is in English (MARC 008/35-37). The place
+ * comes from 264/260 $a. Returns ['APA' => …, 'MLA' => …, 'Chicago' => …] as HTML: every part
+ * escaped, the title in <em>. $record needs catalog_id, title_statement, joint_authors, publisher,
+ * pub_year, edition. Dependency-free, so a future citation API (Project Y RAG) can cite eLibrary
+ * materials the same way.
  */
 function buildCitations($record)
 {
 	if (!$record) return [];
 
-	// Title + subtitle from 245 WITHOUT $c: the citation prints the authors itself, and the
-	// stored title_statement now carries the statement of responsibility too.
 	$fieldData = !empty($record->catalog_id) ? \App\Models\Catalog::whereKey($record->catalog_id)->value('field_data') : null;
-	$title = rtrim(trim((string)(marcTitle($fieldData, false) ?? seoTrimIsbd($record->title_statement ?? ''))), " .");
+	$fields = json_decode((string) $fieldData, true) ?: [];
+
+	// Title + subtitle from 245 WITHOUT $c (the citation prints the authors itself), with ISBD's
+	// spaced colon closed up: "Title : subtitle" -> "Title: subtitle".
+	$title = trim((string) (marcTitle($fields, false) ?? seoTrimIsbd($record->title_statement ?? '')));
+	$title = rtrim(preg_replace(['/\s+:\s*/u', '/\s+;\s*/u'], [': ', '; '], $title), ' .');
 	if ($title === '') return [];
 
-	$year      = trim((string)($record->pub_year ?? '')) ?: 'n.d.';
-	$publisher = seoTrimIsbd($record->publisher ?? '');   // drop ISBD's trailing "," / ":" (260$b "Publisher,")
-	$edition   = trim((string)($record->edition ?? ''));
-	$authors   = array_values(array_filter(array_map('trim', preg_split('#\s*/\s*#', (string)($record->joint_authors ?? '')))));
+	$year      = trim((string) ($record->pub_year ?? ''), ' .');        // "2009"; "[1960]" is a supplied date
+	$publisher = seoTrimIsbd($record->publisher ?? '');                 // 260$b "Publisher," -> "Publisher"
+	$place     = citePlace(marcFirstSubfield($fields, ['264$a', '260$a']));
+	$edition   = rtrim(seoTrimIsbd($record->edition ?? ''), '.');
+	if (preg_match('/\b(ed|rev)$/i', $edition)) $edition .= '.';        // "2nd ed" -> "2nd ed."
+	$language  = trim((string) marcFirstSubfield($fields, ['008$35-37']), ' |');
+	$english   = in_array($language, ['', 'eng', 'und'], true);
+	$headline  = $english ? citeTitleCase($title) : $title;
 
-	$ed     = $edition ? ' ('.e($edition).')' : '';
-	$titleI = '<em>'.e($title).'</em>';
-	$pub    = $publisher !== '' ? e($publisher) : '';
+	$authors = array_values(array_filter(array_map('citeName', preg_split('#\s*/\s*#', (string) ($record->joint_authors ?? '')))));
+	$orgIsPublisher = count($authors) === 1 && ! $authors[0]['person'] && citeSameOrganisation($authors[0]['name'], $publisher);
 
-	// APA:     Authors (Year). Title (Edition). Publisher.
-	$apa = (citeAuthors($authors, 'apa') ? citeAuthors($authors, 'apa').' ' : '')."($year). ".$titleI.$ed.'.'.($pub ? ' '.$pub.'.' : '');
-	// MLA:     Authors. Title. Publisher, Year.
-	$mla = (citeAuthors($authors, 'mla') ? citeAuthors($authors, 'mla').'. ' : '').$titleI.'.'.($pub ? ' '.$pub.',' : '')." $year.";
-	// Chicago: Authors. Title. Publisher, Year.
-	$chi = (citeAuthors($authors, 'chicago') ? citeAuthors($authors, 'chicago').'. ' : '').$titleI.'.'.($pub ? ' '.$pub.',' : '')." $year.";
+	$em  = fn (string $t) => '<em>' . e($t) . '</em>' . (preg_match('/[?!]$/u', $t) ? '' : '.');   // "Why?." -> "Why?"
+	$end = fn (string $s) => rtrim($s, '.') . '.';                    // one closing period ("P. M.", "Inc.", "n.d.")
 
-	$fix = function ($s) { return rtrim(trim($s), '.').'.'; };   // exactly one trailing period
-	return ['APA' => $fix($apa), 'MLA' => $fix($mla), 'Chicago' => $fix($chi)];
+	// APA 7: Author. (Year). Title (Edition). Publisher.
+	$apaAuthors = citeAuthorList($authors, 'apa');
+	$apaDate    = '(' . ($year !== '' ? e(trim($year, '[]')) : 'n.d.') . ').';
+	$apaTitle   = $edition !== ''
+		? '<em>' . e(citeCapitaliseStart($title)) . '</em> (' . e($edition) . ').'
+		: $em(citeCapitaliseStart($title));
+	$apaPub     = ($publisher !== '' && ! $orgIsPublisher) ? ' ' . $end(e($publisher)) : '';
+	$apa = $apaAuthors !== ''
+		? $end($apaAuthors) . ' ' . $apaDate . ' ' . $apaTitle . $apaPub
+		: $apaTitle . ' ' . $apaDate . $apaPub;                         // no author: the title leads
+
+	// MLA 9: Author. Title. Edition, Publisher, Year.
+	$mlaAuthors = $orgIsPublisher ? '' : citeAuthorList($authors, 'mla');
+	$mlaPub     = implode(', ', array_map('e', array_filter([$edition, $publisher, $year], 'strlen')));
+	$mla = ($mlaAuthors !== '' ? $end($mlaAuthors) . ' ' : '') . $em($headline) . ($mlaPub !== '' ? ' ' . $end($mlaPub) : '');
+
+	// Chicago: Author. Title. Edition. Place: Publisher, Year.
+	$chiAuthors = citeAuthorList($authors, 'chicago');
+	$imprint    = $place !== '' && $publisher !== '' ? e($place) . ': ' . e($publisher) : e($place . $publisher);
+	$chiPub     = implode(', ', array_filter([$imprint, $year !== '' ? e($year) : 'n.d.'], 'strlen'));
+	$chi = ($chiAuthors !== '' ? $end($chiAuthors) . ' ' : '') . $em($headline)
+		. ($edition !== '' ? ' ' . e(rtrim($edition, '.')) . '.' : '') . ' ' . $end($chiPub);   // "n.d." keeps one period
+
+	return ['APA' => $apa, 'MLA' => $mla, 'Chicago' => $chi];
+}
+
+/** The first non-empty value of the given MARC subfields ("260$a", "008$35-37"), in that order of preference. */
+function marcFirstSubfield(array $fields, array $codes): ?string
+{
+	foreach ($codes as $code) {
+		foreach ($fields as $f) {
+			foreach ((is_array($f) ? ($f['subfield'] ?? []) : []) as $s) {
+				$value = trim((string) ($s['value'] ?? ''));
+				if (($s['code'] ?? '') === $code && $value !== '' && $value !== 'Enter value') return $value;
+			}
+		}
+	}
+	return null;
+}
+
+/** 260/264 $a as a citation's place: ISBD punctuation, brackets and "[S.l.]" removed; the first of several places. */
+function citePlace(?string $value): string
+{
+	$place = trim(explode(';', seoTrimIsbd($value ?? ''))[0]);
+	$place = trim($place, '[] ');
+	return preg_match('/^(s\.\s*l\.?|place of publication not identified)$/i', $place) ? '' : $place;
 }
 
 /**
- * Join an author list ("Surname, First") per citation style (values are HTML-escaped).
+ * One name from joint_authors: a person when written "Last, Given" (MARC 100/700), otherwise an
+ * organisation. A trailing initial keeps (or gets) its period: "Dasco, Ma Lilibeth P" -> "P.".
  */
-function citeAuthors(array $authors, $style)
+function citeName($raw): ?array
 {
-	$authors = array_values(array_filter(array_map(function ($a) { return e(rtrim(trim($a), ' .')); }, $authors)));
+	$name = trim(preg_replace('/\s+/u', ' ', (string) $raw), " ,;");
+	if (!preg_match('/\b\p{Lu}\.$/u', $name)) $name = rtrim($name, ' .');   // "Institute." -> "Institute"
+	if ($name === '') return null;
+
+	if (!str_contains($name, ',')) return ['person' => false, 'name' => $name];
+
+	[$last, $given] = array_map('trim', explode(',', $name, 2));
+	$given = trim(explode(',', $given)[0]);                                // drop dates, "1950-"
+	if (preg_match('/(^|\s)\p{Lu}$/u', $given)) $given .= '.';
+	return ['person' => true, 'name' => $given === '' ? $last : "$last, $given", 'last' => $last, 'given' => $given];
+}
+
+/** APA initials of given names: "Robby Carlo" -> "R. C.", "Lisette CPGM" -> "L. C. P. G. M.", "Jean-Paul" -> "J.-P.". */
+function citeInitials(string $given): string
+{
+	$out = [];
+	foreach (preg_split('/\s+/u', trim($given), -1, PREG_SPLIT_NO_EMPTY) as $token) {
+		$token = rtrim($token, '.');
+		if ($token === '') continue;
+		if (preg_match('/^\p{Lu}{2,4}$/u', $token)) {                      // initials written together
+			foreach (mb_str_split($token) as $letter) $out[] = $letter . '.';
+		} else {
+			$out[] = implode('-', array_map(fn ($part) => mb_strtoupper(mb_substr($part, 0, 1)) . '.', array_filter(explode('-', $token), 'strlen')));
+		}
+	}
+	return implode(' ', $out);
+}
+
+/**
+ * The author list for a style, escaped. A person is "Last, Given" first and "Given Last" after that
+ * (MLA, Chicago), or "Last, I. I." throughout (APA).
+ *   APA      A, B, & C (up to 20; then the first 19, ". . .", the last)
+ *   MLA      A; A, and B; A, et al. (three or more)
+ *   Chicago  A; A, and B; A, B, and C (up to 10; then the first 7, et al.)
+ */
+function citeAuthorList(array $authors, string $style): string
+{
 	$n = count($authors);
 	if ($n === 0) return '';
-	if ($n === 1) return $authors[0];
-	if ($style === 'mla' && $n > 2) return $authors[0].', et al';
-	$conj = $style === 'apa' ? '&amp;' : 'and';
-	if ($n === 2) return $authors[0].' '.$conj.' '.$authors[1];
-	$last = array_pop($authors);
-	return implode(', ', $authors).', '.$conj.' '.$last;
+
+	$shown = $style === 'apa'
+		? array_map(fn ($a) => $a['person'] ? $a['last'] . ($a['given'] !== '' ? ', ' . citeInitials($a['given']) : '') : $a['name'], $authors)
+		: array_map(fn ($a, $i) => $a['person'] && $i > 0 ? trim($a['given'] . ' ' . $a['last']) : $a['name'], $authors, array_keys($authors));
+	$shown = array_map('e', $shown);
+
+	if ($style === 'apa') {
+		if ($n === 1) return $shown[0];
+		if ($n > 20) return implode(', ', array_slice($shown, 0, 19)) . ', . . . ' . end($shown);
+		$last = array_pop($shown);
+		return implode(', ', $shown) . ', &amp; ' . $last;
+	}
+	if ($n === 1) return $shown[0];
+	if ($style === 'mla' && $n > 2) return $shown[0] . ', et al.';
+	if ($style === 'chicago' && $n > 10) return implode(', ', array_slice($shown, 0, 7)) . ', et al.';
+	// Two names: the comma follows an inverted name only ("Cruz, Juan, and Ana Reyes"; "FNRI and DOST").
+	if ($n === 2) return $shown[0] . ($authors[0]['person'] ? ', and ' : ' and ') . $shown[1];
+	$last = array_pop($shown);
+	return implode(', ', $shown) . ', and ' . $last;
+}
+
+/** APA keeps the catalogue's sentence case; only the first word of the title and of a subtitle get a capital. */
+function citeCapitaliseStart(string $title): string
+{
+	return preg_replace_callback('/(^|:\s+)([^\p{L}\p{N}\s]*)(\p{Ll})/u', fn ($m) => $m[1] . $m[2] . mb_strtoupper($m[3]), $title);
+}
+
+/**
+ * Headline-style capitals (MLA, Chicago): every word capitalised except articles, conjunctions and
+ * prepositions, which are capitalised only first, last or after a colon. Words that already have a
+ * capital (acronyms, names: "ENNS", "FNRI", "de Groot") are left as written; so are words that start
+ * with a digit ("33rd"). Each part of a hyphenated word counts: "deep-fried" -> "Deep-Fried".
+ * Common Filipino function words count as small words too, for titles that mix the two languages.
+ */
+function citeTitleCase(string $title): string
+{
+	static $small = ['a', 'an', 'the', 'and', 'but', 'or', 'nor', 'for', 'so', 'yet', 'as', 'at', 'by', 'from', 'in',
+		'into', 'of', 'off', 'on', 'onto', 'per', 'to', 'up', 'via', 'with', 'vs', 'versus', 'than', 'over', 'upon',
+		'about', 'across', 'against', 'along', 'amid', 'among', 'around', 'before', 'behind', 'below', 'between',
+		'beyond', 'during', 'except', 'inside', 'outside', 'through', 'toward', 'towards', 'under', 'until', 'within', 'without',
+		'ng', 'sa', 'mga', 'ang', 'na', 'ni', 'nina', 'kay', 'kina', 'o'];
+
+	$words = preg_split('/(\s+)/u', $title, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
+	$wordIdx = array_keys(array_filter($words, fn ($w) => trim($w) !== ''));
+	$last = end($wordIdx);
+
+	$forceNext = true;
+	foreach ($words as $i => $word) {
+		if (trim($word) === '') continue;
+		$force = $forceNext || $i === $last;
+		$forceNext = (bool) preg_match('/[:?!—]$/u', $word);
+
+		$parts = explode('-', $word);
+		foreach ($parts as $p => $part) {
+			// Leading punctuation only ("(rice"); a word starting with a digit ("33rd") never matches.
+			$parts[$p] = preg_replace_callback('/^([^\p{L}\p{N}]*)(\p{L}[\p{L}\'’]*)(.*)$/su', function ($m) use ($small, $force, $p) {
+				[$all, $lead, $core, $rest] = $m;
+				if (preg_match('/\p{Lu}/u', $core)) return $all;                   // already has a capital
+				if (in_array(mb_strtolower($core), $small, true) && !($force && $p === 0)) return $all;
+				return $lead . mb_strtoupper(mb_substr($core, 0, 1)) . mb_substr($core, 1) . $rest;
+			}, $part);
+		}
+		$words[$i] = implode('-', $parts);
+	}
+	return implode('', $words);
+}
+
+/** Two organisation names for the same body, the order of their parts aside ("FNRI - DOST" and "DOST - FNRI"). */
+function citeSameOrganisation(string $a, string $b): bool
+{
+	$words = function (string $s) {
+		$w = preg_split('/[^\p{L}\p{N}]+/u', mb_strtolower($s), -1, PREG_SPLIT_NO_EMPTY);
+		$w = array_values(array_unique(array_diff($w, ['and', 'of', 'the', 'for', 'in', 'on', 'at'])));
+		sort($w);
+		return $w;
+	};
+	$x = $words($a);
+	return count($x) >= 2 && $x === $words($b);
 }
 
 /**
