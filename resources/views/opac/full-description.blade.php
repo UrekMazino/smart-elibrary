@@ -88,7 +88,13 @@
 			/* Catalogers format values as plain text (line breaks, "• " bullets, indentation): show them as written. */
 			.fd-table td.fd-val { white-space: pre-wrap; overflow-wrap: anywhere; }
 			.fd-citation { background: #f7f9fa; border: 1px solid #e6e9ec; border-radius: 4px; padding: 14px 16px; }
-			.fd-citation-style { display: inline-block; font-size: 11px; font-weight: 700; color: #fff; background: #00857a; border-radius: 3px; padding: 2px 8px; margin-bottom: 8px; }
+			/* Citation style switch (APA | MLA | Chicago): one citation shows at a time. */
+			.fd-cite-styles { display: inline-flex; border: 1px solid #b9dcd3; border-radius: 4px; overflow: hidden; margin-bottom: 10px; }
+			.fd-cite-style { border: 0; background: #fff; color: #00857a; font-size: 11px; font-weight: 700; letter-spacing: .3px; padding: 3px 10px; cursor: pointer; }
+			.fd-cite-style + .fd-cite-style { border-left: 1px solid #b9dcd3; }
+			.fd-cite-style:hover { background: #eef7f4; }
+			.fd-cite-style[aria-pressed="true"] { background: #00857a; color: #fff; }
+			.fd-cite-style:focus-visible { outline: 2px solid #00857a; outline-offset: 2px; position: relative; }
 			.fd-citation p { margin: 0; font-size: 14px; line-height: 1.55; color: #333; }
 			.fd-copy-btn { margin-top: 12px !important; font-size: 12px; padding: 5px 14px; background-color: #029978; }
 			.fd-copies { display: flex; gap: 12px; flex-wrap: wrap; }
@@ -273,9 +279,18 @@
 						@if(!empty($citations))
 						<div class="fd-section">
 							<h6 class="fd-section-title"><i class="pe-7s-note2"></i> Citation</h6>
+							{{-- buildCitations() escapes every part; the markup is the italic title. --}}
 							<div class="fd-citation">
-								<span class="fd-citation-style">APA</span>
-								<p id="fd-cite-apa">{!! $citations['APA'] ?? reset($citations) !!}</p>
+								<div class="fd-cite-styles" role="group" aria-label="Citation style">
+									@foreach($citations as $style => $text)
+									<button type="button" class="fd-cite-style" data-cite-style="{{ $style }}" aria-pressed="{{ $loop->first ? 'true' : 'false' }}" onclick="showFdCitation(this.dataset.citeStyle)">{{ $style }}</button>
+									@endforeach
+								</div>
+								<div aria-live="polite">
+									@foreach($citations as $style => $text)
+									<p class="fd-cite-text" data-cite-style="{{ $style }}"{{ $loop->first ? '' : ' hidden' }}>{!! $text !!}</p>
+									@endforeach
+								</div>
 								<button type="button" class="btn_1 fd-copy-btn" onclick="copyFdCitation(this)">Copy citation</button>
 							</div>
 						</div>
@@ -700,9 +715,27 @@ function shareRecord(btn)
 	}
 }
 
+// Citation style switch: show one style, and remember the choice in this browser (researchers
+// usually stick to one style). Storage can be unavailable (private windows): then it just isn't kept.
+function showFdCitation(style)
+{
+	var texts = document.querySelectorAll('.fd-cite-text');
+	if (!document.querySelector('.fd-cite-text[data-cite-style="' + style + '"]')) return;
+	texts.forEach(function (p) { p.hidden = p.getAttribute('data-cite-style') !== style; });
+	document.querySelectorAll('.fd-cite-style').forEach(function (b) {
+		b.setAttribute('aria-pressed', b.getAttribute('data-cite-style') === style ? 'true' : 'false');
+	});
+	try { localStorage.setItem('fd-cite-style', style); } catch (e) {}
+}
+(function () {
+	var saved = null;
+	try { saved = localStorage.getItem('fd-cite-style'); } catch (e) {}
+	if (saved) showFdCitation(saved);
+})();
+
 function copyFdCitation(btn)
 {
-	var el = document.getElementById('fd-cite-apa');
+	var el = document.querySelector('.fd-cite-text:not([hidden])');
 	if(!el) return;
 	var text = (el.innerText || el.textContent || '').trim();
 
