@@ -108,12 +108,9 @@ class HoldingController extends Controller
             ->first();
         abort_if(!$result, 404);
 
-        $pdf = App\Models\Multimedia::where('catalog_id',$catalog_id)->first();
-        abort_if(!$pdf, 404);
-
-        $loc  = ltrim((string)$pdf['FileLocation'], '/');
-        $path = public_path($loc);
-        abort_if($loc === '' || !is_file($path), 404);
+        // The file, from private storage (never served directly by the web server).
+        $path = fullTextFile($catalog_id);
+        abort_if(!$path, 404);
 
         // A logged-in patron reading a material adds it to their "To Review" list — the
         // same as downloading. Recorded once per user + material: PDF.js sends several range

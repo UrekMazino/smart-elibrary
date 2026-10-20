@@ -38,7 +38,7 @@ class SearchIndexSyncTest extends TestCase
         // folder of the test's own. Test record ids repeat real ones (gen-1138.jpg, for example),
         // so the app's own public/ folder would lose real covers.
         $this->public = sys_get_temp_dir() . '/search-index-sync-' . uniqid();
-        foreach (['frontpages', 'thumb', 'pdf', 'js/admin'] as $dir) File::ensureDirectoryExists("{$this->public}/$dir");
+        foreach (['frontpages', 'thumb', 'js/admin'] as $dir) File::ensureDirectoryExists("{$this->public}/$dir");
         // The record page stamps its script with filemtime(public_path(...)): bring it along.
         File::copy(public_path('js/admin/catalog-view-record.js'), "{$this->public}/js/admin/catalog-view-record.js");
         $this->app->usePublicPath($this->public);

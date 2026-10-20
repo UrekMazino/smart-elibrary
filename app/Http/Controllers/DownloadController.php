@@ -31,14 +31,14 @@ class DownloadController extends Controller
             ->where('is_published', 1)->whereNull('deleted_at')->exists();
         abort_unless($public, 404);
 
+        // The file, from private storage (never served directly by the web server). A row whose
+        // file is missing gets the error page.
+        $myFile = fullTextFile($catalogId);
+        if (! $myFile) return view('opac.error', ['message' => 'Error downloading file']);
+
         try
         {
-            $file = App\Models\Multimedia::where('catalog_id',$catalogId)->first();
-
-            //https://www.nicesnippets.com/blog/laravel-response-download-file-from-storage-example
-
-            $myFile = public_path($file['FileLocation']);
-            $headers = ['Content-Type: application/pdf'];
+            $headers = ['Content-Type' => 'application/pdf'];
             $newName = 'dost-pcaarrd-elibrary-'.time().'.pdf';
 
             //COUNT DOWNLOAD (patrons only: staff checking a record don't add to the statistics)

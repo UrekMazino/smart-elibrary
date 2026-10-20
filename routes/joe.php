@@ -108,7 +108,9 @@ Route::controller(CatalogingController::class, 'admin')->middleware('can:access.
     Route::get('/admin/create-record', 'createRecord')->middleware('can:create.catalog');
     Route::post('/admin/view-record', 'viewRecord');
     // GET landing for a single record (used by the post-create redirect / PRG).
-    Route::get('/admin/view-record/{id}', 'showRecord')->name('show-record');
+    Route::get('/admin/view-record/{id}', 'showRecord')->whereNumber('id')->name('show-record');
+    // The record's full text for staff (held records too): open in the browser, or ?download=1.
+    Route::get('/admin/full-text/{id}', 'fullText')->whereNumber('id')->name('full-text');
     // MARC export: single record + batch, each as MARC21 binary (.mrc) or MARCXML (.xml).
     Route::get('/admin/export-record/{id}/{format}', 'exportRecord')->name('export-record')->where('format', 'mrc|xml');
     Route::get('/admin/export-records/{format}', 'exportRecords')->name('export-records')->where('format', 'mrc|xml');

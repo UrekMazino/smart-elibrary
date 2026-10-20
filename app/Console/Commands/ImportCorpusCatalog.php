@@ -10,6 +10,7 @@ use App\Models\ViewCatalog;
 use App\Services\SearchIndex;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Stage B — turn the Project Y corpus into catalog records.
@@ -87,9 +88,8 @@ class ImportCorpusCatalog extends Command
         $this->info(($dry ? 'DRY RUN — ' : '') . "reading {$file}");
         $this->line('already imported: ' . $existing->count());
 
-        $pdfDir = public_path('pdf');
         if (! $dry) {
-            ensurePublicDir($pdfDir);   // public/pdf is a link into storage; its target may not exist yet
+            Storage::disk('private')->makeDirectory('pdf');   // full texts live in private storage
         }
 
         $stats = ['imported' => 0, 'held' => 0, 'published' => 0, 'skipped' => 0,
@@ -234,10 +234,10 @@ class ImportCorpusCatalog extends Command
             $view->save();
             SearchIndex::refresh($catalog->id);
 
-            // Full text: copy the PDF in the way the app expects (public/pdf + multimedia).
+            // Full text: copy the PDF in the way the app expects (private storage + multimedia).
             if (! empty($rec['pdf']) && is_file($rec['pdf'])) {
                 $newName = 'ft-' . uniqid() . '.pdf';
-                if (@copy($rec['pdf'], public_path('pdf/' . $newName))) {
+                if (@copy($rec['pdf'], fullTextPath('pdf/' . $newName))) {
                     Multimedia::create([
                         'catalog_id'   => $catalog->id,
                         'FileLocation' => 'pdf/' . $newName,

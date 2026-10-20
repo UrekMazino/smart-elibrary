@@ -213,9 +213,10 @@
                         @php
                             // Resolve the files on disk so the panel can state facts (size, date)
                             // rather than just "uploaded". A row can outlive its file.
-                            $ftPath    = $fullText  ? public_path($fullText->FileLocation) : null;
+                            // Full texts are in private storage: staff open them through the full-text route.
+                            $ftPath    = $fullText  ? fullTextPath($fullText->FileLocation) : null;
                             $ftExists  = $ftPath && is_file($ftPath);
-                            $ftUrl     = $fullText  ? asset($fullText->FileLocation) : null;
+                            $ftUrl     = $fullText  ? route('full-text', $fullText->catalog_id) : null;
 
                             $cvPath    = $coverPage ? public_path($coverPage->FrontPageLocation) : null;
                             $cvExists  = $cvPath && is_file($cvPath);
@@ -291,7 +292,7 @@
                                                 <a href="{{ $ftUrl }}" target="_blank" rel="noopener" class="btn btn-primary btn-sm">
                                                     <i data-feather="book-open" class="icon-sm me-1"></i>Read PDF
                                                 </a>
-                                                <a href="{{ $ftUrl }}" download="{{ $fullText->FileName }}" class="btn btn-outline-secondary btn-sm">
+                                                <a href="{{ $ftUrl }}?download=1" class="btn btn-outline-secondary btn-sm">
                                                     <i data-feather="download" class="icon-sm me-1"></i>Download
                                                 </a>
                                             @elseif($fullText && ! $ftExists)

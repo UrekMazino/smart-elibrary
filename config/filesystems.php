@@ -35,6 +35,15 @@ return [
             'root' => storage_path('app'),
         ],
 
+        // Full texts (multimedia.FileLocation, e.g. "pdf/ft-….pdf"). Never under public/: the web
+        // server can't hand them out, only the app's Read and Download routes and the staff preview,
+        // which check the account and the record first. See fullTextPath().
+        'private' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private'),
+            'visibility' => 'private',
+        ],
+
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
@@ -77,11 +86,8 @@ return [
         public_path('storage') => storage_path('app/public'),
         public_path('thumb') => storage_path('app/public/thumbnails'),
         public_path('fullpage') => storage_path('app/public/fullpage'),
-        public_path('pdf') => storage_path('app/public/pdf'),
         public_path('frontpages') => storage_path('app/public/frontpages'),
         public_path('news_cover') => storage_path('app/public/news_cover'),
-        public_path('marc_file') => storage_path('app/public/marc_file'),  
-        public_path('marc_file_uploaded') => storage_path('app/public/marc_file_uploaded'),  
     ],
 
 ];

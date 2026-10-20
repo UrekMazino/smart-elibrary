@@ -417,7 +417,7 @@ function getFrontpageResult($catalog_id)
 /**
  * Make sure a directory under public/ exists and can be written to before saving into it.
  *
- * public/thumb, public/pdf, public/news_cover, ... are symlinks into storage/app/public
+ * public/thumb, public/frontpages, public/news_cover, ... are symlinks into storage/app/public
  * (config/filesystems.php `links`). On a fresh checkout `storage:link` creates the links but
  * not their targets, and a plain is_dir()/mkdir() can't fix that: is_dir() is false for a
  * dangling link and mkdir() fails because the link itself exists. So create the link's
@@ -522,18 +522,6 @@ function getFrontpageLink($catalog_id)
 	return url('/')."/".$url;
 }
 
-function getPDFLink($catalog_id)
-{
-	$pdf = App\Models\Multimedia::where('catalog_id',$catalog_id)->first();
-
-	if($pdf)
-		$url = $pdf['FileLocation'];
-	else
-		$url =  "frontpages/no-preview.jpg";
-
-	return url('/')."/".$url;
-}
-
 /**
  * Parse a catalog's stored MARC field_data into readable "Full Record" rows for the OPAC.
  * Skips the Leader + 00X control fields (pure MARC plumbing), the title and the author tags the
@@ -601,19 +589,29 @@ function getFullRecordFields($catalog_id)
 }
 
 /**
- * Root-relative web path to a catalog's PDF (e.g. "/pdf/ft-xxx.pdf"), but only when the
- * DB row exists AND the file is actually present on disk. Returns '' otherwise, so callers
- * (grid Read/Download buttons, PDF.js reader) never render an action that would 404.
+ * Where a full text's file is on disk: multimedia.FileLocation (e.g. "pdf/ft-….pdf") inside the
+ * private disk (storage/app/private). Full texts are never under public/, so only the app's Read,
+ * Download and staff-preview routes hand them out, after their checks. null for an empty or
+ * unsafe location.
  */
-function getReadPdfUrl($catalog_id)
+function fullTextPath($location): ?string
 {
-	$pdf = App\Models\Multimedia::where('catalog_id',$catalog_id)->first();
-	if(!$pdf) return '';
+	$loc = ltrim(str_replace('\\', '/', (string) $location), '/');
+	if ($loc === '' || in_array('..', explode('/', $loc), true)) return null;
 
-	$loc = ltrim((string)$pdf['FileLocation'], '/');
-	if($loc === '' || !is_file(public_path($loc))) return '';
+	return Illuminate\Support\Facades\Storage::disk('private')->path($loc);
+}
 
-	return '/'.$loc;
+/**
+ * The file of a catalog's current full text, when its row exists AND the file is on disk; else
+ * null. Callers (Read/Download buttons, the reader) never offer an action that would 404.
+ */
+function fullTextFile($catalog_id): ?string
+{
+	$pdf = App\Models\Multimedia::where('catalog_id', $catalog_id)->first();
+	$path = $pdf ? fullTextPath($pdf->FileLocation) : null;
+
+	return $path && is_file($path) ? $path : null;
 }
 
 /**
@@ -623,8 +621,8 @@ function getReadPdfUrl($catalog_id)
  */
 function getReadUrl($catalog_id)
 {
-	// Reuse existence check; only expose the guarded route when a file is actually present.
-	if(getReadPdfUrl($catalog_id) === '') return '';
+	// Only expose the guarded route when a file is actually present.
+	if(! fullTextFile($catalog_id)) return '';
 
 	return url('/read/'.$catalog_id);
 }

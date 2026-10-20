@@ -7,6 +7,7 @@ use App\Models\Multimedia;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Role;
 use Tests\SeedsReferenceData;
 use Tests\TestCase;
@@ -23,7 +24,6 @@ class StaffOpacTest extends TestCase
     private User $staff;
     private User $patron;
     private int $catalogId;
-    private string $public;
 
     protected function setUp(): void
     {
@@ -40,20 +40,9 @@ class StaffOpacTest extends TestCase
             'material_type_id' => $material, 'is_published' => 1]);
         DB::table('copies')->insert(['catalog_id' => $this->catalogId, 'circulation_number' => 'C-1', 'status' => 1]);
 
-        // The full text, in a public folder of the test's own.
-        $this->public = sys_get_temp_dir() . '/staff-opac-' . uniqid();
-        mkdir($this->public . '/pdf', 0777, true);
-        file_put_contents($this->public . '/pdf/ft.pdf', "%PDF-1.4\n%%EOF\n");
-        $this->app->usePublicPath($this->public);
+        // The full text, on a private disk of the test's own.
+        Storage::fake('private')->put('pdf/ft.pdf', "%PDF-1.4\n%%EOF\n");
         Multimedia::create(['catalog_id' => $this->catalogId, 'FileName' => 'ft.pdf', 'FileLocation' => 'pdf/ft.pdf', 'FileType' => 'pdf']);
-    }
-
-    protected function tearDown(): void
-    {
-        @unlink($this->public . '/pdf/ft.pdf');
-        @rmdir($this->public . '/pdf');
-        @rmdir($this->public);
-        parent::tearDown();
     }
 
     private function recordPage(User $user)

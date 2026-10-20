@@ -221,6 +221,7 @@ class CatalogingController extends Controller
         $record = Catalog::select('catalogs.*')
             ->where('catalogs.id', $catalogId)
             ->first();
+        abort_unless($record, 404);   // an unknown or deleted record: "not found", not a crash in the view
 
         $totalCopies = Holdingcopy::where('catalog_id', $catalogId)->count();
 
@@ -2932,13 +2933,13 @@ class CatalogingController extends Controller
                 return $this->renderRecordView($request->catalog_id, $request->title, ['uploadStatus' => true, 'uploadError' => 'The full-text file must be a PDF no larger than 100 MB.']);
             }
 
-            $fileType = $uploadedFile->getClientOriginalExtension();
+            $fileType = 'pdf';
             $newFileName = 'ft-'. uniqid() . '.' . $fileType;
             $filePath = 'pdf/' . $newFileName;
 
-            // Store directly under public/pdf (where DownloadController's public_path() serves from).
-            ensurePublicDir(public_path('pdf'));   // link target may not exist yet (fresh checkout)
-            $uploadedFile->move(public_path('pdf'), $newFileName);
+            // Into private storage (storage/app/private/pdf): the web server never serves it; Read,
+            // Download and the staff preview do, after their checks (fullTextPath()).
+            $uploadedFile->storeAs('pdf', $newFileName, 'private');
 
             $coverPage = Multimedia::where('catalog_id', $request->catalog_id)->where('deleted_at', null)->first();
 
@@ -2972,6 +2973,22 @@ class CatalogingController extends Controller
         
         return $this->renderRecordView($request->catalog_id, $request->title);
 
+    }
+
+    /**
+     * The record's full text for staff, from private storage: shown in the browser, or downloaded
+     * under its original name with ?download=1. Unlike the OPAC's Read and Download, this serves
+     * held records too (staff check a record before publishing it).
+     */
+    public function fullText($id)
+    {
+        $fullText = Multimedia::where('catalog_id', $id)->first();
+        $path = $fullText ? fullTextFile($id) : null;
+        abort_unless($path, 404);
+
+        return request()->boolean('download')
+            ? response()->download($path, $fullText->FileName ?: basename($path), ['Content-Type' => 'application/pdf'])
+            : response()->file($path, ['Content-Type' => 'application/pdf']);
     }
 
     public function destroyFullText(Request $request)

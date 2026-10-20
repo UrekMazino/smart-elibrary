@@ -29,7 +29,8 @@ They share **one MySQL database** (`elibrarydb`) and the eLibrary **`.env`** —
 git pull
 composer install --no-dev --optimize-autoloader
 npm ci && npm run build                               # Vite -> public/build (also committed, so optional)
-php artisan storage:link                              # public/thumb, pdf, news_cover, ... -> storage/app/public
+php artisan storage:link                              # public/thumb, frontpages, news_cover, ... -> storage/app/public
+php artisan fulltext:make-private                     # once (safe to re-run): full-text PDFs -> storage/app/private/pdf
 
 # 2. database  — see the landmine note below before running this
 php artisan migrate:status          # confirm the baseline migrations show "Ran"
@@ -68,9 +69,13 @@ php artisan permission:cache-reset                    # roles/permissions are ca
 Also: HTTPS + force-https, one canonical host (www **or** apex, 301 the other).
 
 ### Web server
-- **Folder listings off.** `public/pdf` holds the full texts; a listing would hand out every file
-  name and skip the sign-in that Read and Download require. Apache: `Options -Indexes` in the
-  vhost (`public/.htaccess` only turns it off when `mod_negotiation` is loaded). nginx: `autoindex off` (the default).
+- **Full texts stay private.** They live in `storage/app/private/pdf`, outside `public/`: only Read,
+  Download (signed in, published records) and the staff preview serve them. Never link or copy that
+  folder under `public/`, and run `php artisan fulltext:make-private` on an install that predates it
+  (it moves the files and removes the old `public/pdf` link). The Windows AI sync worker reads them
+  from there too (`ELIBRARY_FULLTEXT`, hermes-with-rag `CATALOG_SYNC_RUNBOOK.md`).
+- **Folder listings off.** Apache: `Options -Indexes` in the vhost (`public/.htaccess` only turns it
+  off when `mod_negotiation` is loaded). nginx: `autoindex off` (the default).
 - **Only `index.php` runs.** `public/.htaccess` refuses any other `.php` under `public/` (an upload
   folder, say). nginx: pass only `index.php` to PHP-FPM, never `~ \.php$`.
 - **`mod_headers` on** (Apache), so static files get `X-Content-Type-Options: nosniff`.

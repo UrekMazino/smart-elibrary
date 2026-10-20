@@ -9,7 +9,7 @@
 ## 1. The two systems (as of 2026-07)
 
 **eLibrary (this repo)** — Laravel 13 app on Laragon/Apache. Catalog records (MARC + aggregated
-`view_catalogs`), per-record **full-text PDFs** (`public/pdf`), cover photos + thumbnails,
+`view_catalogs`), per-record **full-text PDFs** (`storage/app/private/pdf`, private since Oct 2026), cover photos + thumbnails,
 APA/MLA/Chicago **citations** (`buildCitations()`), and an OPAC with **Meilisearch** instant
 (keyword) search. Domain: Philippine agriculture/forestry research (FPRDI/DOST).
 
@@ -85,7 +85,7 @@ must stop llama-server first (schedule off-hours). This matches the Project Y op
 
 ## 5. Data flow
 
-**Ingestion (write path):** PDF uploaded in `/admin/view-record` → stored `public/pdf/ft-*.pdf`
+**Ingestion (write path):** PDF uploaded in `/admin/view-record` → stored `storage/app/private/pdf/ft-*.pdf`
 (done) → *(new)* job posts `{catalog_id, path, metadata}` to the RAG ingest endpoint → OCR/extract
 → chunk → BGE-M3 embed → **upsert into LanceDB with `catalog_id` + page in each chunk's metadata**.
 
@@ -147,7 +147,7 @@ Build every feature so it *feeds* or *consumes* the RAG cleanly:
 ---
 
 ## 9. What we've already built with this in mind
-- **Predictable full-text storage** (`public/pdf`, `catalog_id`-named) — directly ingestible.
+- **Predictable full-text storage** (`storage/app/private/pdf`, located by `multimedia.FileLocation`) — directly ingestible.
 - **`buildCitations()`** — dependency-free, HTML-escaped, ready to back `/api/citation`.
 - **`catalog_id` correlation** across covers/thumbnails/PDF — the join key the RAG will use.
 - **Meilisearch instant search** — the keyword half of the hybrid search story.

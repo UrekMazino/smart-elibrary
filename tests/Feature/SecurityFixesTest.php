@@ -8,6 +8,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Role;
 use Tests\SeedsReferenceData;
 use Tests\TestCase;
@@ -36,9 +37,10 @@ class SecurityFixesTest extends TestCase
         $this->staff->assignRole(Role::findOrCreate('developer'));
         $this->material = DB::table('materials')->insertGetId(['name' => 'Book']);
 
-        // Downloads and uploads read and write files: a public folder of the test's own.
+        // Downloads and uploads read and write files: a public folder and a private disk of the test's own.
+        Storage::fake('private');
         $this->public = sys_get_temp_dir() . '/security-fixes-' . uniqid();
-        foreach (['pdf', 'news_cover', 'thumb', 'frontpages', 'js/admin'] as $dir) File::ensureDirectoryExists("{$this->public}/$dir");
+        foreach (['news_cover', 'thumb', 'frontpages', 'js/admin'] as $dir) File::ensureDirectoryExists("{$this->public}/$dir");
         File::copy(public_path('js/admin/catalog-view-record.js'), "{$this->public}/js/admin/catalog-view-record.js");
         $this->app->usePublicPath($this->public);
     }
@@ -55,7 +57,7 @@ class SecurityFixesTest extends TestCase
         $id = DB::table('catalogs')->insertGetId(['material_type_id' => $this->material, 'field_data' => '[]', 'is_published' => (int) $published]);
         DB::table('view_catalogs')->insert(['catalog_id' => $id, 'title_statement' => $title,
             'material_type_id' => $this->material, 'is_published' => (int) $published]);
-        file_put_contents("{$this->public}/pdf/ft-$id.pdf", "%PDF-1.4\n%%EOF\n");
+        Storage::disk('private')->put("pdf/ft-$id.pdf", "%PDF-1.4\n%%EOF\n");
         Multimedia::create(['catalog_id' => $id, 'FileName' => "ft-$id.pdf", 'FileLocation' => "pdf/ft-$id.pdf", 'FileType' => 'pdf']);
         return $id;
     }
