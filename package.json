@@ -12,10 +12,10 @@
         "vite": "^8.3.4"
     },
     "dependencies": {
-        "@citation-js/core": "^0.6.8",
-        "alpinejs": "^3.4.2",
+        "@citation-js/core": "^0.9.0",
+        "alpinejs": "^3.17.4",
         "axios": "^1.20.0",
-        "citation-js": "^0.6.8",
+        "citation-js": "^0.9.0",
         "lodash": "^4.17.19"
     }
 }
