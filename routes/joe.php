@@ -176,7 +176,6 @@ Route::controller(CatalogingController::class, 'admin')->middleware('can:access.
 
     Route::get('/admin/copy-list-json', 'copyListJson');
     Route::get('/admin/getcopy-details-json/{id}', 'getCopyDetailsJson');
-    Route::get('/get-import-progress', 'getTaskProgress')->middleware('can:create.catalog.import');
 });
 
 

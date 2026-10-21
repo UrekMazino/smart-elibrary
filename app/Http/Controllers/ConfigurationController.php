@@ -24,19 +24,9 @@ class ConfigurationController extends Controller
 
     public function marcTemplatesJson(Request $request)
     {
-        $draw = $request->get('draw');
-        $start = $request->get("start");
-        $rowPerPage = $request->get("length"); // Rows display per page
-
-        $columnIndex_arr = $request->get('order');
-        $columnName_arr = $request->get('columns');
-        $order_arr = $request->get('order');
-        $search_arr = $request->get('search');
-
-        $columnIndex = $columnIndex_arr[0]['column']; // Column index
-        $columnName = $columnName_arr[$columnIndex]['data']; // Column name
-        $columnSortOrder = $order_arr[0]['dir']; // asc or desc
-        $searchValue = $search_arr['value']; // Search value
+        // Paging, sorting and search as the table sends them; the sort column only from this list.
+        $dt = dataTableRequest($request, ['id' => 'id', 'name' => 'name'], 'name');
+        [$draw, $start, $rowPerPage, $columnName, $columnSortOrder, $searchValue] = [$dt->draw, $dt->start, $dt->length, $dt->column, $dt->dir, $dt->search];
 
         // Total records
         $totalRecords = MarcTemplate::count();
@@ -147,19 +137,9 @@ class ConfigurationController extends Controller
 
     public function marcTagsJson(Request $request)
     {
-        $draw = $request->get('draw');
-        $start = $request->get("start");
-        $rowPerPage = $request->get("length"); // Rows display per page
-
-        $columnIndex_arr = $request->get('order');
-        $columnName_arr = $request->get('columns');
-        $order_arr = $request->get('order');
-        $search_arr = $request->get('search');
-
-        $columnIndex = $columnIndex_arr[0]['column']; // Column index
-        $columnName = $columnName_arr[$columnIndex]['data']; // Column name
-        $columnSortOrder = $order_arr[0]['dir']; // asc or desc
-        $searchValue = $search_arr['value']; // Search value
+        // Paging, sorting and search as the table sends them; the sort column only from this list.
+        $dt = dataTableRequest($request, ['id' => 'id', 'code' => 'code', 'description' => 'description'], 'code');
+        [$draw, $start, $rowPerPage, $columnName, $columnSortOrder, $searchValue] = [$dt->draw, $dt->start, $dt->length, $dt->column, $dt->dir, $dt->search];
 
         // The create form asks to hide the control fields that can't be added by hand
         // (LDR and 008 are auto-generated and edited in the Fixed Fields panel). Sent only
@@ -240,6 +220,7 @@ class ConfigurationController extends Controller
     {
 
         $tag = MarctagsLoc::select(DB::raw('*'))->where('id', $request->marctag_id)->first();
+        abort_unless($tag, 404);
         $subfields = MarctagSubfield::where('marctags_loc_id', $tag->id)->get();
         $firstIndArray = json_decode($tag->first_indictors);
         $secondIndArray = json_decode($tag->second_indicators);
