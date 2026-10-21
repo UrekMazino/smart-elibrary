@@ -108,7 +108,9 @@ Route::controller(CatalogingController::class, 'admin')->middleware('can:access.
     Route::get('/admin/create-record', 'createRecord')->middleware('can:create.catalog');
     Route::post('/admin/view-record', 'viewRecord');
     // GET landing for a single record (used by the post-create redirect / PRG).
-    Route::get('/admin/view-record/{id}', 'showRecord')->name('show-record');
+    Route::get('/admin/view-record/{id}', 'showRecord')->whereNumber('id')->name('show-record');
+    // The record's full text for staff (held records too): open in the browser, or ?download=1.
+    Route::get('/admin/full-text/{id}', 'fullText')->whereNumber('id')->name('full-text');
     // MARC export: single record + batch, each as MARC21 binary (.mrc) or MARCXML (.xml).
     Route::get('/admin/export-record/{id}/{format}', 'exportRecord')->name('export-record')->where('format', 'mrc|xml');
     Route::get('/admin/export-records/{format}', 'exportRecords')->name('export-records')->where('format', 'mrc|xml');
@@ -137,8 +139,6 @@ Route::controller(CatalogingController::class, 'admin')->middleware('can:access.
         ->where(['token' => '[A-Za-z0-9]{40}', 'format' => 'mrc|xml'])->middleware('throttle:60,1');
 
     Route::middleware('can:publish-hold.catalog')->group(function () {
-        Route::post('/admin/hold-all-published', 'holdAllPublished');
-        Route::post('/admin/publish-all-onhold', 'publishAllOnhold');
         Route::post('/admin/publish-to-opac', 'publishToOpac');
         Route::post('/admin/hold-view-from-opac', 'holdViewFromOpac');
         Route::post('/admin/batch-publish', 'togglePublishHoldMaterial');
@@ -164,6 +164,7 @@ Route::controller(CatalogingController::class, 'admin')->middleware('can:access.
     Route::middleware('can:edit.catalog')->group(function () {
         Route::post('/admin/upload/cover-photo', 'uploadCoverPhoto')->name('upload-coverphoto');
         Route::delete('/admin/delete-cover-photo', 'destroyCoverPhoto')->name('delete-coverphoto');
+        Route::post('/admin/view-record/{id}/cover-placeholder', 'toggleCoverPlaceholder')->whereNumber('id')->name('cover-placeholder');
 
         Route::post('/admin/upload/full-text', 'uploadFullText')->name('upload-fulltext');
         Route::delete('/admin/delete-full-text', 'destroyFullText')->name('delete-fulltext');
@@ -223,7 +224,6 @@ Route::controller(CsfController::class)->group(function () {
     
     Route::get('/csf', 'index');
     Route::get('/csf/system-review', 'create');
-    Route::get('/csf/get-ratings/json', 'getRatings');
     Route::post('/csf/store', 'store');
     
 });

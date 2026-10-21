@@ -268,6 +268,7 @@
 @endsection
 
 @section('js')
+@include('opac.partials.guest-login-js')
 <script>
 (function () {
     'use strict';
@@ -278,7 +279,6 @@
     var QUICK   = @json(url('/search/quick'));
     var SAVE    = @json(url('/search/saved'));
     var LOGIN   = @json(route('login'));
-    var REGISTER = @json(route('register'));
     var CSRF    = @json(csrf_token());
     var AUTHED  = @json(auth()->check());
 
@@ -532,6 +532,10 @@
 
     // The result buttons, also used inside the Quick view dialog (which sits outside #sr-main).
     function onAction(e) {
+        // A guest's Save (a link to the login page, for when scripts are off): ask first instead.
+        var guestOnly = e.target.closest('[data-login-prompt]');
+        if (guestOnly) { e.preventDefault(); promptLogin(guestOnly.dataset.loginPrompt); return; }
+
         var quick = e.target.closest('[data-quick]');
         if (quick) {
             fetch(QUICK + '/' + encodeURIComponent(quick.dataset.quick), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
@@ -579,7 +583,7 @@
 
         var read = e.target.closest('[data-read]');
         if (read) {
-            if (!AUTHED) { promptReadLogin(); return; }   // reading is for signed-in patrons only
+            if (!AUTHED) { promptLogin('read'); return; }   // reading is for signed-in patrons only
             openReader(read.dataset.read, read.dataset.title);
             if (window.QuickReview) QuickReview.startRead(read.dataset.id, read.dataset.title);   // a minute or more asks for a review on close
             // Count this read as a view, like opening the record page.
@@ -589,6 +593,7 @@
 
         var dl = e.target.closest('[data-download]');
         if (dl) {
+            if (!AUTHED) { promptLogin('download'); return; }   // downloading is for signed-in patrons only
             $('sr-download-id').value = dl.dataset.download; $('sr-download').submit();
             if (window.QuickReview) QuickReview.download(dl.dataset.download, dl.dataset.title);
         }
@@ -603,23 +608,11 @@
     $('sr-scrim').addEventListener('click', closeSheet);
     $('sr-dialog-scrim').addEventListener('click', closeDialog);
 
-    function promptReadLogin() {
-        if (!window.Swal) { location.href = LOGIN; return; }
+    // Read, Download and Save ask a guest to sign in first (opac.partials.guest-login-js, shared
+    // with the record page).
+    function promptLogin(action) {
         if (!$('sr-dialog').hidden) closeDialog();   // Quick view (z-index 2001) would cover the popup
-        Swal.fire({
-            icon: 'info',
-            title: 'Sign in to read',
-            text: 'Reading materials online is available to registered members. Log in or create a free account to continue.',
-            showDenyButton: true,
-            showCancelButton: true,
-            confirmButtonText: 'Log in',
-            denyButtonText: 'Register',
-            cancelButtonText: 'Not now',
-            reverseButtons: true
-        }).then(function (r) {
-            if (r.isConfirmed) location.href = LOGIN;
-            else if (r.isDenied) location.href = REGISTER;
-        });
+        promptGuestLogin(action);
     }
     function openReader(url, title) {
         $('sr-reader-frame').src = '/pdfjs/web/viewer.html?file=' + encodeURIComponent(url);

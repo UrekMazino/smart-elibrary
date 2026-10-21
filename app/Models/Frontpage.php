@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Services\SearchIndex;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -22,12 +23,8 @@ class Frontpage extends Model
     {
         // Generated placeholder covers ("gen-") never count as a cover, so they need no refresh.
         if (str_starts_with((string) $this->FrontPageName, 'gen-')) return;
-        if (! $this->catalog_id) return;
-        try {
-            ViewCatalog::where('catalog_id', $this->catalog_id)->searchable();
-        } catch (\Throwable $e) {
-            report($e);   // search engine down: the upload itself must still succeed
-        }
+        // Sent after the change commits; a search engine that is down never fails the upload.
+        SearchIndex::refresh($this->catalog_id);
     }
 
     protected $fillable = [

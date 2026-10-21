@@ -57,17 +57,12 @@
 <!--View reservation Modal -->
 @include('admin.modals.view-reservation-modal')
 
-<form method="post" action="{{ url('/admin/borrowed/action') }}" id="frm">
-	@csrf
-	<input type="hidden" class="form-control" name="borrowed_id" id="borrowed_id" value="">
-  <input type="hidden" class="form-control" name="borrowed_action" id="borrowed_action" value="">
-</form>
 @endsection
 
 @section('js')
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net/jquery.dataTables.js') }}"></script>
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net-bs5/dataTables.bootstrap5.js') }}"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.31.0/min/moment.min.js"></script>
 <script src="{{ asset('js/admin/view-modals.js') }}"></script>
 <script> 
   let viewMaterialUrl = '{{ url("/admin/reservation/material-json") }}';
@@ -76,6 +71,15 @@
   let viewReservationUrl = '{{ url("/admin/reservation/view-json") }}';
 </script>
 <script>
+// Values go into the table as text: patron names and titles are not trusted markup.
+function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+}
+// An argument inside onclick="f(...)": a JS string literal, escaped again for the attribute.
+function jsArg(s) { return esc(JSON.stringify(s == null ? '' : String(s))); }
+
 $('#tbl').DataTable({
     processing: true,
     serverSide: true,
@@ -84,18 +88,18 @@ $('#tbl').DataTable({
     columns: [
         { data: 'title_statement',
             render: function(data, type, row) {
-                return '<a href="#" onclick="viewMaterial(\'' + row.catalog_id + '\', \'' + row.circulation_number + '\', 0)" >' + data + '</a>';
+                return '<a href="#" onclick="viewMaterial(' + jsArg(row.catalog_id) + ', ' + jsArg(row.circulation_number) + ', 0)" >' + esc(data) + '</a>';
             }
         
         },
         { data: 'patron_name',
             render: function(data, type, row) {
-                return '<a href="#" onclick="viewPatron( \''+row.user_id+'\')" >' + data + '</a>';
+                return '<a href="#" onclick="viewPatron(' + jsArg(row.user_id) + ')" >' + esc(data) + '</a>';
             }
         },
         { data: 'transaction_code',
             render: function(data, type, row) {
-                return '<a href="#" onclick="viewTransaction( \''+row.transaction_code+'\')" >' + data + '</a>';
+                return '<a href="#" onclick="viewTransaction(' + jsArg(row.transaction_code) + ')" >' + esc(data) + '</a>';
             } 
         },
        
@@ -103,13 +107,13 @@ $('#tbl').DataTable({
         { data: 'reservation_code',
             render: function(data, type, row) {
                 if(data == 'Walk-in') {
-                  return data;
+                  return esc(data);
                 } else {
-                  return '<a href="#" onclick="viewReservation( \''+row.reservation_code+'\')" >' + data + '</a>';
+                  return '<a href="#" onclick="viewReservation(' + jsArg(row.reservation_code) + ')" >' + esc(data) + '</a>';
                 }
 
             } },
-        { data: 'status' },
+        { data: 'status', render: function (d, type) { return type === 'display' ? esc(d) : d; } },
         { data: 'created_at',
             render: function(data, type, row) {
               let humanReadableDate = moment(data).format('MMMM Do, YYYY h:mm:ss A');
@@ -118,14 +122,6 @@ $('#tbl').DataTable({
     ]
 });
 
-
-function approvedBorrowed(status,id)
-{
-  $("#borrowed_id").val(id);
-  $("#borrowed_action").val(status);
-
-  $("#frm").submit();
-}
 
 </script>
 @endsection

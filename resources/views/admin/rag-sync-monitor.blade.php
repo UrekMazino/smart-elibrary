@@ -9,6 +9,30 @@
             color: #7987a1; white-space: nowrap; padding: 9px 10px;
         }
         #syncTbl td { vertical-align: middle; }
+        /* The admin theme keeps every table cell on one line (.table td { white-space: nowrap }): a
+           long title made the table wider than any screen and pushed the other columns out of view.
+           The Catalog column wraps instead (a very long unbroken word breaks too). */
+        #syncTbl td.sync-catalog { white-space: normal; overflow-wrap: anywhere; min-width: 12rem; }
+        /* Tablets, small laptops: the columns give up their fixed widths; dates break between day and time. */
+        @media (max-width: 1199.98px) {
+            #syncTbl th { width: auto !important; }
+            #syncTbl td.sync-catalog { min-width: 9rem; }
+            #syncTbl td.sync-date { white-space: normal; }
+        }
+        /* Phones: six columns can't fit, so each change is a small card: the title, then labelled values. */
+        @media (max-width: 767.98px) {
+            #syncTbl thead { display: none; }
+            #syncTbl, #syncTbl tbody, #syncTbl tr, #syncTbl td { display: block; width: 100% !important; }
+            #syncTbl tr { border-bottom: 1px solid #eef0f2; padding: 8px 0; }
+            /* DataTables gives cells content-box sizing: the padding would push them past the edge. */
+            #syncTbl td { border: 0; padding: 2px 4px; white-space: normal; text-align: left !important; box-sizing: border-box; }
+            #syncTbl td[data-label]::before {
+                content: attr(data-label) ": "; margin-right: 4px;
+                font-size: 11px; text-transform: uppercase; letter-spacing: .4px; color: #7987a1;
+            }
+            #syncTbl td.sync-catalog { min-width: 0; font-weight: 600; }
+            #syncTbl td.sync-action { padding-top: 6px; }
+        }
         .sync-stat { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
         .sync-stat .card { border: 1px solid #eef0f2; border-radius: 8px; padding: 10px 16px; min-width: 120px; }
         .sync-stat .n { font-size: 22px; font-weight: 700; line-height: 1; }
@@ -105,6 +129,14 @@
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/DataTables/DataTables-1.12.1/js/dataTables.bootstrap5.min.js') }}"></script>
 <script>
 $(document).ready(function () {
+    // The column name on each cell, shown before the value when phones show rows as cards.
+    function label(name) { return function (td) { td.setAttribute('data-label', name); }; }
+    // "2026-10-20 18:03:02": when the column is narrow it breaks between the day and the time only.
+    function dayTime(d, type) {
+        var m = type === 'display' && /^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}(:\d{2})?)$/.exec(String(d));
+        return m ? '<span class="text-nowrap">' + m[1] + '</span> <span class="text-nowrap">' + m[2] + '</span>' : d;
+    }
+
     var table = $('#syncTbl').DataTable({
         processing: true,
         serverSide: true,
@@ -116,15 +148,16 @@ $(document).ready(function () {
                 d.sync_status = $('#fStatus').val();
             }
         },
+        autoWidth: false,   // widths come from the CSS, so the table follows the screen
         columns: [
-            { data: 'title', orderable: false, render: function (d, t, row) {
+            { data: 'title', orderable: false, className: 'sync-catalog', render: function (d, t, row) {
                 return '<span class="text-muted">#' + row.catalog_id + '</span> ' + d;
             }},
-            { data: 'change', orderable: false },
-            { data: 'when', orderable: false },
-            { data: 'synced', orderable: false },
-            { data: 'status', orderable: false },
-            { data: 'resync', orderable: false, className: 'text-end', render: function (d) {
+            { data: 'change', orderable: false, createdCell: label('Change') },
+            { data: 'when', orderable: false, className: 'sync-date', createdCell: label('Changed'), render: dayTime },
+            { data: 'synced', orderable: false, className: 'sync-date', createdCell: label('Synced'), render: dayTime },
+            { data: 'status', orderable: false, createdCell: label('Status') },
+            { data: 'resync', orderable: false, className: 'text-end sync-action', render: function (d) {
                 return '<button type="button" class="btn btn-sm btn-outline-info resync-btn" data-id="' + d + '">Re-sync</button>';
             }},
         ],

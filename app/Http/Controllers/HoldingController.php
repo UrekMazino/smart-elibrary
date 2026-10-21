@@ -108,18 +108,15 @@ class HoldingController extends Controller
             ->first();
         abort_if(!$result, 404);
 
-        $pdf = App\Models\Multimedia::where('catalog_id',$catalog_id)->first();
-        abort_if(!$pdf, 404);
-
-        $loc  = ltrim((string)$pdf['FileLocation'], '/');
-        $path = public_path($loc);
-        abort_if($loc === '' || !is_file($path), 404);
+        // The file, from private storage (never served directly by the web server).
+        $path = fullTextFile($catalog_id);
+        abort_if(!$path, 404);
 
         // A logged-in patron reading a material adds it to their "To Review" list — the
         // same as downloading. Recorded once per user + material: PDF.js sends several range
         // requests at once, so rely on the unique (user_id, catalog_id) key rather than a
-        // check-then-insert that two of them could pass together.
-        if (Auth::check()) {
+        // check-then-insert that two of them could pass together. Staff reads are not recorded.
+        if (Auth::check() && ! Auth::user()->isStaff()) {
             \DB::table('reads')->insertOrIgnore([
                 'user_id'    => Auth::id(),
                 'catalog_id' => $result->catalog_id,

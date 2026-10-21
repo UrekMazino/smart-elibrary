@@ -141,7 +141,7 @@
 										<select class="form-control required" name="region_id" id="region_id">
 											<option selected disabled>Select Region</option>
 											@foreach (getRegion() as $item)
-												<option value="{{ $item->regCode }}" {{ $item->regCode == $user->region_id ? 'selected' : '' }}>
+												<option value="{{ $item->id }}" {{ $item->id == $user->region_id ? 'selected' : '' }}>
 													{{ $item->desc }}
 												</option>
 											@endforeach

@@ -20,8 +20,15 @@ class ReviewController extends Controller
 
     public function create()
     {
-      request()->validate(['catalog_id' => ['required', 'integer', 'exists:catalogs,id']]);
-      $record = App\Models\ViewCatalog::where('catalog_id', request()->catalog_id)->first();
+      // The same rules as the quick review popup (quickStore): a 1-5 star rating of a public record.
+      request()->validate([
+          'catalog_id'   => ['required', 'integer'],
+          'rating_input' => ['required', 'integer', 'between:1,5'],
+          'remarks'      => ['nullable', 'string', 'max:1000'],
+      ]);
+      $record = App\Models\ViewCatalog::where('catalog_id', request()->catalog_id)
+          ->where('is_published', 1)->whereNull('deleted_at')->first();
+      abort_unless($record, 404);
 
       // One review per patron per material (a unique key on ratings).
       if (App\Models\Rating::where('user_id', Auth::id())->where('catalog_id', request()->catalog_id)->exists()) {

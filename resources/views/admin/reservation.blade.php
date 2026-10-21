@@ -108,7 +108,7 @@
   let canManageReservation = @json(auth()->user()->can('manage.circulation.reservation'));
   let canManagePatronStatus = @json(auth()->user()->can('manage.patron.status'));
 </script>
-<script src="{{ asset('js/admin/reservation.js') }}"></script>
+<script src="{{ asset('js/admin/reservation.js') }}?v={{ filemtime(public_path('js/admin/reservation.js')) }}"></script>
 <script src="{{ asset('js/admin/view-modals.js') }}"></script>
 <script>
 $(document).ready(function() {
@@ -151,7 +151,7 @@ function loadReservationChat() {
                 '<div class="' + side + '" style="margin:8px 0;">' +
                   '<div style="display:inline-block;max-width:80%;text-align:left;border-radius:10px;padding:8px 12px;' + bubble + '">' +
                     '<div>' + $('<div>').text(obj.message).html() + '</div>' +
-                    '<small style="opacity:.8;">' + name + ' · ' + obj.created_at + '</small>' +
+                    '<small style="opacity:.8;">' + $('<div>').text(name + ' · ' + obj.created_at).html() + '</small>' +
                   '</div>' +
                 '</div>'
             );

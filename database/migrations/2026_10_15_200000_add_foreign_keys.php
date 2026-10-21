@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 
 /**
@@ -20,7 +21,8 @@ use Illuminate\Support\Facades\Schema;
  * Not declared: rag_sync_queue.catalog_id (the outbox must outlive a deleted record to remove it
  * from the AI index), model_has_roles.model_id (polymorphic), users.region_id (regions is MyISAM).
  *
- * Changes nothing if any row already points at a missing parent; the message lists where.
+ * Rows that already point at a missing parent get their key's rule (cascade: deleted; set null:
+ * cleared; logged). Under restrict they stop the migration before anything changes.
  */
 return new class extends Migration
 {
@@ -62,16 +64,27 @@ return new class extends Migration
 
     public function up(): void
     {
+        // Rows whose parent was already deleted get what the key will do from now on: cascade
+        // deletes them, set null clears the reference. Orphans under restrict are history, so
+        // they stop the migration before anything changes.
         $orphans = [];
-        foreach (self::KEYS as [$table, $column, $parent, $key]) {
-            $count = DB::table("$table as c")->whereNotNull("c.$column")
-                ->whereNotExists(fn ($q) => $q->select(DB::raw(1))->from("$parent as p")->whereColumn("p.$key", "c.$column"))
-                ->count();
-            if ($count) $orphans[] = "$table.$column -> $parent ($count)";
+        $blocked = [];
+        foreach (self::KEYS as [$table, $column, $parent, $key, $onDelete]) {
+            $count = $this->orphans($table, $column, $parent, $key)->count();
+            if (! $count) continue;
+            $orphans[] = [$table, $column, $parent, $key, $onDelete, $count];
+            if ($onDelete === 'restrict') $blocked[] = "$table.$column -> $parent ($count)";
         }
-        if ($orphans) {
-            throw new RuntimeException('Not changed: rows point at missing parents: ' . implode(', ', $orphans)
+        if ($blocked) {
+            throw new RuntimeException('Not changed: rows point at missing parents: ' . implode(', ', $blocked)
                 . '. Correct or clear those references, then migrate again.');
+        }
+        foreach ($orphans as [$table, $column, $parent, $key, $onDelete, $count]) {
+            $ids = $this->orphans($table, $column, $parent, $key)->pluck('c.id');
+            $onDelete === 'cascade'
+                ? DB::table($table)->whereIn('id', $ids)->delete()
+                : DB::table($table)->whereIn('id', $ids)->update([$column => null]);
+            Log::notice("add_foreign_keys: $table.$column -> $parent: $count orphan row(s) " . ($onDelete === 'cascade' ? 'deleted' : 'set to NULL'));
         }
 
         // The projection is one row per record.
@@ -99,6 +112,13 @@ return new class extends Migration
         }
 
         Schema::table('view_catalogs', fn (Blueprint $table) => $table->dropUnique(['catalog_id']));
+    }
+
+    /** Rows of $table whose $column points at no row of $parent. */
+    private function orphans(string $table, string $column, string $parent, string $key)
+    {
+        return DB::table("$table as c")->whereNotNull("c.$column")
+            ->whereNotExists(fn ($q) => $q->select(DB::raw(1))->from("$parent as p")->whereColumn("p.$key", "c.$column"));
     }
 
     private function hasForeignKey(string $table, string $name): bool

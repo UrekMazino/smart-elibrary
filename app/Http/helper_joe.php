@@ -241,6 +241,27 @@ function fineAmount($value) {
 	return is_numeric($value) ? round((float) $value, 2) : null;
 }
 
+// A news article's body as the editor may hold it: the formatting the TinyMCE toolbar produces
+// (headings, lists, links, images, tables, alignment) and nothing else. Scripts, event handlers,
+// iframes, embedded media, comments and TinyMCE's own data-mce-* / mce:protected markup are
+// dropped: those are how the known TinyMCE 6 XSS advisories reach a staff member's browser when
+// a crafted body is opened in the editor. Applied on save and again when the editor loads.
+function cleanNewsHtml(?string $html): string {
+	static $sanitizer = null;
+	$sanitizer ??= new Symfony\Component\HtmlSanitizer\HtmlSanitizer(
+		(new Symfony\Component\HtmlSanitizer\HtmlSanitizerConfig())
+			->allowSafeElements()
+			->allowLinkSchemes(['http', 'https', 'mailto'])
+			->allowMediaSchemes(['http', 'https'])
+			->allowRelativeLinks()
+			->allowRelativeMedias()
+			->allowAttribute('style', ['p', 'div', 'span', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'img', 'table', 'td', 'th', 'li'])
+			->forceAttribute('a', 'rel', 'noopener noreferrer')
+			->withMaxInputLength(200000)
+	);
+	return $sanitizer->sanitize((string) $html);
+}
+
 // Total unseen chat messages FROM patrons (drives the admin Reservation menu badge).
 function getReservationUnseenMsgCount() {
 	return DB::table('reservation_messages')
@@ -277,23 +298,36 @@ function getIndDesc($id)
 	return $indicator;
 }
 
+// The MARC 21 reference tables (marctags_loc, marctag_subfields_loc, marctag_indicators_loc) never
+// change while the app runs, and importing one record asks about 300 questions about the same few
+// dozen codes. Each answer is kept for the rest of the request: the database is still asked once
+// per distinct question, exactly as before, instead of every time.
+function marcLookup(string $question, Closure $answer)
+{
+	if (! app()->bound('marc.lookups')) app()->instance('marc.lookups', new ArrayObject());
+	$memo = app('marc.lookups');
+	if (! $memo->offsetExists($question)) $memo[$question] = $answer();
+	return $memo[$question];
+}
+
 function getTagDetails($id, $code = null, $col = null)
 {
-	if(is_null($code)) {
-		$marcTag = DB::table('marctags_loc')->select('id','code', 'description')->where('id', $id)->first();
-		return $marcTag;
-	} else {
-		$marcTag = DB::table('marctags_loc')->select('id','code', 'description')->where('code',  'like', '%' . $code . '%')->first();
+	return marcLookup(__FUNCTION__ . json_encode(func_get_args()), function () use ($id, $code, $col) {
+		if(is_null($code)) {
+			$marcTag = DB::table('marctags_loc')->select('id','code', 'description')->where('id', $id)->first();
+			return $marcTag;
+		} else {
+			$marcTag = DB::table('marctags_loc')->select('id','code', 'description')->where('code',  'like', '%' . $code . '%')->first();
 		
-		if(!is_null($marcTag)){
-			return !is_null($col) ? $marcTag->$col : $marcTag->id;
-		} 
-		// id 2500 meaning Marc Tag not Found
-		$id = 2500;
-		return $id;
+			if(!is_null($marcTag)){
+				return !is_null($col) ? $marcTag->$col : $marcTag->id;
+			} 
+			// id 2500 meaning Marc Tag not Found
+			$id = 2500;
+			return $id;
 		
-	}
-
+		}
+	});
 }
 
 function getSubfieldDetails($id)
@@ -338,7 +372,7 @@ function marcFileIndToTableChar($ch)
 }
 
 function getFirstIndicatorId($tagId, $indCode = null, $col = null){
-
+	return marcLookup(__FUNCTION__ . json_encode(func_get_args()), function () use ($tagId, $indCode, $col) {
 		$marcTag = DB::table('marctags_loc')->select('first_indictors')->where('id', $tagId)->first();
 
 		$ind1 = json_decode($marcTag->first_indictors);
@@ -366,56 +400,60 @@ function getFirstIndicatorId($tagId, $indCode = null, $col = null){
 		}
 
 		return $col == "indicator" ? "# - Undefined" : 1;
-
+	});
 }
 
 function getSecondIndicatorId($tagId, $indCode = null)
 {
-	$marcTag = DB::table('marctags_loc')->select('second_indicators')->where('id', $tagId)->first();
-	$ind2 = json_decode($marcTag->second_indicators);
+	return marcLookup(__FUNCTION__ . json_encode(func_get_args()), function () use ($tagId, $indCode) {
+		$marcTag = DB::table('marctags_loc')->select('second_indicators')->where('id', $tagId)->first();
+		$ind2 = json_decode($marcTag->second_indicators);
 	
 
-	if(count($ind2) > 0) {
-		$ind2Collection = DB::table('marctag_indicators_loc')->whereIn('id', $ind2)->get();
+		if(count($ind2) > 0) {
+			$ind2Collection = DB::table('marctag_indicators_loc')->whereIn('id', $ind2)->get();
 
 
-		if(!is_null($ind2Collection)) {
-			foreach($ind2Collection as $col) {
-				$parts = explode(' ', $col->indicator);
+			if(!is_null($ind2Collection)) {
+				foreach($ind2Collection as $col) {
+					$parts = explode(' ', $col->indicator);
 
-				// Get the first element (index 0) from the array
-				$code = $parts[0];
+					// Get the first element (index 0) from the array
+					$code = $parts[0];
 
-				if($code == marcFileIndToTableChar($indCode)) {
-					if($col->id != null) {
-						return $col->id;
+					if($code == marcFileIndToTableChar($indCode)) {
+						if($col->id != null) {
+							return $col->id;
+						}
 					}
 				}
 			}
-		}
 
-		return 1;
-	}
-	
+			return 1;
+		}
+	});
 }
 
 function getSubfieldId($code)
 {
-	$subfield = DB::table('marctag_subfields_loc')->select('id')->where('code',  'like', '%' . $code . '%')->first();
-	if(is_null($subfield)) {
-		return "MARCTAG ($code) not found!";
-	}
-	return $subfield ? $subfield->id : 0;
+	return marcLookup(__FUNCTION__ . json_encode(func_get_args()), function () use ($code) {
+		$subfield = DB::table('marctag_subfields_loc')->select('id')->where('code',  'like', '%' . $code . '%')->first();
+		if(is_null($subfield)) {
+			return "MARCTAG ($code) not found!";
+		}
+		return $subfield ? $subfield->id : 0;
+	});
 }
 
 function getSubfield($code, $col)
 {
-
-	$subfield = DB::table('marctag_subfields_loc')->select('id', 'code', 'description')->where('code',  'like', '%' . $code . '%')->first();
-	if(is_null($subfield)) {
-		return "MARCTAG ($code) not found!";
-	}
-	return $subfield->$col;
+	return marcLookup(__FUNCTION__ . json_encode(func_get_args()), function () use ($code, $col) {
+		$subfield = DB::table('marctag_subfields_loc')->select('id', 'code', 'description')->where('code',  'like', '%' . $code . '%')->first();
+		if(is_null($subfield)) {
+			return "MARCTAG ($code) not found!";
+		}
+		return $subfield->$col;
+	});
 }
 
 function getCopiesStatus()

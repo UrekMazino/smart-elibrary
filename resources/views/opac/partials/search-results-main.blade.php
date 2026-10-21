@@ -295,7 +295,7 @@
                             @if($authed)
                                 <button type="button" class="sr-act" data-save="{{ $h['catalog_id'] }}" aria-pressed="{{ $saved ? 'true' : 'false' }}">{{ $saved ? 'Saved' : 'Save' }}</button>
                             @else
-                                <a class="sr-act" href="{{ route('login') }}" title="Log in to save records">Save</a>
+                                <a class="sr-act" href="{{ route('login') }}" data-login-prompt="save" title="Log in to save records">Save</a>
                             @endif
                         </div>
                     </li>

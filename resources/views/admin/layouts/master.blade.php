@@ -48,6 +48,22 @@ License: For each use you must have a valid license purchased only from above li
   <!-- Layout styles -->  
 	<link rel="stylesheet" href="{{ asset('admintemplate/nobleui/template/assets/css/demo1/style.css') }}">
   <!-- End layout styles -->
+  <style>
+    /* NobleUI's template.js adds .overflow-hidden to <body> while the pointer is over the sidebar,
+       to stop the page scrolling under it. That hid the page scrollbar, so the whole page widened
+       and narrowed by its 15px every time the pointer crossed between the sidebar and the content
+       (and the page could not be scrolled from over the sidebar). Leave the page's overflow alone. */
+    body.overflow-hidden { overflow: visible !important; }
+
+    /* Navbar "OPAC" button: opens the public catalogue as this staff account. */
+    .navbar .navbar-content .navbar-nav .nav-item .nav-link.nav-opac {
+      display: inline-flex; align-items: center; gap: 6px; padding: 5px 13px; border: 1px solid #d9dee8;
+      border-radius: 999px; font-size: 13px; font-weight: 600; color: #344057; line-height: 1.2;
+    }
+    .navbar .navbar-content .navbar-nav .nav-item .nav-link.nav-opac:hover { background: #f2f5f9; color: #1f2a3c; }
+    .navbar .navbar-content .navbar-nav .nav-item .nav-link.nav-opac svg { width: 16px; height: 16px; }
+    @media (max-width: 575px) { .nav-opac span { display: none; } }
+  </style>
 
   	<!-- Favicons-->
 	<link rel="shortcut icon" href="{{ asset('assets/images/elibrary-02.png') }}">
@@ -294,8 +310,12 @@ License: For each use you must have a valid license purchased only from above li
 						</div>
 					</form>
 					<ul class="navbar-nav">
-
-						
+						{{-- The public catalogue as this staff account; its "Return to admin" comes back here. --}}
+						<li class="nav-item">
+							<a class="nav-link nav-opac" href="{{ route('admin.opac') }}" title="Open the OPAC (public catalogue)">
+								<i data-feather="book-open"></i><span>OPAC</span>
+							</a>
+						</li>
 						@can('access.notifications')
 						<li class="nav-item dropdown">
 							@php $nfyCount = notifications()['count']; @endphp
@@ -428,6 +448,8 @@ License: For each use you must have a valid license purchased only from above li
 	<!-- endinject -->
 
   <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/sweetalert2/sweetalert2.min.js') }}"></script>
+  {{-- data-confirm on a form, link or button: ask before a delete / remove. --}}
+  @include('admin.partials.confirm-js')
 
 
 	<!-- Custom js for this page -->

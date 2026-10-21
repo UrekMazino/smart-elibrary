@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Frontpage;
 use App\Models\ViewCatalog;
 use App\Services\RagSync;
+use App\Services\SearchIndex;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -70,10 +71,8 @@ class RebuildCatalogTitles extends Command
         });
         $this->info('Updated ' . count($changes) . ' title(s) (and their copies).');
 
-        // Search index (Meilisearch via Scout; a no-op on the collection driver).
-        foreach (array_chunk($ids, 500) as $chunk) {
-            ViewCatalog::whereIn('catalog_id', $chunk)->searchable();
-        }
+        // Search index (sent in chunks).
+        SearchIndex::refresh($ids);
         $this->info('Search index re-synced.');
 
         // AI index: the worker re-reads the record, so queueing is enough.

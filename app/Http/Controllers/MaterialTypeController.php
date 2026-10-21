@@ -4,8 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Material;
 use App\Models\MaterialTypeMap;
-use App\Models\ViewCatalog;
-use App\Services\RagSync;
+use App\Services\SearchIndex;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -16,7 +15,7 @@ use Illuminate\Validation\Rule;
  *
  * The hub lists the utilities this admin can use; Material Types is the first one. Material
  * types are referenced by records (catalogs + the OPAC's view_catalogs, which also stores the
- * NAME), batches, mapping presets and legacy holdings — so:
+ * NAME), batches and mapping presets — so:
  *   - a type in use can't be deleted: merge it into another type (moves everything) or hide it;
  *   - a rename is pushed to every record's stored name + the search index;
  *   - MARC record-type entries (LDR/06 codes) are protected: never deleted; "Move records to…"
@@ -134,7 +133,6 @@ class MaterialTypeController extends Controller
             DB::table('view_catalogs')->where('material_type_id', $source->id)
                 ->update(['material_type_id' => $target->id, 'material_type' => $target->name]);
             DB::table('catalog_imports')->where('material_type_id', $source->id)->update(['material_type_id' => $target->id]);
-            DB::table('holdings')->where('material_type_id', $source->id)->update(['material_type_id' => $target->id]);
 
             // Mapping presets: their default and every value mapped to the source.
             foreach (MaterialTypeMap::all() as $preset) {
@@ -171,15 +169,14 @@ class MaterialTypeController extends Controller
         return response()->json(['message' => '“' . $m->name . '” deleted.']);
     }
 
-    /** Re-index the records of a type (search + AI) and refresh cached OPAC pages. */
+    /**
+     * Re-index the records of a type in OPAC search and refresh cached OPAC pages. The AI index is
+     * left alone: it never reads material types, and queuing the type's records re-embedded every
+     * one of them (about 40 minutes per 2,000 records) for unchanged text.
+     */
     private function resync(int $materialId): void
     {
-        ViewCatalog::where('material_type_id', $materialId)->searchable();
-        RagSync::enqueueMany(
-            DB::table('view_catalogs')->where('material_type_id', $materialId)->pluck('catalog_id'),
-            RagSync::UPSERT,
-            'material-type-change'
-        );
+        SearchIndex::refresh(DB::table('view_catalogs')->where('material_type_id', $materialId)->pluck('catalog_id'));
         clearHomeCache();
     }
 
@@ -200,7 +197,6 @@ class MaterialTypeController extends Controller
             'records'  => $count('catalogs'),
             'opac'     => $count('view_catalogs'),
             'batches'  => $count('catalog_imports'),
-            'holdings' => $count('holdings'),
             'presets'  => $presets,
         ];
     }

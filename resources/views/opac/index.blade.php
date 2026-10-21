@@ -133,12 +133,12 @@
 	<nav class="section-nav" aria-label="Page sections">
 		<a href="#sec-search"  data-label="Search"  class="active"><i></i></a>
 		<a href="#sec-shelves" data-label="Shelves"><i></i></a>
-		<a href="#sec-misc"    data-label="Recent"><i></i></a>
+		<a href="#sec-misc"    data-label="Highlights"><i></i></a>
 	</nav>
 {{-- @if(Auth::user() && !checkCSF()) {{ session(['message' => 'Hello! Can we have a minute of your time to answer our CSF form. Thank you!']); }} @endif --}}
 		@if (session('message'))
 			<div class="alert @if(!checkCSF())alert-warning @else alert-success @endif text-center" style="margin-bottom:0; padding: 10px 1rem;" role="alert">
-				{{ session('message') }} @if(!checkCSF()) <a href="{{ url('/csf/system-review') }}"><u>Go to CSF</u></a> @endif
+				{{ session('message') }} @if(!checkCSF() && ! (Auth::check() && Auth::user()->isStaff())) <a href="{{ url('/csf/system-review') }}"><u>Go to CSF</u></a> @endif
 			</div>
 			@php session()->forget('message'); @endphp
 		@endif
@@ -275,7 +275,7 @@
 
 		<div id="sec-shelves">@include('opac.partials.shelf-browser')</div>
 		<style>
-			/* Recent section — compact, minimalist carousels (Recent Uploads / Top lists / News) */
+			/* Highlights section — compact, minimalist carousels (Recent Uploads / Top lists / News) */
 			#sec-misc { padding:20px 0 36px; }
 			.cover-carousel { max-width:1680px; margin:0 auto; padding:4px 24px 2px; }
 			.cover-carousel .main_title { text-align:center; margin-bottom:6px; }
@@ -421,6 +421,7 @@
 @endsection
 
 @section('js')
+@include('opac.partials.guest-login-js')
 <script type="text/javascript">
 	// ---- Minimalist section nav: smooth-scroll (offset for the sticky header) + scrollspy ----
 	(function () {
@@ -461,7 +462,8 @@
       });
 
 </script>
-@if(!checkCSF() && Auth::user())
+{{-- The client satisfaction survey is for patrons, not staff browsing the OPAC. --}}
+@if(Auth::user() && ! Auth::user()->isStaff() && !checkCSF())
 <script type="text/javascript">
 
     $(window).on('load', function() {
@@ -630,24 +632,7 @@
 	var isGuest = !@json(auth()->check());
 
 	function promptLogin() {
-		if (window.Swal) {
-			Swal.fire({
-				icon: 'info',
-				title: 'Sign in to use AI mode',
-				text: 'Asking the library’s AI is available to registered members. Log in or create a free account to continue.',
-				showDenyButton: true,
-				showCancelButton: true,
-				confirmButtonText: 'Log in',
-				denyButtonText: 'Register',
-				cancelButtonText: 'Not now',
-				reverseButtons: true
-			}).then(function (r) {
-				if (r.isConfirmed) window.location = "{{ url('/login') }}";
-				else if (r.isDenied) window.location = "{{ url('/register') }}";
-			});
-		} else {
-			window.location = "{{ url('/login') }}";
-		}
+		promptGuestLogin('ai');   // opac.partials.guest-login-js, the same popup as Read / Download / Save
 	}
 
 	$('.mode-btn').on('click', function () {
@@ -786,21 +771,7 @@
 		Swal.fire({ toast: true, position: 'bottom', icon: icon || 'success', title: text, showConfirmButton: false, timer: 1800, timerProgressBar: false });
 	}
 	function promptLogin() {
-		if (!window.Swal) { window.location = "{{ url('/login') }}"; return; }
-		Swal.fire({
-			icon: 'info',
-			title: 'Sign in to save materials',
-			text: 'Saving materials to your list is available to registered members. Log in or create a free account to continue.',
-			showDenyButton: true,
-			showCancelButton: true,
-			confirmButtonText: 'Log in',
-			denyButtonText: 'Register',
-			cancelButtonText: 'Not now',
-			reverseButtons: true
-		}).then(function (r) {
-			if (r.isConfirmed) window.location = "{{ url('/login') }}";
-			else if (r.isDenied) window.location = "{{ url('/register') }}";
-		});
+		promptGuestLogin('save');   // opac.partials.guest-login-js, the same popup as the search results
 	}
 
 	document.addEventListener('click', function (e) {

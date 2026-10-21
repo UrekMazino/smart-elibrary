@@ -37,8 +37,18 @@
     RewriteCond %{REQUEST_URI} (.+)/$
     RewriteRule ^ %1 [L,R=301]
 
+    # Only index.php runs. Any other .php file under public/ (one slipped into an upload
+    # folder such as pdf/ or frontpages/, say) is refused rather than executed.
+    RewriteRule ^(?!index\.php(?:/|$)).+\.(?:php\d*|phtml|phar)(?:/|$) - [F,L,NC]
+
     # Send Requests To Front Controller...
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
+</IfModule>
+
+# ----- Static files: browsers use the declared type, never guess one (the app's own pages get
+# this and more from App\Http\Middleware\SecurityHeaders) -----
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
 </IfModule>

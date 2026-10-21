@@ -10,6 +10,13 @@ class InquiryController extends Controller
 {
     public function create()
     {
+        // Inquiries come from patrons. Staff browsing the OPAC see the button disabled; this
+        // refuses a direct post too (staff answer inquiries from the admin, through reply()).
+        if(Auth::check() && Auth::user()->isStaff())
+        {
+            return redirect()->back()->with('error', 'Inquiries are sent by patrons. You are signed in as staff.');
+        }
+
         // Blocked accounts cannot use chat / inquiry.
         if(Auth::check() && Auth::user()->is_blocked)
         {
@@ -35,30 +42,16 @@ class InquiryController extends Controller
         // The record asked about, if the form names a real one (general inquiries have none).
         $catalogId = App\Models\Catalog::whereKey((int) request()->catalog_id_inquiry)->value('id');
 
-        if(Auth::check())
-        {
-            $inq->user_id = Auth::user()->id;
-            $inq->catalog_id = $catalogId;
-            $inq->fullname = Auth::user()->name;
-            $inq->contactnum = Auth::user()->contactnum;
-            $inq->email = Auth::user()->email;
-            $inq->message = request()->inquiry_message;
-        }
-        else
-        {
-            $inq->catalog_id = $catalogId;
-            $inq->fullname = request()->inquiry_fullname;
-            $inq->contactnum = request()->inquiry_contactnum;
-            $inq->email = request()->inquiry_email;
-            $inq->message = request()->inquiry_message;
-        }
+        // Signed-in users only (route middleware). The sender's name, phone and email are read
+        // from their account (view_inquiries), not copied here, so a correction or erasure is
+        // made in one place.
+        $inq->user_id = Auth::id();
+        $inq->catalog_id = $catalogId;
+        $inq->message = request()->inquiry_message;
 
         $inq->save();
-        
-        if(Auth::check() && in_array(Auth::user()->usertype, ['Administrator','Developer']))
-            return redirect('/admin/inquiry');
-        else
-            return view('opac.thank-you',['message' => 'Thank You!<br/>We will contact you as soon as possible!']);
+
+        return view('opac.thank-you',['message' => 'Thank You!<br/>We will contact you as soon as possible!']);
     }
 
     public function reply()
