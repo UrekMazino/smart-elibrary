@@ -12,6 +12,7 @@ Move a document across when that changes.
 | [MEILISEARCH_SETUP.md](implemented/MEILISEARCH_SETUP.md) | Running and syncing the OPAC search index | — |
 | [OPAC_SEO_PLAN.md](implemented/OPAC_SEO_PLAN.md) | Page metadata, JSON-LD, sitemap, record URL slugs (all four workstreams) | §4 pre-launch steps: real domain, HTTPS, Search Console |
 | [RAG_CATALOG_SYNC_PLAN.md](implemented/RAG_CATALOG_SYNC_PLAN.md) | Catalog changes → AI index: outbox, worker, reconcile, AI Sync Monitor | Optional: content-hash re-sync, record-list badge, purge policy |
+| [QA_REFERENCE.md](implemented/QA_REFERENCE.md) | Every page and action for QA testing: address, who may use it, what to check, and the security checks to repeat. Also as a PDF to send: [QA_REFERENCE.pdf](implemented/QA_REFERENCE.pdf) | — (kept current with the app; `tests/Feature/RouteSecurityTest.php` checks every route automatically) |
 | [database/](implemented/database/) | Database documentation; its findings R1–R16 are all fixed | Re-export the PDF from Word (the .docx is newer) |
 
 ## [not-implemented/](not-implemented/)

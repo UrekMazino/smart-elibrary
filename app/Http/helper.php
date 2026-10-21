@@ -1761,3 +1761,34 @@ function recordUrl($record, $title = null): string
 {
 	return url('/full-description/' . seoRecordSegment($record, $title));
 }
+
+/**
+ * The paging, sorting and search a DataTables table sends (server-side mode), read defensively.
+ * A request without them (an address typed in, a bot) gets the first page in the default order
+ * instead of a server error. The sort column comes only from $sortable (the table's column name =>
+ * an SQL column), never from the request; `data` is the requested name, for callers with their own
+ * mapping. DataTables' "All" (length -1) means every row.
+ */
+function dataTableRequest(Illuminate\Http\Request $request, array $sortable = [], string $defaultColumn = 'id', string $defaultDir = 'asc'): object
+{
+	$order = (array) $request->input('order.0', []);
+	$data  = $request->input('columns.' . (int) ($order['column'] ?? -1) . '.data');
+	$dir   = strtolower((string) ($order['dir'] ?? ''));
+
+	return (object) [
+		'draw'   => (int) $request->input('draw', 0),
+		'start'  => max(0, (int) $request->input('start', 0)),
+		'length' => dataTableLength($request),
+		'data'   => is_string($data) ? $data : null,
+		'column' => is_string($data) && isset($sortable[$data]) ? $sortable[$data] : $defaultColumn,
+		'dir'    => in_array($dir, ['asc', 'desc'], true) ? $dir : $defaultDir,
+		'search' => trim((string) $request->input('search.value', '')),
+	];
+}
+
+/** Rows per page a DataTables table asked for: 10 when it didn't say, every row for "All" (-1). */
+function dataTableLength(Illuminate\Http\Request $request): int
+{
+	$length = (int) $request->input('length', 10);
+	return $length > 0 ? $length : PHP_INT_MAX;
+}

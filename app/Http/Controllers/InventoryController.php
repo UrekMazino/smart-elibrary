@@ -89,19 +89,11 @@ class InventoryController extends Controller
     public function physicalInventoryListJson(Request $request)
     {
 
-        $draw = $request->get('draw');
-        $start = $request->get("start");
-        $rowPerPage = $request->get("length"); // Rows display per page
-
-        $columnIndex_arr = $request->get('order');
-        $columnName_arr = $request->get('columns');
-        $order_arr = $request->get('order');
-        $search_arr = $request->get('search');
-
-        $columnIndex = $columnIndex_arr[0]['column']; // Column index
-        $columnName = $columnName_arr[$columnIndex]['data']; // Column name
-        $columnSortOrder = $order_arr[0]['dir']; // asc or desc
-        $searchValue = $search_arr['value']; // Search value
+        // Paging, sorting and search as the table sends them; the sort column only from this list.
+        $dt = dataTableRequest($request, ['id' => 'copies.id', 'circulation_number' => 'copies.circulation_number',
+            'status_name' => 'copies_status.name', 'source' => 'copies.source', 'location' => 'copies.location',
+            'presented' => 'copies.presented'], 'copies.id', 'desc');
+        [$draw, $start, $rowPerPage, $columnName, $columnSortOrder, $searchValue] = [$dt->draw, $dt->start, $dt->length, $dt->column, $dt->dir, $dt->search];
 
         $totalRecords = Holdingcopy::count();
 
@@ -127,9 +119,9 @@ class InventoryController extends Controller
                 ->orWhere('source', 'like', '%' . $searchValue . '%')
                 ->orWhere('copies.presented', 'like', '%' . $searchValue . '%');
         })
-        ->orderBy('copies.id','desc')
-        ->skip(0)
-        ->take(10)
+        ->orderBy($columnName, $columnSortOrder)
+        ->skip($start)
+        ->take($rowPerPage)
         ->get();
        
         $data_arr = array();
@@ -146,7 +138,7 @@ class InventoryController extends Controller
         }
         // dd($data_arr);
         $response = array(
-            "draw" => intval(1),
+            "draw" => $draw,
             "iTotalRecords" => $totalRecords,
             "iTotalDisplayRecords" => $totalRecordswithFilter,
             "aaData" => $data_arr
