@@ -1,0 +1,12 @@
+[
+    {
+        "role_id": 19,
+        "model_type": "App\\Models\\User",
+        "model_id": 3
+    },
+    {
+        "role_id": 12,
+        "model_type": "App\\Models\\User",
+        "model_id": 13
+    }
+]

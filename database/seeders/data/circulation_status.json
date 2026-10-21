@@ -1,0 +1,42 @@
+[
+    {
+        "id": 1,
+        "name": "For Approval",
+        "order_no": 1,
+        "description": "The booking is in the process of being reviewed and validated by the relevant authority or personnel.",
+        "created_at": "2023-05-26 14:40:53",
+        "updated_at": "2023-05-26 14:45:06"
+    },
+    {
+        "id": 2,
+        "name": "Approved",
+        "order_no": 2,
+        "description": "Passed the necessary checks and validations and is now ready for check-out.",
+        "created_at": "2023-05-26 14:53:58",
+        "updated_at": "2023-05-26 14:53:59"
+    },
+    {
+        "id": 3,
+        "name": "Open",
+        "order_no": 3,
+        "description": "The material was check-out already and was received by the patron.",
+        "created_at": "2023-05-26 15:04:24",
+        "updated_at": "2023-05-26 15:04:26"
+    },
+    {
+        "id": 4,
+        "name": "Declined",
+        "order_no": 4,
+        "description": "Request for reservation denied.",
+        "created_at": "2023-05-26 15:09:24",
+        "updated_at": "2023-05-26 15:09:26"
+    },
+    {
+        "id": 5,
+        "name": "Closed",
+        "order_no": 5,
+        "description": "The material was returned and fine was settled.",
+        "created_at": "2023-06-02 14:59:25",
+        "updated_at": "2023-06-02 14:59:27"
+    }
+]

@@ -1,0 +1,50 @@
+[
+    {
+        "id": 1,
+        "types": "Business/Private Sector",
+        "created_at": "2023-03-23 14:19:09",
+        "updated_at": "2023-03-23 14:19:09"
+    },
+    {
+        "id": 2,
+        "types": "Farmer",
+        "created_at": "2023-03-23 14:19:09",
+        "updated_at": "2023-03-23 14:19:09"
+    },
+    {
+        "id": 3,
+        "types": "Government Employee",
+        "created_at": "2023-03-23 14:19:09",
+        "updated_at": "2023-03-23 14:19:09"
+    },
+    {
+        "id": 4,
+        "types": "Policymaker",
+        "created_at": "2023-03-23 14:19:09",
+        "updated_at": "2023-03-23 14:19:09"
+    },
+    {
+        "id": 5,
+        "types": "Professional",
+        "created_at": "2023-03-23 14:19:09",
+        "updated_at": "2023-03-23 14:19:09"
+    },
+    {
+        "id": 6,
+        "types": "Researcher",
+        "created_at": "2023-03-23 14:19:09",
+        "updated_at": "2023-03-23 14:19:09"
+    },
+    {
+        "id": 7,
+        "types": "Student",
+        "created_at": "2023-03-23 14:19:09",
+        "updated_at": "2023-03-23 14:19:09"
+    },
+    {
+        "id": 8,
+        "types": "Others",
+        "created_at": "2023-03-23 14:19:09",
+        "updated_at": "2023-03-23 14:19:09"
+    }
+]

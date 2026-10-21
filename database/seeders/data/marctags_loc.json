@@ -1,0 +1,2492 @@
+[
+    {
+        "id": 1,
+        "code": "001",
+        "description": "Control Number",
+        "first_indictors": "[]",
+        "second_indicators": "[]",
+        "Repeatable": 0,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2,
+        "code": "003",
+        "description": "Control Number Identifier",
+        "first_indictors": "[]",
+        "second_indicators": "[]",
+        "Repeatable": 0,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 3,
+        "code": "005",
+        "description": "Date and Time of Latest Transaction",
+        "first_indictors": "[]",
+        "second_indicators": "[]",
+        "Repeatable": 0,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 4,
+        "code": "006",
+        "description": "Fixed-Length Data Elements -- Additional Material Characteristics",
+        "first_indictors": "[]",
+        "second_indicators": "[]",
+        "Repeatable": 0,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 5,
+        "code": "007",
+        "description": "Physical Description Fixed Field",
+        "first_indictors": "[]",
+        "second_indicators": "[]",
+        "Repeatable": 0,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 6,
+        "code": "008",
+        "description": "Fixed Length Data Elements",
+        "first_indictors": "[]",
+        "second_indicators": "[]",
+        "Repeatable": 0,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 7,
+        "code": "010",
+        "description": "Library of Congress Control Number",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 0,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 11,
+        "code": "013",
+        "description": "Patent Control Information",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 19,
+        "code": "015",
+        "description": "National Bibliography Number",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 25,
+        "code": "016",
+        "description": "National Bibliographic Agency Control Number",
+        "first_indictors": "[2,3]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 29,
+        "code": "017",
+        "description": "Copyright or Legal Deposit Number",
+        "first_indictors": "[1]",
+        "second_indicators": "[4,5]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 37,
+        "code": "018",
+        "description": "Copyright Article-Fee Code",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 0,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 40,
+        "code": "020",
+        "description": "International Standard Book Number",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 46,
+        "code": "022",
+        "description": "International Standard Serial Number",
+        "first_indictors": "[6,7,8]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 56,
+        "code": "024",
+        "description": "Other Standard Identifier",
+        "first_indictors": "[3,9,10,11,12,13,15]",
+        "second_indicators": "[16,17,18]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 64,
+        "code": "025",
+        "description": "Overseas Acquisition Number",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 66,
+        "code": "026",
+        "description": "Fingerprint Identifier",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 67,
+        "code": "027",
+        "description": "Standard Technical Report Number",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 71,
+        "code": "028",
+        "description": "Publisher or Distributor Number",
+        "first_indictors": "[19,20,21,22,23,24,25]",
+        "second_indicators": "[26,27,28,29]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 76,
+        "code": "030",
+        "description": "CODEN Designation",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 80,
+        "code": "031",
+        "description": "Musical Incipits Information",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 100,
+        "code": "032",
+        "description": "Postal Registration Number",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 104,
+        "code": "033",
+        "description": "Date/Time and Place of an Event",
+        "first_indictors": "[30,31,32,33]",
+        "second_indicators": "[16,34,35,36]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 114,
+        "code": "034",
+        "description": "Coded Cartographic Mathematical Data",
+        "first_indictors": "[37,38,39]",
+        "second_indicators": "[40,41,42]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 139,
+        "code": "035",
+        "description": "System Control Number",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 143,
+        "code": "036",
+        "description": "Original Study Number for Computer Data Files",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 0,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 147,
+        "code": "037",
+        "description": "Source of Acquisition",
+        "first_indictors": "[43,44,45]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 157,
+        "code": "038",
+        "description": "Record Content Licensor",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 0,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 160,
+        "code": "040",
+        "description": "Cataloging Source",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 0,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 167,
+        "code": "041",
+        "description": "Language Code",
+        "first_indictors": "[16, 46,47]",
+        "second_indicators": "[3,48]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 187,
+        "code": "042",
+        "description": "Authentication code",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 188,
+        "code": "043",
+        "description": "Geographic Area Code",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 196,
+        "code": "044",
+        "description": "Country of Publishing/Producing Entity Code",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 0,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 202,
+        "code": "045",
+        "description": "Time Period of Content",
+        "first_indictors": "[49,50,51,52]",
+        "second_indicators": "[1]",
+        "Repeatable": 0,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 207,
+        "code": "046",
+        "description": "Special Coded Dates",
+        "first_indictors": "[16,53,54,55]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 225,
+        "code": "047",
+        "description": "Form of Musical Composition Code",
+        "first_indictors": "[1]",
+        "second_indicators": "[3,56]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 228,
+        "code": "048",
+        "description": "Number of Musical Instruments or Voices Codes",
+        "first_indictors": "[1]",
+        "second_indicators": "[3,57]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 232,
+        "code": "050",
+        "description": "Library of Congress Call Number",
+        "first_indictors": "[16,58,59]",
+        "second_indicators": "[60,61]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 239,
+        "code": "051",
+        "description": "Library of Congress Copy, Issue, Offprint Statement",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 243,
+        "code": "052",
+        "description": "Geographic Classification",
+        "first_indictors": "[3,62,63]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 251,
+        "code": "055",
+        "description": "Classification Numbers Assigned in Canada",
+        "first_indictors": "[64,65,66]",
+        "second_indicators": "[67,68,69,70,71,72,73,74,75,76]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 258,
+        "code": "060",
+        "description": "National Library of Medicine Call Number",
+        "first_indictors": "[16,77,78]",
+        "second_indicators": "[79,80]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 263,
+        "code": "061",
+        "description": "National Library of Medicine Copy Statement",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 267,
+        "code": "066",
+        "description": "Character Sets Present",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 0,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 270,
+        "code": "070",
+        "description": "National Agricultural Library Call Number",
+        "first_indictors": "[16,81,82]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 275,
+        "code": "071",
+        "description": "National Agricultural Library Copy Statement",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 279,
+        "code": "072",
+        "description": "Subject Category Code",
+        "first_indictors": "[1]",
+        "second_indicators": "[3,83]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 284,
+        "code": "074",
+        "description": "GPO Item Number",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 287,
+        "code": "080",
+        "description": "Universal Decimal Classification Number",
+        "first_indictors": "[16,84,85]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 295,
+        "code": "082",
+        "description": "Dewey Decimal Classification Number",
+        "first_indictors": "[86,87,88]",
+        "second_indicators": "[16,60,61]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 303,
+        "code": "083",
+        "description": "Additional Dewey Decimal Classification Number",
+        "first_indictors": "[86,87,88]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 313,
+        "code": "084",
+        "description": "Other Classification Number",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 322,
+        "code": "085",
+        "description": "Synthesized Classification Number Components",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 338,
+        "code": "086",
+        "description": "Government Document Classification Number",
+        "first_indictors": "[89,90,91]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 345,
+        "code": "088",
+        "description": "Report Number",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 349,
+        "code": "100",
+        "description": "Main Entry - Personal Name",
+        "first_indictors": "[92,93,94]",
+        "second_indicators": "[1]",
+        "Repeatable": 0,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 393,
+        "code": "110",
+        "description": "Main Entry - Corporate Name",
+        "first_indictors": "[95,96,97]",
+        "second_indicators": "[1]",
+        "Repeatable": 0,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 413,
+        "code": "111",
+        "description": "Main Entry - Meeting Name",
+        "first_indictors": "[95,96,97]",
+        "second_indicators": "[1]",
+        "Repeatable": 0,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 434,
+        "code": "130",
+        "description": "Main Entry - Uniform Title",
+        "first_indictors": "[98,99,100,101,102,103,104,105,106,107]",
+        "second_indicators": "[1]",
+        "Repeatable": 0,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 454,
+        "code": "210",
+        "description": "Abbreviated Title",
+        "first_indictors": "[108,109]",
+        "second_indicators": "[110,111]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 460,
+        "code": "222",
+        "description": "Key Title",
+        "first_indictors": "[1]",
+        "second_indicators": "[112,99,100,101,102,103,104,105,106,107]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 464,
+        "code": "240",
+        "description": "Uniform Title",
+        "first_indictors": "[114,115]",
+        "second_indicators": "[98,99,100,101,102,103,104,105,106,107]",
+        "Repeatable": 0,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 484,
+        "code": "242",
+        "description": "Translation of Title by Cataloging Agency",
+        "first_indictors": "[108, 109]",
+        "second_indicators": "[112,99,100,101,102,103,104,105,106,107]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 492,
+        "code": "243",
+        "description": "Collective Uniform Title",
+        "first_indictors": "[114,115]",
+        "second_indicators": "[98,99,100,101,102,103,104,105,106,107]",
+        "Repeatable": 0,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 507,
+        "code": "245",
+        "description": "Title Statement",
+        "first_indictors": "[108, 109]",
+        "second_indicators": "[112,99,100,101,102,103,104,105,106,107]",
+        "Repeatable": 0,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 520,
+        "code": "246",
+        "description": "Varying Form of Title",
+        "first_indictors": "[116,117,118,29]",
+        "second_indicators": "[119,120,121,122,123,124,125,126,127,128]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 532,
+        "code": "247",
+        "description": "Former Title",
+        "first_indictors": "[108, 109]",
+        "second_indicators": "[129,130]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 543,
+        "code": "250",
+        "description": "Edition Statement",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 549,
+        "code": "251",
+        "description": "Version Information",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 556,
+        "code": "254",
+        "description": "Musical Presentation Statement",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 0,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 559,
+        "code": "255",
+        "description": "Cartographic Mathematical Data",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 569,
+        "code": "256",
+        "description": "Computer File Characteristics",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 0,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 573,
+        "code": "257",
+        "description": "Country of Producing Entity",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 579,
+        "code": "258",
+        "description": "Philatelic Issue Data",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 583,
+        "code": "260",
+        "description": "Publication, Distribution, etc. (Imprint)",
+        "first_indictors": "[43,132,133]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 592,
+        "code": "263",
+        "description": "Projected Publication Date",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 0,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 595,
+        "code": "264",
+        "description": "Production, Publication, Distribution, Manufacture, and Copyright Notice",
+        "first_indictors": "[43,44,45]",
+        "second_indicators": "[134,135,136,137,138]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 602,
+        "code": "270",
+        "description": "Address",
+        "first_indictors": "[139,140]",
+        "second_indicators": "[119,141,142]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 623,
+        "code": "300",
+        "description": "Physical Description",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 633,
+        "code": "306",
+        "description": "Playing Time",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 0,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 636,
+        "code": "307",
+        "description": "Hours, etc.",
+        "first_indictors": "[143,5]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 640,
+        "code": "310",
+        "description": "Current Publication Frequency",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 647,
+        "code": "321",
+        "description": "Former Publication Frequency",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 654,
+        "code": "334",
+        "description": "Mode of Issuance",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 661,
+        "code": "335",
+        "description": "Extension Plan",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 670,
+        "code": "336",
+        "description": "Content Type",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 679,
+        "code": "337",
+        "description": "Media Type",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 687,
+        "code": "338",
+        "description": "Carrier Type",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 695,
+        "code": "340",
+        "description": "Physical Medium",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 718,
+        "code": "341",
+        "description": "Accessibility Content",
+        "first_indictors": "[16,144,145]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 727,
+        "code": "342",
+        "description": "Geospatial Reference Data",
+        "first_indictors": "[146,147]",
+        "second_indicators": "[148,149,150,151,152,153,154,155,156]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 753,
+        "code": "343",
+        "description": "Planar Coordinate Data",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 764,
+        "code": "344",
+        "description": "Sound Characteristics",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 780,
+        "code": "345",
+        "description": "Moving Image Characteristics",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 790,
+        "code": "346",
+        "description": "Video Characteristics",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 798,
+        "code": "347",
+        "description": "Digital File Characteristics",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 810,
+        "code": "348",
+        "description": "Notated Music Characteristics",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 821,
+        "code": "351",
+        "description": "Organization and Arrangement of Materials",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 827,
+        "code": "352",
+        "description": "Digital Graphic Representation",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 838,
+        "code": "353",
+        "description": "Supplementary Content Characteristics",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 846,
+        "code": "355",
+        "description": "Security Classification Control",
+        "first_indictors": "[157,158,159,160,161,162,163]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 857,
+        "code": "357",
+        "description": "Originator Dissemination Control",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 0,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 863,
+        "code": "361",
+        "description": "Structured Ownership and Custodial History",
+        "first_indictors": "[16,164,165]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 864,
+        "code": "362",
+        "description": "Dates of Publication and/or Sequential Designation",
+        "first_indictors": "[166,167]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 867,
+        "code": "363",
+        "description": "Normalized Date and Sequential Designation",
+        "first_indictors": "[16,168,169]",
+        "second_indicators": "[170,171,172]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 886,
+        "code": "365",
+        "description": "Trade Price",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 901,
+        "code": "366",
+        "description": "Trade Availability Information",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 914,
+        "code": "370",
+        "description": "Associated Place",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 930,
+        "code": "377",
+        "description": "Associated Language",
+        "first_indictors": "[1]",
+        "second_indicators": "[48,173]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 939,
+        "code": "380",
+        "description": "Form of Work",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 947,
+        "code": "381",
+        "description": "Other Distinguishing Characteristics of Work or Expression",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 957,
+        "code": "382",
+        "description": "Medium of Performance",
+        "first_indictors": "[16,174,175,176,177]",
+        "second_indicators": "[16,178,179]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 974,
+        "code": "383",
+        "description": "Numeric Designation of Musical Work",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 984,
+        "code": "384",
+        "description": "Key",
+        "first_indictors": "[180,181,182,183]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 991,
+        "code": "385",
+        "description": "Audience Characteristics",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1002,
+        "code": "386",
+        "description": "Creator/Contributor Characteristics",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1015,
+        "code": "387",
+        "description": "Representative Expression Characteristics",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1035,
+        "code": "388",
+        "description": "Time Period of Creation",
+        "first_indictors": "[16,184,185]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1043,
+        "code": "490",
+        "description": "Series Statement",
+        "first_indictors": "[186,187]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1053,
+        "code": "500",
+        "description": "General Note",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1059,
+        "code": "501",
+        "description": "With Note",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1064,
+        "code": "502",
+        "description": "Dissertation Note",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1073,
+        "code": "504",
+        "description": "Bibliography, etc. Note",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1077,
+        "code": "505",
+        "description": "Formatted Contents Note",
+        "first_indictors": "[188,189,190,5]",
+        "second_indicators": "[191,192]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1085,
+        "code": "506",
+        "description": "Restrictions on Access Note",
+        "first_indictors": "[16,193,194]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1099,
+        "code": "507",
+        "description": "Scale Note for Visual Materials",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 0,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1103,
+        "code": "508",
+        "description": "Creation/Production Credits Note",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1107,
+        "code": "510",
+        "description": "Citation/References Note",
+        "first_indictors": "[195,196,197,198,199]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1116,
+        "code": "511",
+        "description": "Participant or Performer Note ",
+        "first_indictors": "[200,201]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1119,
+        "code": "513",
+        "description": "Type of Report and Period Covered Note",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1123,
+        "code": "514",
+        "description": "Data Quality Note",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 0,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1139,
+        "code": "515",
+        "description": "Numbering Peculiarities Note",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1143,
+        "code": "516",
+        "description": "Type of Computer File or Data Note",
+        "first_indictors": "[202,5]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1146,
+        "code": "518",
+        "description": "Date/Time and Place of an Event Note",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1157,
+        "code": "520",
+        "description": "Summary, etc.",
+        "first_indictors": "[203,204,205,206,207,208,5]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1166,
+        "code": "521",
+        "description": "Target Audience Note",
+        "first_indictors": "[209,210,211,212,213,214,5]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1171,
+        "code": "522",
+        "description": "Geographic Coverage Note",
+        "first_indictors": "[215,5]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1174,
+        "code": "524",
+        "description": "Preferred Citation of Described Materials Note",
+        "first_indictors": "[216,5]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1179,
+        "code": "525",
+        "description": "Supplement Note",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1182,
+        "code": "526",
+        "description": "Study Program Information Note",
+        "first_indictors": "[217,5]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1192,
+        "code": "530",
+        "description": "Additional Physical Form available Note",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1200,
+        "code": "532",
+        "description": "Accessibility Note",
+        "first_indictors": "[218,219,220,5]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1203,
+        "code": "533",
+        "description": "Reproduction Note",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1217,
+        "code": "534",
+        "description": "Original Version Note",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1234,
+        "code": "535",
+        "description": "Location of Originals/Duplicates Note",
+        "first_indictors": "[221,222]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1242,
+        "code": "536",
+        "description": "Funding Information Note",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1253,
+        "code": "538",
+        "description": "System Details Note",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1259,
+        "code": "540",
+        "description": "Terms Governing Use and Reproduction Note",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1273,
+        "code": "541",
+        "description": "Immediate Source of Acquisition Note",
+        "first_indictors": "[16,164,165]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1285,
+        "code": "542",
+        "description": "Information Relating to Copyright Status",
+        "first_indictors": "[16,164,165]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1308,
+        "code": "544",
+        "description": "Location of Other Archival Materials Note",
+        "first_indictors": "[16,223,224]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1317,
+        "code": "545",
+        "description": "Biographical or Historical Data",
+        "first_indictors": "[16,225,226]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1322,
+        "code": "546",
+        "description": "Language Note",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1328,
+        "code": "547",
+        "description": "Former Title Complexity Note",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1331,
+        "code": "550",
+        "description": "Issuing Body Note",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1335,
+        "code": "552",
+        "description": "Entity and Attribute Information Note",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1355,
+        "code": "555",
+        "description": "Cumulative Index/Finding Aids Note",
+        "first_indictors": "[227,228,5]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1364,
+        "code": "556",
+        "description": "Information About Documentation Note",
+        "first_indictors": "[229,5]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1368,
+        "code": "561",
+        "description": "Ownership and Custodial History",
+        "first_indictors": "[16,164,165]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1374,
+        "code": "562",
+        "description": "Copy and Version Identification",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1383,
+        "code": "563",
+        "description": "Binding Information",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1389,
+        "code": "565",
+        "description": "Case File Characteristics Note",
+        "first_indictors": "[230,231,5]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1397,
+        "code": "567",
+        "description": "Methodology Note",
+        "first_indictors": "[232,5]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1404,
+        "code": "580",
+        "description": "Linking Entry Complexity Note",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1407,
+        "code": "581",
+        "description": "Publications About Described Materials Note",
+        "first_indictors": "[233,5]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1412,
+        "code": "583",
+        "description": "Action Note",
+        "first_indictors": "[16,164,165]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1434,
+        "code": "584",
+        "description": "Accumulation and Frequency of Use Note",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1440,
+        "code": "585",
+        "description": "Exhibitions Note",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1445,
+        "code": "586",
+        "description": "Awards Note",
+        "first_indictors": "[234,5]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1449,
+        "code": "588",
+        "description": "Source of Description, Etc. Note",
+        "first_indictors": "[16,235,236]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1453,
+        "code": "600",
+        "description": "Subject Added Entry - Personal Name",
+        "first_indictors": "[92,93,94]",
+        "second_indicators": "[237,238,239,240,241,242,243,3]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1485,
+        "code": "610",
+        "description": "Subject Added Entry - Corporate Name",
+        "first_indictors": "[95,96,97]",
+        "second_indicators": "[237,238,239,240,241,242,243,3]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1515,
+        "code": "611",
+        "description": "Subject Added Entry - Meeting Name",
+        "first_indictors": "[95,96,97]",
+        "second_indicators": "[237,238,239,240,241,242,243,3]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1543,
+        "code": "630",
+        "description": "Subject Added Entry - Uniform Title",
+        "first_indictors": "[98,99,100,101,102,103,104,105,106,107]",
+        "second_indicators": "[237,238,239,240,241,242,243,3]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1570,
+        "code": "647",
+        "description": "Subject Added Entry - Named Event",
+        "first_indictors": "[1]",
+        "second_indicators": "[237,238,239,240,241,242,243,3]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1584,
+        "code": "648",
+        "description": "Subject Added Entry - Chronological Term",
+        "first_indictors": "[1]",
+        "second_indicators": "[237,238,239,240,241,242,243,3]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1596,
+        "code": "650",
+        "description": "Subject Added Entry - Topical Term",
+        "first_indictors": "[16,244,139,140]",
+        "second_indicators": "[237,238,239,240,241,242,243,3]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1614,
+        "code": "651",
+        "description": "Subject Added Entry - Geographic Name",
+        "first_indictors": "[1]",
+        "second_indicators": "[237,238,239,240,241,242,243,3]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1629,
+        "code": "653",
+        "description": "Index Term - Uncontrolled",
+        "first_indictors": "[16,244,139,140]",
+        "second_indicators": "[16,245,246,247,248,249,250,251]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1633,
+        "code": "654",
+        "description": "Subject Added Entry - Faceted Topical Terms",
+        "first_indictors": "[16,244,139,140]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1647,
+        "code": "655",
+        "description": "Index Term - Genre/Form",
+        "first_indictors": "[191,252]",
+        "second_indicators": "[16,245,246,247,248,249,250,251]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1662,
+        "code": "656",
+        "description": "Index Term - Occupation",
+        "first_indictors": "[1]",
+        "second_indicators": "[3]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1674,
+        "code": "657",
+        "description": "Index Term - Function",
+        "first_indictors": "[1]",
+        "second_indicators": "[3]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1685,
+        "code": "658",
+        "description": "Index Term - Curriculum Objective",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1692,
+        "code": "662",
+        "description": "Subject Added Entry - Hierarchical Place Name",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1706,
+        "code": "688",
+        "description": "Subject Added Entry - Type of Entity Unspecified",
+        "first_indictors": "[1]",
+        "second_indicators": "[16,3]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1716,
+        "code": "700",
+        "description": "Added Entry - Personal Name",
+        "first_indictors": "[92,93,94]",
+        "second_indicators": "[16,253]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1747,
+        "code": "710",
+        "description": "Added Entry - Corporate Name",
+        "first_indictors": "[95,96,97]",
+        "second_indicators": "[16,253]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1776,
+        "code": "711",
+        "description": "Added Entry - Meeting Name",
+        "first_indictors": "[95,96,97]",
+        "second_indicators": "[16,253]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1803,
+        "code": "720",
+        "description": "Added Entry - Uncontrolled Name",
+        "first_indictors": "[170,246,254]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1808,
+        "code": "730",
+        "description": "Added Entry - Uniform Title",
+        "first_indictors": "[98,99,100,101,102,103,104,105,106,107]",
+        "second_indicators": "[16,253]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1832,
+        "code": "740",
+        "description": "Added Entry - Uncontrolled Related/Analytical Title",
+        "first_indictors": "[112,99,100,101,102,103,104,105,106,107]",
+        "second_indicators": "[16,253]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1839,
+        "code": "751",
+        "description": "Added Entry - Geographic Name",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1850,
+        "code": "752",
+        "description": "Added Entry - Hierarchical Place Name",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1864,
+        "code": "753",
+        "description": "System Details Access to Computer Files",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1872,
+        "code": "754",
+        "description": "Added Entry - Taxonomic Identification",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1882,
+        "code": "758",
+        "description": "Resource Identifier",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1892,
+        "code": "760",
+        "description": "Main Series Entry",
+        "first_indictors": "[129,130]",
+        "second_indicators": "[255,5]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1912,
+        "code": "762",
+        "description": "Subseries Entry",
+        "first_indictors": "[129,130]",
+        "second_indicators": "[256,5]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1932,
+        "code": "765",
+        "description": "Original Language Entry",
+        "first_indictors": "[129,130]",
+        "second_indicators": "[257,5]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1957,
+        "code": "767",
+        "description": "Translation Entry",
+        "first_indictors": "[129,130]",
+        "second_indicators": "[258,5]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 1980,
+        "code": "770",
+        "description": "Supplement/Special Issue Entry",
+        "first_indictors": "[129,130]",
+        "second_indicators": "[259,5]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2004,
+        "code": "772",
+        "description": "Supplement Parent Entry",
+        "first_indictors": "[129,130]",
+        "second_indicators": "[260,261,5]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2028,
+        "code": "773",
+        "description": "Host Item Entry",
+        "first_indictors": "[129,130]",
+        "second_indicators": "[262,5]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2053,
+        "code": "774",
+        "description": "Constituent Unit Entry",
+        "first_indictors": "[129,130]",
+        "second_indicators": "[263,5]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2077,
+        "code": "775",
+        "description": "Other Edition Entry",
+        "first_indictors": "[129,130]",
+        "second_indicators": "[264,5]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2103,
+        "code": "776",
+        "description": "Additional Physical Form Entry",
+        "first_indictors": "[129,130]",
+        "second_indicators": "[265,5]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2127,
+        "code": "777",
+        "description": "Issued With Entry",
+        "first_indictors": "[129,130]",
+        "second_indicators": "[266,5]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2151,
+        "code": "780",
+        "description": "Preceding Entry",
+        "first_indictors": "[129,130]",
+        "second_indicators": "[267,268,269,270,271,272,273,274]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2175,
+        "code": "785",
+        "description": "Succeeding Entry",
+        "first_indictors": "[129,130]",
+        "second_indicators": "[275,276,277,278,279,280,281,282,283]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2199,
+        "code": "786",
+        "description": "Data Source Entry",
+        "first_indictors": "[129,130]",
+        "second_indicators": "[284,5]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2226,
+        "code": "787",
+        "description": "Other Relationship Entry",
+        "first_indictors": "[129,130]",
+        "second_indicators": "[285,5]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2250,
+        "code": "788",
+        "description": "Parallel Description in Another Language of Cataloging",
+        "first_indictors": "[129,130]",
+        "second_indicators": "[286,5]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2265,
+        "code": "800",
+        "description": "Series Added Entry - Personal Name",
+        "first_indictors": "[92,93,94]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2298,
+        "code": "810",
+        "description": "Series Added Entry - Corporate Name",
+        "first_indictors": "[95,96,97]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2329,
+        "code": "811",
+        "description": "Series Added Entry - Meeting Name",
+        "first_indictors": "[95,96,97]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2358,
+        "code": "830",
+        "description": "Series Added Entry - Uniform Title",
+        "first_indictors": "[1]",
+        "second_indicators": "[112,99,100,101,102,103,104,105,106,107]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2359,
+        "code": "841",
+        "description": "Holdings Coded Data Values",
+        "first_indictors": "[]",
+        "second_indicators": "[]",
+        "Repeatable": 0,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2360,
+        "code": "842",
+        "description": "Textual Physical Form Designator",
+        "first_indictors": "[]",
+        "second_indicators": "[]",
+        "Repeatable": 0,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2361,
+        "code": "843",
+        "description": "Reproduction Note",
+        "first_indictors": "[]",
+        "second_indicators": "[]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2362,
+        "code": "844",
+        "description": "Name of Unit",
+        "first_indictors": "[]",
+        "second_indicators": "[]",
+        "Repeatable": 0,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2363,
+        "code": "845",
+        "description": "Terms Governing Use and Reproduction",
+        "first_indictors": "[]",
+        "second_indicators": "[]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2384,
+        "code": "850",
+        "description": "Holding Institution",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2386,
+        "code": "852",
+        "description": "Location",
+        "first_indictors": "[16,287,288,289,290,291,292,293,3,294]",
+        "second_indicators": "[16,295,296,297]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2387,
+        "code": "853",
+        "description": "Captions and Pattern - Basic Bibliographic Unit",
+        "first_indictors": "[]",
+        "second_indicators": "[]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2388,
+        "code": "854",
+        "description": "Captions and Pattern - Supplementary Material",
+        "first_indictors": "[]",
+        "second_indicators": "[]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2389,
+        "code": "855",
+        "description": "Captions and Pattern - Indexes",
+        "first_indictors": "[]",
+        "second_indicators": "[]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2390,
+        "code": "863",
+        "description": "Enumeration and Chronology - Basic Bibliographic Unit",
+        "first_indictors": "[]",
+        "second_indicators": "[]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2391,
+        "code": "864",
+        "description": "Enumeration and Chronology - Supplementary Material",
+        "first_indictors": "[]",
+        "second_indicators": "[]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2392,
+        "code": "865",
+        "description": "Enumeration and Chronology - Indexes",
+        "first_indictors": "[]",
+        "second_indicators": "[]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2393,
+        "code": "866",
+        "description": "Textual Holdings - Basic Bibliographic Unit",
+        "first_indictors": "[]",
+        "second_indicators": "[]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2394,
+        "code": "867",
+        "description": "Textual Holdings - Supplementary Material",
+        "first_indictors": "[]",
+        "second_indicators": "[]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2395,
+        "code": "868",
+        "description": "Textual Holdings - Indexes",
+        "first_indictors": "[]",
+        "second_indicators": "[]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2396,
+        "code": "876",
+        "description": "Item Information - Basic Bibliographic Unit",
+        "first_indictors": "[]",
+        "second_indicators": "[]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2397,
+        "code": "877",
+        "description": "Item Information - Supplementary Material",
+        "first_indictors": "[]",
+        "second_indicators": "[]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2398,
+        "code": "878",
+        "description": "Item Information - Indexes",
+        "first_indictors": "[]",
+        "second_indicators": "[]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2411,
+        "code": "856",
+        "description": "Electronic Location and Access",
+        "first_indictors": "[16,298,299,300,301,302,303]",
+        "second_indicators": "[16,304,305,306,307,308,5]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2412,
+        "code": "857",
+        "description": "Electronic Archive Location and Access",
+        "first_indictors": "[16,299,302,303]",
+        "second_indicators": "[16,304,305,306,307,308,5]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2413,
+        "code": "880",
+        "description": "Alternate Graphic Representation",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2438,
+        "code": "881",
+        "description": "Manifestation Statements",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2455,
+        "code": "882",
+        "description": "Replacement Record Information",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 0,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2460,
+        "code": "883",
+        "description": "Metadata Provenance",
+        "first_indictors": "[343,344,345,346]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2470,
+        "code": "884",
+        "description": "Description Conversion Information",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2475,
+        "code": "885",
+        "description": "Matching Information",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2486,
+        "code": "886",
+        "description": "Tag of the foreign MARC field",
+        "first_indictors": "[347,348,349]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2489,
+        "code": "887",
+        "description": "Non-MARC Information",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2499,
+        "code": "901",
+        "description": "Local Data Element A, LDA (RLIN)",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 0,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2500,
+        "code": "999",
+        "description": "Marctag not found",
+        "first_indictors": "[]",
+        "second_indicators": "[]",
+        "Repeatable": 0,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2501,
+        "code": "LDR",
+        "description": "Leader",
+        "first_indictors": "[]",
+        "second_indicators": "[]",
+        "Repeatable": 0,
+        "created_at": null,
+        "updated_at": null
+    }
+]

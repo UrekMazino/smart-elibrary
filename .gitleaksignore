@@ -1,0 +1,7 @@
+# Findings gitleaks should no longer report (format: commit:file:rule:line). Only list a secret here
+# AFTER it has been revoked — ignoring it here does not make it safe.
+#
+# OpenSSH private key `elibrary` (ED25519, SHA256:gQDZFf6OYwZ/M9pbdB1+w7vvhiETYq5e7ipG9UYZylM,
+# labelled m.diaz@pcaarrd.dost.gov.ph), committed in the first commit and removed in Oct 2026. It is
+# still in history; treat it as compromised and keep it off every server / account it was ever on.
+6308025ef5129784c23f319f71225c3d5a886f15:elibrary:private-key:1

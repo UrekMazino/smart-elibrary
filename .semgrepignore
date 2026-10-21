@@ -1,0 +1,16 @@
+# Paths Semgrep (the code scan in .github/workflows/security.yml) skips.
+# Third-party and generated code is covered by the dependency audits instead.
+vendor/
+node_modules/
+storage/
+bootstrap/cache/
+public/admintemplate/
+public/assets/
+public/opac/
+public/pdfjs/
+public/js/tinymce/
+public/js/app.js
+public/js/jquery-3.6.0.min.js
+public/css/
+*.min.js
+*.min.css

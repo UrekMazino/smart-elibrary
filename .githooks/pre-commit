@@ -1,0 +1,17 @@
+#!/bin/sh
+# Blocks a commit that would add a secret (private key, API token, password, ...): the local half of
+# .github/workflows/security.yml, so a leak is caught before it ever reaches GitHub.
+#
+# Enable once per clone:   git config core.hooksPath .githooks
+# Needs gitleaks on PATH or in ~/.local/bin (https://github.com/gitleaks/gitleaks/releases).
+# A false positive: add its fingerprint to .gitleaksignore, or skip once with `git commit --no-verify`.
+
+GITLEAKS=$(command -v gitleaks)
+[ -z "$GITLEAKS" ] && [ -x "$HOME/.local/bin/gitleaks" ] && GITLEAKS="$HOME/.local/bin/gitleaks"
+
+if [ -z "$GITLEAKS" ]; then
+    echo "pre-commit: gitleaks is not installed, so staged files were NOT scanned for secrets." >&2
+    exit 0
+fi
+
+exec "$GITLEAKS" git --pre-commit --staged --redact --no-banner --verbose .
