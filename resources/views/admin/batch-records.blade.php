@@ -113,6 +113,7 @@ function escapeHtml(text) {
 }
 var OK_BADGE = '<span class="badge rounded-pill border border-success text-success">&#10003;</span>';
 var NO_BADGE = '<span class="badge rounded-pill border border-danger text-danger">&#10007;</span>';
+@include('admin.partials.cover-placeholder-tag-js')
 
 function actionMenu(row) {
     var items = '<a class="dropdown-item" href="#" data-act="view">View Details</a>';
@@ -169,7 +170,7 @@ $(function () {
             { data: 'has_multimedia', orderable: false, className: 'text-center',
               render: function (d, type) { return type === 'display' ? (d == 1 ? OK_BADGE : NO_BADGE) : d; } },
             { data: 'has_coverpage', orderable: false, className: 'text-center',
-              render: function (d, type) { return type === 'display' ? (d == 1 ? OK_BADGE : NO_BADGE) : d; } },
+              render: function (d, type, row) { return type === 'display' ? (d == 1 ? OK_BADGE + (row.cover_placeholder == 1 ? PLACEHOLDER_TAG : '') : NO_BADGE) : d; } },
             { data: null, orderable: false, className: 'text-center',
               render: function (d, type, row) { return actionMenu(row); } },
         ]

@@ -24,6 +24,7 @@ use App\Services\MarcExportService;
 use App\Services\MarcMaterialMapper;
 use App\Models\MaterialTypeMap;
 use App\Services\RagSync;
+use App\Services\SearchIndex;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -209,11 +210,18 @@ class CatalogingController extends Controller
         return $this->renderRecordView($id, $title);
     }
 
-    private function renderRecordView($catalogId, $title)
+    /**
+     * The record page with everything it shows (copies, citations, reviews, import flag). The
+     * cover / full-text / copy actions render it too, adding their result flags (uploadStatus,
+     * uploadError, copyUpdate, copyError): they used to build a partial set of variables and
+     * failed with "Undefined variable $reviews" once the Reviews tab was added.
+     */
+    private function renderRecordView($catalogId, $title, array $flags = [])
     {
         $record = Catalog::select('catalogs.*')
             ->where('catalogs.id', $catalogId)
             ->first();
+        abort_unless($record, 404);   // an unknown or deleted record: "not found", not a crash in the view
 
         $totalCopies = Holdingcopy::where('catalog_id', $catalogId)->count();
 
@@ -221,7 +229,12 @@ class CatalogingController extends Controller
 
         $fullText = Multimedia::where('catalog_id', $catalogId)->whereNull('deleted_at')->first();
 
-        $citations = buildCitations(ViewCatalog::where('catalog_id', $catalogId)->first());
+        $viewCatalog = ViewCatalog::where('catalog_id', $catalogId)->first();
+        $citations = buildCitations($viewCatalog);
+        // The heading shows the catalogue's title. The lists post the clicked row's title too,
+        // HTML-escaped from their JSON; that copy is only the fallback for a record with no
+        // OPAC row (the page escapes it on output, so it can't add markup).
+        $title = $viewCatalog->title_statement ?? html_entity_decode((string) $title, ENT_QUOTES, 'UTF-8');
 
         // Patron reviews for the Reviews tab (admin.partials.record-reviews), newest first.
         $reviews = DB::table('ratings as r')
@@ -233,7 +246,7 @@ class CatalogingController extends Controller
         // Flagged at import and not reviewed yet: shown above the record.
         $importIssue = CatalogImportIssue::where('catalog_id', $catalogId)->where('outcome', 'imported')->whereNull('reviewed_at')->first();
 
-        return view('admin.catalog-view-record', ['record' => $record, 'fullText' => $fullText, 'coverPage' => $coverPage, 'title' => $title, 'totalCopies' => $totalCopies, 'citations' => $citations, 'reviews' => $reviews, 'importIssue' => $importIssue]);
+        return view('admin.catalog-view-record', ['record' => $record, 'fullText' => $fullText, 'coverPage' => $coverPage, 'title' => $title, 'totalCopies' => $totalCopies, 'citations' => $citations, 'reviews' => $reviews, 'importIssue' => $importIssue] + $flags);
     }
 
     /**
@@ -578,6 +591,9 @@ class CatalogingController extends Controller
 
         // The import report: records imported, imported but flagged for review, and skipped.
         $imported = $flagged = $skipped = 0;
+
+        // The file's search-index updates go out in chunks of 500, not one call per record.
+        SearchIndex::hold();
 
         foreach($fields as $index => $f) {
             $marcTags = [];
@@ -1221,6 +1237,8 @@ class CatalogingController extends Controller
           
         }
 
+        SearchIndex::release();
+
         $catalogImport->update(['imported_count' => $imported, 'skipped_count' => $skipped]);
         // CatalogImportProgress::truncate();
 
@@ -1397,9 +1415,8 @@ class CatalogingController extends Controller
             RagSync::enqueueMany($batchIds, RagSync::DELETE, 'deleted');
         });
 
-        // Same as destroyRecord: the query-builder update bypasses Scout, so remove the
-        // whole batch from the search index (else the docs linger with deleted_at = null).
-        ViewCatalog::where('catalog_import_id', $request->id)->get()->unsearchable();
+        // Remove the whole batch from the search index (deleted records leave it).
+        SearchIndex::refresh($batchIds);
 
         // Deleting a batch changes the collection -> bust the home caches (destroyRecord
         // already does this; batch delete was missing it and left a stale homepage).
@@ -1806,13 +1823,14 @@ class CatalogingController extends Controller
 
     /**
      * Create a catalogue record and its OPAC row (view_catalogs) in one transaction: either both
-     * exist or neither does. Scout indexes the OPAC row after the commit (scout.after_commit).
+     * exist or neither does. The search index gets the record after the commit (SearchIndex).
      */
     private function createWithOpacRow(array $catalogRow, array $opacRow): Catalog
     {
         return DB::transaction(function () use ($catalogRow, $opacRow) {
             $catalog = Catalog::create($catalogRow);
             ViewCatalog::create(['catalog_id' => $catalog->id] + $opacRow);
+            SearchIndex::refresh($catalog->id);
             return $catalog;
         });
     }
@@ -2044,6 +2062,7 @@ class CatalogingController extends Controller
     public function destroyRecord(Request $request)
     {
         $user = Auth::user();
+        $wasPublished = (int) Catalog::whereKey($request->id)->value('is_published') === 1;
 
         // Record, OPAC row and RAG outbox entry change together. The outbox entry removes this
         // record's chunks from the AI index.
@@ -2063,12 +2082,16 @@ class CatalogingController extends Controller
             RagSync::enqueue((int) $request->id, RagSync::DELETE, 'deleted');
         });
 
-        // Query-builder updates bypass Scout, so drop the record from the search index.
-        // Otherwise its Meilisearch doc keeps deleted_at = null, still matches the OPAC's
-        // "deleted_at IS NULL" filter, and inflates the result count vs what's shown.
-        optional(ViewCatalog::where('catalog_id', $request->id)->first())->unsearchable();
+        // Drop the record from the search index. Otherwise its document keeps deleted_at = null,
+        // still matches the OPAC's "deleted_at IS NULL" filter, and inflates the result count.
+        SearchIndex::refresh((int) $request->id);
 
         clearHomeCache();
+
+        // Deleted from its own page: go to the list it was in, not back to the deleted record.
+        if ($request->input('return_to') === 'list') {
+            return redirect($wasPublished ? '/admin/record-list' : '/admin/on-hold-list');
+        }
         return redirect()->back();
     }
 
@@ -2310,13 +2333,9 @@ class CatalogingController extends Controller
         });
 
         if($catalog) {
-            // A query-builder update doesn't reach the search index: refresh this record's entry,
-            // or the OPAC keeps finding it by its old title, authors and subjects.
-            try {
-                ViewCatalog::where('catalog_id', $id)->searchable();
-            } catch (\Throwable $e) {
-                report($e);
-            }
+            // Refresh this record's search entry, or the OPAC keeps finding it by its old title,
+            // authors and subjects.
+            SearchIndex::refresh((int) $id);
 
             $this->recheckImportIssue((int) $id, $opacRow);
         }
@@ -2377,6 +2396,10 @@ class CatalogingController extends Controller
 
         $records = $query->select('view_catalogs.*')
             ->selectRaw('EXISTS (SELECT 1 FROM frontpages WHERE frontpages.catalog_id = view_catalogs.catalog_id AND frontpages.deleted_at IS NULL) AS has_coverpage')
+            // The cover is a generated placeholder (it counts as a cover; the list tags it).
+            ->selectRaw("EXISTS (SELECT 1 FROM frontpages WHERE frontpages.catalog_id = view_catalogs.catalog_id AND frontpages.deleted_at IS NULL AND frontpages.FrontPageName LIKE 'gen-%')
+                AND NOT EXISTS (SELECT 1 FROM frontpages WHERE frontpages.catalog_id = view_catalogs.catalog_id AND frontpages.deleted_at IS NULL
+                    AND (frontpages.FrontPageName IS NULL OR frontpages.FrontPageName NOT LIKE 'gen-%')) AS cover_placeholder")
             ->selectRaw('EXISTS (SELECT 1 FROM multimedia WHERE multimedia.catalog_id = view_catalogs.catalog_id AND multimedia.deleted_at IS NULL) AS has_multimedia')
             ->orderBy($columnName, $sortDir)
             ->orderBy('view_catalogs.catalog_id')
@@ -2395,6 +2418,7 @@ class CatalogingController extends Controller
                 'title_statement' => htmlspecialchars((string) $record->title_statement, ENT_QUOTES, 'UTF-8'),
                 'has_multimedia'  => (int) $record->has_multimedia,
                 'has_coverpage'   => (int) $record->has_coverpage,
+                'cover_placeholder' => (int) $record->cover_placeholder,
                 'is_published'    => (int) $record->is_published,
             ];
         }
@@ -2511,18 +2535,18 @@ class CatalogingController extends Controller
                     ViewCatalog::whereIn('catalog_id', $target)->update($stamp);
                     RagSync::enqueueMany($target, $to ? RagSync::UPSERT : RagSync::DELETE, $to ? 'published' : 'unpublished');
                 });
-                // Query-builder updates bypass Scout: re-index so OPAC search sees the new is_published.
-                ViewCatalog::whereIn('catalog_id', $target)->searchable();
+                // Re-index so OPAC search sees the new is_published.
+                SearchIndex::refresh($target);
                 $changed += count($target);
             } elseif ($action === 'delete') {
-                // Drop from the search index first (same reason as destroyRecord), then soft-delete.
-                ViewCatalog::whereIn('catalog_id', $chunk)->get()->unsearchable();
                 $stamp = ['deleted_at' => now(), 'deleted_by' => $userId];
                 DB::transaction(function () use ($chunk, $stamp) {
                     Catalog::whereIn('id', $chunk)->update($stamp);
                     ViewCatalog::whereIn('catalog_id', $chunk)->update($stamp);
                     RagSync::enqueueMany($chunk, RagSync::DELETE, 'deleted');
                 });
+                // Drop them from the search index (same reason as destroyRecord).
+                SearchIndex::refresh($chunk);
                 $changed += count($chunk);
             } else {   // reindex: just queue; the worker gates on is_published as usual
                 RagSync::enqueueMany($chunk, RagSync::UPSERT, 'manual');
@@ -2683,72 +2707,6 @@ class CatalogingController extends Controller
         ];
     }
 
-    public function holdAllPublished()
-    {
-        $user = Auth::user();
-
-        // Record flags, OPAC flags and the RAG outbox change together. All held -> queue for
-        // RAG sync to remove them from the index.
-        DB::transaction(function () use ($user) {
-            // Capture the affected ids BEFORE the flip (they won't match is_published=1 after).
-            $affected = Catalog::where('is_published', 1)->lockForUpdate()->pluck('id');
-
-            Catalog::where('is_published', 1)
-            ->update([
-                'is_published' => 0,
-                'updated_at' => now(),
-                'updated_by' => $user->id,
-            ]);
-
-            ViewCatalog::where('is_published', 1)
-            ->update([
-                'is_published' => 0,
-                'updated_at' => now(),
-                'updated_by' => $user->id,
-            ]);
-
-            RagSync::enqueueMany($affected, RagSync::DELETE, 'unpublished');
-        });
-
-        // Bulk change -> re-index so Meilisearch reflects the new is_published values.
-        ViewCatalog::makeAllSearchable();
-
-        return response()->json(['success' => true]);
-    }
-
-    public function publishAllOnhold(Request $request)
-    {
-        $user = Auth::user();
-
-        // Record flags, OPAC flags and the RAG outbox change together. All published -> queue
-        // for RAG sync to index them.
-        DB::transaction(function () use ($user) {
-            // Capture the affected ids BEFORE the flip (they won't match is_published=0 after).
-            $affected = Catalog::where('is_published', 0)->lockForUpdate()->pluck('id');
-
-            Catalog::where('is_published', 0)
-            ->update([
-                'is_published' => 1,
-                'updated_at' => now(),
-                'updated_by' => $user->id,
-            ]);
-
-            ViewCatalog::where('is_published', 0)
-            ->update([
-                'is_published' => 1,
-                'updated_at' => now(),
-                'updated_by' => $user->id,
-            ]);
-
-            RagSync::enqueueMany($affected, RagSync::UPSERT, 'published');
-        });
-
-        // Bulk change -> re-index so Meilisearch reflects the new is_published values.
-        ViewCatalog::makeAllSearchable();
-
-        return response()->json(['success' => true]);
-    }
-
     public function publishToOpac(Request $request)
     {
         $user = Auth::user();
@@ -2773,9 +2731,12 @@ class CatalogingController extends Controller
             RagSync::enqueue((int) $request->catalog_id, RagSync::UPSERT, 'published');
         });
 
-        // Query-builder updates bypass Scout's observers, so re-index the record — else
-        // Meilisearch keeps the stale is_published and the OPAC search filter hides it.
-        optional(ViewCatalog::where('catalog_id', $request->catalog_id)->first())->searchable();
+        // Re-index the record, else the search index keeps the stale is_published and the OPAC
+        // search filter hides it.
+        SearchIndex::refresh((int) $request->catalog_id);
+
+        // The homepage shelves list published records (10-min cache): show it there now.
+        clearHomeCache();
 
         return response()->json(['success' => true]);
     }
@@ -2804,8 +2765,11 @@ class CatalogingController extends Controller
             RagSync::enqueue((int) $request->catalog_id, RagSync::DELETE, 'unpublished');
         });
 
-        // Re-index so Meilisearch reflects is_published=0 (record hidden from OPAC search).
-        optional(ViewCatalog::where('catalog_id', $request->catalog_id)->first())->searchable();
+        // Re-index so the search index reflects is_published=0 (record hidden from OPAC search).
+        SearchIndex::refresh((int) $request->catalog_id);
+
+        // ...and drop it from the cached homepage shelves now, not after their 10-min TTL.
+        clearHomeCache();
 
         return response()->json(['success' => true]);
     }
@@ -2816,7 +2780,7 @@ class CatalogingController extends Controller
 
         // Record flags, OPAC flags and the RAG outbox change together: the whole batch is queued
         // for RAG sync — publish -> index, hold -> remove.
-        DB::transaction(function () use ($request, $user) {
+        $batchIds = DB::transaction(function () use ($request, $user) {
             Catalog::where('catalog_import_id', $request->catalog_import_id)
             ->update([
                 'is_published' => $request->action == 1 ? 1 : 0,
@@ -2837,10 +2801,14 @@ class CatalogingController extends Controller
                 $request->action == 1 ? RagSync::UPSERT : RagSync::DELETE,
                 $request->action == 1 ? 'published' : 'unpublished'
             );
+            return $batchIds;
         });
 
-        // Re-index the batch so Meilisearch reflects the new is_published values.
-        ViewCatalog::where('catalog_import_id', $request->catalog_import_id)->get()->each(fn($m) => $m->searchable());
+        // Re-index the batch (in chunks) so the search index reflects the new is_published values.
+        SearchIndex::refresh($batchIds);
+
+        // The homepage shelves list published records (10-min cache): reflect the batch now.
+        clearHomeCache();
 
         return view('admin.batch-list');
     }
@@ -2851,15 +2819,14 @@ class CatalogingController extends Controller
 
             $uploadedFile = $request->file('coverImage');
 
-            // Cover photo limit: JPG/PNG/WEBP image, max 10 MB.
-            if(!in_array(strtolower($uploadedFile->getClientOriginalExtension()), ['jpg','jpeg','png','webp']) || $uploadedFile->getSize() > 10 * 1024 * 1024) {
-                $record = Catalog::select('catalogs.*')->where('catalogs.id',$request->catalog_id)->first();
-                $coverPage = Frontpage::where('catalog_id',$request->catalog_id)->whereNull('deleted_at')->first();
-                $fullText = Multimedia::where('catalog_id',$request->catalog_id)->whereNull('deleted_at')->first();
-                return view('admin.catalog-view-record', ['record' => $record, 'fullText' => $fullText, 'coverPage' => $coverPage, 'title' => $request->title, 'uploadStatus' => true, 'uploadError' => 'The cover photo must be a JPG, PNG, or WEBP image no larger than 10 MB.']);
+            // Cover photo limit: JPG/PNG/WEBP image, max 10 MB. Both the name it was sent with and
+            // what the file really is (read from its content) must be one of those.
+            $allowed = ['jpg','jpeg','png','webp'];
+            if(!in_array(strtolower($uploadedFile->getClientOriginalExtension()), $allowed) || !in_array($uploadedFile->extension(), $allowed) || $uploadedFile->getSize() > 10 * 1024 * 1024) {
+                return $this->renderRecordView($request->catalog_id, $request->title, ['uploadStatus' => true, 'uploadError' => 'The cover photo must be a JPG, PNG, or WEBP image no larger than 10 MB.']);
             }
 
-            $fileType = $uploadedFile->getClientOriginalExtension();
+            $fileType = $uploadedFile->extension();
             $newFileName = 'cp-'. uniqid() . '.' . $fileType;
             $filePath = 'frontpages/' . $newFileName;
 
@@ -2880,59 +2847,79 @@ class CatalogingController extends Controller
                     'FrontPageType' => $fileType
                 ]);
             } else {
-                Frontpage::where('id', $coverPage->id)
-                    ->update([
-                        'FrontPageLocation' => $filePath,
-                        'FrontPageName' => $newFileName,
-                        'FrontPageType' => $fileType,
-                        'updated_at' => now(),
-                    ]);
+                // A replaced placeholder's generated image and thumbnail are not used any more.
+                if (str_starts_with((string) $coverPage->FrontPageName, 'gen-')) {
+                    @unlink(public_path($coverPage->FrontPageLocation));
+                    @unlink(public_path('thumb/'.basename((string) $coverPage->FrontPageLocation)));
+                }
+                // Through the model, so its hook re-indexes the record: replacing a generated
+                // placeholder ("gen-") with a real cover turns has_cover on. A query-builder
+                // update skipped the hook and left the search index saying "no cover".
+                $coverPage->update([
+                    'FrontPageLocation' => $filePath,
+                    'FrontPageName' => $newFileName,
+                    'FrontPageType' => $fileType,
+                ]);
             }
 
             // Bust the cached homepage carousels/shelves (they bake in cover thumbnails) so
             // the new cover shows immediately instead of after the 10-min TTL.
             clearHomeCache();
 
-            $record = Catalog::select('catalogs.*')
-            ->where('catalogs.id',$request->catalog_id)
-            ->first(); 
 
-            $coverPage = Frontpage::where('catalog_id',$request->catalog_id)->whereNull('deleted_at')->first();
-            $fullText = Multimedia::where('catalog_id',$request->catalog_id)->whereNull('deleted_at')->first();
-
-        return view('admin.catalog-view-record', ['record' => $record, 'fullText' => $fullText, 'coverPage' => $coverPage, 'title' => $request->title, 'uploadStatus' => true]);
+        return $this->renderRecordView($request->catalog_id, $request->title, ['uploadStatus' => true]);
 
         }
-        $record = Catalog::select('catalogs.*')
-        ->where('catalogs.id',$request->catalog_id)
-        ->first(); 
 
-        $coverPage = Frontpage::where('catalog_id',$request->catalog_id)->whereNull('deleted_at')->first();
-        $fullText = Multimedia::where('catalog_id',$request->catalog_id)->whereNull('deleted_at')->first();
-
-        return view('admin.catalog-view-record', ['record' => $record, 'fullText' => $fullText, 'coverPage' => $coverPage, 'title' => $request->title]);
+        return $this->renderRecordView($request->catalog_id, $request->title);
           
     }
 
     public function destroyCoverPhoto(Request $request)
     {
-        
-        $coverPage = Frontpage::where('catalog_id', $request->catalog_id)->whereNull('deleted_at')->first();
-        Frontpage::where('id', $coverPage->id)
-            ->update([
-            'deleted_at' => now()
-        ]);
+        $cover = Frontpage::where('catalog_id', $request->catalog_id)->whereNull('deleted_at')->first();
+
+        if ($cover && str_starts_with((string) $cover->FrontPageName, 'gen-')) {
+            // Removing a placeholder is turning it off (the Resources tab switch does the same).
+            // Off is remembered, so the placeholder generators leave this record alone.
+            DB::table('catalogs')->where('id', $request->catalog_id)->update(['cover_placeholder' => 0]);
+            removePlaceholderCover($request->catalog_id);
+        } elseif ($cover) {
+            // Soft-delete through the model, so its hook re-indexes the record (has_cover off).
+            // A query-builder update skipped the hook and left the search index saying "has cover".
+            $cover->delete();
+            // With its placeholder on, the record shows a generated cover again.
+            ensurePlaceholderCover($request->catalog_id);
+        }
 
         // Removed cover must drop from the cached homepage carousels/shelves immediately.
         clearHomeCache();
 
-        $coverPage = Frontpage::where('catalog_id',$request->catalog_id)->whereNull('deleted_at')->first();
-        $fullText = Multimedia::where('catalog_id',$request->catalog_id)->whereNull('deleted_at')->first();
-        $record = Catalog::select('catalogs.*')
-        ->where('catalogs.id',$request->catalog_id)
-        ->first(); 
+        return $this->renderRecordView($request->catalog_id, $request->title, ['uploadStatus' => true]);
+    }
 
-        return view('admin.catalog-view-record', ['record' => $record, 'fullText' => $fullText, 'coverPage' => $coverPage, 'title' => $request->title, 'uploadStatus' => true]);
+    /**
+     * Resources tab switch: show a generated placeholder cover while the record has no real
+     * cover, or not. Off removes the placeholder and is remembered (catalogs.cover_placeholder),
+     * so the generators skip the record; on generates one now when the record has no cover.
+     */
+    public function toggleCoverPlaceholder(Request $request, $id)
+    {
+        abort_unless(Catalog::whereKey($id)->exists(), 404);
+        $on = $request->boolean('on');
+
+        DB::table('catalogs')->where('id', $id)->update(['cover_placeholder' => $on ? 1 : 0]);
+        $on ? ensurePlaceholderCover($id) : removePlaceholderCover($id);
+        clearHomeCache();   // the homepage shelves show cover thumbnails
+
+        $notice = $on
+            ? 'Placeholder cover on: shown whenever this record has no real cover.'
+            : 'Placeholder cover off: this record shows no cover until a real one is uploaded.';
+        if ($on && ! settingEnabled('enable_placeholder_covers')) {
+            $notice = 'Saved. Placeholder covers are turned off for all records in Settings, so none is shown.';
+        }
+
+        return $this->renderRecordView($id, $request->title, ['uploadStatus' => true, 'coverNotice' => $notice]);
     }
 
     public function uploadFullText(Request $request)
@@ -2943,19 +2930,16 @@ class CatalogingController extends Controller
 
             // Full-text upload limit: PDF only, max 100 MB.
             if(strtolower($uploadedFile->getClientOriginalExtension()) !== 'pdf' || $uploadedFile->getSize() > 100 * 1024 * 1024) {
-                $record = Catalog::select('catalogs.*')->where('catalogs.id',$request->catalog_id)->first();
-                $fullText = Multimedia::where('catalog_id',$request->catalog_id)->whereNull('deleted_at')->first();
-                $coverPage = Frontpage::where('catalog_id',$request->catalog_id)->whereNull('deleted_at')->first();
-                return view('admin.catalog-view-record', ['record' => $record, 'fullText' => $fullText, 'coverPage' => $coverPage, 'title' => $request->title, 'uploadStatus' => true, 'uploadError' => 'The full-text file must be a PDF no larger than 100 MB.']);
+                return $this->renderRecordView($request->catalog_id, $request->title, ['uploadStatus' => true, 'uploadError' => 'The full-text file must be a PDF no larger than 100 MB.']);
             }
 
-            $fileType = $uploadedFile->getClientOriginalExtension();
+            $fileType = 'pdf';
             $newFileName = 'ft-'. uniqid() . '.' . $fileType;
             $filePath = 'pdf/' . $newFileName;
 
-            // Store directly under public/pdf (where DownloadController's public_path() serves from).
-            ensurePublicDir(public_path('pdf'));   // link target may not exist yet (fresh checkout)
-            $uploadedFile->move(public_path('pdf'), $newFileName);
+            // Into private storage (storage/app/private/pdf): the web server never serves it; Read,
+            // Download and the staff preview do, after their checks (fullTextPath()).
+            $uploadedFile->storeAs('pdf', $newFileName, 'private');
 
             $coverPage = Multimedia::where('catalog_id', $request->catalog_id)->where('deleted_at', null)->first();
 
@@ -2982,43 +2966,42 @@ class CatalogingController extends Controller
             // Distinct reason so the AI Sync Monitor can flag PDF changes (heavy) vs metadata edits.
             RagSync::enqueue((int) $request->catalog_id, RagSync::UPSERT, is_null($coverPage) ? 'fulltext_added' : 'fulltext_updated');
 
-            $record = Catalog::select('catalogs.*')
-                ->where('catalogs.id',$request->catalog_id)
-                ->first();
 
-            $fullText = Multimedia::where('catalog_id',$request->catalog_id)->whereNull('deleted_at')->first();
-            $coverPage = Frontpage::where('catalog_id',$request->catalog_id)->whereNull('deleted_at')->first();
-
-        return view('admin.catalog-view-record', ['record' => $record, 'fullText' => $fullText, 'coverPage' => $coverPage, 'title' => $request->title, 'uploadStatus' => true]);
+        return $this->renderRecordView($request->catalog_id, $request->title, ['uploadStatus' => true]);
 
         }
-        $record = Catalog::select('catalogs.*')
-            ->where('catalogs.id',$request->catalog_id)
-            ->first(); 
-        $fullText = Multimedia::where('catalog_id',$request->catalog_id)->whereNull('deleted_at')->first();
-        $coverPage = Frontpage::where('catalog_id',$request->catalog_id)->whereNull('deleted_at')->first();
         
-        return view('admin.catalog-view-record', ['record' => $record, 'fullText' => $fullText, 'coverPage' => $coverPage, 'title' => $request->title]);
+        return $this->renderRecordView($request->catalog_id, $request->title);
 
+    }
+
+    /**
+     * The record's full text for staff, from private storage: shown in the browser, or downloaded
+     * under its original name with ?download=1. Unlike the OPAC's Read and Download, this serves
+     * held records too (staff check a record before publishing it).
+     */
+    public function fullText($id)
+    {
+        $fullText = Multimedia::where('catalog_id', $id)->first();
+        $path = $fullText ? fullTextFile($id) : null;
+        abort_unless($path, 404);
+
+        return request()->boolean('download')
+            ? response()->download($path, $fullText->FileName ?: basename($path), ['Content-Type' => 'application/pdf'])
+            : response()->file($path, ['Content-Type' => 'application/pdf']);
     }
 
     public function destroyFullText(Request $request)
     {
-        $ft = Multimedia::where('catalog_id', $request->catalog_id)->whereNull('deleted_at')->first();
-        Multimedia::where('id', $ft->id)
-            ->update([
-            'deleted_at' => now()
-        ]);
+        // Soft-delete through the model, so its hook re-indexes the record: has_fulltext drives the
+        // OPAC's "Full text available" filter. A query-builder update skipped the hook, so a record
+        // whose PDF was removed kept matching that filter.
+        Multimedia::where('catalog_id', $request->catalog_id)->whereNull('deleted_at')->first()?->delete();
 
         // Full text removed -> queue for RAG sync (record reverts to metadata-only).
         RagSync::enqueue((int) $request->catalog_id, RagSync::UPSERT, 'fulltext_removed');
-        $coverPage = Frontpage::where('catalog_id',$request->catalog_id)->whereNull('deleted_at')->first();
-        $fullText = Multimedia::where('catalog_id',$request->catalog_id)->whereNull('deleted_at')->first();
-        $record = Catalog::select('catalogs.*')
-            ->where('catalogs.id',$request->catalog_id)
-            ->first(); 
 
-        return view('admin.catalog-view-record', ['record' => $record, 'fullText' => $fullText, 'coverPage' => $coverPage, 'title' => $request->title, 'uploadStatus' => true]);
+        return $this->renderRecordView($request->catalog_id, $request->title, ['uploadStatus' => true]);
     }
 
     public function addCopy(Request $request)
@@ -3042,14 +3025,7 @@ class CatalogingController extends Controller
             
         }
 
-        $coverPage = Frontpage::where('catalog_id',$request->catalog_id)->whereNull('deleted_at')->first();
-        $fullText = Multimedia::where('catalog_id',$request->catalog_id)->whereNull('deleted_at')->first();
-        $record = Catalog::select('catalogs.*')
-            ->where('catalogs.id',$request->catalog_id)
-            ->first(); 
-        $totalCopies = Holdingcopy::where('catalog_id', $request->catalog_id)->count();
-
-        return view('admin.catalog-view-record', ['record' => $record, 'fullText' => $fullText, 'coverPage' => $coverPage, 'title' => $request->title, 'totalCopies' => $totalCopies, 'copyUpdate' => true]);
+        return $this->renderRecordView($request->catalog_id, $request->title, ['copyUpdate' => true]);
 
     }
 
@@ -3141,31 +3117,18 @@ class CatalogingController extends Controller
                     'status' => $request->status,
                 ]);
         }
-        $coverPage = Frontpage::where('catalog_id',$request->catalog_id)->whereNull('deleted_at')->first();
-        $fullText = Multimedia::where('catalog_id',$request->catalog_id)->whereNull('deleted_at')->first();
-        $record = Catalog::select('catalogs.*')
-            ->where('catalogs.id',$request->catalog_id)
-            ->first();
-        $totalCopies = Holdingcopy::where('catalog_id', $request->catalog_id)->count();
 
-        return view('admin.catalog-view-record', ['record' => $record, 'fullText' => $fullText, 'coverPage' => $coverPage, 'title' => $request->title, 'totalCopies' => $totalCopies, 'copyUpdate' => true,
+        return $this->renderRecordView($request->catalog_id, $request->title, ['copyUpdate' => true,
             'copyError' => $taken ? 'Barcode ' . $request->circulation_number . ' already belongs to another copy, so this copy was not changed.' : null]);
     }
 
-    public function destroyCopy($id) 
+    public function destroyCopy($id)
     {
-        $coverPage = Frontpage::where('catalog_id',request('catalog_id'))->whereNull('deleted_at')->first();
-        $fullText = Multimedia::where('catalog_id',request('catalog_id'))->whereNull('deleted_at')->first();
-        $record = Catalog::select('catalogs.*')
-            ->where('catalogs.id',request('catalog_id'))
-            ->first();
-
         try {
             Holdingcopy::destroy($id);
-            $totalCopies = Holdingcopy::where('catalog_id', request('catalog_id'))->count();
-            return view('admin.catalog-view-record', ['record' => $record, 'fullText' => $fullText, 'coverPage' => $coverPage, 'title' => request('title'), 'totalCopies' => $totalCopies, 'copyUpdate' => true]);
+            return $this->renderRecordView(request('catalog_id'), request('title'), ['copyUpdate' => true]);
         } catch (\Exception $e) {
-            return view('admin.catalog-view-record', ['record' => $record, 'fullText' => $fullText, 'coverPage' => $coverPage, 'title' => request('title'), 'totalCopies' => $totalCopies, 'copyUpdate' => true]);
+            return $this->renderRecordView(request('catalog_id'), request('title'), ['copyUpdate' => true]);
         }
 
     }

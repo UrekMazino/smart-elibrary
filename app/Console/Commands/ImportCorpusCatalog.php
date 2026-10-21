@@ -7,8 +7,10 @@ use App\Models\Frontpage;
 use App\Models\Material;
 use App\Models\Multimedia;
 use App\Models\ViewCatalog;
+use App\Services\SearchIndex;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Stage B — turn the Project Y corpus into catalog records.
@@ -86,9 +88,8 @@ class ImportCorpusCatalog extends Command
         $this->info(($dry ? 'DRY RUN — ' : '') . "reading {$file}");
         $this->line('already imported: ' . $existing->count());
 
-        $pdfDir = public_path('pdf');
         if (! $dry) {
-            ensurePublicDir($pdfDir);   // public/pdf is a link into storage; its target may not exist yet
+            Storage::disk('private')->makeDirectory('pdf');   // full texts live in private storage
         }
 
         $stats = ['imported' => 0, 'held' => 0, 'published' => 0, 'skipped' => 0,
@@ -96,6 +97,9 @@ class ImportCorpusCatalog extends Command
 
         $fh = fopen($file, 'r');
         $n = 0;
+
+        // Search-index updates go out in chunks of 500 as the import runs (SearchIndex).
+        SearchIndex::hold();
 
         while (($line = fgets($fh)) !== false) {
             $line = trim($line);
@@ -137,6 +141,7 @@ class ImportCorpusCatalog extends Command
         }
 
         fclose($fh);
+        SearchIndex::release();
 
         $this->newLine();
         $this->info(($dry ? 'Would import' : 'Imported') . ": {$stats['imported']}");
@@ -152,7 +157,7 @@ class ImportCorpusCatalog extends Command
         if (! $dry && $stats['imported'] > 0) {
             clearHomeCache();
             $this->newLine();
-            $this->comment('Next: php artisan scout:import "App\Models\ViewCatalog"  (make them searchable)');
+            $this->comment('Search index: the imported records were added as they were imported.');
         }
 
         return self::SUCCESS;
@@ -196,8 +201,8 @@ class ImportCorpusCatalog extends Command
                 'accession_number'  => $rec['stem'],
                 'field_data'        => $this->fieldData($rec, $title, $note),
                 'is_published'      => $hold ? 0 : 1,
-                'created_by'        => 'corpus-import',
-                'updated_by'        => 'corpus-import',
+                'created_by'        => null,   // no account: a console import
+                'updated_by'        => null,
             ]);
 
             $view = ViewCatalog::create([
@@ -215,8 +220,8 @@ class ImportCorpusCatalog extends Command
                 'pub_year'         => $year,
                 'joint_authors'    => $rec['authors'] ?? null,
                 'subjects'         => marcSubjects($catalog->field_data),
-                'created_by'       => 'corpus-import',
-                'updated_by'       => 'corpus-import',
+                'created_by'       => null,
+                'updated_by'       => null,
             ]);
 
             // is_published is NOT in ViewCatalog's $fillable — passing it to create() above
@@ -227,11 +232,12 @@ class ImportCorpusCatalog extends Command
             // become mass-assignable app-wide.
             $view->is_published = $hold ? 0 : 1;
             $view->save();
+            SearchIndex::refresh($catalog->id);
 
-            // Full text: copy the PDF in the way the app expects (public/pdf + multimedia).
+            // Full text: copy the PDF in the way the app expects (private storage + multimedia).
             if (! empty($rec['pdf']) && is_file($rec['pdf'])) {
                 $newName = 'ft-' . uniqid() . '.pdf';
-                if (@copy($rec['pdf'], public_path('pdf/' . $newName))) {
+                if (@copy($rec['pdf'], fullTextPath('pdf/' . $newName))) {
                     Multimedia::create([
                         'catalog_id'   => $catalog->id,
                         'FileLocation' => 'pdf/' . $newName,

@@ -19,6 +19,7 @@
         "php-http/curl-client": "^2.2",
         "scriptotek/marc": "^3.0",
         "spatie/laravel-permission": "^8.0",
+        "symfony/html-sanitizer": "^7.4",
         "symfony/http-client": "^7.0"
     },
     "require-dev": {

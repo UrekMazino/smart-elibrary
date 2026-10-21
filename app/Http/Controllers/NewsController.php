@@ -36,13 +36,16 @@ class NewsController extends Controller
             'news_title' => 'required|string|max:255',
             'news_body' => 'required|string',
             'news_cover' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:2048',
+            // Shown as a link on the OPAC home: web addresses only (no javascript: links).
+            'news_url' => 'nullable|url:http,https|max:2048',
         ]);               
         $news = new News;
 
         if ($request->hasFile('news_cover')) {
             //COVER PHOTO -> store under public/news_cover (where it is served from) + thumbnail
             $file = $request->file('news_cover');
-            $coverName = 'news-'.uniqid().'.'.$file->getClientOriginalExtension();
+            // Named by what the file is (the validated image type), not by the name it was sent with.
+            $coverName = 'news-'.uniqid().'.'.$file->extension();
             ensurePublicDir(public_path('news_cover'));   // link target may not exist yet (fresh checkout)
             $file->move(public_path('news_cover'), $coverName);
             $news->news_cover = 'news_cover/'.$coverName;
@@ -51,7 +54,7 @@ class NewsController extends Controller
 
         $news->news_title = request()->news_title;
         $news->redirect_url = request()->news_url;
-        $news->news_body = request()->news_body;
+        $news->news_body = cleanNewsHtml(request()->news_body);
         $news->featured = request()->is_featured ? 'Yes' : 'No';
         $news->created_by = Auth::id();
         $news->save();
@@ -69,18 +72,21 @@ class NewsController extends Controller
             'news_title' => 'required|string|max:255',
             'news_body' => 'required|string',
             'news_cover' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:2048',
+            // Shown as a link on the OPAC home: web addresses only (no javascript: links).
+            'news_url' => 'nullable|url:http,https|max:2048',
         ]);
         $article = News::findOrFail($id);
         $article->news_title = request()->news_title;
         $article->redirect_url = request()->news_url;
-        $article->news_body = request()->news_body;
+        $article->news_body = cleanNewsHtml(request()->news_body);
         $article->featured = request()->is_featured ? 'Yes' : 'No';
         
         // Check if a new cover image has been uploaded
         if ($request->hasFile('news_cover')) {
             // Store under public/news_cover (where it is served from) + thumbnail
             $file = $request->file('news_cover');
-            $coverName = 'news-'.uniqid().'.'.$file->getClientOriginalExtension();
+            // Named by what the file is (the validated image type), not by the name it was sent with.
+            $coverName = 'news-'.uniqid().'.'.$file->extension();
             ensurePublicDir(public_path('news_cover'));   // link target may not exist yet (fresh checkout)
             $file->move(public_path('news_cover'), $coverName);
             $article->news_cover = 'news_cover/'.$coverName;

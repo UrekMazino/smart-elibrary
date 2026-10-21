@@ -49,7 +49,7 @@
 						</div>
 						<div>
 							<label for="news_body" class="form-label">Body</label>
-							<textarea class="form-control @error('news_body') is-invalid @enderror" name="news_body" id="tinymceExample" rows="12">{{ old('news_body', $article->news_body) }}</textarea>
+							<textarea class="form-control @error('news_body') is-invalid @enderror" name="news_body" id="tinymceExample" rows="12">{{ cleanNewsHtml(old('news_body', $article->news_body)) }}</textarea>
 							@error('news_body')<div class="invalid-feedback">{{ $message }}</div>@enderror
 						</div>
 					</div>
@@ -91,8 +91,8 @@
 				selector: '#tinymceExample',
 				height: 420,
 				menubar: false,
-				plugins: ['advlist autolink lists link image charmap preview anchor pagebreak searchreplace wordcount visualblocks visualchars code fullscreen'],
-				toolbar: 'undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image | code fullscreen',
+				plugins: 'advlist autolink lists link image charmap preview anchor pagebreak searchreplace wordcount visualblocks visualchars code fullscreen',   // one string: in an array it was read as one plugin name, so none loaded
+				toolbar: 'undo redo | styles | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image | code fullscreen',
 				image_advtab: true,
 				content_css: []
 			});

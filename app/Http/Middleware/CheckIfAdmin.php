@@ -17,7 +17,7 @@ class CheckIfAdmin
      */
     public function handle(Request $request, Closure $next)
     {
-        if(Auth::user()->usertype == 'Administrator' || Auth::user()->usertype == 'Developer')
+        if(Auth::user()->isStaff())
            return $next($request);
         return redirect('/');
     }

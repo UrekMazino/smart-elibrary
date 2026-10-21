@@ -137,6 +137,11 @@
 							});
 							</script>
 							@endif
+							@if(Auth::user()->isStaff())
+							{{-- Staff browsing the OPAC from the admin: no patron menu (profile, reservations,
+							     inquiries, reviews), just the way back to the admin page they came from. --}}
+							<li class="acct-li acct-li-register"><a href="{{ route('admin.return') }}" class="acct-register">Return to admin</a></li>
+							@else
 							<li class="submenu">
 								<a href="#0" class="show-submenu">Welcome, {{Auth::user()->name}} <i class="icon-down-open-mini"></i></a>
 								<ul>
@@ -153,11 +158,14 @@
 								</ul>
 
 							</li>
+							@endif
 							@else
 							{{-- Guests: "Log in" as a plain link for returning members, "Register" as the one filled
 							     button for newcomers. In the phone menu they become two full-width buttons, Register first. --}}
 							<li class="acct-li acct-li-login"><a href="{{ route('login') }}" class="acct-login">Log in</a></li>
 							<li class="acct-li acct-li-register"><a href="{{ route('register') }}" class="acct-register">Register</a></li>
+							@endauth
+							{{-- Account buttons: guests' "Log in" / "Register", staff's "Return to admin". --}}
 							<style>
 								.main-menu > ul > li.acct-li { vertical-align: top; }
 								/* 30px lines keep the header as tall as the old icon "Login" (and the patrons' bell). */
@@ -177,9 +185,8 @@
 									.main-menu > ul > li > a.acct-register:hover { background-color: #006f65; color: #fff !important; }
 								}
 							</style>
-							@endauth
 						</ul>
-						{!! getNotif('overall') !!}
+						@unless(Auth::check() && Auth::user()->isStaff()) {!! getNotif('overall') !!} @endunless
 					</div>
 					<!-- /main-menu -->
 
@@ -328,7 +335,13 @@
 	<script src="{{ asset('opac/DataTables/DataTables-1.12.1/js/jquery.dataTables.min.js') }}"></script>
 	<script src="{{ asset('opac/DataTables/DataTables-1.12.1/js/dataTables.bootstrap5.min.js') }}"></script>
 
-	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.25"></script>
+	<script>
+		// While a popup is open SweetAlert hides the page's scrollbar and pads <body> by its width.
+		// These pages scroll on <html>, so the scrollbar stays and the padding only shifted the page
+		// 15px to the left (a gap at the right of the header). No padding for any popup.
+		if (window.Swal) window.Swal = Swal.mixin({ scrollbarPadding: false });
+	</script>
 	@auth
 		@if(Auth::user()->usertype === 'Patron')
 			@include('opac.partials.quick-review')

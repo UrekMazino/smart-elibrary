@@ -53,9 +53,9 @@
 								<img src="{{ url('/' . $cover) }}" alt="cover">
 							</div>
 							<div class="tx-body">
-								<h3 class="tx-title"><a href="{{ recordUrl($lists->catalog_id, $holdings['title_statement']) }}">{!! $holdings['title_statement'] !!}</a></h3>
+								<h3 class="tx-title"><a href="{{ recordUrl($lists->catalog_id, $holdings['title_statement']) }}">{{ $holdings['title_statement'] }}</a></h3>
 								@if($authors !== '')
-									<div class="tx-authors">{!! $holdings['joint_authors'] !!}</div>
+									<div class="tx-authors">{{ $holdings['joint_authors'] }}</div>
 								@endif
 								<div class="tx-meta">
 									<span class="rating"><i data-star="{{ starRatingAve($lists->catalog_id) }}"></i></span>

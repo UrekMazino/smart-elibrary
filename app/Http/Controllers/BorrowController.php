@@ -4,8 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use App;
-use Auth;
 use App\Models\Circulation;
 use App\Models\CirculationReservation;
 
@@ -14,14 +12,6 @@ class BorrowController extends Controller
     public function __construct()
     {
         $this->middleware(['auth','admin']);
-    }
-
-    public function index($userid)
-    {
-        $data = [
-            "userid" => $userid
-        ];
-        return view('admin.borrow-patron')->with('data',$data);
     }
 
     public function json(Request $request)
@@ -115,51 +105,4 @@ class BorrowController extends Controller
 
     }
 
-    public function action()
-    {
-        switch(request()->borrowed_action)
-        {
-            case 1:
-                $borrowed = App\Models\Barrowed_book::where('id',request()->borrowed_id)
-                            ->update([
-                               'status' => 'Borrowed',
-                               'approved_at' => date('Y-m-d H:i:s'),  
-                               'approved_by' => Auth::user()->name     
-                            ]);
-                //BAWAS SA INVENTORY
-                //GET COPY
-                $material =  App\Models\Barrowed_book::where('id',request()->borrowed_id)->first();
-                $catalog_id = $material['catalog_id'];
-                
-                $holdings = App\Models\Holding::where('catalog_id',$catalog_id)->first();
-                // $upcopies = $holdings['copies'] - 1;
-                // //UPDATE
-                // $holdings = App\Models\Holding::where('catalog_id',$catalog_id)->update(['copies' => $upcopies]);
-
-
-                break;
-            case 2:
-                $borrowed = App\Models\Barrowed_book::where('id',request()->borrowed_id)->delete();
-                break;
-            case 3:
-                $borrowed = App\Models\Barrowed_book::where('id',request()->borrowed_id)
-                            ->update([
-                               'status' => 'Returned',
-                               'returned_at' => date('Y-m-d H:i:s'),  
-                               'update_return_by' => Auth::user()->name     
-                            ]);
-                //BALIK SA INVENTORY
-                //GET COPY
-                $material =  App\Models\Barrowed_book::where('id',request()->borrowed_id)->first();
-                $catalog_id = $material['catalog_id'];
-                
-                // $holdings = App\Models\Holding::where('catalog_id',$catalog_id)->first();
-                // $upcopies = $holdings['copies'] + 1;
-                // //UPDATE
-                // $holdings = App\Models\Holding::where('catalog_id',$catalog_id)->update(['copies' => $upcopies]);
-                break;
-        }
-
-        return redirect('admin/borrowed');
-    }
 }

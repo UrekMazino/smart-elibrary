@@ -40,13 +40,20 @@ class ReservationOpacController extends Controller
             'visit_schedtime.required'       => 'Please pick a visit time.',
         ]);
 
+        // Only public records (published, not deleted) can be reserved. The title shown to staff
+        // comes from the catalogue, not from the form: the form's copy is whatever the browser sent.
+        $record = App\Models\ViewCatalog::where('catalog_id', $request->catalog_id)
+            ->where('is_published', 1)->whereNull('deleted_at')->first(['title_statement']);
+        abort_unless($record, 404);
+        $title = $record->title_statement;
+
         $reservation_code = generateReservationCode();
         $transaction_code = generateTransactionCode();
         $user = Auth::user();
 
         // The ticket, its reservation details and its (empty) fine record are one unit: all
         // three are written or none is.
-        DB::transaction(function () use ($request, $user, $reservation_code, $transaction_code) {
+        DB::transaction(function () use ($request, $user, $title, $reservation_code, $transaction_code) {
             Circulation::create([
                 'user_id' => $user->id,
                 'catalog_id' => $request->catalog_id,
@@ -64,7 +71,7 @@ class ReservationOpacController extends Controller
                 'reservation_code' => $reservation_code,
                 'visit_date' => Carbon::parse($request->visit_scheddate)->toDateString(),
                 'visit_time' => date('H:i:s', strtotime('2000-01-01 ' . $request->visit_schedtime)),
-                'title_statement' => $request->title_statement,
+                'title_statement' => $title,
             ]);
 
             CirculationFineHistory::create([

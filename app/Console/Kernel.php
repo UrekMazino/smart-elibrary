@@ -18,6 +18,10 @@ class Kernel extends ConsoleKernel
         // Keep the OPAC sitemap current as records are published/held/edited. Static files, so
         // this costs nothing at request time. See OPAC_SEO_PLAN.md workstream C.
         $schedule->command('sitemap:generate')->dailyAt('03:30')->withoutOverlapping();
+
+        // Safety net for the OPAC search index: adds what an outage missed, removes deleted
+        // records, and refreshes the view counts behind the "Most viewed" sort.
+        $schedule->command('search:reconcile')->dailyAt('03:45')->withoutOverlapping();
     }
 
     /**

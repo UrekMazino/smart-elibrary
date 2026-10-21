@@ -1,3 +1,4 @@
-@import 'tailwindcss/base';
-@import 'tailwindcss/components';
-@import 'tailwindcss/utilities';
+@import 'tailwindcss' source(none);
+
+/* Content paths (source(none): only those, no project-wide scan), theme (Nunito) and the forms plugin stay in tailwind.config.js. */
+@config '../../tailwind.config.js';
