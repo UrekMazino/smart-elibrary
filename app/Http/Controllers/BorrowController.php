@@ -18,7 +18,7 @@ class BorrowController extends Controller
     {
         $draw = $request->get('draw');
         $start = $request->get("start");
-        $rowPerPage = $request->get("length"); // Rows display per page
+        $rowPerPage = dataTableLength($request); // Rows display per page
 
         $columnIndex_arr = $request->get('order');
         $columnName_arr = $request->get('columns');

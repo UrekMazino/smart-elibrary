@@ -325,18 +325,18 @@ class AdminController extends Controller
 
     public function patronjson(Request $request)
     {
-        $draw       = $request->get('draw');
-        $start      = $request->get('start');
-        $rowperpage = $request->get('length'); // Rows display per page
+        $dt         = dataTableRequest($request);   // paging, sort and search, with defaults when the table sent none
+        $draw       = $dt->draw;
+        $start      = $dt->start;
+        $rowperpage = $dt->length;
 
         $columnName_arr = $request->get('columns');
         $order_arr      = $request->get('order');
         $search_arr     = $request->get('search');
 
-        $columnIndex     = $order_arr[0]['column'];
-        $columnName      = $this->userSortColumn($columnName_arr[$columnIndex]['data'] ?? 'name');
-        $columnSortOrder = strtolower($order_arr[0]['dir']) === 'desc' ? 'desc' : 'asc';
-        $searchValue     = $search_arr['value'];
+        $columnName      = $this->userSortColumn($dt->data ?? 'name');
+        $columnSortOrder = $dt->dir;
+        $searchValue     = $dt->search;
 
         // Status filter chips (All / Active / Blocked / Banned). "Active" = neither flag set.
         $status = $request->get('status_filter', 'all');
@@ -410,18 +410,18 @@ class AdminController extends Controller
     
     public function adminJson(Request $request)
     {
-        $draw       = $request->get('draw');
-        $start      = $request->get('start');
-        $rowperpage = $request->get('length'); // Rows display per page
+        $dt         = dataTableRequest($request);   // paging, sort and search, with defaults when the table sent none
+        $draw       = $dt->draw;
+        $start      = $dt->start;
+        $rowperpage = $dt->length;
 
         $columnName_arr = $request->get('columns');
         $order_arr      = $request->get('order');
         $search_arr     = $request->get('search');
 
-        $columnIndex     = $order_arr[0]['column'];
-        $columnName      = $this->userSortColumn($columnName_arr[$columnIndex]['data'] ?? 'name');
-        $columnSortOrder = strtolower($order_arr[0]['dir']) === 'desc' ? 'desc' : 'asc';
-        $searchValue     = $search_arr['value'];
+        $columnName      = $this->userSortColumn($dt->data ?? 'name');
+        $columnSortOrder = $dt->dir;
+        $searchValue     = $dt->search;
 
         // The search terms have to match the fetch query below, otherwise the row count
         // disagrees with the rows actually returned and paging breaks.

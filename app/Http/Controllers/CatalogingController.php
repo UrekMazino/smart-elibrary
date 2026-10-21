@@ -1429,7 +1429,7 @@ class CatalogingController extends Controller
     {
         $draw = $request->get('draw');
         $start = $request->get("start");
-        $rowPerPage = $request->get("length"); // Rows display per page
+        $rowPerPage = dataTableLength($request); // Rows display per page
 
         $columnIndex_arr = $request->get('order');
         $columnName_arr = $request->get('columns');
@@ -2098,6 +2098,7 @@ class CatalogingController extends Controller
     public function editRecord($id)
     {
         $record = Catalog::where('id', $id)->first();
+        abort_unless($record, 404);
 
         $marcTemplates = MarcTemplate::get();
 
@@ -3093,6 +3094,7 @@ class CatalogingController extends Controller
     {
 
         $copy = Holdingcopy::where('id', $id)->first();
+        abort_unless($copy, 404);
         $response = array(
             "copy_id" => $copy->id,
             "circulation_number" => $copy->circulation_number,
@@ -3133,15 +3135,4 @@ class CatalogingController extends Controller
 
     }
 
-    public function getTaskProgress()
-    {
-        // Get the current progress from the database
-        $task = CatalogImportProgress::where('id', 1)->first(); // Find the appropriate task
-        // dd($task);
-        if ($task) {
-            return response()->json(['progress' => $task->progress, 'total_records' => $task->total_records]);
-        }
-        
-        return response()->json(['progress' => 1, 'total_records' => 1]); // Default to 0 if no task found
-    }
 }

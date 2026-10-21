@@ -25,7 +25,7 @@ class NewsController extends Controller
 
     public function edit($id)
     {
-        $article = News::where('id', $id)->first();
+        $article = News::where('id', $id)->firstOrFail();
         
         return view('admin.news-edit', ['article' => $article]);
     }
@@ -118,19 +118,10 @@ class NewsController extends Controller
 
     public function json(Request $request)
     {
-        $draw = $request->get('draw');
-        $start = $request->get("start");
-        $rowperpage = $request->get("length"); // Rows display per page
-
-        $columnIndex_arr = $request->get('order');
-        $columnName_arr = $request->get('columns');
-        $order_arr = $request->get('order');
-        $search_arr = $request->get('search');
-
-        $columnIndex = $columnIndex_arr[0]['column']; // Column index
-        $columnName = $columnName_arr[$columnIndex]['data']; // Column name
-        $columnSortOrder = $order_arr[0]['dir']; // asc or desc
-        $searchValue = $search_arr['value']; // Search value
+        // Paging, sorting and search as the table sends them; the sort column only from this list.
+        $dt = dataTableRequest($request, ['id' => 'id', 'news_title' => 'news_title', 'featured' => 'featured',
+            'created_by' => 'created_by', 'created_at' => 'created_at'], 'created_at', 'desc');
+        [$draw, $start, $rowperpage, $columnName, $columnSortOrder, $searchValue] = [$dt->draw, $dt->start, $dt->length, $dt->column, $dt->dir, $dt->search];
 
         // Total records
         $totalRecords = News::whereNull('deleted_at')->count();
