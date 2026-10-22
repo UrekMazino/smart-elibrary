@@ -16,9 +16,9 @@ Test every page with the account its **Who** column names, and once with an acco
 
 | Role (staff) | Permissions (default) | Use it to test |
 | --- | --- | --- |
-| `super_admin` | All 35 | Everything, including administrators, roles and permissions |
-| `developer` | All 35, and passes every check | Same as super admin |
-| `system_admin` | 31: all except AI mode, material types, blocking/banning patrons, editing imports | Most admin pages |
+| `super_admin` | All 36 | Everything, including administrators, roles and permissions |
+| `developer` | All 36, and passes every check | Same as super admin |
+| `system_admin` | 32: all except AI mode, material types, blocking/banning patrons, editing imports | Most admin pages |
 | `cataloging_admin` | Records (create, edit, delete), batch import, record list, MARC template create | Cataloguing |
 | `circulation_admin` | Reservations (view, manage), check-out/in, block/ban patrons | Circulation |
 | `faculty` | Records (create, edit, delete), no record list | Record editing without lists |
@@ -147,6 +147,7 @@ All of these open from **Accounts** under Administration in the sidebar. Patron 
 | Permissions | Accounts card; `/admin/permissions` | `super_admin` or `developer`; add and delete: `developer` only | List and edit permission names |
 | My profile | `/admin/profile` | Any staff | Edit own name and email (must be unused); change password with the current one (at most 10 tries a minute) |
 | Appearance | profile menu → **Appearance**; `/admin/appearance` | Any staff | Colour theme (9 ready-made, the ones marked AA keep text on them at 4.5:1 or more; or a custom colour, darkened until text on it reads), status colours (standard or colour-blind safe), text size 100–150% (the sidebar widens to fit), motion (follow the device, or always reduce), font (standard or Atkinson Hyperlegible). Each choice previews at once; **Save** keeps it on the account, on any computer; **Use the library default** goes back to Theme's. At 150% dropdowns still open under their buttons |
+| Appearance: background, sidebar, contrast | same page | Any staff | **Background**: Standard, White, Warm cream, Cool grey; Dark, Dim, Black; **Follow my device** (light or dark with the computer's own setting, switching without a reload); or a custom colour, made light or dark enough for text on it to read at 7:1 (a note under Contrast says when it was adjusted). Panels, tables, menus, fields, badges and the dashboard charts follow it, and text stays readable on every admin page. **Sidebar**: dark, or light like the page (the logo then has dark lettering); always dark with a dark background. **High contrast**: pure white or black, text and links at 7:1 or more, underlined links, stronger borders and a thicker focus outline. With the standard choices every page looks exactly as before |
 
 ## Admin: dashboard, news, inquiries, reports, settings
 

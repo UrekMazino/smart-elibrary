@@ -94,8 +94,13 @@ The Laravel framework is open-sourced software licensed under the [MIT license](
 
 DEVELOPERS NOTE:
 
-## Admin appearance (themes, text size, motion, font)
-Each staff member's Appearance (profile menu) and the library default (Utilities → Theme) are `App\Services\Appearance`. The admin loads `public/css/admin-theme.css`, a **generated** copy of NobleUI's `demo1/style.css` with its theme colours, pixel font sizes, font and sidebar width as variables: don't edit it by hand; if the template's stylesheet changes, run `node scripts/admin-theme.mjs` again. In our own admin styles, use `var(--t-primary)` (and `color-mix()` tints of it) instead of the indigo `#6571ff`, and `rem` for font sizes, so they follow the person's colours and text size.
+## Admin appearance (themes, backgrounds, contrast, text size, motion, font)
+Each staff member's Appearance (profile menu) and the library default (Utilities → Theme) are `App\Services\Appearance`, which also does the contrast maths (WCAG 2.2); the form's live preview asks it through `/admin/appearance/preview`. The admin loads `public/css/admin-theme.css` and `public/css/admin-theme-dark.css`, **generated** copies of NobleUI's `demo1/style.css` (light) and `demo2/style.css` (dark) with their theme colours, neutral colours, pixel font sizes, font and sidebar width as variables: don't edit them by hand; if the template's stylesheets change, run `node scripts/admin-theme.mjs` again. The layout turns one of them on by its `media` attribute (both, by the device's setting, for Follow my device).
+
+In our own admin styles, so they follow the person's choice:
+- the accent: `var(--t-primary)` (and `color-mix()` tints of it) instead of the indigo `#6571ff`; as text, `var(--ui-accent-text, var(--t-primary))`;
+- neutral colours: `var(--ui-ROLE, #the-original)`, with ROLE one of `page`, `surface` (cards, menus), `surface-2` (raised: disabled fields, hover), `border`, `text`, `text-2`, `muted`; status tints: `--ui-{success,danger,warning,info}-ink` (text), `-soft` (background), `-line` (border); our navy `#33509c`: `--ui-navy` (text, borders), `--ui-navy-solid` (behind white text). The roles are only set for a background, high contrast or dark mode, so the fallback is what everyone else sees;
+- font sizes in `rem`; colours used from JavaScript (charts) read from these variables, as `public/js/admin/dashboard.js` does.
 
 ## php.ini
 memory_limit=2048M
