@@ -15,8 +15,8 @@ use Illuminate\Validation\Rule;
 /**
  * Administration → Utilities.
  *
- * The hub lists the utilities this admin can use: Material Types (below), MARC Templates and the
- * AI Sync Monitor (their own controllers; the sidebar's Utilities link checks the same
+ * The hub lists the utilities this admin can use: Material Types (below), MARC Templates, the AI
+ * Sync Monitor and Theme (their own controllers; the sidebar's Utilities link checks the same
  * permissions). Material
  * types are referenced by records (catalogs + the OPAC's view_catalogs, which also stores the
  * NAME), batches and mapping presets — so:
@@ -67,9 +67,19 @@ class MaterialTypeController extends Controller
             ];
         }
 
+        if ($user->can('manage.theme')) {
+            $cards[] = [
+                'title' => 'Theme',
+                'icon'  => 'droplet',
+                'url'   => route('utilities.theme'),
+                'text'  => 'The appearance every staff member starts with: colours, status colours, text size, motion, font. Each can still choose their own.',
+                'meta'  => \App\Services\Appearance::describe(\App\Services\Appearance::siteDefault()),
+            ];
+        }
+
         return view('admin.hub', [
             'title' => 'Utilities',
-            'intro' => "Tools for the library's reference data, the cataloguing templates and the AI search. You see the ones your role may use.",
+            'intro' => "Tools for the library's reference data, the cataloguing templates, the AI search and the admin's appearance. You see the ones your role may use.",
             'cards' => $cards,
         ]);
     }

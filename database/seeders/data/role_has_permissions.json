@@ -502,5 +502,17 @@
     {
         "permission_id": 40,
         "role_id": 19
+    },
+    {
+        "permission_id": 41,
+        "role_id": 12
+    },
+    {
+        "permission_id": 41,
+        "role_id": 17
+    },
+    {
+        "permission_id": 41,
+        "role_id": 19
     }
 ]

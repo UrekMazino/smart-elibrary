@@ -74,6 +74,7 @@ class HomeController extends Controller
             'manage.material.types'        => 'admin/utilities',
             'view.config.template'         => 'admin/utilities',
             'access.ai.sync.monitor'       => 'admin/utilities',
+            'manage.theme'                 => 'admin/utilities',
         ];
         // Module access is required as well for pages inside a module.
         $module = [
@@ -82,6 +83,7 @@ class HomeController extends Controller
             'access.circulation.transaction' => 'access.circulation',
             'access.settings' => 'access.configuration', 'manage.material.types' => 'access.configuration',
             'view.config.template' => 'access.configuration', 'access.ai.sync.monitor' => 'access.configuration',
+            'manage.theme' => 'access.configuration',
         ];
 
         foreach ($pages as $permission => $url) {

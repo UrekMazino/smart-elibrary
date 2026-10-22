@@ -25,9 +25,10 @@ class RouteSecurityTest extends TestCase
         'login', 'register', 'forgot-password', 'reset-password', 'reset-password/{token}',
     ];
 
-    /** Admin routes any staff account may use: its own profile, the OPAC button, MARC lookups for the editor. */
+    /** Admin routes any staff account may use: its own profile and appearance, the OPAC button, MARC lookups for the editor. */
     private const ANY_STAFF = [
         'admin/opac', 'admin/opac/return', 'admin/profile', 'admin/profile/update', 'admin/profile/update/password',
+        'admin/appearance', 'admin/appearance/reset',
         'admin/profile/validate-email', 'admin/get-marc-tag-details', 'admin/get-marc-template-details', 'admin/marc-tags-list/json',
     ];
 

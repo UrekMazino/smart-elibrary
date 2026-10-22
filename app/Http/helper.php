@@ -283,6 +283,16 @@ function reservationUpdatesQuery($userId)
 		->where(fn ($q) => $q->whereNull('patron_seen_status')->orWhereColumn('status', '<>', 'patron_seen_status'));
 }
 
+/**
+ * asset() with the file's modification time as ?v=, so browsers fetch a changed file again instead of
+ * keeping an old copy. Without the stamp when the file isn't there.
+ */
+function versionedAsset(string $path): string
+{
+	$file = public_path($path);
+	return asset($path) . (is_file($file) ? '?v=' . filemtime($file) : '');
+}
+
 function getNotif($type)
 {
 	if(Auth::check())

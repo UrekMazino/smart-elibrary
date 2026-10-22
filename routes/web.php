@@ -98,6 +98,19 @@ Route::controller(SettingController::class)->middleware(['can:access.configurati
     Route::post('/admin/settings/generate-sitemap', 'generateSitemap')->middleware('throttle:5,1');
 });
 
+// APPEARANCE (App\Services\Appearance): each staff member's own, from the profile menu, and the
+// library default under Utilities → Theme.
+use App\Http\Controllers\AppearanceController;
+Route::controller(AppearanceController::class)->group(function () {
+    Route::get('/admin/appearance', 'edit')->name('appearance');
+    Route::post('/admin/appearance', 'update');
+    Route::post('/admin/appearance/reset', 'reset');
+    Route::middleware(['can:access.configuration', 'can:manage.theme'])->group(function () {
+        Route::get('/admin/utilities/theme', 'editDefault')->name('utilities.theme');
+        Route::post('/admin/utilities/theme', 'updateDefault');
+    });
+});
+
 //UTILITIES (Administration → Utilities). The hub needs the Administration module; each
 // utility has its own permission.
 use App\Http\Controllers\MaterialTypeController;
