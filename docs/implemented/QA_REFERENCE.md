@@ -146,6 +146,7 @@ All of these open from **Accounts** under Administration in the sidebar. Patron 
 | Roles | Accounts card; `/admin/roles` | same | Create, rename, delete roles; tick or untick each permission of a role. A staff member's menus change accordingly at their next page load |
 | Permissions | Accounts card; `/admin/permissions` | `super_admin` or `developer`; add and delete: `developer` only | List and edit permission names |
 | My profile | `/admin/profile` | Any staff | Edit own name and email (must be unused); change password with the current one (at most 10 tries a minute) |
+| Appearance | profile menu → **Appearance**; `/admin/appearance` | Any staff | Colour theme (9 ready-made, the ones marked AA keep text on them at 4.5:1 or more; or a custom colour, darkened until text on it reads), status colours (standard or colour-blind safe), text size 100–150% (the sidebar widens to fit), motion (follow the device, or always reduce), font (standard or Atkinson Hyperlegible). Each choice previews at once; **Save** keeps it on the account, on any computer; **Use the library default** goes back to Theme's. At 150% dropdowns still open under their buttons |
 
 ## Admin: dashboard, news, inquiries, reports, settings
 
@@ -165,7 +166,8 @@ The rest of the admin, in sidebar order. Staff land on the Dashboard after signi
 | Search index | card on Settings | same | **Scan** reports records missing from search; **Rebuild** re-creates the index (at most 5 a minute) |
 | Sitemap | card on Settings | same | Regenerates `/sitemap.xml` (at most 5 a minute) |
 | Clear cache | card on Settings | same | Home page shelves and counts refresh; patrons and staff stay signed in (at most 10 a minute) |
-| Utilities | `/admin/utilities` | `access.configuration` | Cards for the tools the role may use: Material Types, MARC Templates, AI Sync Monitor. The sidebar's Utilities stays highlighted on those pages, and their breadcrumb leads back here. "No utilities for your role yet" otherwise |
+| Utilities | `/admin/utilities` | `access.configuration` | Cards for the tools the role may use: Material Types, MARC Templates, AI Sync Monitor, Theme. The sidebar's Utilities stays highlighted on those pages, and their breadcrumb leads back here. "No utilities for your role yet" otherwise |
+| Theme | Utilities card; `/admin/utilities/theme` | `access.configuration` + `manage.theme` | The same choices as Appearance, as the library default for every staff member without their own; **Back to original** restores the template's look. Staff who chose their own keep it. With nothing chosen, every page looks exactly as before |
 | AI Sync Monitor | Utilities card; `/admin/ai-sync-monitor` | `access.configuration` + `access.ai.sync.monitor` | Pending, Failed and Synced counts; filter by change type and status; long titles wrap, and phones show each change as a card. **Re-sync** queues one record; **Run sync now** processes the queue (needs the AI service running) |
 
 ## Must not work: security checks

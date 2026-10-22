@@ -94,6 +94,9 @@ The Laravel framework is open-sourced software licensed under the [MIT license](
 
 DEVELOPERS NOTE:
 
+## Admin appearance (themes, text size, motion, font)
+Each staff member's Appearance (profile menu) and the library default (Utilities → Theme) are `App\Services\Appearance`. The admin loads `public/css/admin-theme.css`, a **generated** copy of NobleUI's `demo1/style.css` with its theme colours, pixel font sizes, font and sidebar width as variables: don't edit it by hand; if the template's stylesheet changes, run `node scripts/admin-theme.mjs` again. In our own admin styles, use `var(--t-primary)` (and `color-mix()` tints of it) instead of the indigo `#6571ff`, and `rem` for font sizes, so they follow the person's colours and text size.
+
 ## php.ini
 memory_limit=2048M
 
