@@ -44,7 +44,7 @@
         <h1>Access denied</h1>
         <p>{{ $message }}</p>
         @if($isStaff)
-            <p class="hint">If you need this, ask a Super Administrator to grant your role the permission in <strong>Administration → Roles</strong>.</p>
+            <p class="hint">If you need this, ask a Super Administrator to grant your role the permission in <strong>Administration → Accounts → Roles</strong>.</p>
         @endif
         <div class="actions">
             @if($showBack)

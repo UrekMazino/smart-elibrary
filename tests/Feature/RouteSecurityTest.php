@@ -5,9 +5,7 @@ namespace Tests\Feature;
 use App\Http\Middleware\VerifyCsrfToken;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
-use Spatie\Permission\PermissionRegistrar;
 use Tests\SeedsReferenceData;
 use Tests\TestCase;
 
@@ -65,20 +63,10 @@ class RouteSecurityTest extends TestCase
         return in_array($name, $mw, true) || (bool) preg_grep('/^' . preg_quote($name, '/') . ':/', $mw);
     }
 
-    /** Permission or role checks on the route: can:x, permission:a|b, role:a|b. */
+    /** Permission or role checks on the route: can:x, permission:a|b, role:a|b, role_or_permission:a|b. */
     private function guards(array $mw): array
     {
-        return array_values(preg_grep('/^(can|permission|role):/', $mw));
-    }
-
-    /** The seeded roles and permissions; migrations already add some of them, so existing rows are kept. */
-    private function seedAccess(): void
-    {
-        foreach (['permissions', 'roles', 'role_has_permissions'] as $table) {
-            $rows = json_decode(file_get_contents(database_path("seeders/data/$table.json")), true);
-            foreach (array_chunk($rows, 500) as $chunk) DB::table($table)->insertOrIgnore($chunk);
-        }
-        app(PermissionRegistrar::class)->forgetCachedPermissions();
+        return array_values(preg_grep('/^(can|permission|role|role_or_permission):/', $mw));
     }
 
     private function staff(string $role, string $usertype = 'Administrator'): User
@@ -146,7 +134,11 @@ class RouteSecurityTest extends TestCase
             $allowed = collect($guards)->every(function ($g) use ($staff) {
                 [$kind, $names] = explode(':', $g, 2);
                 $names = explode('|', $names);
-                return $kind === 'role' ? $staff->hasAnyRole($names) : collect($names)->contains(fn ($p) => $staff->can($p));
+                return match ($kind) {
+                    'role'               => $staff->hasAnyRole($names),
+                    'role_or_permission' => $staff->hasAnyRole($names) || $staff->canAny($names),
+                    default              => collect($names)->contains(fn ($p) => $staff->can($p)),
+                };
             });
             if (!$guards || $allowed) continue;
 
@@ -192,13 +184,7 @@ class RouteSecurityTest extends TestCase
     public function test_pages_answer_without_server_errors_even_for_missing_records()
     {
         $this->seedAccess();
-        // The reference data a fresh install seeds (DatabaseSeeder); migrations already add some rows.
-        foreach (['circulation_fines', 'circulation_status', 'consortias', 'copies_status', 'imprints', 'type_of_imprints',
-                  'marc_class_sys', 'materials', 'patrontypes', 'regions', 'settings', 'marctags_loc',
-                  'marctag_indicators_loc', 'marctag_subfields_loc', 'marc_templates'] as $table) {
-            $rows = json_decode(file_get_contents(database_path("seeders/data/$table.json")), true);
-            foreach (array_chunk($rows, 500) as $chunk) DB::table($table)->insertOrIgnore($chunk);
-        }
+        $this->seedInstallData();
         Http::fake();   // the AI status check and anything else that would call out
         $staff = $this->staff('developer', 'Developer');
         $patron = User::factory()->create(['usertype' => 'Patron']);
