@@ -188,6 +188,13 @@ Route::controller(ReservationController::class)->middleware(['can:access.circula
     Route::post('/admin/reservation/chat/reply', 'reservationChatReply')->middleware('can:manage.circulation.reservation');
 });
 
+// The same reservation threads, read and answered from Administration → Inquiries, which lists the
+// ones a patron wrote in; staff who answer inquiries need no circulation permissions for that.
+Route::controller(ReservationController::class)->middleware('can:access.inquiry')->group(function () {
+    Route::get('/admin/inquiry/reservation/{reservation_code}', 'reservationChatJson');
+    Route::post('/admin/inquiry/reservation/reply', 'reservationChatReply')->middleware('throttle:20,1');
+});
+
 // Read-only detail popups (material / patron / transaction / reservation) shared by the
 // Reservation page AND the Transaction page, so either permission opens them.
 Route::controller(ReservationController::class)

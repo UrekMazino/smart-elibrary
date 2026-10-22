@@ -60,6 +60,7 @@ class ReservationOpacController extends Controller
                 'reservation_code' => $reservation_code,
                 'transaction_code' => $transaction_code,
                 'status' => 1,
+                'patron_seen_status' => 1,   // the patron's own request: nothing new for them to see
                 'user_library_code'=> $user->library_code,
             ]);
 

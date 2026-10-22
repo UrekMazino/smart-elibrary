@@ -193,7 +193,7 @@ class ReservationController extends Controller
         $sortColumn = $sortable[$columnName] ?? 'circulation_reservations.id';
 
         $active = Circulation::join('circulation_reservations', 'circulation_reservations.reservation_code', '=', 'circulations.reservation_code')
-            ->whereIn('circulations.status', [1, 2, 3]);
+            ->whereIn('circulations.status', Circulation::ON_RESERVATIONS_PAGE);
         $filtered = (clone $active)->where(function ($query) use ($searchValue) {
             $query->where('circulation_reservations.title_statement', 'like', '%' . $searchValue . '%')
                 ->orWhere('circulation_reservations.requested_by', 'like', '%' . $searchValue . '%')
@@ -392,10 +392,12 @@ class ReservationController extends Controller
             'message'          => 'required|string|max:5000',
         ]);
 
-        // Resolve the patron this reservation belongs to (for thread ownership).
+        // Resolve the patron this reservation belongs to (for thread ownership); no message for a
+        // reservation that doesn't exist.
         $reservation = DB::table('circulation_reservations')
             ->where('reservation_code', $request->reservation_code)
             ->first();
+        abort_unless($reservation, 404);
 
         DB::table('reservation_messages')->insert([
             'reservation_code' => $request->reservation_code,

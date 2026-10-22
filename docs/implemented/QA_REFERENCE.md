@@ -58,14 +58,14 @@ These pages are open to everyone. Only published records ever appear; a held, de
 
 ## OPAC: patron account
 
-A signed-in patron reaches these from the **Welcome, {name}** menu at the top right; the red badges count unread replies. A staff account sees **Return to admin** instead of this menu and is sent to `/home` if it opens these addresses.
+A signed-in patron reaches these from the **Welcome, {name}** menu at the top right; the red badges count unread replies and, on Transactions, what the library changed. A staff account sees **Return to admin** instead of this menu and is sent to `/home` if it opens these addresses.
 
 | Page | Address | Who | What to check |
 | --- | --- | --- | --- |
 | Profile | `/patron/profile` | Patron | Edit name, email (must be unused), contact number, birthdate (before today), affiliation, sex, patron type (required), region, address. Library code shown as a QR code |
 | Change password | on the Profile page | Patron | Needs the current password; new password 8+ characters, typed twice. At most 10 tries a minute |
 | Saved | **Saved** button in the search bar | Patron | Shows how many records are saved; opens `/results?saved=1`, the saved records with the usual filters. The star on a record adds or removes it |
-| Reservations | `/patron/transactions` | Patron | Each reservation with its code, title, visit date and time, and status (For Approval, Approved, Open = checked out, Declined, Closed = returned). **Messages** opens a chat with the library about that reservation |
+| Transactions | `/patron/transactions` | Patron | Each reservation with its code, title, visit date and time, and status (For Approval, Approved, Open = checked out, Declined, Closed = returned). **Messages** opens a chat with the library about that reservation. When staff approve, decline, check out or check in one, the menu's Reservations badge counts it and the bell says so (approved: "ready for pickup"; others: "reservation updated") until the patron opens this page, where the card shows **Updated** once. The patron's own new request doesn't count |
 | Reservation chat | Messages button on a reservation | Patron | Send a message; the library's replies appear; opening it clears the badge. Only the patron's own reservations open. A blocked account cannot send |
 | Inquiries | `/patron/inquiries` | Patron | Each inquiry with its record and messages; reply in the thread; "Seen" marks. Only the patron's own inquiries open. A blocked account cannot reply |
 | To Review | `/patron/to-review` | Patron | Records the patron read or downloaded and has not reviewed yet; reviewing one removes it from the list |
@@ -80,7 +80,7 @@ Every page here needs a staff account with `access.cataloging`, plus the permiss
 | Record List | `/admin/record-list` | `view.catalog.list` | Published records only. Search, filters (material type, author, year, full text, cover) with counts, sort, paging |
 | Bulk actions | checkboxes on Record List and On-Hold | Publish/Hold: `publish-hold.catalog`; Delete: `delete.catalog` | Publish, hold, delete or re-index the ticked records; each asks for confirmation. At most 30 a minute |
 | Bulk export | on Record List and On-Hold | `access.cataloging` | Ticked records as MARC21 (`.mrc`) or MARCXML (`.xml`); `/admin/export-records/{format}` exports all |
-| On-Hold | `/admin/on-hold-list` | `view.catalog.list` | Held records only; same search, filters and bulk actions as Record List |
+| On-Hold | `/admin/on-hold-list` | `view.catalog.list` | Held records only; same search, filters and bulk actions as Record List. The sidebar badge shows how many are held; publishing one lowers it at the next page load |
 | Record page | `/admin/view-record/{id}` | `access.cataloging` | Details, citations (each with Copy), copies, reviews. An unknown number answers 404 |
 | Publish / Hold | buttons on the record page | `publish-hold.catalog` | The record appears in, or disappears from, the OPAC and its search |
 | Edit | `/admin/edit-record/{id}` | `edit.catalog` | MARC editor with the record's fields; saving updates the OPAC. Fixing a problem the import flagged clears that flag |
@@ -109,7 +109,7 @@ Circulation pages need `access.circulation`; Physical Count needs `access.invent
 
 | Page or action | Address | Who | What to check |
 | --- | --- | --- | --- |
-| Reservation | `/admin/reservations` | `circulation.reservation.view` | Every reservation: title, requested by, email, status, code, date of visit; search and sort. Names and titles show as plain text, even when they contain symbols such as `<` or `>` |
+| Transactions | `/admin/reservations` | `circulation.reservation.view` | Every open reservation and loan (For Approval, Approved, checked out): title, requested by, email, status, code, date of visit; search and sort. Names and titles show as plain text, even when they contain symbols such as `<` or `>`. The sidebar badge counts open reservations (For Approval and Approved); the red one counts unread patron messages on the reservations listed here. A message on a declined or closed reservation doesn't light it: that conversation is under Inquiries |
 | Material and patron details | click a title or a name in the list | `circulation.reservation.view` | Popups with the record's copies, and the patron's details |
 | Approve | button on a For Approval row | `manage.circulation.reservation` | Pick an available copy first; the copy becomes Reserved and the status Approved |
 | Decline | button on a For Approval row | `manage.circulation.reservation` | Asks for confirmation; status Declined |
@@ -121,7 +121,7 @@ Circulation pages need `access.circulation`; Physical Count needs `access.invent
 | Check-out | on Check-Out/Check-In | `manage.circulation.checkouts` | Due date and overdue fine rate; status Open; the copy is no longer Available |
 | Edit a check-out | on Check-Out/Check-In | `manage.circulation.checkouts` | Change the due date or fine rate of an open loan |
 | Check-in | on Check-Out/Check-In | `manage.circulation.checkouts` | Overdue hours and fine calculated; record amount paid and amount waived; status Closed; the copy is Available again |
-| Transaction | `/admin/borrowed` | `access.circulation.transaction` | Every loan, newest first: title, patron, transaction code, reservation code (or Walk-in), status, date; each opens its details |
+| History | `/admin/borrowed` | `access.circulation.transaction` | Every reservation and loan, whatever its status, newest first: title, patron, transaction code, reservation code (or Walk-in), status, date; each opens its details |
 | Physical Count | `/admin/inventory` | `access.inventory` | Enter or scan circulation numbers of copies on the shelf; the list pages and sorts through every copy; remove a wrong entry; **Reset** starts a new count (asks first) |
 | Present and missing reports | `/admin/inventory/presented`, `/admin/inventory/reportpresented`, `/admin/inventory/reportmissing` | `access.inventory` | Copies counted, and copies on record but not counted; printable |
 
@@ -156,7 +156,7 @@ The rest of the admin, in sidebar order. Staff land on the Dashboard after signi
 | Dashboard | `/admin/dashboard` | `access.dashboard` | Library at a glance, Activity chart (choose a metric and a period; switch to a table), Top materials, Titles by material type, Patrons by category, Newest patrons, Recent reviews, Needs attention |
 | Notification bell | top bar | `access.notifications` | Counts pending reservations, unread inquiries and reservation messages; each item opens its page, and the count drops once it is handled |
 | OPAC button | top bar, `/admin/opac` | Any staff | Opens the OPAC signed in; **Return to admin** (`/admin/opac/return`) goes back to the admin page it came from |
-| Inquiries | `/admin/inquiry` | `access.inquiry` | Every inquiry, unread ones marked; open a thread, reply, see "Seen by"; block or ban the patron from there |
+| Inquiries | `/admin/inquiry` | `access.inquiry` | Every inquiry, unread ones marked; open a thread, reply, see "Seen by"; block or ban the patron from there. Reservation conversations a patron wrote in (Messages on their Transactions page) are listed too, as "Reservation RSV-… · status" with the material's title: **Reply** shows the whole thread and answers in it (the patron reads it under Messages), and **Open in Transactions** finds an open one there. The sidebar badge counts the inquiries this account hasn't opened plus reservation conversations with unread patron messages |
 | News Article | `/admin/news` | `access.news` | List, edit, delete (asks first) |
 | Add or edit news | `/admin/news/add`, `/admin/news/edit/{id}` | `access.news` | Title, body (formatting kept, scripts removed), cover image (JPG, PNG or WEBP up to 2 MB), link (must start with http:// or https://), Featured. Shows under Related News on the OPAC home |
 | Reports | `/admin/report` | `access.reports` | Pick a report and a period, preview, print: Acquisition, Patron, Borrowed Materials, Inquiries, CSF (satisfaction survey), Publication Downloads, Publication Uploads |
@@ -188,7 +188,7 @@ Repeat these every test round: each one should be refused. A "pass" here means t
 | `/csf/get-ratings/json` and `/marcfile/upload` (removed) | Anyone | 404 |
 | `/opac/assets/contact.php`, or any `.php` address other than the site itself | Anyone | 404 or 403, never a page |
 | A folder address such as `/frontpages/` or `/thumb/` | Anyone | 404 or 403, never a list of files |
-| Register or edit a patron with a name like `<b>Test</b>` or `<img src=x onerror=alert(1)>`, then view it in reviews, the admin Reservation list, reservation chat, Patrons | Patron, then staff | The name shows exactly as typed, as text; no bold, no image, no popup |
+| Register or edit a patron with a name like `<b>Test</b>` or `<img src=x onerror=alert(1)>`, then view it in reviews, the admin Transactions list, reservation chat, Patrons | Patron, then staff | The name shows exactly as typed, as text; no bold, no image, no popup |
 | A news link starting with `javascript:` | Staff | Refused with a message |
 | A cover upload that is not really an image (for example a text file renamed `.jpg`) | Staff | Refused with a message |
 | Send 6 inquiries within a minute; then open several quick views and send one more inquiry the next minute | Patron | The 6th inquiry is refused ("Too Many Requests"); quick views never use up the inquiry allowance, so the later inquiry goes through. Each limit counts its own action |

@@ -47,9 +47,9 @@
 					<div class="admin-page-head">
 						<div>
 							<h6 class="apt">Inquiries</h6>
-							<p class="aph-desc">Questions patrons submitted about materials — reply to registered users to keep the conversation going.</p>
+							<p class="aph-desc">Questions patrons sent about materials, and their messages about reservations — reply to keep the conversation going.</p>
 						</div>
-						<span class="badge bg-primary rounded-pill" style="font-size:13px;">{{ count($list) }} total</span>
+						<span class="badge bg-primary rounded-pill" style="font-size:13px;">{{ count($list) + count($threads) }} total</span>
 					</div>
 
 					<div class="table-responsive">
@@ -95,6 +95,47 @@
 										</td>
 									</tr>
 								@endforeach
+								{{-- Reservation conversations (AdminController::inquiry): the same thread as the Messages chat on
+								     the patron's and the admin's Transactions pages. --}}
+								@foreach($threads as $t)
+									@php
+										$uf = $userFlags[$t->user_id] ?? null;
+										// Plain words for the status ("Open" / "Closed" are the circulation desk's terms).
+										$status = [1 => 'For Approval', 2 => 'Approved', 3 => 'Checked out', 4 => 'Declined', 5 => 'Returned'][(int) $t->status] ?? $t->status_name;
+										$subject = 'Reservation ' . $t->reservation_code . ($status ? ' · ' . $status : '');
+										$visit = $t->visit_date ? \Carbon\Carbon::parse($t->visit_date . ' ' . ($t->visit_time ?: '00:00'))->format('M d, Y' . ($t->visit_time ? ' g:i A' : '')) : null;
+										$context = 'Messages about reservation ' . $t->reservation_code . ($status ? ' (' . $status . ')' : '') . ($visit ? '. Visit: ' . $visit : '') . '.';
+										// Open reservations (For Approval, Approved, checked out) are on the Transactions page.
+										$open = auth()->user()->can('circulation.reservation.view') && in_array((int) $t->status, \App\Models\Circulation::ON_RESERVATIONS_PAGE, true)
+											? url('/admin/reservations') . '?q=' . urlencode($t->reservation_code) : '';
+									@endphp
+									<tr>
+										<td><div class="inq-msg">{{ $subject }}</div></td>
+										@php $fullTitle = trim(strip_tags((string) getTitle($t->catalog_id))); @endphp
+										<td><span title="{{ $fullTitle }}">{{ \Illuminate\Support\Str::limit($fullTitle, 55) }}</span></td>
+										<td>
+											{{ $t->fullname }}
+											@if($uf && $uf->is_banned)<span class="badge bg-danger ms-1">Banned</span>@endif
+											@if($uf && $uf->is_blocked)<span class="badge bg-warning text-dark ms-1">Blocked</span>@endif
+										</td>
+										<td>{{ $t->contactnum }}</td>
+										<td>{{ $t->email }}</td>
+										<td data-order="{{ strtotime($t->created_at) }}">{{ \Carbon\Carbon::parse($t->created_at)->format('M d, Y g:i A') }}</td>
+										<td class="text-center">
+											<div class="btn-group">
+												<button class="btn btn-primary btn-sm position-relative" data-subject="{{ $subject }}" data-message="{{ $context }}" data-code="{{ $t->reservation_code }}" data-patron="{{ $t->fullname }}" data-open="{{ $open }}" onclick="replyReservation(this)">@if($t->unread > 0)<span class="reply-dot" title="Unseen message"></span>@endif<i data-feather="corner-up-left" class="icon-sm me-1"></i>Reply</button>
+												@if($t->user_id && auth()->user()->can('manage.patron.status'))
+													<button type="button" class="btn btn-primary btn-sm dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false"><span class="visually-hidden">Manage</span></button>
+													<div class="dropdown-menu dropdown-menu-end">
+														<h6 class="dropdown-header">Manage account</h6>
+														<a class="dropdown-item text-warning" href="#" onclick="toggleUserFlag({{ $t->user_id }},'blocked');return false;">{{ $uf && $uf->is_blocked ? 'Unblock account' : 'Block account' }}</a>
+														<a class="dropdown-item text-danger" href="#" onclick="toggleUserFlag({{ $t->user_id }},'banned');return false;">{{ $uf && $uf->is_banned ? 'Unban account' : 'Ban account' }}</a>
+													</div>
+												@endif
+											</div>
+										</td>
+									</tr>
+								@endforeach
 							</tbody>
 						</table>
 					</div>
@@ -133,7 +174,42 @@
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net/jquery.dataTables.js') }}"></script>
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net-bs5/dataTables.bootstrap5.js') }}"></script>
 <script>
+	// A reservation conversation opens in the same modal; its thread and replies go through the
+	// reservation chat (the patron reads them under Messages on their Transactions page).
+	var resCode = null;
+
+	function replyReservation(btn) {
+		$(btn).find('.reply-dot').remove();
+		resCode = btn.getAttribute('data-code');
+		$('#inquireReplyModal .modal-title').text('Reservation messages');
+		$("#inquireReplyModal").modal('show');
+
+		var esc = function (s) { return $('<div>').text(s == null ? '' : s).html(); };
+		var open = btn.getAttribute('data-open');
+		var patron = btn.getAttribute('data-patron') || 'Patron';
+		var box = $("#inquiry_message").empty();
+		box.append('<div class="container-msg-reply"><p><span class="text-muted small">Subject</span><br><strong>' + esc(btn.getAttribute('data-subject')) + '</strong></p><p>' + esc(btn.getAttribute('data-message')) + '</p>'
+			+ (open ? '<p class="mb-1"><a href="' + esc(open) + '">Open in Transactions</a></p>' : '') + '<span class="time-left"><small>Reservation</small></span></div>');
+
+		var thread = $('<div id="res_thread"></div>').appendTo(box);
+		var load = function () {
+			$.getJSON("{{ url('admin/inquiry/reservation') }}/" + encodeURIComponent(resCode)).done(function (rows) {
+				thread.empty();
+				rows.forEach(function (m) {
+					var mine = m.sender_role === 'admin';
+					var who = mine ? (m.sender_name || 'Library') : patron;
+					var when = m.created_at ? new Date(m.created_at.replace(' ', 'T')).toLocaleString('en-US', { month: 'long', day: '2-digit', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
+					thread.append('<div class="container-msg-reply' + (mine ? ' darker' : '') + '"><p>' + esc(m.message) + '</p><span class="' + (mine ? 'time-right' : 'time-left') + '"><small>' + esc(who) + ' | ' + esc(when) + '</small></span></div>');
+				});
+			});
+		};
+		load();
+		replyReservation.reload = load;
+	}
+
 	function replyInquiry(btn, id, userid) {
+		resCode = null;
+		$('#inquireReplyModal .modal-title').text('Reply to inquiry');
 		if (btn) $(btn).find('.reply-dot').remove();
 		$("#inquireReplyModal").modal('show');
 		$("#catalog_id_inquiry_reply").val(id);
@@ -181,6 +257,18 @@
 			});
 		});
 	}
+
+	// A reservation reply is sent in place (the inquiry form posts and reloads the page).
+	$(document).on('submit', '#frm_inquiry_reply', function (e) {
+		if (!resCode) return;
+		e.preventDefault();
+		var ta = $(this).find('[name=inquiry_message_reply]');
+		var msg = $.trim(ta.val());
+		if (!msg) return;
+		$.post("{{ url('admin/inquiry/reservation/reply') }}", { _token: "{{ csrf_token() }}", reservation_code: resCode, message: msg })
+			.done(function () { ta.val(''); if (replyReservation.reload) replyReservation.reload(); })
+			.fail(function () { Swal.fire('Error', 'Could not send your message. Please try again.', 'error'); });
+	});
 
 	$(function () {
 		'use strict';

@@ -35,7 +35,8 @@
         $('#material-acquisition-mode').val(res.acquisition_mode);
         $('#material-source').val(res.source);
 
-        if(res.circulation_number == 'null') {
+        // No copy assigned yet: the list sends an empty value (jsArg), older links the text 'null'.
+        if(!res.circulation_number || res.circulation_number == 'null') {
             if(id == 0){
               $('#material-circulation-numbers').hide();
               $('#material-circulation-number').val("No selected circulation no. yet.");

@@ -27,7 +27,8 @@
         <div class="col-md-12">
             <div class="card">
                 <div class="card-body">
-                    <h6 class="card-title text-secondary">RESERVATIONS</h6>
+                    <h6 class="card-title text-secondary mb-1">TRANSACTIONS</h6>
+                    <p class="text-muted mb-3" style="font-size: 12.5px;">Open reservations and checked-out materials: approve or decline a request, check it out, message the patron. Returned and declined ones are in History.</p>
                     <div class="table-responsive">
                         <table id="tbl" class="table">
                           <thead>

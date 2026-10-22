@@ -12,6 +12,8 @@ $('#tbl').DataTable({
     processing: true,
     serverSide: true,
     ajax: reservationsUrl,
+    // ?q=RSV-... (Inquiries' "Open in Reservations") starts the list searched for that reservation.
+    search: { search: new URLSearchParams(location.search).get('q') || '' },
     drawCallback: function () { if (window.feather) feather.replace(); },
     columns: [
         {

@@ -153,14 +153,30 @@ class AdminController extends Controller
         // Inquiries now only come from registered users (guests are directed to email),
         // so we surface each patron's ban/block state for the admin controls.
         $list = App\Models\View_inquiry::get();
-        $userFlags = App\Models\User::whereIn('id', $list->pluck('user_id')->filter()->unique()->values())
+
+        // Reservation conversations a patron wrote in (the Messages chat on their Transactions page,
+        // answered on the admin Transactions page too): one row per reservation, read and answered
+        // here in the same thread.
+        $threads = DB::table('reservation_messages as m')
+            ->join('circulation_reservations as r', 'r.reservation_code', '=', 'm.reservation_code')
+            ->leftJoin('circulations as c', 'c.reservation_code', '=', 'm.reservation_code')
+            ->leftJoin('circulation_status as s', 's.order_no', '=', 'c.status')
+            ->leftJoin('users as u', 'u.id', '=', 'r.user_id')
+            ->groupBy('m.reservation_code', 'r.user_id', 'r.visit_date', 'r.visit_time', 'c.catalog_id', 'c.status', 's.name', 'u.name', 'u.contactnum', 'u.email')
+            ->havingRaw("SUM(m.sender_role = 'patron') > 0")
+            ->get(['m.reservation_code', 'r.user_id', 'r.visit_date', 'r.visit_time', 'c.catalog_id', 'c.status', 's.name as status_name',
+                   'u.name as fullname', 'u.contactnum', 'u.email',
+                   DB::raw("MIN(CASE WHEN m.sender_role = 'patron' THEN m.created_at END) as created_at"),
+                   DB::raw("SUM(m.sender_role = 'patron' AND m.seen_at IS NULL) as unread")]);
+
+        $userFlags = App\Models\User::whereIn('id', $list->pluck('user_id')->merge($threads->pluck('user_id'))->filter()->unique()->values())
                         ->get(['id', 'is_banned', 'is_blocked'])->keyBy('id');
 
         // Inquiries the current admin hasn't opened since the latest patron message
         // (drives the red "unseen" dot on each Reply button). array_flip -> O(1) lookup.
         $unread = array_flip(App\Services\NotificationService::unreadInquiryIds(Auth::user()));
 
-        return view('admin.inquiry', ['list' => $list, 'userFlags' => $userFlags, 'unread' => $unread]);
+        return view('admin.inquiry', ['list' => $list, 'threads' => $threads, 'userFlags' => $userFlags, 'unread' => $unread]);
     }
 
     public function inquiryjson()
