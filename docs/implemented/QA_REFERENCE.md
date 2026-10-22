@@ -1,6 +1,6 @@
 # DOST-FNRI eLibrary — QA Reference: Pages and Functions
 
-As of 21 October 2026.
+As of 22 October 2026.
 
 Every page and action of the eLibrary, with its address, who may use it and what to check. Addresses are relative to the site being tested (for example the staging server); `{id}` stands for a record or item number.
 
@@ -96,8 +96,9 @@ Every page here needs a staff account with `access.cataloging`, plus the permiss
 | Batch records | `/admin/batch-records/{id}` | `view.catalog.importlist` | The records of one import, with the same filters as Record List |
 | Publish or hold a batch | on the batch list | `publish-hold.catalog` | All records of the import change at once |
 | Delete a batch | on the batch list | `delete.catalog.import` | Asks for confirmation; removes the import's records |
+| Local MARC tags | a record with 942, 952 or 999 (Koha exports have them), by Batch Import or **Import MARC file** in Create New Record | `create.catalog.import` / `create.catalog` | Tags outside MARC 21 are named by their number: "942" on the admin Full Record tab and as the editor heading, subfields by code ("942$c"). Every one is kept (not only the first), the import does not fail, and **Update Record** keeps them. The OPAC hides 9XX tags |
 | Import report | `/admin/batch-report/{id}` | `view.catalog.importlist` | Skipped records and imported-but-flagged records, each with its problems (no title, no author, possible duplicate…). **Download skipped records** gives a `.mrc` of the skipped ones |
-| MARC Templates | `/admin/marc-templates` | `access.configuration` + `view.config.template` | List and search templates |
+| MARC Templates | Utilities card; `/admin/marc-templates` | `access.configuration` + `view.config.template` | List and search templates |
 | Create / edit template | `/admin/marc-templates/create`, `/admin/marc-templates/edit` | `create.config.template`, `edit.config.template` | Add MARC tags and subfields; the template appears in Create New Record |
 | Delete template | on the template list | `delete.config.template` | Asks for confirmation |
 | Material Types | `/admin/utilities/material-types` | `access.configuration` + `manage.material.types` | Add, rename, hide or show, merge into another type, delete. A type still in use cannot be deleted (the message says to merge it); MARC record types can only be hidden |
@@ -126,23 +127,24 @@ Circulation pages need `access.circulation`; Physical Count needs `access.invent
 
 ## Admin: people and roles
 
-Patron pages need `access.accounts`; administrators, roles and permissions need the `super_admin` or `developer` role. Every staff account can edit its own profile.
+All of these open from **Accounts** under Administration in the sidebar. Patron pages need `access.accounts`; administrators, roles and permissions need the `super_admin` or `developer` role. Every staff account can edit its own profile.
 
 | Page or action | Address | Who | What to check |
 | --- | --- | --- | --- |
-| Patrons | `/admin/patron` | `access.accounts` | Every patron: name, library code, contact, email, location, joined; filter by Active / Blocked / Banned; search. Names show as plain text |
+| Accounts | `/admin/accounts` | `access.accounts`, or the `super_admin` or `developer` role | Cards for the account pages the role may use: Patrons (needs `access.accounts`); Administrators, Roles, Permissions (`super_admin` and `developer`, even if their `access.accounts` is unticked), each with a count. The sidebar's Accounts stays highlighted on those pages, and their breadcrumb leads back here |
+| Patrons | Accounts card; `/admin/patron` | `access.accounts` | Every patron: name, library code, contact, email, location, joined; filter by Active / Blocked / Banned; search. Names show as plain text |
 | Generate Library Code | action on a patron | `edit.patron` | Gives the patron a new library code |
 | Reset Password | action on a patron | `edit.patron` | Shows a new random password once; the patron can sign in with it |
 | Block / Unblock | action on a patron | `manage.patron.status` | Blocked patrons cannot chat or send inquiries; a badge shows in lists |
 | Ban / Unban | action on a patron | `manage.patron.status` | Banned patrons cannot read or download, even in a session already open |
 | Delete patron | action on a patron | `delete.patron` | Asks for confirmation; the patron disappears from the list and cannot sign in |
-| Register a Patron | `/admin/register` | `create.patron` | Creates a patron with a library code. **Known issue:** the message says the password was emailed, but no email is sent; the patron has to use Forgot password |
-| Administrators | `/superadmin/admin-list` | `super_admin` or `developer` role | Every staff account with its role |
-| Create administrator | `/superadmin/admin-create` | same | Name, email, role; the new account opens the admin |
+| Register a Patron | button on Patrons; `/admin/register` | `create.patron` | Creates a patron with a library code. **Known issue:** the message says the password was emailed, but no email is sent; the patron has to use Forgot password |
+| Administrators | Accounts card; `/superadmin/admin-list` | `super_admin` or `developer` role | Every staff account with its role |
+| Create administrator | button on Administrators; `/superadmin/admin-create` | same | Name, email, role; the new account opens the admin |
 | Change role | on Administrators | same | Only a developer can give the `developer` role. The last super admin cannot be changed to another role |
 | Reset password, library code, delete | actions on Administrators | same | As for patrons; delete asks for confirmation |
-| Roles | `/admin/roles` | same | Create, rename, delete roles; tick or untick each permission of a role. A staff member's menus change accordingly at their next page load |
-| Permissions | `/admin/permissions` | `super_admin` or `developer`; add and delete: `developer` only | List and edit permission names |
+| Roles | Accounts card; `/admin/roles` | same | Create, rename, delete roles; tick or untick each permission of a role. A staff member's menus change accordingly at their next page load |
+| Permissions | Accounts card; `/admin/permissions` | `super_admin` or `developer`; add and delete: `developer` only | List and edit permission names |
 | My profile | `/admin/profile` | Any staff | Edit own name and email (must be unused); change password with the current one (at most 10 tries a minute) |
 
 ## Admin: dashboard, news, inquiries, reports, settings
@@ -163,8 +165,8 @@ The rest of the admin, in sidebar order. Staff land on the Dashboard after signi
 | Search index | card on Settings | same | **Scan** reports records missing from search; **Rebuild** re-creates the index (at most 5 a minute) |
 | Sitemap | card on Settings | same | Regenerates `/sitemap.xml` (at most 5 a minute) |
 | Clear cache | card on Settings | same | Home page shelves and counts refresh; patrons and staff stay signed in (at most 10 a minute) |
-| Utilities | `/admin/utilities` | `access.configuration` | Cards for the tools the role may use (Material Types); "No utilities for your role yet" otherwise |
-| AI Sync Monitor | `/admin/ai-sync-monitor` | `access.configuration` + `access.ai.sync.monitor` | Pending, Failed and Synced counts; filter by change type and status; long titles wrap, and phones show each change as a card. **Re-sync** queues one record; **Run sync now** processes the queue (needs the AI service running) |
+| Utilities | `/admin/utilities` | `access.configuration` | Cards for the tools the role may use: Material Types, MARC Templates, AI Sync Monitor. The sidebar's Utilities stays highlighted on those pages, and their breadcrumb leads back here. "No utilities for your role yet" otherwise |
+| AI Sync Monitor | Utilities card; `/admin/ai-sync-monitor` | `access.configuration` + `access.ai.sync.monitor` | Pending, Failed and Synced counts; filter by change type and status; long titles wrap, and phones show each change as a card. **Re-sync** queues one record; **Run sync now** processes the queue (needs the AI service running) |
 
 ## Must not work: security checks
 
