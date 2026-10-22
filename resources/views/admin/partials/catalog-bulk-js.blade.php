@@ -8,8 +8,8 @@
   #tbl th.bs-cell, #tbl td.bs-cell { width: 34px; text-align: center; padding-left: 6px !important; padding-right: 6px !important; cursor: default; }
   #tbl .bs-cell .form-check-input { margin: 0; cursor: pointer; width: 1.05em; height: 1.05em; }
   #tbl tbody tr.bs-selected, #tbl tbody tr.bs-selected:hover { background: #eaf1ff; }
-  .bulk-banner { background: #f2f6ff; border: 1px solid #d6e2ff; border-radius: 6px; padding: 7px 12px; margin-bottom: 10px; font-size: 13px; color: #33415c; }
-  .bulk-banner .btn-link { padding: 0 2px; font-size: 13px; vertical-align: baseline; }
+  .bulk-banner { background: #f2f6ff; border: 1px solid #d6e2ff; border-radius: 6px; padding: 7px 12px; margin-bottom: 10px; font-size: 0.8125rem; color: #33415c; }
+  .bulk-banner .btn-link { padding: 0 2px; font-size: 0.8125rem; vertical-align: baseline; }
   #bulkBtn .badge { font-weight: 600; }
 </style>
 <script>

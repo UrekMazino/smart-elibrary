@@ -4,9 +4,9 @@
     <link rel="stylesheet" href="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net-bs5/dataTables.bootstrap5.css') }}">
     <style>
       /* Compact, readable people table — same treatment as the catalog lists. */
-      #tbl { font-size: 13px; width: 100% !important; }
+      #tbl { font-size: 0.8125rem; width: 100% !important; }
       #tbl thead th {
-        font-size: 11px; text-transform: uppercase; letter-spacing: .4px;
+        font-size: 0.6875rem; text-transform: uppercase; letter-spacing: .4px;
         color: #7987a1; white-space: nowrap; padding: 9px 10px;
         border-bottom: 2px solid #eef0f2; vertical-align: middle;
       }
@@ -17,26 +17,26 @@
       .u-cell { display: flex; align-items: center; gap: 9px; }
       .u-avatar {
         flex: 0 0 30px; width: 30px; height: 30px; border-radius: 50%;
-        background: #e4e9f2; color: #4a5a78; font-size: 11.5px; font-weight: 700;
+        background: #e4e9f2; color: #4a5a78; font-size: 0.71875rem; font-weight: 700;
         display: flex; align-items: center; justify-content: center; letter-spacing: .3px;
       }
       .u-name { font-weight: 600; color: #22283b; }
-      .u-sub { color: #a3adc2; font-size: 11.5px; }
+      .u-sub { color: #a3adc2; font-size: 0.71875rem; }
 
       /* `#tbl` prefix beats the template's `.badge { color:#fff }` (same specificity otherwise). */
       #tbl .role-pill {
-        background: #e8eefc; color: #33509c; font-weight: 600; font-size: 11.5px;
+        background: #e8eefc; color: #33509c; font-weight: 600; font-size: 0.71875rem;
         cursor: pointer; margin: 1px 3px 1px 0;
       }
       #tbl .role-pill:hover { background: #d7e2fb; }
-      #tbl .role-none { background: #f4f5f7; color: #a3adc2; font-weight: 500; font-size: 11.5px; }
+      #tbl .role-none { background: #f4f5f7; color: #a3adc2; font-weight: 500; font-size: 0.71875rem; }
 
       .cell-muted { color: #7987a1; }
-      .date-main { color: #33415c; } .date-time { color: #a3adc2; font-size: 11.5px; }
+      .date-main { color: #33415c; } .date-time { color: #a3adc2; font-size: 0.71875rem; }
 
       /* Permission list inside the modal — two columns, easy to scan. */
       #permissionList { columns: 2; column-gap: 24px; margin: 0; padding-left: 18px; }
-      #permissionList li { text-align: left; margin-bottom: 4px; font-size: 12.5px; break-inside: avoid; }
+      #permissionList li { text-align: left; margin-bottom: 4px; font-size: 0.78125rem; break-inside: avoid; }
     </style>
 @endsection
 
@@ -62,7 +62,7 @@
                             <i data-feather="user-plus" class="icon-sm me-1"></i>Add New Admin
                         </a>
                     </div>
-                    <p class="text-muted mb-3" style="font-size: 12.5px;">
+                    <p class="text-muted mb-3" style="font-size: 0.78125rem;">
                         Staff accounts and the role each one is assigned. Click a role to see exactly
                         what it can do; use <strong>Action</strong> to change a role, reset a password,
                         or remove an account.
@@ -237,7 +237,7 @@ function showSecret(message, label, value) {
   Swal.fire({
     icon: 'success', title: message,
     html: '<div class="text-muted small mb-1">' + escapeHtml(label) + '</div>' +
-          '<code style="font-size:18px;letter-spacing:1px;user-select:all;">' + escapeHtml(value) + '</code>',
+          '<code style="font-size:1.125rem;letter-spacing:1px;user-select:all;">' + escapeHtml(value) + '</code>',
     showCancelButton: true, confirmButtonText: 'Copy', cancelButtonText: 'Close', cancelButtonColor: '#6c757d', reverseButtons: true
   }).then(function (r) {
     if (r.isConfirmed && navigator.clipboard) navigator.clipboard.writeText(value);

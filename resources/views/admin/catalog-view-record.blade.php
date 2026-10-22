@@ -12,22 +12,22 @@
         /* The <img> ids/classes below are wired to cropper.js — don't rename them. */
         .res-thumb img { max-width: 100%; max-height: 104px; height: auto; border-radius: 3px; }
         .res-thumb-cover img { box-shadow: 0 1px 6px rgba(0,0,0,.18); }
-        .res-none { font-size: 11px; color: #a3adc2; margin-top: 6px; }
+        .res-none { font-size: 0.6875rem; color: #a3adc2; margin-top: 6px; }
 
         .res-meta { flex: 1; min-width: 0; }
         .res-meta dt {
-            font-size: 10.5px; text-transform: uppercase; letter-spacing: .4px;
+            font-size: 0.65625rem; text-transform: uppercase; letter-spacing: .4px;
             color: #a3adc2; font-weight: 700; margin-bottom: 1px;
         }
-        .res-meta dd { font-size: 12.5px; color: #33415c; margin-bottom: 8px; word-break: break-all; }
-        .res-meta dd.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; }
+        .res-meta dd { font-size: 0.78125rem; color: #33415c; margin-bottom: 8px; word-break: break-all; }
+        .res-meta dd.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.71875rem; }
 
-        .res-label { font-size: 12px; font-weight: 600; color: #33415c; margin-bottom: 4px; display: block; }
+        .res-label { font-size: 0.75rem; font-weight: 600; color: #33415c; margin-bottom: 4px; display: block; }
 
         /* `.badge` prefixed by an id/class beats the template's `.badge { color:#fff }`. */
-        .card-body .res-badge-ok   { background: #e8f6ef; color: #1c7c54; font-weight: 600; font-size: 10.5px; }
-        .card-body .res-badge-none { background: #f4f5f7; color: #8a94a6; font-weight: 600; font-size: 10.5px; }
-        .card-body .res-badge-auto { background: #fff5e0; color: #a06e14; font-weight: 600; font-size: 10.5px; }
+        .card-body .res-badge-ok   { background: #e8f6ef; color: #1c7c54; font-weight: 600; font-size: 0.65625rem; }
+        .card-body .res-badge-none { background: #f4f5f7; color: #8a94a6; font-weight: 600; font-size: 0.65625rem; }
+        .card-body .res-badge-auto { background: #fff5e0; color: #a06e14; font-weight: 600; font-size: 0.65625rem; }
 
         .even-row {
             background-color: #f2f2f2;
@@ -46,8 +46,8 @@
         }
 
         /* Count beside a tab label (e.g. Reviews 4). */
-        .nav-tabs .tab-count { display: inline-block; min-width: 20px; margin-left: 4px; padding: 1px 6px; border-radius: 10px; background: #eef0f6; color: #5b6478; font-size: 11px; font-weight: 600; text-align: center; }
-        .nav-tabs .nav-link.active .tab-count { background: #eef0ff; color: #4b55d9; }
+        .nav-tabs .tab-count { display: inline-block; min-width: 20px; margin-left: 4px; padding: 1px 6px; border-radius: 10px; background: #eef0f6; color: #5b6478; font-size: 0.6875rem; font-weight: 600; text-align: center; }
+        .nav-tabs .nav-link.active .tab-count { background: color-mix(in srgb, var(--t-primary) 12%, #fff); color: color-mix(in srgb, var(--t-primary), #000 18%); }
     </style>
     <link rel="stylesheet" href="{{ asset('assets/css/cropper.min.css') }}">
 @endsection
@@ -103,7 +103,7 @@
 
     {{-- Flagged at the batch import and not reviewed yet (CatalogRecordCheck). --}}
     @if(!empty($importIssue))
-        <div class="alert alert-warning py-2 mb-3" style="font-size: 13px;" role="alert">
+        <div class="alert alert-warning py-2 mb-3" style="font-size: 0.8125rem;" role="alert">
             <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
                 <div>
                     <i data-feather="alert-triangle" class="icon-sm me-1"></i>
@@ -130,7 +130,7 @@
     @endif
 
     @if(session('rag_reindexed'))
-        <div class="alert alert-success alert-dismissible py-2 mb-3" style="font-size: 13px;" role="alert">
+        <div class="alert alert-success alert-dismissible py-2 mb-3" style="font-size: 0.8125rem;" role="alert">
             <i data-feather="check-circle" class="icon-sm me-1"></i>
             Queued for AI re-indexing &mdash; it will be picked up on the next indexing run.
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
@@ -143,7 +143,7 @@
                 <div class="card-header">
                     <span class="card-title">Details for:</span><h3> {{ $title }} </h3>
                     @php $ragStatus = \App\Services\RagSync::statusFor($record->id, $record->is_published); @endphp
-                    <span class="badge {{ $ragStatus['class'] }}" style="font-size: 11px;" title="AI (RAG) search index status">
+                    <span class="badge {{ $ragStatus['class'] }}" style="font-size: 0.6875rem;" title="AI (RAG) search index status">
                         <i data-feather="cpu" class="icon-sm" style="width:13px;height:13px;"></i> {{ $ragStatus['label'] }}
                     </span>
                 </div>
@@ -207,7 +207,7 @@
                     <!-- Record Resources Tab -->
                     <div class="tab-pane fade {{ isset($uploadStatus) ? 'show active' : '' }}" id="resources" role="tabpanel" aria-labelledby="resources-tab">
                         @isset($uploadError)
-                            <div class="alert alert-danger py-2" style="font-size: 13px;">{{ $uploadError }}</div>
+                            <div class="alert alert-danger py-2" style="font-size: 0.8125rem;">{{ $uploadError }}</div>
                         @endisset
 
                         @php
@@ -247,7 +247,7 @@
                                                 <span class="badge res-badge-none rounded-pill">Not attached</span>
                                             @endif
                                         </div>
-                                        <p class="text-muted mb-3" style="font-size: 12.5px;">
+                                        <p class="text-muted mb-3" style="font-size: 0.78125rem;">
                                             The PDF patrons read and download. One per record &mdash; uploading again replaces it.
                                         </p>
 
@@ -278,7 +278,7 @@
                                                         <dd class="mb-0">{{ $fullText->created_at ? \Carbon\Carbon::parse($fullText->created_at)->format('d M Y, g:i a') : '—' }}</dd>
                                                     </dl>
                                                 @else
-                                                    <p class="text-muted mb-0" style="font-size: 12.5px;">
+                                                    <p class="text-muted mb-0" style="font-size: 0.78125rem;">
                                                         No full text yet. Choose a PDF below to attach one.
                                                     </p>
                                                 @endif
@@ -296,7 +296,7 @@
                                                     <i data-feather="download" class="icon-sm me-1"></i>Download
                                                 </a>
                                             @elseif($fullText && ! $ftExists)
-                                                <span class="text-danger" style="font-size: 12.5px;">
+                                                <span class="text-danger" style="font-size: 0.78125rem;">
                                                     The record points to a file that isn&rsquo;t on disk &mdash; re-upload it.
                                                 </span>
                                             @endif
@@ -351,14 +351,14 @@
                                                 <span class="badge res-badge-none rounded-pill">Not attached</span>
                                             @endif
                                         </div>
-                                        <p class="text-muted mb-3" style="font-size: 12.5px;">
+                                        <p class="text-muted mb-3" style="font-size: 0.78125rem;">
                                             Shown on the OPAC and in listings.
                                             @if($cvIsAuto)
                                                 This placeholder was generated from the title &mdash; upload a real cover to replace it.
                                             @endif
                                         </p>
                                         @isset($coverNotice)
-                                            <div class="alert alert-success py-2" style="font-size: 12.5px;" role="status">{{ $coverNotice }}</div>
+                                            <div class="alert alert-success py-2" style="font-size: 0.78125rem;" role="status">{{ $coverNotice }}</div>
                                         @endisset
 
                                         <div class="res-panel">
@@ -391,7 +391,7 @@
                                                         <dd class="mb-0">{{ $coverPage->created_at ? \Carbon\Carbon::parse($coverPage->created_at)->format('d M Y, g:i a') : '—' }}</dd>
                                                     </dl>
                                                 @else
-                                                    <p class="text-muted mb-0" style="font-size: 12.5px;">
+                                                    <p class="text-muted mb-0" style="font-size: 0.78125rem;">
                                                         No cover yet. Choose an image below to attach one.
                                                     </p>
                                                 @endif
@@ -409,7 +409,7 @@
                                                     <i data-feather="external-link" class="icon-sm me-1"></i>Open in new tab
                                                 </a>
                                             @elseif($coverPage && ! $cvExists)
-                                                <span class="text-danger" style="font-size: 12.5px;">
+                                                <span class="text-danger" style="font-size: 0.78125rem;">
                                                     The record points to an image that isn&rsquo;t on disk &mdash; re-upload it.
                                                 </span>
                                             @endif
@@ -434,7 +434,7 @@
                                                        onchange="document.getElementById('placeholderOn').value = this.checked ? 1 : 0; if (window.appBusy) appBusy.show(); this.form.submit();">
                                                 <label class="form-check-label" for="placeholderSwitch">Placeholder cover</label>
                                             </div>
-                                            <div class="text-muted" style="font-size: 12px;">
+                                            <div class="text-muted" style="font-size: 0.75rem;">
                                                 @if(! $placeholdersOn)
                                                     Placeholder covers are turned off for all records in Settings.
                                                 @elseif($hasRealCover)
@@ -512,7 +512,7 @@
                     <!-- Physical Copy Tab -->
                     <div class="tab-pane fade {{ isset($copyUpdate) ? 'show active' : '' }}" id="physical-copy" role="tabpanel" aria-labelledby="physical-copy-tab">
                         @if(!empty($copyError))
-                            <div class="alert alert-danger py-2" style="font-size: 13px;" role="alert">{{ $copyError }}</div>
+                            <div class="alert alert-danger py-2" style="font-size: 0.8125rem;" role="alert">{{ $copyError }}</div>
                         @endif
                         <div class="row">
                             <div class="col-md-12 stretch-card">

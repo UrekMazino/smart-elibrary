@@ -8,25 +8,25 @@
 @section('css')
     <link rel="stylesheet" href="{{ asset('admintemplate/nobleui/template/assets/vendors/DataTables/DataTables-1.12.1/css/dataTables.bootstrap5.css') }}">
     <style>
-      .ir-meta { font-size: 12.5px; color: #7987a1; }
+      .ir-meta { font-size: 0.78125rem; color: #7987a1; }
       .ir-meta strong { color: #33415c; font-weight: 600; }
       .ir-stats { display: flex; gap: 12px; flex-wrap: wrap; margin: 16px 0 8px; }
       .ir-stat { flex: 1 1 140px; border: 1px solid #eef0f2; border-radius: 8px; padding: 10px 14px; }
-      .ir-stat .n { font-size: 22px; font-weight: 700; color: #22283b; font-variant-numeric: tabular-nums; line-height: 1.2; }
-      .ir-stat .l { font-size: 12px; color: #7987a1; }
+      .ir-stat .n { font-size: 1.375rem; font-weight: 700; color: #22283b; font-variant-numeric: tabular-nums; line-height: 1.2; }
+      .ir-stat .l { font-size: 0.75rem; color: #7987a1; }
       .ir-stat.ok .n { color: #1d7a55; }
       .ir-stat.review .n { color: #a15c00; }
       .ir-stat.skip .n { color: #b42318; }
       .ir-section { margin-top: 28px; }
       .ir-section h6 { margin-bottom: 2px; }
-      .ir-help { font-size: 12.5px; color: #7987a1; margin-bottom: 10px; }
-      .ir-table { font-size: 13px; width: 100% !important; }
-      .ir-table thead th { font-size: 11px; text-transform: uppercase; letter-spacing: .4px; color: #7987a1; white-space: nowrap; padding: 9px 10px; border-bottom: 2px solid #eef0f2; }
+      .ir-help { font-size: 0.78125rem; color: #7987a1; margin-bottom: 10px; }
+      .ir-table { font-size: 0.8125rem; width: 100% !important; }
+      .ir-table thead th { font-size: 0.6875rem; text-transform: uppercase; letter-spacing: .4px; color: #7987a1; white-space: nowrap; padding: 9px 10px; border-bottom: 2px solid #eef0f2; }
       /* The template keeps table cells on one line; titles here must wrap. */
       .ir-table tbody td { padding: 7px 10px; vertical-align: top; white-space: normal; }
       .ir-table td.ir-nowrap { white-space: nowrap; }
       .ir-title { font-weight: 600; color: #22283b; overflow-wrap: anywhere; min-width: 200px; display: inline-block; }
-      .ir-muted { color: #a3adc2; font-size: 12px; }
+      .ir-muted { color: #a3adc2; font-size: 0.75rem; }
       .ir-problems { margin: 0; padding-left: 16px; min-width: 220px; }
       .ir-problems li.error { color: #b42318; }
       .ir-table tr.is-reviewed td { opacity: .6; }
@@ -58,7 +58,7 @@
             </div>
 
             @if(is_null($batch->imported_count))
-                <div class="alert alert-secondary py-2 mt-3 mb-0" style="font-size: 13px;" role="alert">
+                <div class="alert alert-secondary py-2 mt-3 mb-0" style="font-size: 0.8125rem;" role="alert">
                     This batch was imported before import reports were kept, so its skipped and flagged records weren't recorded.
                 </div>
             @else
@@ -114,7 +114,7 @@
                     @if($reviewDone)
                         <div class="form-check form-switch mt-1">
                             <input class="form-check-input" type="checkbox" id="showDone">
-                            <label class="form-check-label" for="showDone" style="font-size: 13px;">Show reviewed</label>
+                            <label class="form-check-label" for="showDone" style="font-size: 0.8125rem;">Show reviewed</label>
                         </div>
                     @endif
                 </div>

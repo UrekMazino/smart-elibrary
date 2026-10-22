@@ -29,7 +29,7 @@
                                 Enable placeholder coverpage
                             </label>
                         </div>
-                        <p class="text-muted mb-4" style="font-size: 13px;">
+                        <p class="text-muted mb-4" style="font-size: 0.8125rem;">
                             When <strong>on</strong>, materials without an uploaded cover show an auto-generated
                             placeholder cover. When <strong>off</strong>, they show the default
                             &ldquo;no&nbsp;preview&rdquo; image. Uploaded covers are always shown either way.
@@ -47,7 +47,7 @@
                                 Enable AI mode in the OPAC
                             </label>
                         </div>
-                        <p class="text-muted mb-3" style="font-size: 13px;">
+                        <p class="text-muted mb-3" style="font-size: 0.8125rem;">
                             Adds an <strong>AI mode</strong> toggle to the public search, answering
                             questions from the collection with sources instead of listing keyword
                             matches. When <strong>off</strong>, it disappears from the OPAC entirely
@@ -69,7 +69,7 @@
                                 Discourage search engines from indexing this site
                             </label>
                         </div>
-                        <p class="text-muted mb-3" style="font-size: 13px;">
+                        <p class="text-muted mb-3" style="font-size: 0.8125rem;">
                             Turn this <strong>on</strong> while the site is a staging or pre-launch copy: every
                             public page is served as <code>noindex, nofollow</code> so nothing is added to Google.
                             <strong class="text-danger">Turn it off before launch</strong> &mdash; left on, the
@@ -77,14 +77,14 @@
                             honour, not access control.
                         </p>
 
-                        <label for="seo_verification_google" class="form-label" style="font-size: 13px;">
+                        <label for="seo_verification_google" class="form-label" style="font-size: 0.8125rem;">
                             Google Search Console verification code
                         </label>
                         <input type="text" class="form-control mb-1" id="seo_verification_google"
                                name="seo_verification_google" autocomplete="off"
                                placeholder="e.g. AbCdEf123..."
                                value="{{ $settings['seo_verification_google'] ?? '' }}">
-                        <p class="text-muted mb-3" style="font-size: 13px;">
+                        <p class="text-muted mb-3" style="font-size: 0.8125rem;">
                             The <em>content</em> value from Search Console&rsquo;s HTML-tag verification method
                             (the code only, not the whole tag). Added to every public page. Leave blank if you
                             verified by another method.
@@ -102,7 +102,7 @@
             <div class="card">
                 <div class="card-body">
                     <h6 class="card-title mb-1">Search index</h6>
-                    <p class="text-muted mb-3" style="font-size: 13px;">
+                    <p class="text-muted mb-3" style="font-size: 0.8125rem;">
                         OPAC search runs on a Meilisearch index built from the catalog. Deleting or
                         re-importing records can leave stale entries behind, which makes the result
                         count disagree with the results actually shown. <strong>Re-sync</strong>
@@ -116,7 +116,7 @@
                         <button type="button" id="reindexBtn" class="btn btn-outline-primary">
                             <i data-feather="refresh-cw" class="icon-sm me-1"></i>Re-sync search index
                         </button>
-                        <span id="reindexStatus" style="font-size: 13px;"></span>
+                        <span id="reindexStatus" style="font-size: 0.8125rem;"></span>
                     </div>
 
                     <div id="driftResult" class="mt-3" style="display:none;"></div>
@@ -130,28 +130,28 @@
             <div class="card">
                 <div class="card-body">
                     <h6 class="card-title mb-1">Sitemap</h6>
-                    <p class="text-muted mb-3" style="font-size: 13px;">
+                    <p class="text-muted mb-3" style="font-size: 0.8125rem;">
                         Tells search engines which catalogue records exist &mdash; without it, deep record
                         pages may never be crawled. Rebuilt automatically every night; regenerate here after
                         publishing a batch, or after the site&rsquo;s address changes.
                     </p>
 
                     @if($sitemap['exists'])
-                        <p class="mb-2" style="font-size: 13px;">
+                        <p class="mb-2" style="font-size: 0.8125rem;">
                             <span class="badge bg-success">Generated</span>
                             <span class="text-muted ms-1">
                                 {{ number_format($sitemap['urls']) }} URLs &middot; last built {{ $sitemap['generated_at'] }}
                             </span>
                         </p>
                         @unless($sitemap['host_ok'])
-                            <div class="alert alert-warning py-2" style="font-size: 13px;">
+                            <div class="alert alert-warning py-2" style="font-size: 0.8125rem;">
                                 <strong>Wrong address.</strong> The sitemap lists URLs on a different domain than
                                 this site is served from &mdash; it was probably generated before
                                 <code>APP_URL</code> was updated. Regenerate it.
                             </div>
                         @endunless
                     @else
-                        <p class="mb-2" style="font-size: 13px;">
+                        <p class="mb-2" style="font-size: 0.8125rem;">
                             <span class="badge bg-secondary">Not generated yet</span>
                         </p>
                     @endif
@@ -165,7 +165,7 @@
                                 <i data-feather="external-link" class="icon-sm me-1"></i>View
                             </a>
                         @endif
-                        <span id="sitemapStatus" style="font-size: 13px;"></span>
+                        <span id="sitemapStatus" style="font-size: 0.8125rem;"></span>
                     </div>
                 </div>
             </div>
@@ -177,13 +177,13 @@
             <div class="card">
                 <div class="card-body">
                     <h6 class="card-title mb-1">Cache</h6>
-                    <p class="text-muted mb-2" style="font-size: 13px;">
+                    <p class="text-muted mb-2" style="font-size: 0.8125rem;">
                         The homepage panels and the dashboard chart are cached for 10 minutes, so a
                         change can take a moment to appear &mdash; and bulk operations can leave them
                         stale for longer. Clearing is safe to run any time: it only drops cached
                         copies, never data.
                     </p>
-                    <p class="text-muted mb-3" style="font-size: 12px;">
+                    <p class="text-muted mb-3" style="font-size: 0.75rem;">
                         Clears the homepage/sidebar panels, the dashboard chart, and compiled page
                         templates. Leaves everything else alone &mdash; <strong>nobody is signed
                         out</strong>, sign-in protection isn&rsquo;t reset, and the search index
@@ -194,7 +194,7 @@
                         <button type="button" id="clearCacheBtn" class="btn btn-outline-secondary">
                             <i data-feather="trash-2" class="icon-sm me-1"></i>Clear cache
                         </button>
-                        <span id="clearCacheStatus" style="font-size: 13px;"></span>
+                        <span id="clearCacheStatus" style="font-size: 0.8125rem;"></span>
                     </div>
                 </div>
             </div>
@@ -210,13 +210,13 @@ function driftChip(label, val, tone) {
     var bg = tone === 'danger' ? '#ffe9ee' : (tone === 'warn' ? '#fff5e0' : '#eef1f8'),
         fg = tone === 'danger' ? '#c92a4b' : (tone === 'warn' ? '#a06e14' : '#4a5a78');
     return '<span style="display:inline-block;background:' + bg + ';color:' + fg + ';border-radius:20px;' +
-           'padding:3px 10px;font-size:12px;font-weight:600;margin:0 6px 6px 0;">' + label + ': ' + val + '</span>';
+           'padding:3px 10px;font-size:0.75rem;font-weight:600;margin:0 6px 6px 0;">' + label + ': ' + val + '</span>';
 }
 
 function runDriftScan(silent) {
     var $btn = $('#scanBtn'), $out = $('#driftResult');
     $btn.prop('disabled', true);
-    if (!silent) $out.show().html('<span class="text-muted" style="font-size:13px;">Scanning the index…</span>');
+    if (!silent) $out.show().html('<span class="text-muted" style="font-size:0.8125rem;">Scanning the index…</span>');
 
     return $.getJSON("{{ url('/admin/settings/scan-search') }}")
         .done(function (r) {
@@ -231,8 +231,8 @@ function runDriftScan(silent) {
                         driftChip('Stale', r.stale, r.stale ? 'warn' : null) +
                         driftChip('Missing', r.missing, r.missing ? 'warn' : null);
 
-            $out.show().html('<div style="font-size:13px;">' + head + '<div class="mt-2">' + chips + '</div>' +
-                '<div class="text-muted" style="font-size:12px;">' +
+            $out.show().html('<div style="font-size:0.8125rem;">' + head + '<div class="mt-2">' + chips + '</div>' +
+                '<div class="text-muted" style="font-size:0.75rem;">' +
                 'Orphaned = indexed but deleted from the database (only a re-sync clears these) &middot; ' +
                 'Stale = indexed values no longer match the database &middot; ' +
                 'Missing = in the database but not indexed.</div></div>');
@@ -241,7 +241,7 @@ function runDriftScan(silent) {
             var msg = (xhr.responseJSON && xhr.responseJSON.message)
                     ? xhr.responseJSON.message
                     : 'Scan failed. Check that Meilisearch is running.';
-            $out.show().html('<span class="text-danger" style="font-size:13px;">' + msg + '</span>');
+            $out.show().html('<span class="text-danger" style="font-size:0.8125rem;">' + msg + '</span>');
         })
         .always(function () { $btn.prop('disabled', false); });
 }
@@ -257,13 +257,13 @@ function renderAiStatus(r) {
         label = r.ok ? 'Connected' : (warming ? 'Starting up' : 'Unreachable');
 
     $('#aiStatusBox').html(
-        '<div style="border:1px solid ' + bg + ';background:' + bg + ';border-radius:6px;padding:10px 12px;font-size:12.5px;">' +
+        '<div style="border:1px solid ' + bg + ';background:' + bg + ';border-radius:6px;padding:10px 12px;font-size:0.78125rem;">' +
           '<div class="d-flex justify-content-between align-items-center flex-wrap gap-2">' +
             '<span><strong style="color:' + color + ';">&#9679; ' + label + '</strong>' +
               '<span class="text-muted"> &mdash; ' + $('<div>').text(r.detail || '').html() + '</span></span>' +
             '<button type="button" id="aiTestBtn" class="btn btn-outline-secondary btn-sm">Test connection</button>' +
           '</div>' +
-          '<div class="text-muted mt-2" style="font-size:11.5px;">' +
+          '<div class="text-muted mt-2" style="font-size:0.71875rem;">' +
             'Agent: Local (Hermes) &middot; Endpoint: <code>' + $('<div>').text(r.endpoint || '—').html() + '</code>' +
             ' &middot; set in <code>.env</code>, not here &mdash; secrets stay out of the database.' +
           '</div>' +
@@ -272,11 +272,11 @@ function renderAiStatus(r) {
 }
 
 function loadAiStatus() {
-    $('#aiStatusBox').html('<span class="text-muted" style="font-size:12.5px;">Checking the agent…</span>');
+    $('#aiStatusBox').html('<span class="text-muted" style="font-size:0.78125rem;">Checking the agent…</span>');
     $.getJSON("{{ url('/admin/settings/ai-status') }}")
         .done(renderAiStatus)
         .fail(function () {
-            $('#aiStatusBox').html('<span class="text-danger" style="font-size:12.5px;">Could not read the agent status.</span>');
+            $('#aiStatusBox').html('<span class="text-danger" style="font-size:0.78125rem;">Could not read the agent status.</span>');
         });
 }
 @endcan

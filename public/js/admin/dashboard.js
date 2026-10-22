@@ -56,7 +56,8 @@
   var root = document.getElementById('dsh-activity');
   if (!root) return;
 
-  var ACCENT = '#6571ff', PREV = '#8a94a6', GRID = '#eceff4', MUTED = '#8a94a6';
+  // The staff member's accent colour (Appearance), as the page shows it.
+  var ACCENT = getComputedStyle(document.documentElement).getPropertyValue('--t-primary').trim() || '#6571ff', PREV = '#8a94a6', GRID = '#eceff4', MUTED = '#8a94a6';
   var METRICS = {
     views:     { title: 'Record views', noun: 'views' },
     downloads: { title: 'Downloads', noun: 'downloads' },

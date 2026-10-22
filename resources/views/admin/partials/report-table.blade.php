@@ -1,7 +1,7 @@
 @php $count = is_countable($list) ? count($list) : 0; @endphp
 @isset($preview)
 	<div class="d-flex align-items-center mb-3">
-		<span class="badge bg-primary" style="font-size:13px;">{{ number_format($count) }}</span>
+		<span class="badge bg-primary" style="font-size:0.8125rem;">{{ number_format($count) }}</span>
 		<span class="ms-2 text-muted">record{{ $count == 1 ? '' : 's' }} found</span>
 	</div>
 @endisset

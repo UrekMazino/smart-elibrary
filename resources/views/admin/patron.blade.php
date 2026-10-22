@@ -4,9 +4,9 @@
     <link rel="stylesheet" href="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net-bs5/dataTables.bootstrap5.css') }}">
     <style>
       /* Compact, readable people table — same treatment as the catalog lists. */
-      #tbl { font-size: 13px; width: 100% !important; }
+      #tbl { font-size: 0.8125rem; width: 100% !important; }
       #tbl thead th {
-        font-size: 11px; text-transform: uppercase; letter-spacing: .4px;
+        font-size: 0.6875rem; text-transform: uppercase; letter-spacing: .4px;
         color: #7987a1; white-space: nowrap; padding: 9px 10px;
         border-bottom: 2px solid #eef0f2; vertical-align: middle;
       }
@@ -17,30 +17,30 @@
       .u-cell { display: flex; align-items: center; gap: 9px; }
       .u-avatar {
         flex: 0 0 30px; width: 30px; height: 30px; border-radius: 50%;
-        background: #e4e9f2; color: #4a5a78; font-size: 11.5px; font-weight: 700;
+        background: #e4e9f2; color: #4a5a78; font-size: 0.71875rem; font-weight: 700;
         display: flex; align-items: center; justify-content: center; letter-spacing: .3px;
       }
       .u-avatar.is-banned  { background: #ffe0e6; color: #c92a4b; }
       .u-avatar.is-blocked { background: #fff0d6; color: #a06e14; }
       .u-name { font-weight: 600; color: #22283b; }
-      .u-sub  { color: #a3adc2; font-size: 11.5px; }
+      .u-sub  { color: #a3adc2; font-size: 0.71875rem; }
 
       /* `#tbl` prefix beats the template's `.badge { color:#fff }` (same specificity otherwise). */
-      #tbl .pill-banned  { background: #ffe0e6; color: #c92a4b; font-weight: 600; font-size: 10.5px; }
-      #tbl .pill-blocked { background: #fff0d6; color: #a06e14; font-weight: 600; font-size: 10.5px; }
+      #tbl .pill-banned  { background: #ffe0e6; color: #c92a4b; font-weight: 600; font-size: 0.65625rem; }
+      #tbl .pill-blocked { background: #fff0d6; color: #a06e14; font-weight: 600; font-size: 0.65625rem; }
 
       .cell-muted { color: #7987a1; }
       .addr {
         color: #7987a1; display: inline-block; max-width: 240px;
         overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle;
       }
-      .date-main { color: #33415c; } .date-time { color: #a3adc2; font-size: 11.5px; }
+      .date-main { color: #33415c; } .date-time { color: #a3adc2; font-size: 0.71875rem; }
       @media (max-width: 1200px) { .addr { max-width: 150px; } }
 
       /* Status filter chips */
       .chip {
         border: 1px solid #e4e9f2; background: #fff; color: #4a5a78; border-radius: 20px;
-        padding: 4px 12px; font-size: 12px; font-weight: 600; line-height: 1.4;
+        padding: 4px 12px; font-size: 0.75rem; font-weight: 600; line-height: 1.4;
       }
       .chip:hover { background: #f4f7fc; }
       .chip.active { background: #33509c; border-color: #33509c; color: #fff; }
@@ -70,7 +70,7 @@
                         </a>
                         @endcan
                     </div>
-                    <p class="text-muted mb-3" style="font-size: 12.5px;">
+                    <p class="text-muted mb-3" style="font-size: 0.78125rem;">
                         Registered library users. A <strong>banned</strong> account cannot log in or
                         read materials; a <strong>blocked</strong> account can still browse but cannot
                         use chat or inquiries.
@@ -308,7 +308,7 @@ function showSecret(message, label, value) {
   Swal.fire({
     icon: 'success', title: message,
     html: '<div class="text-muted small mb-1">' + escapeHtml(label) + '</div>' +
-          '<code style="font-size:18px;letter-spacing:1px;user-select:all;">' + escapeHtml(value) + '</code>',
+          '<code style="font-size:1.125rem;letter-spacing:1px;user-select:all;">' + escapeHtml(value) + '</code>',
     showCancelButton: true, confirmButtonText: 'Copy', cancelButtonText: 'Close', cancelButtonColor: '#6c757d', reverseButtons: true
   }).then(function (r) {
     if (r.isConfirmed && navigator.clipboard) navigator.clipboard.writeText(value);

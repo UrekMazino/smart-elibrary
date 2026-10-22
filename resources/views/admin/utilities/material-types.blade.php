@@ -7,22 +7,22 @@
     <style>
       .ac-head { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
       .ac-head h4 { font-weight: 700; color: #22283b; margin: 0; }
-      .ac-head p  { color: #8a94a6; margin: 2px 0 0; font-size: 13px; max-width: 760px; }
+      .ac-head p  { color: #8a94a6; margin: 2px 0 0; font-size: 0.8125rem; max-width: 760px; }
       .page-content .card { border: 1px solid #eef0f4; border-radius: 12px; box-shadow: 0 1px 2px rgba(20, 30, 60, .04); }
-      .mt-tbl { font-size: 13px; width: 100%; margin: 0; }
-      .mt-tbl thead th { font-size: 11px; text-transform: uppercase; letter-spacing: .4px; color: #7987a1; white-space: nowrap; padding: 9px 10px; border-bottom: 2px solid #eef0f2; }
+      .mt-tbl { font-size: 0.8125rem; width: 100%; margin: 0; }
+      .mt-tbl thead th { font-size: 0.6875rem; text-transform: uppercase; letter-spacing: .4px; color: #7987a1; white-space: nowrap; padding: 9px 10px; border-bottom: 2px solid #eef0f2; }
       .mt-tbl tbody td { padding: 9px 10px; vertical-align: middle; border-bottom: 1px solid #f1f3f7; }
       .mt-tbl tbody tr:hover { background: #f9fbfe; }
       .mt-name { font-weight: 600; color: #22283b; }
-      .mt-desc { color: #6b7489; font-size: 12.5px; }
+      .mt-desc { color: #6b7489; font-size: 0.78125rem; }
       .mt-count { font-variant-numeric: tabular-nums; }
-      .mt-badge { font-size: 11px; font-weight: 600; border-radius: 10px; padding: 2px 8px; }
+      .mt-badge { font-size: 0.6875rem; font-weight: 600; border-radius: 10px; padding: 2px 8px; }
       .mt-badge.on  { background: #e3f6ef; color: #1d7a55; }
       .mt-badge.off { background: #f1f3f7; color: #7987a1; }
-      .mt-code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; background: #eef1f6; border-radius: 4px; padding: 1px 6px; font-size: 12px; }
-      .mt-section-title { font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: #7987a1; font-weight: 700; margin: 0 0 6px; }
-      .mt-note { font-size: 12.5px; color: #6b7489; margin: 0 0 10px; }
-      .mt-toggle-link { cursor: pointer; color: #6571ff; font-size: 13px; font-weight: 600; text-decoration: none; }
+      .mt-code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; background: #eef1f6; border-radius: 4px; padding: 1px 6px; font-size: 0.75rem; }
+      .mt-section-title { font-size: 0.6875rem; text-transform: uppercase; letter-spacing: .5px; color: #7987a1; font-weight: 700; margin: 0 0 6px; }
+      .mt-note { font-size: 0.78125rem; color: #6b7489; margin: 0 0 10px; }
+      .mt-toggle-link { cursor: pointer; color: var(--t-primary); font-size: 0.8125rem; font-weight: 600; text-decoration: none; }
     </style>
 @endsection
 
@@ -128,7 +128,7 @@
                     <input class="form-check-input" type="checkbox" id="mtActive" checked>
                     <label class="form-check-label" for="mtActive">Show in lists (pickers and OPAC filters)</label>
                 </div>
-                <div class="alert alert-danger py-2 mt-3 mb-0" id="mtError" style="display:none; font-size:13px;"></div>
+                <div class="alert alert-danger py-2 mt-3 mb-0" id="mtError" style="display:none; font-size:0.8125rem;"></div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>

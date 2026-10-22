@@ -2,32 +2,32 @@
 
 @section('css')
     <style>
-      .form-label { font-size: 12.5px; font-weight: 600; color: #33415c; margin-bottom: 4px; }
-      .form-hint  { color: #a3adc2; font-size: 11.5px; margin-top: 4px; display: block; }
+      .form-label { font-size: 0.78125rem; font-weight: 600; color: #33415c; margin-bottom: 4px; }
+      .form-hint  { color: #a3adc2; font-size: 0.71875rem; margin-top: 4px; display: block; }
       .req { color: #c92a4b; }
 
       .form-section {
-        font-size: 11px; text-transform: uppercase; letter-spacing: .4px; color: #7987a1;
+        font-size: 0.6875rem; text-transform: uppercase; letter-spacing: .4px; color: #7987a1;
         font-weight: 700; padding-bottom: 6px; border-bottom: 1px solid #eef0f2; margin-bottom: 14px;
       }
 
       /* Identity card */
       .id-avatar {
         width: 74px; height: 74px; border-radius: 50%; margin: 0 auto 12px;
-        background: #e4e9f2; color: #4a5a78; font-size: 26px; font-weight: 700;
+        background: #e4e9f2; color: #4a5a78; font-size: 1.625rem; font-weight: 700;
         display: flex; align-items: center; justify-content: center; letter-spacing: .5px;
       }
-      .id-name { font-size: 15px; font-weight: 700; color: #22283b; }
-      .id-email { color: #7987a1; font-size: 12.5px; word-break: break-all; }
+      .id-name { font-size: 0.9375rem; font-weight: 700; color: #22283b; }
+      .id-email { color: #7987a1; font-size: 0.78125rem; word-break: break-all; }
       .badge-role {
-        background: #e8eefc; color: #33509c; font-weight: 600; font-size: 11px; margin: 2px;
+        background: #e8eefc; color: #33509c; font-weight: 600; font-size: 0.6875rem; margin: 2px;
       }
       .id-meta { border-top: 1px solid #eef0f2; margin-top: 14px; padding-top: 12px; }
       .id-meta dt {
-        font-size: 10.5px; text-transform: uppercase; letter-spacing: .4px;
+        font-size: 0.65625rem; text-transform: uppercase; letter-spacing: .4px;
         color: #a3adc2; font-weight: 700; margin-bottom: 2px;
       }
-      .id-meta dd { font-size: 12.5px; color: #33415c; margin-bottom: 10px; }
+      .id-meta dd { font-size: 0.78125rem; color: #33415c; margin-bottom: 10px; }
       .id-meta dd.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .5px; }
     </style>
 @endsection
@@ -42,7 +42,7 @@
 
     @if(session('success'))
         <div class="row"><div class="col-12">
-            <div class="alert alert-success py-2" style="font-size: 13px;">{{ session('success') }}</div>
+            <div class="alert alert-success py-2" style="font-size: 0.8125rem;">{{ session('success') }}</div>
         </div></div>
     @endif
 
@@ -63,7 +63,7 @@
                         @forelse($user->getRoleNames() as $role)
                             <span class="badge badge-role rounded-pill">{{ $role }}</span>
                         @empty
-                            <span class="text-muted" style="font-size: 11.5px;">No role assigned</span>
+                            <span class="text-muted" style="font-size: 0.71875rem;">No role assigned</span>
                         @endforelse
                     </div>
 
@@ -89,13 +89,13 @@
             <div class="card">
                 <div class="card-body">
                     <h6 class="card-title mb-1">YOUR DETAILS</h6>
-                    <p class="text-muted mb-3" style="font-size: 12.5px;">
+                    <p class="text-muted mb-3" style="font-size: 0.78125rem;">
                         Keep your contact details current &mdash; they're how the library reaches you.
                     </p>
 
                     {{-- Errors from the profile form (the password form uses its own bag) --}}
                     @if($errors->getBag('default')->any())
-                        <div class="alert alert-danger py-2" style="font-size: 13px;">
+                        <div class="alert alert-danger py-2" style="font-size: 0.8125rem;">
                             <ul class="mb-0 ps-3">
                                 @foreach($errors->getBag('default')->all() as $error)
                                     <li>{{ $error }}</li>
@@ -198,7 +198,7 @@
 
                     <div class="form-section mt-4">Security</div>
                     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                        <span class="text-muted" style="font-size: 12.5px;">
+                        <span class="text-muted" style="font-size: 0.78125rem;">
                             Change the password you use to sign in.
                         </span>
                         <button type="button" class="btn btn-outline-danger btn-sm" onclick="showChangePasswordModal()">

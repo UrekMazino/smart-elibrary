@@ -6,16 +6,16 @@
 
     <style>
       /* Compact, readable catalog table */
-      #tbl { font-size: 13px; width: 100% !important; }
+      #tbl { font-size: 0.8125rem; width: 100% !important; }
       #tbl thead th {
-        font-size: 11px; text-transform: uppercase; letter-spacing: .4px;
+        font-size: 0.6875rem; text-transform: uppercase; letter-spacing: .4px;
         color: #7987a1; white-space: nowrap; padding: 9px 10px;
         border-bottom: 2px solid #eef0f2; vertical-align: middle;
       }
       #tbl tbody td { padding: 6px 10px; vertical-align: middle !important; white-space: normal; }
       #tbl tbody tr { cursor: pointer; }
       #tbl tbody tr:hover { background: #f7f9fc; }
-      .tbl-id { color: #a3adc2; font-size: 12px; }
+      .tbl-id { color: #a3adc2; font-size: 0.75rem; }
       /* Full MARC 245 title (all subfields), wrapped — never cut to one line. */
       .tbl-title { font-weight: 600; color: #22283b; display: block; white-space: normal; overflow-wrap: anywhere; min-width: 220px; }
       .tbl-authors {
@@ -25,7 +25,7 @@
       /* #tbl prefix beats the template's `.badge { color:#fff }` (same specificity otherwise). */
       #tbl .badge-type {
         background: #e4e9f2; color: #33415c; font-weight: 600;
-        font-size: 11.5px; letter-spacing: .2px;
+        font-size: 0.71875rem; letter-spacing: .2px;
       }
       @media (max-width: 1200px) { .tbl-authors { max-width: 150px; } }
       @media (max-width: 768px)  { .tbl-authors { max-width: 110px; } }
@@ -60,7 +60,7 @@
                   <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
                     <div>
                       <h6 class="card-title mb-1">On-Hold</h6>
-                      <p class="text-muted mb-0" style="font-size: 12.5px;">Records not published yet — hidden from the OPAC until you publish them.</p>
+                      <p class="text-muted mb-0" style="font-size: 0.78125rem;">Records not published yet — hidden from the OPAC until you publish them.</p>
                     </div>
                     @include('admin.partials.catalog-bulk-toolbar', ['list' => 'onhold'])
 

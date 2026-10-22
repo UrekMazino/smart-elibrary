@@ -2,19 +2,19 @@
 
 @section('css')
     <style>
-      .form-hint { color: #a3adc2; font-size: 11.5px; margin-top: 4px; display: block; }
-      .form-label { font-size: 12.5px; font-weight: 600; color: #33415c; margin-bottom: 4px; }
+      .form-hint { color: #a3adc2; font-size: 0.71875rem; margin-top: 4px; display: block; }
+      .form-label { font-size: 0.78125rem; font-weight: 600; color: #33415c; margin-bottom: 4px; }
       .req { color: #c92a4b; }
 
       /* Section divider inside the form */
       .form-section {
-        font-size: 11px; text-transform: uppercase; letter-spacing: .4px; color: #7987a1;
+        font-size: 0.6875rem; text-transform: uppercase; letter-spacing: .4px; color: #7987a1;
         font-weight: 700; padding-bottom: 6px; border-bottom: 1px solid #eef0f2; margin-bottom: 14px;
       }
 
       .note {
         background: #fff8e8; border: 1px solid #f6e3bc; border-radius: 6px;
-        padding: 10px 12px; font-size: 12px; color: #7a5b16; line-height: 1.5;
+        padding: 10px 12px; font-size: 0.75rem; color: #7a5b16; line-height: 1.5;
       }
 
       /* Credentials handed over once, after the account is created */
@@ -22,12 +22,12 @@
         background: #f7f9fc; border: 1px dashed #cfd8e8; border-radius: 8px; padding: 14px;
       }
       .cred-label {
-        font-size: 11px; text-transform: uppercase; letter-spacing: .4px;
+        font-size: 0.6875rem; text-transform: uppercase; letter-spacing: .4px;
         color: #7987a1; font-weight: 700; margin-bottom: 5px;
       }
       .cred-value {
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-        font-size: 16px; font-weight: 700; letter-spacing: 1px;
+        font-size: 1rem; font-weight: 700; letter-spacing: 1px;
         color: #22283b; background: #fff; text-align: center;
       }
       .qr-wrap svg, .qr-wrap img { max-width: 150px; height: auto; }
@@ -36,7 +36,7 @@
         display: none; position: fixed; top: 50%; left: 50%;
         transform: translate(-50%, -50%); padding: 10px 20px;
         background-color: #f1f1f1; border: 1px solid #ccc; border-radius: 4px;
-        font-size: 16px; z-index: 2000;
+        font-size: 1rem; z-index: 2000;
       }
     </style>
 @endsection
@@ -60,14 +60,14 @@
                             <i data-feather="arrow-left" class="icon-sm me-1"></i>Back to Administrators
                         </a>
                     </div>
-                    <p class="text-muted mb-3" style="font-size: 12.5px;">
+                    <p class="text-muted mb-3" style="font-size: 0.78125rem;">
                         Creates a staff account with the role you pick below. A temporary password and
                         library code are generated and shown once, right after saving.
                     </p>
 
                     <x-auth-validation-errors class="mb-3 text-danger" :errors="$errors"/>
                     @if(session('error'))
-                        <div class="alert alert-danger py-2" style="font-size: 13px;">{{ session('error') }}</div>
+                        <div class="alert alert-danger py-2" style="font-size: 0.8125rem;">{{ session('error') }}</div>
                     @endif
 
                     <form method="post" action="{{ route('admin.store') }}">
@@ -151,7 +151,7 @@
             </h6>
           </div>
           <div class="modal-body">
-            <p class="text-muted text-center mb-3" style="font-size: 12.5px;">
+            <p class="text-muted text-center mb-3" style="font-size: 0.78125rem;">
                 Give these to <strong>{{ session('new_admin_name') }}</strong> now &mdash;
                 they are shown only once and can't be retrieved later.
             </p>

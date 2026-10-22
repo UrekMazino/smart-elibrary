@@ -7,21 +7,21 @@
 @section('css')
     <link rel="stylesheet" href="{{ asset('admintemplate/nobleui/template/assets/vendors/DataTables/DataTables-1.12.1/css/dataTables.bootstrap5.css') }}">
     <style>
-      #tbl { font-size: 13px; width: 100% !important; }
-      #tbl thead th { font-size: 11px; text-transform: uppercase; letter-spacing: .4px; color: #7987a1; white-space: nowrap; padding: 9px 10px; border-bottom: 2px solid #eef0f2; }
+      #tbl { font-size: 0.8125rem; width: 100% !important; }
+      #tbl thead th { font-size: 0.6875rem; text-transform: uppercase; letter-spacing: .4px; color: #7987a1; white-space: nowrap; padding: 9px 10px; border-bottom: 2px solid #eef0f2; }
       #tbl tbody td { padding: 6px 10px; vertical-align: middle !important; white-space: normal; }
       #tbl tbody tr { cursor: pointer; }
       #tbl tbody tr:hover { background: #f7f9fc; }
-      .tbl-id { color: #a3adc2; font-size: 12px; }
+      .tbl-id { color: #a3adc2; font-size: 0.75rem; }
       /* Full MARC 245 title (all subfields), wrapped — never cut to one line. */
       .tbl-title { font-weight: 600; color: #22283b; display: block; white-space: normal; overflow-wrap: anywhere; min-width: 220px; }
       .tbl-authors { color: #7987a1; display: inline-block; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle; }
       /* #tbl prefix beats the template's `.badge { color:#fff }`. */
-      #tbl .badge-type { background: #e4e9f2; color: #33415c; font-weight: 600; font-size: 11.5px; letter-spacing: .2px; }
-      #tbl .badge-status { font-weight: 600; font-size: 11px; }
+      #tbl .badge-type { background: #e4e9f2; color: #33415c; font-weight: 600; font-size: 0.71875rem; letter-spacing: .2px; }
+      #tbl .badge-status { font-weight: 600; font-size: 0.6875rem; }
       #tbl .badge-status.pub  { background: #e3f6ef; color: #1d7a55; }
       #tbl .badge-status.hold { background: #fff4e5; color: #a15c00; }
-      .bt-meta { font-size: 12.5px; color: #7987a1; }
+      .bt-meta { font-size: 0.78125rem; color: #7987a1; }
       .bt-meta strong { color: #33415c; font-weight: 600; }
       @media (max-width: 1200px) { .tbl-authors { max-width: 150px; } }
       @media (max-width: 768px)  { .tbl-authors { max-width: 110px; } }

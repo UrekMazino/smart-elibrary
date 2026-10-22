@@ -33,7 +33,7 @@
                 <div class="row">
                   <div class="col-12">
                     <input type="hidden" id="total_copies" value="{{getAllCopies()}}">
-                    <h3 style="font-size: 70px">{{ number_format(getAllCopies()) }}</h3>
+                    <h3 style="font-size: 4.375rem">{{ number_format(getAllCopies()) }}</h3>
                   </div>
                 </div>
               </div>
@@ -58,7 +58,7 @@
                 </div>
                 <div class="row">
                   <div class="col-12">
-                    <h3 style="font-size: 70px" id="copypresented">{{ getCopiesPresented() }}</h3>
+                    <h3 style="font-size: 4.375rem" id="copypresented">{{ getCopiesPresented() }}</h3>
                   </div>
                 </div>
               </div>
@@ -80,7 +80,7 @@
                 </div>
                 <div class="row">
                   <div class="col-12">
-                    <h3 class="text-danger" style="font-size: 70px" id="copymissing"></h3>
+                    <h3 class="text-danger" style="font-size: 4.375rem" id="copymissing"></h3>
                     
                   </div>
                 </div>

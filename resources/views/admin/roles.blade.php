@@ -4,29 +4,29 @@
     <style>
       .ac-head { display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:10px; margin-bottom:18px; }
       .ac-head h4 { font-weight:700; color:#22283b; margin:0; }
-      .ac-head p  { color:#8a94a6; margin:2px 0 0; font-size:13px; }
+      .ac-head p  { color:#8a94a6; margin:2px 0 0; font-size:0.8125rem; }
       .page-content .card { border:1px solid #eef0f4; border-radius:12px; box-shadow:0 1px 2px rgba(20,30,60,.04); }
-      .mono { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:11px; color:#a3adc2; }
+      .mono { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:0.6875rem; color:#a3adc2; }
 
       /* Roles list */
-      table.roles-tbl { font-size:13px; width:100%; }
-      table.roles-tbl thead th { font-size:11px; text-transform:uppercase; letter-spacing:.4px; color:#7987a1; padding:9px 10px; border-bottom:2px solid #eef0f2; white-space:nowrap; }
+      table.roles-tbl { font-size:0.8125rem; width:100%; }
+      table.roles-tbl thead th { font-size:0.6875rem; text-transform:uppercase; letter-spacing:.4px; color:#7987a1; padding:9px 10px; border-bottom:2px solid #eef0f2; white-space:nowrap; }
       table.roles-tbl tbody td { padding:9px 10px; vertical-align:middle; border-bottom:1px solid #f2f4f8; }
       .role-name { font-weight:600; color:#22283b; }
-      .pill { display:inline-block; min-width:26px; text-align:center; background:#eef1f8; color:#4a5a78; border-radius:20px; padding:2px 9px; font-size:12px; font-weight:600; }
+      .pill { display:inline-block; min-width:26px; text-align:center; background:#eef1f8; color:#4a5a78; border-radius:20px; padding:2px 9px; font-size:0.75rem; font-weight:600; }
 
       /* Access matrix */
-      .matrix-hint { color:#8a94a6; font-size:12.5px; margin:0 0 14px; }
+      .matrix-hint { color:#8a94a6; font-size:0.78125rem; margin:0 0 14px; }
       .matrix-wrap { overflow:auto; max-height:70vh; border:1px solid #eef0f4; border-radius:10px; }
-      table.matrix { border-collapse:separate; border-spacing:0; width:100%; font-size:13px; }
+      table.matrix { border-collapse:separate; border-spacing:0; width:100%; font-size:0.8125rem; }
       table.matrix th, table.matrix td { padding:8px 12px; border-bottom:1px solid #eef0f4; }
-      table.matrix thead th { position:sticky; top:0; z-index:2; background:#fff; font-size:11px; text-transform:uppercase; letter-spacing:.3px; color:#7987a1; border-bottom:2px solid #eef0f2; }
+      table.matrix thead th { position:sticky; top:0; z-index:2; background:#fff; font-size:0.6875rem; text-transform:uppercase; letter-spacing:.3px; color:#7987a1; border-bottom:2px solid #eef0f2; }
       table.matrix thead th.role-col { text-align:center; min-width:96px; }
       table.matrix thead th.role-col small { display:block; font-weight:400; text-transform:none; letter-spacing:0; }
       table.matrix th.perm-col, table.matrix td.perm-cell { position:sticky; left:0; z-index:1; background:#fff; text-align:left; min-width:290px; box-shadow:1px 0 0 #eef0f4; }
       table.matrix thead th.perm-col { z-index:3; }
       .perm-name { font-weight:600; color:#22283b; display:block; line-height:1.3; }
-      tr.mx-group td { background:#f4f6fb; font-weight:700; font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:#5a6a85; padding:6px 12px; position:sticky; left:0; }
+      tr.mx-group td { background:#f4f6fb; font-weight:700; font-size:0.6875rem; text-transform:uppercase; letter-spacing:.5px; color:#5a6a85; padding:6px 12px; position:sticky; left:0; }
       table.matrix tbody tr:hover td { background:#f9fbfe; }
       table.matrix tbody tr:hover td.perm-cell { background:#f9fbfe; }
       .mx-cell { text-align:center; }
@@ -38,13 +38,13 @@
       /* Ticked (or not) but can't take effect: the role lacks the module's access permission. */
       td.mx-cell.inactive .mx-toggle { opacity:.35; }
       td.mx-cell.inactive .mx-toggle.on { opacity:.45; }
-      .mx-legend { display:flex; flex-wrap:wrap; gap:16px; align-items:center; font-size:12px; color:#6b7489; margin:-6px 0 12px; }
+      .mx-legend { display:flex; flex-wrap:wrap; gap:16px; align-items:center; font-size:0.75rem; color:#6b7489; margin:-6px 0 12px; }
       .mx-legend .mx-toggle { cursor:default; width:16px; height:16px; }
       .mx-legend .mx-toggle.on::after { left:4px; top:1px; width:4px; height:8px; }
       .mx-legend .faded .mx-toggle { opacity:.45; }
-      .badge-you { background:#eef2ff; color:#3a44c7; font-weight:600; font-size:10px; border-radius:10px; padding:1px 7px; text-transform:none; letter-spacing:0; }
-      .badge-unused { background:#fff4e5; color:#a15c00; font-weight:600; font-size:10px; border-radius:10px; padding:1px 7px; margin-left:4px; }
-      .badge-system { background:#f1f3f7; color:#6b7489; font-weight:600; font-size:10px; border-radius:10px; padding:1px 7px; margin-left:4px; }
+      .badge-you { background:color-mix(in srgb, var(--t-primary) 10%, #fff); color:color-mix(in srgb, var(--t-primary), #000 30%); font-weight:600; font-size:0.625rem; border-radius:10px; padding:1px 7px; text-transform:none; letter-spacing:0; }
+      .badge-unused { background:#fff4e5; color:#a15c00; font-weight:600; font-size:0.625rem; border-radius:10px; padding:1px 7px; margin-left:4px; }
+      .badge-system { background:#f1f3f7; color:#6b7489; font-weight:600; font-size:0.625rem; border-radius:10px; padding:1px 7px; margin-left:4px; }
     </style>
 @endsection
 

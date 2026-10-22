@@ -2,14 +2,14 @@
 
 @section('css')
     <style>
-      .form-hint { color: #a3adc2; font-size: 11.5px; margin-top: 4px; display: block; }
-      .form-label { font-size: 12.5px; font-weight: 600; color: #33415c; margin-bottom: 4px; }
+      .form-hint { color: #a3adc2; font-size: 0.71875rem; margin-top: 4px; display: block; }
+      .form-label { font-size: 0.78125rem; font-weight: 600; color: #33415c; margin-bottom: 4px; }
       .req { color: #c92a4b; }
 
       /* Note explaining what actually happens to the password on save. */
       .note {
         background: #fff8e8; border: 1px solid #f6e3bc; border-radius: 6px;
-        padding: 10px 12px; font-size: 12px; color: #7a5b16; line-height: 1.5;
+        padding: 10px 12px; font-size: 0.75rem; color: #7a5b16; line-height: 1.5;
       }
 
       /* Success modal: library code + QR */
@@ -19,7 +19,7 @@
       }
       #qrcodeInput {
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-        font-size: 16px; font-weight: 700; letter-spacing: 1px;
+        font-size: 1rem; font-weight: 700; letter-spacing: 1px;
         color: #22283b; background: #fff; text-align: center;
       }
       .qr-wrap svg, .qr-wrap img { max-width: 170px; height: auto; }
@@ -28,7 +28,7 @@
         display: none; position: fixed; top: 50%; left: 50%;
         transform: translate(-50%, -50%); padding: 10px 20px;
         background-color: #f1f1f1; border: 1px solid #ccc; border-radius: 4px;
-        font-size: 16px; z-index: 2000;
+        font-size: 1rem; z-index: 2000;
       }
     </style>
 @endsection
@@ -52,14 +52,14 @@
                             <i data-feather="arrow-left" class="icon-sm me-1"></i>Back to Patrons
                         </a>
                     </div>
-                    <p class="text-muted mb-3" style="font-size: 12.5px;">
+                    <p class="text-muted mb-3" style="font-size: 0.78125rem;">
                         Creates a library account and issues a library code. The code is shown once the
                         account is saved &mdash; you can always re-issue it later from the Patrons list.
                     </p>
 
                     <x-auth-validation-errors class="mb-3 text-danger" :errors="$errors"/>
                     @if(session('error'))
-                        <div class="alert alert-danger py-2" style="font-size: 13px;">{{ session('error') }}</div>
+                        <div class="alert alert-danger py-2" style="font-size: 0.8125rem;">{{ session('error') }}</div>
                     @endif
 
                     <form method="post" action="{{ url('/admin/register/store') }}">
@@ -117,7 +117,7 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="btn-close"></button>
           </div>
           <div class="modal-body">
-            <p class="text-muted text-center mb-3" style="font-size: 12.5px;">
+            <p class="text-muted text-center mb-3" style="font-size: 0.78125rem;">
                 Give this library code to the patron &mdash; it identifies them at the counter.
             </p>
             <div class="code-box">

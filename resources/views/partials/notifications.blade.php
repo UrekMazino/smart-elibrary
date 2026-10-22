@@ -42,8 +42,8 @@
 <style>
     .nfy { width: 330px; max-width: 88vw; font-family: inherit; color: #22283b; }
     .nfy-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #eef0f4; }
-    .nfy-head-title { font-weight: 700; font-size: 14px; color: #22283b; }
-    .nfy-head-count { font-size: 11px; font-weight: 700; color: #fff; background: #ff3366; border-radius: 10px; padding: 2px 9px; }
+    .nfy-head-title { font-weight: 700; font-size: calc(14px * var(--t-text, 1)); color: #22283b; }
+    .nfy-head-count { font-size: calc(11px * var(--t-text, 1)); font-weight: 700; color: #fff; background: #ff3366; border-radius: 10px; padding: 2px 9px; }
     .nfy-list { max-height: 380px; overflow-y: auto; }
     .nfy-item { display: flex; gap: 12px; align-items: flex-start; padding: 11px 16px; text-decoration: none; border-bottom: 1px solid #f3f5f8; transition: background .12s ease; }
     .nfy-item:last-child { border-bottom: 0; }
@@ -51,16 +51,16 @@
     .nfy-ic { flex: 0 0 auto; width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
     .nfy-ic svg { width: 19px; height: 19px; }
     .nfy-body { display: flex; flex-direction: column; min-width: 0; }
-    .nfy-title { font-size: 13px; font-weight: 600; color: #22283b; line-height: 1.35; }
-    .nfy-text { font-size: 12px; color: #8a94a6; line-height: 1.35; }
+    .nfy-title { font-size: calc(13px * var(--t-text, 1)); font-weight: 600; color: #22283b; line-height: 1.35; }
+    .nfy-text { font-size: calc(12px * var(--t-text, 1)); color: #8a94a6; line-height: 1.35; }
     .nfy-empty { text-align: center; color: #9aa4b8; padding: 30px 16px; }
     .nfy-empty svg { width: 34px; height: 34px; color: #c7cfdb; margin-bottom: 8px; }
-    .nfy-empty p { margin: 0; font-size: 13px; }
-    .nfy-primary { background: #eef0ff; color: #6571ff; }
+    .nfy-empty p { margin: 0; font-size: calc(13px * var(--t-text, 1)); }
+    .nfy-primary { background: color-mix(in srgb, var(--t-primary, #6571ff) 12%, #fff); color: var(--t-primary, #6571ff); }   /* the admin's accent; the OPAC keeps indigo */
     .nfy-success { background: #e6f7ee; color: #05a34a; }
     .nfy-info    { background: #e7f4ff; color: #1a86d0; }
     .nfy-warning { background: #fff5e0; color: #e0a106; }
     .nfy-danger  { background: #ffe9ee; color: #ff3366; }
     /* Count badge on the bell trigger (shared by both themes) */
-    .nfy-badge { position: absolute; top: 0; right: 0; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 9px; background: #ff3366; color: #fff; font-size: 10px; font-weight: 700; line-height: 17px; text-align: center; box-shadow: 0 0 0 2px #fff; }
+    .nfy-badge { position: absolute; top: 0; right: 0; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 9px; background: #ff3366; color: #fff; font-size: calc(10px * var(--t-text, 1)); font-weight: 700; line-height: 17px; text-align: center; box-shadow: 0 0 0 2px #fff; }
 </style>

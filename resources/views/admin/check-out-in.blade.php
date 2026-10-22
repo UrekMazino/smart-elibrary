@@ -12,7 +12,7 @@
         background-color: #f1f1f1;
         border: 1px solid #ccc;
         border-radius: 4px;
-        font-size: 16px;
+        font-size: 1rem;
       }
 
       #checkin-transaction-status {
@@ -425,12 +425,12 @@
                                                                                 <tbody>
                                                                                     <tr>
                                                                                         <td>Total Hours Overdue</td>
-                                                                                        <td class="text-end" style="font-size:12px;" id="total-hrs-overdue">0</td>
+                                                                                        <td class="text-end" style="font-size:0.75rem;" id="total-hrs-overdue">0</td>
                                                                                         <td></td>
                                                                                     </tr>
                                                                                     <tr>
                                                                                         <td>Overdue Fine Rate / Hour</td>
-                                                                                        <td class="text-end" style="font-size:12px;" id="overdue-fine-rate">0.00</td>
+                                                                                        <td class="text-end" style="font-size:0.75rem;" id="overdue-fine-rate">0.00</td>
                                                                                         <td></td>
                                                                                     </tr>
                                                                                     <tr>
