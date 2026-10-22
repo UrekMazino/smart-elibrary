@@ -13,6 +13,8 @@ use Illuminate\Http\Request;
  */
 class AppearanceController extends Controller
 {
+    private const FIELDS = ['accent', 'custom', 'status', 'background', 'background_custom', 'sidebar', 'contrast', 'text', 'motion', 'font'];
+
     public function __construct()
     {
         $this->middleware(['auth', 'admin']);
@@ -31,9 +33,18 @@ class AppearanceController extends Controller
     public function update(Request $request)
     {
         $user = auth()->user();
-        $user->appearance = Appearance::sanitize($request->only(['accent', 'custom', 'status', 'text', 'motion', 'font']));
+        $user->appearance = Appearance::sanitize($request->only(self::FIELDS));
         $user->save();
         return redirect()->route('appearance')->with('success', 'Your appearance is saved.');
+    }
+
+    /**
+     * The form's live preview: the variables, attributes and stylesheets the layout would use for a choice
+     * (nothing is saved), so the page shows it at once. The colour maths stays in App\Services\Appearance.
+     */
+    public function preview(Request $request)
+    {
+        return response()->json(Appearance::preview(Appearance::sanitize($request->only(self::FIELDS))));
     }
 
     /** Back to the library default (and any later change to it). */
@@ -54,7 +65,7 @@ class AppearanceController extends Controller
     {
         // "Back to original" sends reset=1: the template's own look.
         $prefs = $request->boolean('reset') ? Appearance::DEFAULTS
-            : Appearance::sanitize($request->only(['accent', 'custom', 'status', 'text', 'motion', 'font']));
+            : Appearance::sanitize($request->only(self::FIELDS));
         Setting::updateOrCreate(['key' => 'appearance_default'], ['value' => json_encode($prefs)]);
         settingsFlush();
         return redirect()->route('utilities.theme')->with('success', 'The library default is saved. Staff who chose their own appearance keep it.');

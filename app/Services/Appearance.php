@@ -5,17 +5,21 @@ namespace App\Services;
 use App\Models\User;
 
 /**
- * How the admin looks for one staff member: colour theme, status colours, text size, motion, font.
+ * How the admin looks for one staff member: colour theme, status colours, background (light, dark or
+ * following the device), sidebar, contrast, text size, motion and font.
  *
  * Each person may choose their own (users.appearance, set under Appearance in the profile menu);
- * everyone else follows the library default (settings 'appearance_default', set under Utilities →
- * Theme). The admin layout puts the result on <html> (AdminLayout: data-* attributes plus the colour
- * variables), which public/css/admin-theme.css (generated from the template, see
- * scripts/admin-theme.mjs) and public/css/admin-appearance.css read.
+ * everyone else follows the library default (settings 'appearance_default', Utilities → Theme). The
+ * admin layout turns it into data-* attributes on <html>, the light and/or dark stylesheet
+ * (public/css/admin-theme.css and admin-theme-dark.css, generated from NobleUI's by
+ * scripts/admin-theme.mjs) and a <style> block of variables (css()):
+ *   --t-*   the accent, status colours, font and text size (stage 1);
+ *   --ui-*  the roles a background or high contrast sets: page, surface, surface-2, border, text,
+ *           text-2, muted, muted-2, and status ink / soft / line. Unset for the standard light look, so
+ *           every value falls back to the template's own.
  *
- * Colours are checked against WCAG 2.2: white text on the accent (buttons) and the accent as text on
- * white (links) need 4.5:1, so a custom accent, and the colour-blind-safe status colours, are darkened
- * until they reach it; the dark sidebar gets a lighter variant of the accent that reaches 4.5:1 there.
+ * Colours are checked against WCAG 2.2: text 4.5:1 (7:1 with high contrast) on the backgrounds it sits
+ * on; accents, status colours and custom backgrounds are adjusted until they reach it.
  */
 class Appearance
 {
@@ -38,33 +42,67 @@ class Appearance
         'colorblind' => ['success' => '#009e73', 'danger' => '#d55e00', 'warning' => '#e69f00', 'info' => '#0072b2'],
     ];
 
+    /** key => [label, scheme, page colour]. Standard and Dark are the template's own (NobleUI's light and dark). */
+    public const BACKGROUNDS = [
+        'standard' => ['Standard', 'light', null],
+        'white'    => ['White', 'light', '#ffffff'],
+        'cream'    => ['Warm cream', 'light', '#f6efdf'],
+        'cool'     => ['Cool grey', 'light', '#e7ecf3'],
+        'dark'     => ['Dark', 'dark', null],
+        'dim'      => ['Dim', 'dark', '#202329'],
+        'black'    => ['Black', 'dark', '#000000'],
+        'auto'     => ['Follow my device', 'auto', null],
+    ];
+
     public const TEXT = [100, 115, 130, 150];
     public const MOTION = ['auto', 'reduce'];
     public const FONT = ['standard', 'readable'];
+    public const SIDEBARS = ['dark', 'light'];
+    public const CONTRAST = ['standard', 'high'];
 
-    public const DEFAULTS = ['accent' => 'indigo', 'custom' => null, 'status' => 'standard', 'text' => 100, 'motion' => 'auto', 'font' => 'standard'];
+    public const DEFAULTS = [
+        'accent' => 'indigo', 'custom' => null, 'status' => 'standard', 'background' => 'standard', 'background_custom' => null,
+        'sidebar' => 'dark', 'contrast' => 'standard', 'text' => 100, 'motion' => 'auto', 'font' => 'standard',
+    ];
 
-    /** The sidebar's background (sidebar-dark), which the accent shows on as text and icons. */
+    /** The dark sidebar's background (and NobleUI's dark surface). */
     public const SIDEBAR = '#0c1427';
 
     public const MIN_CONTRAST = 4.5;
+    public const HIGH_CONTRAST = 7.0;
+
+    /** NobleUI's dark look, as roles (its own colours; muted text a little lighter so it reads on raised panels too). */
+    private const DARK = ['page' => '#070d19', 'surface' => '#0c1427', 'surface-2' => '#121e3b', 'border' => '#172340', 'text' => '#d0d6e1'];
+    private const HIGH_LIGHT = ['page' => '#ffffff', 'surface' => '#ffffff', 'surface-2' => '#f0f0f0', 'border' => '#6f6f6f', 'text' => '#000000'];
+    private const HIGH_DARK = ['page' => '#000000', 'surface' => '#000000', 'surface-2' => '#141414', 'border' => '#8c8c8c', 'text' => '#ffffff'];
+    private const NAVY = '#33509c';   // our filter chips' colour
 
     /** Only known values; anything else falls back to the default. */
     public static function sanitize(array $in): array
     {
         $out = self::DEFAULTS;
+        $hex = fn ($v) => preg_match('/^#[0-9a-f]{6}$/', $v = strtolower((string) $v)) ? $v : null;
+
         $accent = (string) ($in['accent'] ?? '');
-        $custom = strtolower((string) ($in['custom'] ?? ''));
-        if ($accent === 'custom' && preg_match('/^#[0-9a-f]{6}$/', $custom)) {
+        if ($accent === 'custom' && ($c = $hex($in['custom'] ?? null))) {
             $out['accent'] = 'custom';
-            $out['custom'] = $custom;
+            $out['custom'] = $c;
         } elseif (isset(self::ACCENTS[$accent])) {
             $out['accent'] = $accent;
+        }
+        $background = (string) ($in['background'] ?? '');
+        if ($background === 'custom' && ($c = $hex($in['background_custom'] ?? null))) {
+            $out['background'] = 'custom';
+            $out['background_custom'] = $c;
+        } elseif (isset(self::BACKGROUNDS[$background])) {
+            $out['background'] = $background;
         }
         if (isset(self::STATUS[$in['status'] ?? ''])) $out['status'] = $in['status'];
         if (in_array((int) ($in['text'] ?? 0), self::TEXT, true)) $out['text'] = (int) $in['text'];
         if (in_array($in['motion'] ?? '', self::MOTION, true)) $out['motion'] = $in['motion'];
         if (in_array($in['font'] ?? '', self::FONT, true)) $out['font'] = $in['font'];
+        if (in_array($in['sidebar'] ?? '', self::SIDEBARS, true)) $out['sidebar'] = $in['sidebar'];
+        if (in_array($in['contrast'] ?? '', self::CONTRAST, true)) $out['contrast'] = $in['contrast'];
         return $out;
     }
 
@@ -82,75 +120,231 @@ class Appearance
         return is_array($own) ? self::sanitize($own) : self::siteDefault();
     }
 
-    /** The accent a choice uses, before any adjustment. */
-    public static function accentColour(array $prefs): string
+    // ---- the page: scheme, stylesheets, body class, variables ----
+
+    /** light, dark, or auto (the device's setting). A custom background is light or dark by its own lightness. */
+    public static function mode(array $p): string
     {
-        return $prefs['accent'] === 'custom' && $prefs['custom'] ? $prefs['custom'] : self::ACCENTS[$prefs['accent']][1] ?? self::ACCENTS['indigo'][1];
+        if ($p['background'] === 'custom') return self::isLight(self::customPage($p)) ? 'light' : 'dark';
+        return self::BACKGROUNDS[$p['background']][1];
     }
 
-    /** The colour variables for <html style="...">: accent (and its sidebar variant), status colours, text size. */
-    public static function vars(array $prefs): array
+    /** The media attribute of the light or dark stylesheet's <link>. */
+    public static function media(array $p, string $scheme): string
     {
-        return self::accentVars($prefs) + self::statusVars($prefs['status'])
-            + ['--t-text' => rtrim(rtrim(number_format($prefs['text'] / 100, 2, '.', ''), '0'), '.')];
+        $mode = self::mode($p);
+        if ($mode === 'auto') return "(prefers-color-scheme: $scheme)";
+        return $mode === $scheme ? 'all' : 'not all';
     }
 
-    public static function accentVars(array $prefs): array
+    /** <body> class: the dark sidebar (the template's light sidebar has none; the dark stylesheet's sidebar is always dark). */
+    public static function bodyClass(array $p): string
     {
-        $accent = self::accentColour($prefs);
-        // The original indigo is kept exactly; every other accent is made readable with white text.
-        if ($prefs['accent'] !== 'indigo') $accent = self::forWhiteText($accent);
-        $onDark = self::onDark($accent);
-        return [
-            '--t-primary' => $accent, '--t-primary-rgb' => self::rgbList($accent),
-            '--t-primary-on-dark' => $onDark, '--t-primary-on-dark-rgb' => self::rgbList($onDark),
-        ];
+        return $p['sidebar'] === 'dark' || self::mode($p) === 'dark' ? 'sidebar-dark' : '';
     }
 
+    /** The data-* attributes on <html>. */
+    public static function attributes(array $p): array
+    {
+        return ['data-mode' => self::mode($p), 'data-contrast' => $p['contrast'], 'data-sidebar' => $p['sidebar'],
+                'data-text' => $p['text'], 'data-motion' => $p['motion'], 'data-font' => $p['font'], 'data-status' => $p['status']];
+    }
+
+    /** The <style> block: the variables for the scheme in use (and, following the device, for its dark setting). */
+    public static function css(array $p): string
+    {
+        $block = fn (array $vars) => implode(' ', array_map(fn ($k, $v) => "$k: $v;", array_keys($vars), $vars));
+        $mode = self::mode($p);
+        $css = 'html:root { ' . $block(self::vars($p, $mode === 'dark' ? 'dark' : 'light')) . ' }';
+        if ($mode === 'auto') $css .= "\n@media (prefers-color-scheme: dark) { html:root { " . $block(self::vars($p, 'dark')) . ' } }';
+        return $css;
+    }
+
+    /** All the variables for one scheme: accent, status colours, text size, and the roles. */
+    public static function vars(array $p, ?string $scheme = null): array
+    {
+        $scheme ??= self::mode($p) === 'dark' ? 'dark' : 'light';
+        $roles = self::roles($p, $scheme);
+        $high = $p['contrast'] === 'high';
+        $min = $high ? self::HIGH_CONTRAST : self::MIN_CONTRAST;
+
+        // The accent: white text on it reads (buttons), and it reads as text on the page; its on-dark variant
+        // reads on the dark sidebar, or on the dark scheme's raised panels.
+        $accent = self::accentColour($p);
+        if ($p['accent'] !== 'indigo' || $high) $accent = self::forWhiteText($accent, $min);
+        if ($scheme === 'light' && isset($roles['--ui-page'])) $accent = self::darkenUntil($accent, $roles['--ui-page'], $min);
+        $darkBg = $scheme === 'dark' ? ($roles['--ui-surface-2'] ?? self::DARK['surface-2']) : self::SIDEBAR;
+        $onDark = self::lightenUntil($accent, $darkBg, $min);
+        $vars = ['--t-primary' => $accent, '--t-primary-rgb' => self::rgbList($accent), '--t-primary-on-dark' => $onDark, '--t-primary-on-dark-rgb' => self::rgbList($onDark)];
+
+        foreach (self::statusBase($p) as $name => $colour) {
+            $on = self::lightenUntil($colour, $darkBg, $min);
+            $vars += ["--t-$name" => $colour, "--t-$name-rgb" => self::rgbList($colour), "--t-$name-on-dark" => $on, "--t-$name-on-dark-rgb" => self::rgbList($on)];
+        }
+        $vars['--t-text'] = rtrim(rtrim(number_format($p['text'] / 100, 2, '.', ''), '0'), '.');
+        return $vars + $roles;
+    }
+
+    /** A palette's status colours with their on-dark variants (as the light scheme sets them). */
     public static function statusVars(string $status): array
     {
-        $vars = [];
-        foreach (self::STATUS[$status] ?? self::STATUS['standard'] as $name => $colour) {
-            if ($status !== 'standard') $colour = self::forWhiteText($colour);
-            $vars["--t-$name"] = $colour;
-            $vars["--t-$name-rgb"] = self::rgbList($colour);
-            $vars["--t-$name-on-dark"] = self::onDark($colour);   // as text in the dark sidebar (badges)
-        }
-        return $vars;
+        $vars = self::vars(self::sanitize(['status' => $status]), 'light');
+        return array_filter($vars, fn ($k) => preg_match('/^--t-(success|danger|warning|info)/', $k), ARRAY_FILTER_USE_KEY);
     }
 
-    /** For the Appearance form's live preview: every preset's and palette's variables, and their contrast. */
-    public static function previewData(): array
+    /**
+     * The --ui-* roles for a scheme. None for the standard light look (the template's own colours);
+     * otherwise page, panels, borders and text worked out from the background, and status inks on soft
+     * backgrounds, all reading at 4.5:1 (7:1 with high contrast).
+     */
+    public static function roles(array $p, string $scheme): array
+    {
+        $high = $p['contrast'] === 'high';
+        $base = null;
+        if ($scheme === 'light') {
+            if ($high) $base = self::HIGH_LIGHT;
+            elseif ($page = self::pageColour($p, 'light')) $base = self::deriveLight($page);
+        } else {
+            if ($high) $base = self::HIGH_DARK;
+            elseif ($page = self::pageColour($p, 'dark')) $base = self::deriveDark($page);
+            else $base = self::DARK;
+        }
+        if (! $base && $p['status'] === 'standard') return [];   // the template's own look
+
+        $base ??= ['page' => '#f9fafb', 'surface' => '#ffffff', 'surface-2' => '#e9ecef', 'border' => '#e9ecef', 'text' => '#000000'];
+        $roles = $scheme === 'light' && ! $high && ! self::pageColour($p, 'light') ? [] : self::neutralRoles($base, $high);
+
+        // Status ink on its soft background, the soft background and a line, for our chips and notes.
+        $surface = $base['surface'];
+        $min = $high ? self::HIGH_CONTRAST : self::MIN_CONTRAST;
+        $dark = $scheme === 'dark';
+        foreach (self::statusBase($p) + ['navy' => self::NAVY] as $name => $colour) {
+            $soft = self::mix($colour, $surface, $dark ? 0.80 : 0.88);
+            $ink = $dark ? self::lightenUntil($colour, $soft, $min) : self::darkenUntil($colour, $soft, $min);
+            if ($name === 'navy') { $roles += ['--ui-navy' => $ink, '--ui-navy-soft' => $soft, '--ui-navy-solid' => self::forWhiteText($colour, $min)]; continue; }
+            $roles += ["--ui-$name-ink" => $ink, "--ui-$name-soft" => $soft, "--ui-$name-line" => self::mix($colour, $surface, $dark ? 0.55 : 0.65)];
+        }
+        if ($dark) $roles['--ui-accent-text'] = 'var(--t-primary-on-dark)';
+        return $roles;
+    }
+
+    /** Page, panels, borders and the three text strengths from a base set. */
+    private static function neutralRoles(array $b, bool $high): array
+    {
+        $worst = self::contrast($b['text'], $b['surface-2']) < self::contrast($b['text'], $b['page']) ? $b['surface-2'] : $b['page'];
+        $text2 = self::toward($b['text'], $worst, $high ? 12.0 : 7.0);
+        $muted = self::toward($b['text'], $worst, $high ? self::HIGH_CONTRAST : self::MIN_CONTRAST + 0.1);
+        return ['--ui-page' => $b['page'], '--ui-surface' => $b['surface'], '--ui-surface-2' => $b['surface-2'], '--ui-border' => $b['border'],
+                '--ui-text' => $b['text'], '--ui-text-2' => $text2, '--ui-muted' => $muted, '--ui-muted-2' => $muted];
+    }
+
+    /** A light background's set: lighter panels, slightly darker raised panels and borders, near-black text. */
+    private static function deriveLight(string $page): array
+    {
+        $text = self::darkenUntil('#1d2433', $page, 12.0);
+        return ['page' => $page, 'surface' => self::mix($page, '#ffffff', 0.65), 'surface-2' => self::mix($page, '#000000', 0.05),
+                'border' => self::mix($page, '#000000', 0.12), 'text' => $text];
+    }
+
+    /** A dark background's set: slightly lighter panels and borders, light text. */
+    private static function deriveDark(string $page): array
+    {
+        $text = self::lightenUntil('#d8dde6', $page, 11.0);
+        return ['page' => $page, 'surface' => self::mix($page, '#ffffff', 0.045), 'surface-2' => self::mix($page, '#ffffff', 0.09),
+                'border' => self::mix($page, '#ffffff', 0.17), 'text' => $text];
+    }
+
+    /** The chosen background's page colour for a scheme, or null for the template's own (Standard, Dark, Follow my device). */
+    public static function pageColour(array $p, string $scheme): ?string
+    {
+        if ($p['background'] === 'custom') {
+            $page = self::customPage($p);
+            return (self::isLight($page) ? 'light' : 'dark') === $scheme ? $page : null;
+        }
+        [, $bgScheme, $page] = self::BACKGROUNDS[$p['background']];
+        return $bgScheme === $scheme ? $page : null;
+    }
+
+    /** A custom background, made light or dark enough for text on it to read at 7:1. */
+    public static function customPage(array $p): string
+    {
+        $c = $p['background_custom'] ?: '#ffffff';
+        return self::isLight($c) ? self::lightenUntil($c, '#1d2433', 7.0) : self::darkenUntil($c, '#d8dde6', 7.0);
+    }
+
+    private static function isLight(string $hex): bool
+    {
+        return self::contrast($hex, '#000000') >= self::contrast($hex, '#ffffff');
+    }
+
+    /** The status colours: the palette, darkened for white text when not the template's own. */
+    private static function statusBase(array $p): array
+    {
+        $high = $p['contrast'] === 'high';
+        $out = [];
+        foreach (self::STATUS[$p['status']] as $name => $colour) {
+            $out[$name] = $p['status'] === 'standard' && ! $high ? $colour : self::forWhiteText($colour, $high ? self::HIGH_CONTRAST : self::MIN_CONTRAST);
+        }
+        return $out;
+    }
+
+    /** The accent a choice uses, before any adjustment. */
+    public static function accentColour(array $p): string
+    {
+        return $p['accent'] === 'custom' && $p['custom'] ? $p['custom'] : self::ACCENTS[$p['accent']][1] ?? self::ACCENTS['indigo'][1];
+    }
+
+    // ---- the Appearance form ----
+
+    /** The live preview: what the layout would put on the page for this choice (AppearanceController::preview). */
+    public static function preview(array $p): array
+    {
+        $notes = [];
+        $vars = self::vars($p);
+        $accent = self::accentColour($p);
+        if ($vars['--t-primary'] !== $accent && ($p['accent'] !== 'indigo' || $p['contrast'] === 'high')) {
+            $notes[] = 'The accent is adjusted to ' . $vars['--t-primary'] . ' so text on it stays readable.';
+        }
+        if ($p['background'] === 'custom' && self::customPage($p) !== $p['background_custom']) {
+            $notes[] = 'The background is adjusted to ' . self::customPage($p) . ' so text on it stays readable.';
+        }
+        return ['css' => self::css($p), 'attributes' => self::attributes($p), 'bodyClass' => self::bodyClass($p),
+                'media' => ['light' => self::media($p, 'light'), 'dark' => self::media($p, 'dark')], 'notes' => $notes];
+    }
+
+    /** For the form: each accent's colour and contrast, each background's page / panel / text colours. */
+    public static function options(): array
     {
         $accents = [];
-        foreach (self::ACCENTS as $key => [$label]) {
-            $vars = self::accentVars(self::sanitize(['accent' => $key]));
-            $accents[$key] = ['label' => $label, 'vars' => $vars, 'contrast' => round(self::contrast($vars['--t-primary'], '#ffffff'), 2)];
+        foreach (self::ACCENTS as $key => [$label, $colour]) {
+            $c = self::vars(self::sanitize(['accent' => $key]), 'light')['--t-primary'];
+            $accents[$key] = ['label' => $label, 'colour' => $c, 'contrast' => round(self::contrast($c, '#ffffff'), 2)];
         }
-        return [
-            'accents' => $accents,
-            'status'  => array_map(fn ($s) => self::statusVars($s), array_combine(array_keys(self::STATUS), array_keys(self::STATUS))),
-            'sidebar' => self::SIDEBAR,
-            'min'     => self::MIN_CONTRAST,
-        ];
+        $backgrounds = [];
+        foreach (self::BACKGROUNDS as $key => [$label, $scheme]) {
+            $p = self::sanitize(['background' => $key]);
+            $light = self::roles($p, 'light') + ['--ui-page' => '#f9fafb', '--ui-surface' => '#ffffff', '--ui-text' => '#000000'];
+            $dark = self::roles($p, 'dark');
+            $r = $scheme === 'dark' ? $dark : $light;
+            $backgrounds[$key] = ['label' => $label, 'scheme' => $scheme, 'page' => $r['--ui-page'], 'surface' => $r['--ui-surface'], 'text' => $r['--ui-text'],
+                'darkPage' => $dark['--ui-page'], 'darkSurface' => $dark['--ui-surface']];
+        }
+        return ['accents' => $accents, 'backgrounds' => $backgrounds, 'min' => self::MIN_CONTRAST];
     }
 
-    /** vars() as an inline style. */
-    public static function style(array $prefs): string
+    /** "Indigo (original) · Warm cream · text 115%", for the Utilities card. */
+    public static function describe(array $p): string
     {
-        $vars = self::vars($prefs);
-        return implode('; ', array_map(fn ($k, $v) => "$k: $v", array_keys($vars), $vars));
-    }
-
-    /** "Indigo (original) · text 115%", for the Utilities card. */
-    public static function describe(array $prefs): string
-    {
-        $accent = $prefs['accent'] === 'custom' ? 'Custom ' . $prefs['custom'] : self::ACCENTS[$prefs['accent']][0];
+        $accent = $p['accent'] === 'custom' ? 'Custom ' . $p['custom'] : self::ACCENTS[$p['accent']][0];
+        $background = $p['background'] === 'custom' ? 'custom background ' . $p['background_custom'] : self::BACKGROUNDS[$p['background']][0];
         $extra = array_filter([
-            $prefs['status'] === 'colorblind' ? 'colour-blind-safe statuses' : null,
-            $prefs['text'] !== 100 ? 'text ' . $prefs['text'] . '%' : null,
-            $prefs['motion'] === 'reduce' ? 'reduced motion' : null,
-            $prefs['font'] === 'readable' ? 'easier-to-read font' : null,
+            $p['background'] !== 'standard' ? $background : null,
+            $p['sidebar'] === 'light' ? 'light sidebar' : null,
+            $p['contrast'] === 'high' ? 'high contrast' : null,
+            $p['status'] === 'colorblind' ? 'colour-blind-safe statuses' : null,
+            $p['text'] !== 100 ? 'text ' . $p['text'] . '%' : null,
+            $p['motion'] === 'reduce' ? 'reduced motion' : null,
+            $p['font'] === 'readable' ? 'easier-to-read font' : null,
         ]);
         return implode(' · ', array_merge([$accent], $extra));
     }
@@ -163,20 +357,45 @@ class Appearance
         return (max($la, $lb) + 0.05) / (min($la, $lb) + 0.05);
     }
 
-    /** Darken (same hue) until white text on it, and it as text on white, reach 4.5:1. */
-    public static function forWhiteText(string $hex): string
+    /** Darken (same hue) until white text on it, and it as text on white, reach $min. */
+    public static function forWhiteText(string $hex, float $min = self::MIN_CONTRAST): string
+    {
+        return self::darkenUntil($hex, '#ffffff', $min);
+    }
+
+    /** Darken (same hue) until it reaches $min against $bg. */
+    public static function darkenUntil(string $hex, string $bg, float $min): string
     {
         [$h, $s, $l] = self::hsl($hex);
-        while (self::contrast(self::fromHsl($h, $s, $l), '#ffffff') < self::MIN_CONTRAST && $l > 0) $l = max(0, $l - 0.005);
+        while (self::contrast(self::fromHsl($h, $s, $l), $bg) < $min && $l > 0) $l = max(0, $l - 0.005);
         return self::fromHsl($h, $s, $l);
     }
 
-    /** Lighten (same hue) until it reaches 4.5:1 as text on the dark sidebar. */
-    public static function onDark(string $hex): string
+    /** Lighten (same hue) until it reaches $min against $bg. */
+    public static function lightenUntil(string $hex, string $bg, float $min): string
     {
         [$h, $s, $l] = self::hsl($hex);
-        while (self::contrast(self::fromHsl($h, $s, $l), self::SIDEBAR) < self::MIN_CONTRAST && $l < 1) $l = min(1, $l + 0.005);
+        while (self::contrast(self::fromHsl($h, $s, $l), $bg) < $min && $l < 1) $l = min(1, $l + 0.005);
         return self::fromHsl($h, $s, $l);
+    }
+
+    /** The colour between $fg and $bg as close to $bg as possible while keeping $min against $bg. */
+    private static function toward(string $fg, string $bg, float $min): string
+    {
+        $best = $fg;
+        for ($t = 0.02; $t <= 0.98; $t += 0.02) {
+            $c = self::mix($fg, $bg, $t);
+            if (self::contrast($c, $bg) < $min) break;
+            $best = $c;
+        }
+        return $best;
+    }
+
+    /** $a mixed with $b: $w of $b. */
+    public static function mix(string $a, string $b, float $w): string
+    {
+        [$x, $y] = [self::rgb($a), self::rgb($b)];
+        return sprintf('#%02x%02x%02x', ...array_map(fn ($i) => round($x[$i] * (1 - $w) + $y[$i] * $w), [0, 1, 2]));
     }
 
     private static function rgb(string $hex): array

@@ -72,7 +72,7 @@ class MaterialTypeController extends Controller
                 'title' => 'Theme',
                 'icon'  => 'droplet',
                 'url'   => route('utilities.theme'),
-                'text'  => 'The appearance every staff member starts with: colours, status colours, text size, motion, font. Each can still choose their own.',
+                'text'  => 'The appearance every staff member starts with: colours, background, contrast, status colours, text size, motion, font. Each can still choose their own.',
                 'meta'  => \App\Services\Appearance::describe(\App\Services\Appearance::siteDefault()),
             ];
         }

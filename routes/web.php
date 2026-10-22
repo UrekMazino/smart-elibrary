@@ -105,6 +105,7 @@ Route::controller(AppearanceController::class)->group(function () {
     Route::get('/admin/appearance', 'edit')->name('appearance');
     Route::post('/admin/appearance', 'update');
     Route::post('/admin/appearance/reset', 'reset');
+    Route::get('/admin/appearance/preview', 'preview')->middleware('throttle:120,1');   // read-only: the form's live preview
     Route::middleware(['can:access.configuration', 'can:manage.theme'])->group(function () {
         Route::get('/admin/utilities/theme', 'editDefault')->name('utilities.theme');
         Route::post('/admin/utilities/theme', 'updateDefault');

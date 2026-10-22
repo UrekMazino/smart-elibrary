@@ -5,9 +5,9 @@
 @section('css')
     <style>
       .ac-head { margin-bottom: 18px; }
-      .ac-head h4 { font-weight: 700; color: #22283b; margin: 0; }
-      .ac-head p  { color: #8a94a6; margin: 2px 0 0; font-size: 0.8125rem; max-width: 760px; }
-      .ap-now { font-size: 0.8125rem; color: #22283b; background: #f4f6fa; border: 1px solid #e3e7ef; border-radius: 10px; padding: 9px 12px; margin-bottom: 16px; }
+      .ac-head h4 { font-weight: 700; color: var(--ui-text, #22283b); margin: 0; }
+      .ac-head p  { color: var(--ui-muted, #8a94a6); margin: 2px 0 0; font-size: 0.8125rem; max-width: 760px; }
+      .ap-now { font-size: 0.8125rem; color: var(--ui-text, #22283b); background: var(--ui-surface-2, #f4f6fa); border: 1px solid var(--ui-border, #e3e7ef); border-radius: 10px; padding: 9px 12px; margin-bottom: 16px; }
     </style>
 @endsection
 
@@ -15,7 +15,7 @@
 <div class="page-content">
     <div class="ac-head">
         <h4>Appearance</h4>
-        <p>How the admin looks for you: colours, status colours, text size, motion and font. Only you see your choice, and it follows
+        <p>How the admin looks for you: colours, background, contrast, status colours, text size, motion and font. Only you see your choice, and it follows
            you to any computer you sign in on.</p>
     </div>
 

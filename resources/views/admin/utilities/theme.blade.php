@@ -6,8 +6,8 @@
 @section('css')
     <style>
       .ac-head { margin-bottom: 18px; }
-      .ac-head h4 { font-weight: 700; color: #22283b; margin: 0; }
-      .ac-head p  { color: #8a94a6; margin: 2px 0 0; font-size: 0.8125rem; max-width: 760px; }
+      .ac-head h4 { font-weight: 700; color: var(--ui-text, #22283b); margin: 0; }
+      .ac-head p  { color: var(--ui-muted, #8a94a6); margin: 2px 0 0; font-size: 0.8125rem; max-width: 760px; }
     </style>
 @endsection
 
