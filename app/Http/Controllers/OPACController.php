@@ -105,7 +105,14 @@ class OPACController extends Controller
             ->groupBy('reservation_code')
             ->pluck('c', 'reservation_code');
 
-        return view('opac.transactions',['list' => $list,'flag' => $flag,'unread' => $unread]);
+        // Status changes the patron hasn't seen: marked "Updated" on this visit, then seen. Each is
+        // marked with the status shown here, so a change made meanwhile still counts next time.
+        $updated = $list->filter(fn ($c) => $c->patron_seen_status === null || (int) $c->status !== (int) $c->patron_seen_status);
+        foreach ($updated as $c) {
+            \DB::table('circulations')->where('id', $c->id)->where('status', $c->status)->update(['patron_seen_status' => $c->status]);
+        }
+
+        return view('opac.transactions',['list' => $list,'flag' => $flag,'unread' => $unread,'updated' => $updated->pluck('id')->all()]);
     }
 
     // ---- Patron side of the per-reservation chat (same reservation_messages thread the

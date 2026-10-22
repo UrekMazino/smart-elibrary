@@ -63,6 +63,12 @@ License: For each use you must have a valid license purchased only from above li
     .navbar .navbar-content .navbar-nav .nav-item .nav-link.nav-opac:hover { background: #f2f5f9; color: #1f2a3c; }
     .navbar .navbar-content .navbar-nav .nav-item .nav-link.nav-opac svg { width: 16px; height: 16px; }
     @media (max-width: 575px) { .nav-opac span { display: none; } }
+
+    /* Sidebar count badges (Inquiries, On-Hold, Reservation) sit at the sidebar's right edge. They
+       keep .link-title, so they hide with the labels when the sidebar is folded; NobleUI's hover
+       rule for .link-title (margin-left: 31px) must not move them. */
+    .sidebar .sidebar-body .nav .nav-item .nav-link .link-title.nav-badges,
+    .sidebar .sidebar-body .nav .nav-item:hover .nav-link .link-title.nav-badges { margin-left: auto; margin-right: -12px; display: inline-flex; gap: 4px; }
   </style>
 
   	<!-- Favicons-->
@@ -104,6 +110,8 @@ License: For each use you must have a valid license purchased only from above li
                 <a href="{{ url('/admin/inquiry') }}" class="nav-link">
                   <i class="link-icon" data-feather="message-square"></i>
                   <span class="link-title">Inquiries</span>
+                  {{-- Inquiries with patron activity this admin hasn't opened (the bell's count). --}}
+                  <span class="link-title nav-badges"><span class="badge border border-primary text-info" title="Unread inquiries">{{ notifications()['inquiries'] ?? 0 }}</span></span>
                 </a>
               </li>
             @endcan
@@ -153,6 +161,7 @@ License: For each use you must have a valid license purchased only from above li
                 <a href="{{ url('/admin/on-hold-list') }}" class="nav-link">
                   <i class="link-icon" data-feather="pause-circle"></i>
                   <span class="link-title">On-Hold</span>
+                  <span class="link-title nav-badges"><span class="badge border border-primary text-info" title="Records not published yet">{{ getOnHoldCount() }}</span></span>
                 </a>
               </li>
             @endcan
@@ -164,8 +173,8 @@ License: For each use you must have a valid license purchased only from above li
                   <a href="{{ url('/admin/reservations') }}" class="nav-link">
                   <i class="link-icon" data-feather="calendar"></i>
                   <span class="link-title">Reservation</span>
-                  <span class="link-title">
-                    <span class="badge border border-primary text-info">{{ getReservationCount() }}</span>
+                  <span class="link-title nav-badges">
+                    <span class="badge border border-primary text-info" title="Open reservations">{{ getReservationCount() }}</span>
                     @php $resUnseen = getReservationUnseenMsgCount(); @endphp
                     @if($resUnseen > 0)<span class="badge bg-danger" title="Unread patron messages">{{ $resUnseen }}</span>@endif
                   </span>

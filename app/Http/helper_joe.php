@@ -209,6 +209,11 @@ function getReservationCount() {
 	return $totalRecords;
 }
 
+// Records on the On-Hold list: not published yet (new records start there), not deleted.
+function getOnHoldCount() {
+	return App\Models\ViewCatalog::where('is_published', 0)->whereNull('deleted_at')->count();
+}
+
 // Put copies held for an approved reservation (copies.status 2 = Reserved) back on the shelf
 // (1 = Available) when that ticket is declined, reverted or its patron banned. Without this the
 // copy stays Reserved for nobody. Copies in any other state are left alone.
@@ -262,11 +267,14 @@ function cleanNewsHtml(?string $html): string {
 	return $sanitizer->sanitize((string) $html);
 }
 
-// Total unseen chat messages FROM patrons (drives the admin Reservation menu badge).
+// Unseen chat messages FROM patrons on the reservations the Reservations page lists (drives its
+// menu badge). A declined or closed reservation's messages count under Inquiries instead.
 function getReservationUnseenMsgCount() {
-	return DB::table('reservation_messages')
-		->where('sender_role', 'patron')
-		->whereNull('seen_at')
+	return DB::table('reservation_messages as m')
+		->join('circulations as c', 'c.reservation_code', '=', 'm.reservation_code')
+		->whereIn('c.status', App\Models\Circulation::ON_RESERVATIONS_PAGE)
+		->where('m.sender_role', 'patron')
+		->whereNull('m.seen_at')
 		->count();
 }
 

@@ -28,6 +28,7 @@
 		.tx-status.s-checkout { background: #fff4e5; color: #b26a00; }
 		.tx-status.s-declined { background: #fdecea; color: #c0392b; }
 		.tx-status.s-complete { background: #e7f5f3; color: #00897b; }
+		.tx-updated { display: inline-block; font-size: 10.5px; font-weight: 700; letter-spacing: .2px; color: #fff; background: #e5484d; border-radius: 20px; padding: 2px 8px; margin-right: 6px; }
 		.tx-msg-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: #fff; background: #00857a; border: 0; border-radius: 7px; padding: 7px 14px; cursor: pointer; transition: background .15s; white-space: nowrap; }
 		.tx-msg-btn:hover { background: #006f65; }
 		.tx-msg-btn .tx-unread { background: #e5484d; color: #fff; font-size: 10px; font-weight: 700; border-radius: 20px; padding: 1px 6px; line-height: 1.4; }
@@ -78,7 +79,8 @@
 								</div>
 							</div>
 							<div class="tx-aside">
-								<span class="tx-status {{ $st[1] }}">{{ $st[0] }}</span>
+								{{-- Changed by the library since the patron last opened this page. --}}
+								<span>@if(in_array($lists->id, $updated ?? []))<span class="tx-updated">Updated</span>@endif<span class="tx-status {{ $st[1] }}">{{ $st[0] }}</span></span>
 								@if($lists->reservation_code)
 									<button type="button" class="tx-msg-btn" onclick="openResChat('{{ $lists->reservation_code }}')">
 										<i class="pe-7s-chat"></i> Messages

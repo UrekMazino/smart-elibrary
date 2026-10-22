@@ -9,6 +9,13 @@ class Circulation extends Model
 {
     use HasFactory;
 
+    /**
+     * The statuses the admin Reservations page lists: For Approval, Approved, Open (checked out).
+     * Its message badges count only these; a declined or closed reservation's conversation is
+     * reached from Inquiries.
+     */
+    public const ON_RESERVATIONS_PAGE = [1, 2, 3];
+
     protected $fillable = [
         'user_id',
         'copy_id',
@@ -17,6 +24,7 @@ class Circulation extends Model
         'reservation_code',
         'transaction_code',
         'status',
+        'patron_seen_status',   // the status as the patron last saw it (Reservations badge)
         'due_date',
         'overdue_fine_rate',
         'user_library_code',
