@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\MarcTemplate;
 use App\Models\Material;
 use App\Models\MaterialTypeMap;
+use App\Services\RagSync;
 use App\Services\SearchIndex;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,7 +15,9 @@ use Illuminate\Validation\Rule;
 /**
  * Administration → Utilities.
  *
- * The hub lists the utilities this admin can use; Material Types is the first one. Material
+ * The hub lists the utilities this admin can use: Material Types (below), MARC Templates and the
+ * AI Sync Monitor (their own controllers; the sidebar's Utilities link checks the same
+ * permissions). Material
  * types are referenced by records (catalogs + the OPAC's view_catalogs, which also stores the
  * NAME), batches and mapping presets — so:
  *   - a type in use can't be deleted: merge it into another type (moves everything) or hide it;
@@ -42,8 +46,32 @@ class MaterialTypeController extends Controller
                 'meta'  => Material::where('is_marc_type', false)->count() . ' types · ' . Material::where('is_active', true)->count() . ' shown in lists',
             ];
         }
+        if ($user->can('view.config.template')) {
+            $cards[] = [
+                'title' => 'MARC Templates',
+                'icon'  => 'layout',
+                'url'   => route('marc-templates-index'),
+                'text'  => 'The field templates Create New Record starts from: which MARC tags and subfields a new record shows.',
+                'meta'  => MarcTemplate::count() . ' templates',
+            ];
+        }
+        if ($user->can('access.ai.sync.monitor')) {
+            $open = DB::table('rag_sync_queue')->whereNull('processed_at');
+            $cards[] = [
+                'title' => 'AI Sync Monitor',
+                'icon'  => 'cpu',
+                'url'   => route('ai-sync-monitor'),
+                'text'  => 'Every catalog change and whether the AI search has picked it up; re-sync a record or run the sync now.',
+                'meta'  => (clone $open)->where('attempts', '<', RagSync::MAX_ATTEMPTS)->count() . ' pending · '
+                         . (clone $open)->where('attempts', '>=', RagSync::MAX_ATTEMPTS)->count() . ' failed',
+            ];
+        }
 
-        return view('admin.utilities.index', ['cards' => $cards]);
+        return view('admin.hub', [
+            'title' => 'Utilities',
+            'intro' => "Tools for the library's reference data, the cataloguing templates and the AI search. You see the ones your role may use.",
+            'cards' => $cards,
+        ]);
     }
 
     public function index()

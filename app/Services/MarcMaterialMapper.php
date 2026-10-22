@@ -160,7 +160,7 @@ class MarcMaterialMapper
             if (preg_match('/^(\d{3})\$/', $field, $m)) $codes[$m[1]] = true;
         }
         if ($codes) {
-            $tags = DB::table('marctags_loc')->whereIn('code', array_keys($codes))->pluck('description', 'code');
+            $tags = DB::table('marctags_loc')->where('id', '<>', MARCTAG_NOT_FOUND_ID)->whereIn('code', array_keys($codes))->pluck('description', 'code');
             $subs = DB::table('marctag_subfields_loc')->whereIn('code', array_diff($fields, array_keys($labels)))->pluck('description', 'code');
             foreach ($fields as $field) {
                 if (isset($labels[$field])) continue;

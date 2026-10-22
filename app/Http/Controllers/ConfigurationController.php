@@ -154,14 +154,15 @@ class ConfigurationController extends Controller
         };
 
         // Total records
-        $totalRecords = MarctagsLoc::when($excludeControl, fn ($q) => $q->whereNotIn('code', ['LDR', '008']))->count();
+        // The "Marctag not found" placeholder row is not a tag anyone adds (see MARCTAG_NOT_FOUND_ID).
+        $totalRecords = MarctagsLoc::whereKeyNot(MARCTAG_NOT_FOUND_ID)->when($excludeControl, fn ($q) => $q->whereNotIn('code', ['LDR', '008']))->count();
 
-        $totalRecordswithFilter = MarctagsLoc::where($search)
+        $totalRecordswithFilter = MarctagsLoc::where($search)->whereKeyNot(MARCTAG_NOT_FOUND_ID)
             ->when($excludeControl, fn ($q) => $q->whereNotIn('code', ['LDR', '008']))
             ->count();
 
         // Fetch records
-        $records = MarctagsLoc::where($search)
+        $records = MarctagsLoc::where($search)->whereKeyNot(MARCTAG_NOT_FOUND_ID)
             ->when($excludeControl, fn ($q) => $q->whereNotIn('code', ['LDR', '008']))
             ->orderBy($columnName, $columnSortOrder)
             ->skip($start)

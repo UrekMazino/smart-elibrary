@@ -72,7 +72,7 @@ Route::controller(InventoryController::class)->middleware('can:access.inventory'
     Route::get('/admin/inventory-list-json', 'physicalInventoryListJson');
 });
 Route::controller(ConfigurationController::class, 'admin')->group(function () {
-    // Template management lives under Administration (Configuration module) in the sidebar.
+    // Template management lives under Administration → Utilities (Configuration module).
     Route::middleware('can:access.configuration')->group(function () {
         Route::get('/admin/marc-templates', 'marcTemplates')->name('marc-templates-index')->middleware('can:view.config.template');
         Route::get('/admin/marc-templates/json', 'marcTemplatesJson')->name('marc-templates-json')->middleware('can:view.config.template');
@@ -92,7 +92,7 @@ Route::controller(ConfigurationController::class, 'admin')->group(function () {
     
 });
 
-// Administration → AI Sync Monitor — audit trail of catalog changes + AI-index sync state. The
+// Administration → Utilities → AI Sync Monitor — audit trail of catalog changes + AI-index sync state. The
 // Configuration module plus its own permission (Roles matrix); its per-row re-sync has its own
 // route here, so the page needs no Cataloging access.
 Route::controller(CatalogingController::class)->middleware(['can:access.configuration', 'can:access.ai.sync.monitor'])->group(function () {

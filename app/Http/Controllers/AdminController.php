@@ -22,6 +22,7 @@ use App\Models\Catalog;
 use App\Models\MarcTemplate;
 use App\Models\Material;
 use App\Models\Patrontype;
+use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\ViewCatalog;
@@ -199,6 +200,59 @@ class AdminController extends Controller
         });
 
         return response()->json(['ok' => true, 'flag' => $request->flag, 'value' => (bool) $user->$col, 'declined' => $declined]);
+    }
+
+    /**
+     * Administration → Accounts: a card for each account page this admin may use. Patrons needs
+     * access.accounts; the staff pages are for super_admin and developer, as their routes are.
+     */
+    public function accounts()
+    {
+        $staffAdmin = auth()->user()->hasAnyRole(['super_admin', 'developer']);
+        $patrons    = fn () => User::where('usertype', 'Patron');
+        $cards      = [];
+
+        if ($staffAdmin) {
+            $cards[] = [
+                'title' => 'Administrators',
+                'icon'  => 'shield',
+                'url'   => route('administrators'),
+                'text'  => 'Staff accounts and their roles: add an administrator, change a role, reset a password or library code.',
+                'meta'  => User::where('usertype', 'Administrator')->count() . ' staff accounts',
+            ];
+        }
+        if (auth()->user()->can('access.accounts')) {
+            $cards[] = [
+                'title' => 'Patrons',
+                'icon'  => 'users',
+                'url'   => route('patrons'),
+                'text'  => 'Registered library users: search, filter, block or ban, reset a password or library code, register a new patron.',
+                'meta'  => $patrons()->count() . ' patrons · ' . $patrons()->where('is_blocked', 1)->count() . ' blocked · '
+                         . $patrons()->where('is_banned', 1)->count() . ' banned',
+            ];
+        }
+        if ($staffAdmin) {
+            $cards[] = [
+                'title' => 'Roles',
+                'icon'  => 'user-check',
+                'url'   => route('admin.list_roles'),
+                'text'  => 'Staff roles and their access: tick or untick each permission of a role. Changes save instantly.',
+                'meta'  => Role::count() . ' roles',
+            ];
+            $cards[] = [
+                'title' => 'Permissions',
+                'icon'  => 'key',
+                'url'   => route('admin.list_permissions'),
+                'text'  => 'The permissions roles are built from, grouped by module, with their display names.',
+                'meta'  => Permission::count() . ' permissions',
+            ];
+        }
+
+        return view('admin.hub', [
+            'title' => 'Accounts',
+            'intro' => 'Staff and patron accounts, and the roles and permissions that decide what staff can do. You see the ones your role may use.',
+            'cards' => $cards,
+        ]);
     }
 
     public function patron()
