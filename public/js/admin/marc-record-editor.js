@@ -47,6 +47,8 @@ var MarcEditor = (function () {
     function setMode(m)   { _mode = (m === 'edit' || m === 'template') ? m : 'create'; }
     function isTemplate() { return _mode === 'template'; }
     function blankSub()   { return { _key: nextSubKey(), id: null, code: null, description: null, value: '' }; }
+    // "245 - Title Statement"; just the code when the name is the code itself (a tag outside MARC 21).
+    function codeAndName(code, name) { return (name == null || name === '' || String(name) === String(code)) ? String(code) : code + ' - ' + name; }
     function nextKey()    { return ++keySeq; }
     function nextSubKey() { return ++subSeq; }
     function esc(s)       { return $('<div>').text(s == null ? '' : String(s)).html(); }
@@ -430,9 +432,10 @@ var MarcEditor = (function () {
         var $row    = $('<div>').addClass('row mb-3').attr('data-key', f._key);
         var $parent = $('<div>').addClass('col col-lg-12 subfield-parent');
 
-        // Heading: "245 - Title Statement", remove icon, required badge / toggle.
+        // Heading: "245 - Title Statement", remove icon, required badge / toggle. A tag outside
+        // MARC 21 (942...) has its number as its name: just "942".
         var $head = $('<div>').addClass('mfe-head');
-        $head.append($('<label>').addClass('form-label strong').text(f.marctag.code + ' - ' + f.marctag.description));
+        $head.append($('<label>').addClass('form-label strong').text(codeAndName(f.marctag.code, f.marctag.description)));
 
         // Delete-tag control — but not for a required tag on a record (e.g. 245 Title Statement).
         if (f.editable && (!f.required || isTemplate())) {
@@ -510,13 +513,20 @@ var MarcEditor = (function () {
             }));
 
             var $sel = $('<select>').addClass('form-select mfe-subcode');
-            $sel.append($('<option>').val('').attr('disabled', 'disabled').prop('selected', s.id == null).text('Select Subfield'));
+            var $pick = $('<option>').val('').attr('disabled', 'disabled').text('Select Subfield');
+            $sel.append($pick);
+            var picked = false;
             (f.options.subfields || []).forEach(function (sf) {
-                var opt = $('<option>').val(sf.id).attr({ 'data-code': sf.code, 'data-desc': sf.description })
-                    .text(sf.code + ' - ' + sf.description);
-                if (s.id != null && s.id == sf.id) opt.attr('selected', 'selected');
+                var opt = $('<option>').val(sf.id == null ? '' : sf.id).attr({ 'data-code': sf.code, 'data-desc': sf.description })
+                    .text(codeAndName(sf.code, sf.description));
+                // A local tag's subfields have no id (no MARC 21 row): they match by code.
+                if (s.id != null ? s.id == sf.id : (sf.id == null && s.code != null && s.code === sf.code)) {
+                    opt.attr('selected', 'selected');
+                    picked = true;
+                }
                 $sel.append(opt);
             });
+            $pick.prop('selected', !picked);
             $left.append($sel);
         } else {
             // Fixed code: a static label, not a select.
@@ -705,8 +715,8 @@ var MarcEditor = (function () {
             var s = subOf(f, $(this).closest('[data-sub]').data('sub'));
             if (s) {
                 s.id = parseInt($(this).val(), 10) || null;
-                s.code = opt.data('code') || null;
-                s.description = opt.data('desc') || null;
+                s.code = opt.attr('data-code') || null;          // attr, not data(): no number conversion
+                s.description = opt.attr('data-desc') || null;
             }
         });
         $host.on('change', '.mfe-ind', function () {

@@ -163,8 +163,13 @@ class CatalogingController extends Controller
 
             // Every subfield this tag allows — powers the row picker + Add Subfield. Skipped for
             // the fixed control fields (edited through the guided panel, not the generic card UI).
+            // A tag outside MARC 21 (942...) has no list: it offers the subfield codes it already has.
+            $local   = (int) ($tag['id'] ?? 0) === MARCTAG_NOT_FOUND_ID;
             $allSubfields = [];
-            if (! $isFixed && isset($tag['id'])) {
+            if ($local) {
+                $allSubfields = collect($subfields)->pluck('code')->filter()->unique()->sort()->values()
+                    ->map(fn ($c) => ['id' => null, 'code' => $c, 'description' => $c])->all();
+            } elseif (! $isFixed && isset($tag['id'])) {
                 $allSubfields = DB::table('marctag_subfields_loc')->where('marctags_loc_id', $tag['id'])
                     ->orderBy('code')->get()
                     ->map(fn ($s) => ['id' => $s->id, 'code' => $s->code, 'description' => $s->description])->all();
@@ -182,7 +187,7 @@ class CatalogingController extends Controller
                 'tag'          => [
                     'id'          => $tag['id'] ?? null,
                     'code'        => $code,
-                    'description' => $tag['description'] ?? $code,
+                    'description' => $local || ! is_string($tag['description'] ?? null) ? $code : $tag['description'],
                     'isRequired'  => $code === '245' ? 1 : 0,   // 245 can't be deleted
                 ],
                 'subfields'    => $subfields,
@@ -967,7 +972,9 @@ class CatalogingController extends Controller
                         }
                     }
                     
-                    if(!in_array($marcTagid, $repeatedMarctags)) {
+                    // One field per tag number (the query above gathers its repeats). By number, not id:
+                    // every tag outside MARC 21 (942, 952, 999...) shares the placeholder id.
+                    if(!in_array($marcTags[$w], $repeatedMarctags, true)) {
                         $fa[] = array(
                             'marctag' => [
                                 "index" => $w+1, 
@@ -979,7 +986,7 @@ class CatalogingController extends Controller
                             'indicator' => $indicatorArr,
             
                         );
-                        $repeatedMarctags[] = $marcTagid;
+                        $repeatedMarctags[] = $marcTags[$w];
                     }
                    
                     
@@ -1546,56 +1553,57 @@ class CatalogingController extends Controller
             // LDR - LEADER
             $l = str_split($a->getLeader());
 
-            $subfieldArr[0] = getSubfieldId('LDR$00-04');
+            $subfieldArr[0] = 'LDR$00-04';
             $defaultArr[0] = $l[0].$l[1].$l[2].$l[3].$l[4];
             
-            $subfieldArr[1] = getSubfieldId('LDR$05');
+            $subfieldArr[1] = 'LDR$05';
             $defaultArr[1] = $l[5];
 
-            $subfieldArr[2] = getSubfieldId('LDR$06');
+            $subfieldArr[2] = 'LDR$06';
             $defaultArr[2] = $l[6];
 
-            $subfieldArr[3] = getSubfieldId('LDR$07');
+            $subfieldArr[3] = 'LDR$07';
             $defaultArr[3] = $l[7];
 
-            $subfieldArr[4] = getSubfieldId('LDR$08');
+            $subfieldArr[4] = 'LDR$08';
             $defaultArr[4] = $l[8];
 
-            $subfieldArr[5] = getSubfieldId('LDR$09');
+            $subfieldArr[5] = 'LDR$09';
             $defaultArr[5] = $l[9];
 
-            $subfieldArr[6] = getSubfieldId('LDR$10');
+            $subfieldArr[6] = 'LDR$10';
             $defaultArr[6] = $l[10];
 
-            $subfieldArr[7] = getSubfieldId('LDR$11');
+            $subfieldArr[7] = 'LDR$11';
             $defaultArr[7] = $l[11];
 
-            $subfieldArr[8] = getSubfieldId('LDR$12-16');
+            $subfieldArr[8] = 'LDR$12-16';
             $defaultArr[8] = $l[12].$l[13].$l[14].$l[15].$l[16];
 
-            $subfieldArr[9] = getSubfieldId('LDR$17');
+            $subfieldArr[9] = 'LDR$17';
             $defaultArr[9] = $l[17];
 
-            $subfieldArr[10] = getSubfieldId('LDR$18');
+            $subfieldArr[10] = 'LDR$18';
             $defaultArr[10] = $l[18];
 
-            $subfieldArr[11] = getSubfieldId('LDR$19');
+            $subfieldArr[11] = 'LDR$19';
             $defaultArr[11] = $l[19];
 
-            $subfieldArr[12] = getSubfieldId('LDR$20');
+            $subfieldArr[12] = 'LDR$20';
             $defaultArr[12] = $l[20];
 
-            $subfieldArr[13] = getSubfieldId('LDR$21');
+            $subfieldArr[13] = 'LDR$21';
             $defaultArr[13] = $l[21];
 
-            $subfieldArr[14] = getSubfieldId('LDR$22');
+            $subfieldArr[14] = 'LDR$22';
             $defaultArr[14] = $l[22];
 
-            $subfieldArr[15] = getSubfieldId('LDR$23');
+            $subfieldArr[15] = 'LDR$23';
             $defaultArr[15] = $l[23];
             
             $fa[] = array(
                 'id' => "2501",
+                'code' => 'LDR',
                 'required' =>  0,
                 'subfield' => $subfieldArr,
                 'default' => $defaultArr,
@@ -1628,7 +1636,7 @@ class CatalogingController extends Controller
                         
                         foreach($field->getSubfields() as $y) {
                             $sfCode = $marcTags[$w]."$".$y->getCode();
-                            $subfieldArr[] = getSubfieldId($sfCode);
+                            $subfieldArr[] = $sfCode;
                             $defaultArr[] = $y->getData();
                             $indicatorArr[0] = getFirstIndicatorId($marcTagid, $indicatorArr1[$w]);
                             $indicatorArr[1] = getSecondIndicatorId($marcTagid, $indicatorArr2[$w]);
@@ -1640,63 +1648,63 @@ class CatalogingController extends Controller
 
                         if($marcTags[$w] == '001'){
 
-                            $subfieldArr[0] = getSubfieldId('001$#');
+                            $subfieldArr[0] = '001$#';
                             $defaultArr[0] = $string;
                         }
 
                         if($marcTags[$w] == '003'){
 
-                            $subfieldArr[0] = getSubfieldId('003$#');
+                            $subfieldArr[0] = '003$#';
                             $defaultArr[0] = $string;
                         }
 
                         if($marcTags[$w] == '005'){
 
-                            $subfieldArr[0] = getSubfieldId('005$#');
+                            $subfieldArr[0] = '005$#';
                             $defaultArr[0] = $string;
                         }
 
                         if($marcTags[$w] == '006'){
 
-                            $subfieldArr[0] = getSubfieldId('006$#');
+                            $subfieldArr[0] = '006$#';
                             $defaultArr[0] = $string;
                         }
 
                         if($marcTags[$w] == '007'){
 
-                            $subfieldArr[0] = getSubfieldId('007$#');
+                            $subfieldArr[0] = '007$#';
                             $defaultArr[0] = $string;
                         }
 
 
                         if($marcTags[$w] == '008') {
                         
-                            $subfieldArr[0] = getSubfieldId('008$00-05');
+                            $subfieldArr[0] = '008$00-05';
                             $defaultArr[0] = $c[0].$c[1].$c[2].$c[3].$c[4].$c[5];
 
-                            $subfieldArr[1] = getSubfieldId('008$06');
+                            $subfieldArr[1] = '008$06';
                             $defaultArr[1] = $c[6];
 
-                            $subfieldArr[2] = getSubfieldId('008$07-10');
+                            $subfieldArr[2] = '008$07-10';
                             $defaultArr[2] = $c[7].$c[8].$c[9].$c[10];
 
-                            $subfieldArr[3] = getSubfieldId('008$11-14');
+                            $subfieldArr[3] = '008$11-14';
                             $defaultArr[3] = $c[11].$c[12].$c[13].$c[14];
 
-                            $subfieldArr[4] = getSubfieldId('008$15-17');
+                            $subfieldArr[4] = '008$15-17';
                             $defaultArr[4] = $c[15].$c[16].$c[17];
                             
-                            $subfieldArr[5] = getSubfieldId('008$18-34');
+                            $subfieldArr[5] = '008$18-34';
                             $defaultArr[5] = $c[18].$c[19].$c[20].$c[21].$c[22].$c[23].$c[24].$c[25].$c[26].$c[27].$c[28].$c[29].$c[30].$c[31].$c[32].$c[33].$c[34];
                             
                                 if(isset($c[35])) {
-                                    $subfieldArr[6] = getSubfieldId('008$35-37');
+                                    $subfieldArr[6] = '008$35-37';
                                     $defaultArr[6] = $c[35].$c[36].$c[37];
                                     
-                                    $subfieldArr[7] = getSubfieldId('008$38');
+                                    $subfieldArr[7] = '008$38';
                                     $defaultArr[7] = $c[38];
 
-                                    $subfieldArr[8] = getSubfieldId('008$39');
+                                    $subfieldArr[8] = '008$39';
                                     $defaultArr[8] = $c[39];
                                 }
                             
@@ -1708,16 +1716,18 @@ class CatalogingController extends Controller
                     }
                 }
                 
-                if(!in_array($marcTagid, $repeatedMarctags)) {
+                // One field per tag number; by number, not id, as tags outside MARC 21 share the placeholder id.
+                if(!in_array($marcTags[$w], $repeatedMarctags, true)) {
                     $fa[] = array(
                         'id' => $marcTagid,
+                        'code' => $marcTags[$w],
                         'required' =>  $required,
                         'subfield' => $subfieldArr,
                         'default' => $defaultArr,
                         'indicator' => $indicatorArr,
     
                     );
-                    $repeatedMarctags[] = $marcTagid;
+                    $repeatedMarctags[] = $marcTags[$w];
                 }
 
                 // dump($fa)
@@ -1737,16 +1747,12 @@ class CatalogingController extends Controller
         
         foreach($fieldArray as $index => $tag) {
             // dump($tag);
-            $tagDetail = getTagDetails($tag->id);
-
             $subfieldArr = array();
             if(count($tag->subfield) > 0) {
-                foreach($tag->subfield as $i => $id)
+                foreach($tag->subfield as $i => $sfCode)
                 {
-                    // dd($id);
-                    $subFieldDetails = getSubfieldDetails($id);
-
-                    $subfieldArr[$i] = ['id' => $subFieldDetails->id, 'code' => $subFieldDetails->code, 'description' => $subFieldDetails->description, 'default' => count($tag->default) > 0 ? $tag->default[$i] : "Enter value" ];
+                    // A local tag's subfield has no MARC 21 row: no id, and its code is its name.
+                    $subfieldArr[$i] = ['id' => getSubfieldId($sfCode), 'code' => $sfCode, 'description' => getSubfield($sfCode, 'description'), 'default' => count($tag->default) > 0 ? $tag->default[$i] : "Enter value" ];
                 }
             } 
 
@@ -1759,7 +1765,7 @@ class CatalogingController extends Controller
 
             $detailsArr[$index] = 
                 [
-                    'tag' => ['id' => $tagDetail->id, 'code' => $tagDetail->code, 'description' => $tagDetail->description, 'isRequired' => $tag->required], 
+                    'tag' => ['id' => (int) $tag->id, 'code' => $tag->code, 'description' => getTagDetails(0, $tag->code, 'description'), 'isRequired' => $tag->required], 
                     'subfields' =>  $subfieldArr,
                     'indicators' => $indicatorArr,
                 ];

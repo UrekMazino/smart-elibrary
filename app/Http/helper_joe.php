@@ -310,6 +310,10 @@ function marcLookup(string $question, Closure $answer)
 	return $memo[$question];
 }
 
+// marctags_loc row 2500 ("999 · Marctag not found") stands in for a tag outside MARC 21, a local one
+// such as Koha's 942: its fields get this id (for the indicator lookups) and their tag number as name.
+const MARCTAG_NOT_FOUND_ID = 2500;
+
 function getTagDetails($id, $code = null, $col = null)
 {
 	return marcLookup(__FUNCTION__ . json_encode(func_get_args()), function () use ($id, $code, $col) {
@@ -318,14 +322,13 @@ function getTagDetails($id, $code = null, $col = null)
 			return $marcTag;
 		} else {
 			$marcTag = DB::table('marctags_loc')->select('id','code', 'description')->where('code',  'like', '%' . $code . '%')->first();
-		
-			if(!is_null($marcTag)){
-				return !is_null($col) ? $marcTag->$col : $marcTag->id;
-			} 
-			// id 2500 meaning Marc Tag not Found
-			$id = 2500;
-			return $id;
-		
+
+			// Not a MARC 21 tag (or 999, the placeholder row's own code): the tag number is its name.
+			if (is_null($marcTag) || $marcTag->id == MARCTAG_NOT_FOUND_ID) {
+				return in_array($col, ['code', 'description'], true) ? $code : MARCTAG_NOT_FOUND_ID;
+			}
+			return !is_null($col) ? $marcTag->$col : $marcTag->id;
+
 		}
 	});
 }
@@ -438,10 +441,7 @@ function getSubfieldId($code)
 {
 	return marcLookup(__FUNCTION__ . json_encode(func_get_args()), function () use ($code) {
 		$subfield = DB::table('marctag_subfields_loc')->select('id')->where('code',  'like', '%' . $code . '%')->first();
-		if(is_null($subfield)) {
-			return "MARCTAG ($code) not found!";
-		}
-		return $subfield ? $subfield->id : 0;
+		return $subfield?->id;   // null for a subfield of a tag outside MARC 21: no row to point at
 	});
 }
 
@@ -450,7 +450,7 @@ function getSubfield($code, $col)
 	return marcLookup(__FUNCTION__ . json_encode(func_get_args()), function () use ($code, $col) {
 		$subfield = DB::table('marctag_subfields_loc')->select('id', 'code', 'description')->where('code',  'like', '%' . $code . '%')->first();
 		if(is_null($subfield)) {
-			return "MARCTAG ($code) not found!";
+			return $col === 'id' ? null : $code;   // a local tag's subfield: its code ("942$c") is its name
 		}
 		return $subfield->$col;
 	});
