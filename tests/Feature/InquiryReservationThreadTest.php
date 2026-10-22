@@ -13,9 +13,9 @@ use Tests\SeedsReferenceData;
 use Tests\TestCase;
 
 /**
- * What a patron writes under Messages on their Reservations page is listed in Administration →
+ * What a patron writes under Messages on their Transactions page is listed in Administration →
  * Inquiries as "Reservation RSV-… · status", one row per reservation, and answered there in the same
- * thread the Reservations pages use, by staff who answer inquiries.
+ * thread the Transactions pages use, by staff who answer inquiries.
  */
 class InquiryReservationThreadTest extends TestCase
 {
@@ -100,7 +100,7 @@ class InquiryReservationThreadTest extends TestCase
         DB::table('circulations')->where('reservation_code', $code)->update(['status' => 5]);   // returned
         $this->patronWrites($code, 'Can I borrow this material again?');
 
-        // The Reservations page doesn't list a closed reservation, so its badge doesn't count it.
+        // The Transactions page doesn't list a closed reservation, so its badge doesn't count it.
         $this->assertSame(0, getReservationUnseenMsgCount());
         $bell = NotificationService::for($this->desk);
         $this->assertSame(1, $bell['inquiries']);

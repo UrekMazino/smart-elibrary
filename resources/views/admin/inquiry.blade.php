@@ -96,7 +96,7 @@
 									</tr>
 								@endforeach
 								{{-- Reservation conversations (AdminController::inquiry): the same thread as the Messages chat on
-								     the patron's and the admin's Reservations pages. --}}
+								     the patron's and the admin's Transactions pages. --}}
 								@foreach($threads as $t)
 									@php
 										$uf = $userFlags[$t->user_id] ?? null;
@@ -105,7 +105,7 @@
 										$subject = 'Reservation ' . $t->reservation_code . ($status ? ' · ' . $status : '');
 										$visit = $t->visit_date ? \Carbon\Carbon::parse($t->visit_date . ' ' . ($t->visit_time ?: '00:00'))->format('M d, Y' . ($t->visit_time ? ' g:i A' : '')) : null;
 										$context = 'Messages about reservation ' . $t->reservation_code . ($status ? ' (' . $status . ')' : '') . ($visit ? '. Visit: ' . $visit : '') . '.';
-										// Open reservations (For Approval, Approved, checked out) are on the Reservations page.
+										// Open reservations (For Approval, Approved, checked out) are on the Transactions page.
 										$open = auth()->user()->can('circulation.reservation.view') && in_array((int) $t->status, \App\Models\Circulation::ON_RESERVATIONS_PAGE, true)
 											? url('/admin/reservations') . '?q=' . urlencode($t->reservation_code) : '';
 									@endphp
@@ -175,7 +175,7 @@
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net-bs5/dataTables.bootstrap5.js') }}"></script>
 <script>
 	// A reservation conversation opens in the same modal; its thread and replies go through the
-	// reservation chat (the patron reads them under Messages on their Reservations page).
+	// reservation chat (the patron reads them under Messages on their Transactions page).
 	var resCode = null;
 
 	function replyReservation(btn) {
@@ -189,7 +189,7 @@
 		var patron = btn.getAttribute('data-patron') || 'Patron';
 		var box = $("#inquiry_message").empty();
 		box.append('<div class="container-msg-reply"><p><span class="text-muted small">Subject</span><br><strong>' + esc(btn.getAttribute('data-subject')) + '</strong></p><p>' + esc(btn.getAttribute('data-message')) + '</p>'
-			+ (open ? '<p class="mb-1"><a href="' + esc(open) + '">Open in Reservations</a></p>' : '') + '<span class="time-left"><small>Reservation</small></span></div>');
+			+ (open ? '<p class="mb-1"><a href="' + esc(open) + '">Open in Transactions</a></p>' : '') + '<span class="time-left"><small>Reservation</small></span></div>');
 
 		var thread = $('<div id="res_thread"></div>').appendTo(box);
 		var load = function () {

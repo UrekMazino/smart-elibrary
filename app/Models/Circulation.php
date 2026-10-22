@@ -10,7 +10,8 @@ class Circulation extends Model
     use HasFactory;
 
     /**
-     * The statuses the admin Reservations page lists: For Approval, Approved, Open (checked out).
+     * The statuses the admin Transactions page (/admin/reservations) lists: For Approval, Approved,
+     * Open (checked out).
      * Its message badges count only these; a declined or closed reservation's conversation is
      * reached from Inquiries.
      */
@@ -24,7 +25,7 @@ class Circulation extends Model
         'reservation_code',
         'transaction_code',
         'status',
-        'patron_seen_status',   // the status as the patron last saw it (Reservations badge)
+        'patron_seen_status',   // the status as the patron last saw it (Transactions badge)
         'due_date',
         'overdue_fine_rate',
         'user_library_code',

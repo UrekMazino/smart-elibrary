@@ -58,7 +58,7 @@ class NotificationService
                 url('/patron/transactions'));
         }
 
-        // Other changes the patron hasn't seen on their Reservations page yet (approved ones are
+        // Other changes the patron hasn't seen on their Transactions page yet (approved ones are
         // "ready for pickup" above): declined, checked out, returned.
         $changed = reservationUpdatesQuery($user->id)->where('status', '<>', 2)->pluck('status');
         if ($changed->isNotEmpty()) {
@@ -113,7 +113,7 @@ class NotificationService
                 url('/admin/reservations'));
         }
 
-        // Unread reservation messages sent by patrons, on the reservations the Reservations page
+        // Unread reservation messages sent by patrons, on the reservations the Transactions page
         // lists. Those on declined or closed reservations count with the inquiries below.
         $resMsg = getReservationUnseenMsgCount();
         if ($resMsg > 0) {
@@ -129,7 +129,7 @@ class NotificationService
         // required. A later patron follow-up makes it unread again.
         $inq = count(self::unreadInquiryIds($user));
         // Reservation conversations with unread patron messages: all are listed in Inquiries; the
-        // ones the Reservations page doesn't list (declined, closed) are announced with them.
+        // ones the Transactions page doesn't list (declined, closed) are announced with them.
         $resThreads = DB::table('reservation_messages as m')
             ->join('circulations as c', 'c.reservation_code', '=', 'm.reservation_code')
             ->where('m.sender_role', 'patron')->whereNull('m.seen_at')

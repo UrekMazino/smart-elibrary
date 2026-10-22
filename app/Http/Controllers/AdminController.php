@@ -154,8 +154,8 @@ class AdminController extends Controller
         // so we surface each patron's ban/block state for the admin controls.
         $list = App\Models\View_inquiry::get();
 
-        // Reservation conversations a patron wrote in (the Messages chat on their Reservations page,
-        // answered on the admin Reservations page too): one row per reservation, read and answered
+        // Reservation conversations a patron wrote in (the Messages chat on their Transactions page,
+        // answered on the admin Transactions page too): one row per reservation, read and answered
         // here in the same thread.
         $threads = DB::table('reservation_messages as m')
             ->join('circulation_reservations as r', 'r.reservation_code', '=', 'm.reservation_code')

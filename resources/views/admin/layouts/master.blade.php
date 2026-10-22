@@ -172,7 +172,7 @@ License: For each use you must have a valid license purchased only from above li
               <li class="nav-item">
                   <a href="{{ url('/admin/reservations') }}" class="nav-link">
                   <i class="link-icon" data-feather="calendar"></i>
-                  <span class="link-title">Reservation</span>
+                  <span class="link-title">Transactions</span>
                   <span class="link-title nav-badges">
                     <span class="badge border border-primary text-info" title="Open reservations">{{ getReservationCount() }}</span>
                     @php $resUnseen = getReservationUnseenMsgCount(); @endphp
@@ -193,7 +193,7 @@ License: For each use you must have a valid license purchased only from above li
               <li class="nav-item">
                 <a href="{{ url('/admin/borrowed') }}" class="nav-link">
                   <i class="link-icon" data-feather="activity"></i>
-                  <span class="link-title">Transaction</span>
+                  <span class="link-title">History</span>
                 </a>
               </li>
             @endcan

@@ -267,7 +267,7 @@ function cleanNewsHtml(?string $html): string {
 	return $sanitizer->sanitize((string) $html);
 }
 
-// Unseen chat messages FROM patrons on the reservations the Reservations page lists (drives its
+// Unseen chat messages FROM patrons on the reservations the Transactions page lists (drives its
 // menu badge). A declined or closed reservation's messages count under Inquiries instead.
 function getReservationUnseenMsgCount() {
 	return DB::table('reservation_messages as m')

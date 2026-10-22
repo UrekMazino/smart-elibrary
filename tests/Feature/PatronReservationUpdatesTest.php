@@ -11,8 +11,8 @@ use Tests\SeedsReferenceData;
 use Tests\TestCase;
 
 /**
- * The account menu's Reservations badge counts what the library changed on a patron's reservations
- * (approved, declined, checked out, returned) until the patron opens their Reservations page, which
+ * The account menu's Transactions badge counts what the library changed on a patron's reservations
+ * (approved, declined, checked out, returned) until the patron opens their Transactions page, which
  * marks each changed card "Updated" on that visit.
  */
 class PatronReservationUpdatesTest extends TestCase
@@ -44,11 +44,11 @@ class PatronReservationUpdatesTest extends TestCase
         return (int) DB::table('circulations')->value('id');
     }
 
-    /** The account menu's Reservations entry on an OPAC page: its badge count, or 0. */
+    /** The account menu's Transactions entry on an OPAC page: its badge count, or 0. */
     private function menuBadge(): int
     {
         $html = $this->actingAs($this->patron)->get('/patron/to-review')->assertOk()->getContent();
-        preg_match('#Reservations <span class="badge[^"]*">(\d+)</span>#', $html, $m);
+        preg_match('#Transactions <span class="badge[^"]*">(\d+)</span>#', $html, $m);
         return (int) ($m[1] ?? 0);
     }
 
