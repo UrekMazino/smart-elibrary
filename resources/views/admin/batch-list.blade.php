@@ -9,25 +9,25 @@
       #tbl { font-size: 0.8125rem; width: 100% !important; }
       #tbl thead th {
         font-size: 0.6875rem; text-transform: uppercase; letter-spacing: .4px;
-        color: #7987a1; white-space: nowrap; padding: 9px 10px;
-        border-bottom: 2px solid #eef0f2; vertical-align: middle;
+        color: var(--ui-muted, #7987a1); white-space: nowrap; padding: 9px 10px;
+        border-bottom: 2px solid var(--ui-border, #eef0f2); vertical-align: middle;
       }
       #tbl tbody td { padding: 7px 10px; vertical-align: middle !important; white-space: normal; }
       #tbl tbody tr { cursor: pointer; }
-      #tbl tbody tr:hover { background: #f7f9fc; }
-      .bl-id { color: #a3adc2; font-size: 0.75rem; }
+      #tbl tbody tr:hover { background: var(--ui-surface-2, #f7f9fc); }
+      .bl-id { color: var(--ui-muted-2, #a3adc2); font-size: 0.75rem; }
       .bl-records { font-variant-numeric: tabular-nums; white-space: nowrap; }
-      .bl-records .sep { color: #c4ccd8; margin: 0 4px; }
+      .bl-records .sep { color: var(--ui-muted-2, #c4ccd8); margin: 0 4px; }
       /* Import report badges: records skipped / flagged for review at import. */
       .bl-issue { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 10px; font-size: 0.6875rem; font-weight: 600; text-decoration: none; }
-      .bl-issue.skip { background: #fdecea; color: #b42318; }
-      .bl-issue.review { background: #fff4e5; color: #a15c00; }
+      .bl-issue.skip { background: var(--ui-danger-soft, #fdecea); color: var(--ui-danger-ink, #b42318); }
+      .bl-issue.review { background: var(--ui-warning-soft, #fff4e5); color: var(--ui-warning-ink, #a15c00); }
       .bl-issue:hover { filter: brightness(.95); }
       /* #tbl prefix beats the template's `.badge { color:#fff }`. */
-      .bl-subject { font-weight: 600; color: #22283b; overflow-wrap: anywhere; }
+      .bl-subject { font-weight: 600; color: var(--ui-text, #22283b); overflow-wrap: anywhere; }
       .bl-comment {
         display: inline-block; max-width: 460px; overflow: hidden; text-overflow: ellipsis;
-        white-space: nowrap; vertical-align: middle; color: #5a6a85;
+        white-space: nowrap; vertical-align: middle; color: var(--ui-text-2, #5a6a85);
       }
       @media (max-width: 1200px) { .bl-comment { max-width: 260px; } }
       @media (max-width: 768px)  { .bl-comment { max-width: 150px; } }

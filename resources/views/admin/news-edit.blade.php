@@ -4,8 +4,8 @@
 	<style>
 		.admin-page-head { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px; margin-bottom:18px; }
 		.admin-page-head .apt { margin:0; font-size:1rem; font-weight:600; }
-		.admin-page-head .aph-desc { margin:2px 0 0; font-size:0.8125rem; color:#8a94a6; }
-		#cover_preview { max-height:220px; width:100%; object-fit:cover; border-radius:8px; border:1px solid #e6e9ef; background:#f6f8fa; }
+		.admin-page-head .aph-desc { margin:2px 0 0; font-size:0.8125rem; color:var(--ui-muted, #8a94a6); }
+		#cover_preview { max-height:220px; width:100%; object-fit:cover; border-radius:8px; border:1px solid var(--ui-border, #e6e9ef); background:var(--ui-surface-2, #f6f8fa); }
 	</style>
 @endsection
 

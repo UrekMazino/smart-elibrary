@@ -9,8 +9,8 @@
         left: 50%;
         transform: translate(-50%, -50%);
         padding: 10px 20px;
-        background-color: #f1f1f1;
-        border: 1px solid #ccc;
+        background-color: var(--ui-surface-2, #f1f1f1);
+        border: 1px solid var(--ui-border, #ccc);
         border-radius: 4px;
         font-size: 1rem;
       }

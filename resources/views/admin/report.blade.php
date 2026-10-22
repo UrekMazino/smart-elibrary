@@ -6,16 +6,16 @@
 	.report-tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:12px; }
 	.report-tile { margin:0; cursor:pointer; }
 	.report-tile input { position:absolute; opacity:0; width:0; height:0; }
-	.report-tile .rt-inner { display:flex; flex-direction:column; gap:5px; height:100%; padding:14px 16px; border:1.5px solid #e6e9ef; border-radius:10px; background:#fff; transition:border-color .12s, box-shadow .12s, background .12s; }
-	.report-tile:hover .rt-inner { border-color:#b9c2d0; }
-	.report-tile input:checked + .rt-inner { border-color:#0d6efd; background:#f3f8ff; box-shadow:0 0 0 3px rgba(13,110,253,.12); }
+	.report-tile .rt-inner { display:flex; flex-direction:column; gap:5px; height:100%; padding:14px 16px; border:1.5px solid var(--ui-border, #e6e9ef); border-radius:10px; background:var(--ui-surface, #fff); transition:border-color .12s, box-shadow .12s, background .12s; }
+	.report-tile:hover .rt-inner { border-color:var(--ui-border, #b9c2d0); }
+	.report-tile input:checked + .rt-inner { border-color:#0d6efd; background:var(--ui-navy-soft, #f3f8ff); box-shadow:0 0 0 3px rgba(13,110,253,.12); }
 	.report-tile .rt-inner svg, .report-tile .rt-inner i { width:22px; height:22px; color:#0d6efd; }
-	.rt-name { font-weight:600; font-size:0.875rem; color:#1f2733; }
-	.rt-desc { font-size:0.75rem; color:#7a8494; line-height:1.3; }
+	.rt-name { font-weight:600; font-size:0.875rem; color:var(--ui-text, #1f2733); }
+	.rt-desc { font-size:0.75rem; color:var(--ui-muted, #7a8494); line-height:1.3; }
 	.filter-div { display:none; }
 	.report-preview-box { max-height:560px; overflow:auto; }
 	#report-actions { display:none; }
-	.report-hint { color:#8a94a6; }
+	.report-hint { color:var(--ui-muted, #8a94a6); }
 </style>
 @endsection
 

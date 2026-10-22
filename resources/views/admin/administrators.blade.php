@@ -7,32 +7,32 @@
       #tbl { font-size: 0.8125rem; width: 100% !important; }
       #tbl thead th {
         font-size: 0.6875rem; text-transform: uppercase; letter-spacing: .4px;
-        color: #7987a1; white-space: nowrap; padding: 9px 10px;
-        border-bottom: 2px solid #eef0f2; vertical-align: middle;
+        color: var(--ui-muted, #7987a1); white-space: nowrap; padding: 9px 10px;
+        border-bottom: 2px solid var(--ui-border, #eef0f2); vertical-align: middle;
       }
       #tbl tbody td { padding: 8px 10px; vertical-align: middle !important; white-space: normal; }
-      #tbl tbody tr:hover { background: #f7f9fc; }
+      #tbl tbody tr:hover { background: var(--ui-surface-2, #f7f9fc); }
 
       /* Name cell: initials avatar + name */
       .u-cell { display: flex; align-items: center; gap: 9px; }
       .u-avatar {
         flex: 0 0 30px; width: 30px; height: 30px; border-radius: 50%;
-        background: #e4e9f2; color: #4a5a78; font-size: 0.71875rem; font-weight: 700;
+        background: var(--ui-surface-2, #e4e9f2); color: var(--ui-text-2, #4a5a78); font-size: 0.71875rem; font-weight: 700;
         display: flex; align-items: center; justify-content: center; letter-spacing: .3px;
       }
-      .u-name { font-weight: 600; color: #22283b; }
-      .u-sub { color: #a3adc2; font-size: 0.71875rem; }
+      .u-name { font-weight: 600; color: var(--ui-text, #22283b); }
+      .u-sub { color: var(--ui-muted-2, #a3adc2); font-size: 0.71875rem; }
 
       /* `#tbl` prefix beats the template's `.badge { color:#fff }` (same specificity otherwise). */
       #tbl .role-pill {
-        background: #e8eefc; color: #33509c; font-weight: 600; font-size: 0.71875rem;
+        background: var(--ui-navy-soft, #e8eefc); color: var(--ui-navy, #33509c); font-weight: 600; font-size: 0.71875rem;
         cursor: pointer; margin: 1px 3px 1px 0;
       }
-      #tbl .role-pill:hover { background: #d7e2fb; }
-      #tbl .role-none { background: #f4f5f7; color: #a3adc2; font-weight: 500; font-size: 0.71875rem; }
+      #tbl .role-pill:hover { background: var(--ui-navy-soft, #d7e2fb); }
+      #tbl .role-none { background: var(--ui-surface-2, #f4f5f7); color: var(--ui-muted-2, #a3adc2); font-weight: 500; font-size: 0.71875rem; }
 
-      .cell-muted { color: #7987a1; }
-      .date-main { color: #33415c; } .date-time { color: #a3adc2; font-size: 0.71875rem; }
+      .cell-muted { color: var(--ui-muted, #7987a1); }
+      .date-main { color: var(--ui-text, #33415c); } .date-time { color: var(--ui-muted-2, #a3adc2); font-size: 0.71875rem; }
 
       /* Permission list inside the modal — two columns, easy to scan. */
       #permissionList { columns: 2; column-gap: 24px; margin: 0; padding-left: 18px; }

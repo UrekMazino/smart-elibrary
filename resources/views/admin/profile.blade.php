@@ -2,32 +2,32 @@
 
 @section('css')
     <style>
-      .form-label { font-size: 0.78125rem; font-weight: 600; color: #33415c; margin-bottom: 4px; }
-      .form-hint  { color: #a3adc2; font-size: 0.71875rem; margin-top: 4px; display: block; }
-      .req { color: #c92a4b; }
+      .form-label { font-size: 0.78125rem; font-weight: 600; color: var(--ui-text, #33415c); margin-bottom: 4px; }
+      .form-hint  { color: var(--ui-muted-2, #a3adc2); font-size: 0.71875rem; margin-top: 4px; display: block; }
+      .req { color: var(--ui-danger-ink, #c92a4b); }
 
       .form-section {
-        font-size: 0.6875rem; text-transform: uppercase; letter-spacing: .4px; color: #7987a1;
-        font-weight: 700; padding-bottom: 6px; border-bottom: 1px solid #eef0f2; margin-bottom: 14px;
+        font-size: 0.6875rem; text-transform: uppercase; letter-spacing: .4px; color: var(--ui-muted, #7987a1);
+        font-weight: 700; padding-bottom: 6px; border-bottom: 1px solid var(--ui-border, #eef0f2); margin-bottom: 14px;
       }
 
       /* Identity card */
       .id-avatar {
         width: 74px; height: 74px; border-radius: 50%; margin: 0 auto 12px;
-        background: #e4e9f2; color: #4a5a78; font-size: 1.625rem; font-weight: 700;
+        background: var(--ui-surface-2, #e4e9f2); color: var(--ui-text-2, #4a5a78); font-size: 1.625rem; font-weight: 700;
         display: flex; align-items: center; justify-content: center; letter-spacing: .5px;
       }
-      .id-name { font-size: 0.9375rem; font-weight: 700; color: #22283b; }
-      .id-email { color: #7987a1; font-size: 0.78125rem; word-break: break-all; }
-      .badge-role {
-        background: #e8eefc; color: #33509c; font-weight: 600; font-size: 0.6875rem; margin: 2px;
+      .id-name { font-size: 0.9375rem; font-weight: 700; color: var(--ui-text, #22283b); }
+      .id-email { color: var(--ui-muted, #7987a1); font-size: 0.78125rem; word-break: break-all; }
+      .badge.badge-role {   /* .badge.badge-role: the template's .badge { color: #fff } made the role name white on pale blue */
+        background: var(--ui-navy-soft, #e8eefc); color: var(--ui-navy, #33509c); font-weight: 600; font-size: 0.6875rem; margin: 2px;
       }
-      .id-meta { border-top: 1px solid #eef0f2; margin-top: 14px; padding-top: 12px; }
+      .id-meta { border-top: 1px solid var(--ui-border, #eef0f2); margin-top: 14px; padding-top: 12px; }
       .id-meta dt {
         font-size: 0.65625rem; text-transform: uppercase; letter-spacing: .4px;
-        color: #a3adc2; font-weight: 700; margin-bottom: 2px;
+        color: var(--ui-muted-2, #a3adc2); font-weight: 700; margin-bottom: 2px;
       }
-      .id-meta dd { font-size: 0.78125rem; color: #33415c; margin-bottom: 10px; }
+      .id-meta dd { font-size: 0.78125rem; color: var(--ui-text, #33415c); margin-bottom: 10px; }
       .id-meta dd.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .5px; }
     </style>
 @endsection

@@ -5,36 +5,36 @@
         /* ---- Resources tab ---- */
         .res-panel { display: flex; gap: 16px; align-items: flex-start; }
         .res-thumb {
-            flex: 0 0 96px; width: 96px; min-height: 120px; border: 1px solid #eef0f2; border-radius: 8px;
-            background: #f7f9fc; display: flex; flex-direction: column; align-items: center;
+            flex: 0 0 96px; width: 96px; min-height: 120px; border: 1px solid var(--ui-border, #eef0f2); border-radius: 8px;
+            background: var(--ui-surface-2, #f7f9fc); display: flex; flex-direction: column; align-items: center;
             justify-content: center; padding: 8px; text-align: center;
         }
         /* The <img> ids/classes below are wired to cropper.js — don't rename them. */
         .res-thumb img { max-width: 100%; max-height: 104px; height: auto; border-radius: 3px; }
         .res-thumb-cover img { box-shadow: 0 1px 6px rgba(0,0,0,.18); }
-        .res-none { font-size: 0.6875rem; color: #a3adc2; margin-top: 6px; }
+        .res-none { font-size: 0.6875rem; color: var(--ui-muted-2, #a3adc2); margin-top: 6px; }
 
         .res-meta { flex: 1; min-width: 0; }
         .res-meta dt {
             font-size: 0.65625rem; text-transform: uppercase; letter-spacing: .4px;
-            color: #a3adc2; font-weight: 700; margin-bottom: 1px;
+            color: var(--ui-muted-2, #a3adc2); font-weight: 700; margin-bottom: 1px;
         }
-        .res-meta dd { font-size: 0.78125rem; color: #33415c; margin-bottom: 8px; word-break: break-all; }
+        .res-meta dd { font-size: 0.78125rem; color: var(--ui-text, #33415c); margin-bottom: 8px; word-break: break-all; }
         .res-meta dd.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.71875rem; }
 
-        .res-label { font-size: 0.75rem; font-weight: 600; color: #33415c; margin-bottom: 4px; display: block; }
+        .res-label { font-size: 0.75rem; font-weight: 600; color: var(--ui-text, #33415c); margin-bottom: 4px; display: block; }
 
         /* `.badge` prefixed by an id/class beats the template's `.badge { color:#fff }`. */
-        .card-body .res-badge-ok   { background: #e8f6ef; color: #1c7c54; font-weight: 600; font-size: 0.65625rem; }
-        .card-body .res-badge-none { background: #f4f5f7; color: #8a94a6; font-weight: 600; font-size: 0.65625rem; }
-        .card-body .res-badge-auto { background: #fff5e0; color: #a06e14; font-weight: 600; font-size: 0.65625rem; }
+        .card-body .res-badge-ok   { background: var(--ui-success-soft, #e8f6ef); color: var(--ui-success-ink, #1c7c54); font-weight: 600; font-size: 0.65625rem; }
+        .card-body .res-badge-none { background: var(--ui-surface-2, #f4f5f7); color: var(--ui-muted, #8a94a6); font-weight: 600; font-size: 0.65625rem; }
+        .card-body .res-badge-auto { background: var(--ui-warning-soft, #fff5e0); color: var(--ui-warning-ink, #a06e14); font-weight: 600; font-size: 0.65625rem; }
 
         .even-row {
-            background-color: #f2f2f2;
+            background-color: var(--ui-surface-2, #f2f2f2);
         }
 
         .odd-row {
-            background-color: #ffffff; 
+            background-color: var(--ui-surface, #ffffff); 
         }
 
         .delete-icon {
@@ -46,8 +46,8 @@
         }
 
         /* Count beside a tab label (e.g. Reviews 4). */
-        .nav-tabs .tab-count { display: inline-block; min-width: 20px; margin-left: 4px; padding: 1px 6px; border-radius: 10px; background: #eef0f6; color: #5b6478; font-size: 0.6875rem; font-weight: 600; text-align: center; }
-        .nav-tabs .nav-link.active .tab-count { background: color-mix(in srgb, var(--t-primary) 12%, #fff); color: color-mix(in srgb, var(--t-primary), #000 18%); }
+        .nav-tabs .tab-count { display: inline-block; min-width: 20px; margin-left: 4px; padding: 1px 6px; border-radius: 10px; background: var(--ui-surface-2, #eef0f6); color: var(--ui-text-2, #5b6478); font-size: 0.6875rem; font-weight: 600; text-align: center; }
+        .nav-tabs .nav-link.active .tab-count { background: color-mix(in srgb, var(--t-primary) 12%, var(--ui-surface, #fff)); color: color-mix(in srgb, var(--t-primary), var(--ui-text, #000) 18%); }
     </style>
     <link rel="stylesheet" href="{{ asset('assets/css/cropper.min.css') }}">
 @endsection
@@ -490,7 +490,7 @@
                             <h6 class="modal-title" id="coverPhotoModalLabel">Cover photo</h6>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                           </div>
-                          <div class="modal-body text-center" style="background:#f7f9fc;">
+                          <div class="modal-body text-center" style="background:var(--ui-surface-2, #f7f9fc);">
                             <img id="coverPhotoModalImg" src="" alt="Cover photo"
                                  style="max-width:100%; max-height:70vh; border-radius:4px; box-shadow:0 2px 12px rgba(0,0,0,.18);">
                           </div>

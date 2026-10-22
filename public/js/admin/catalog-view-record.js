@@ -32,7 +32,7 @@ $(document).ready(function(){
 
         let col2Div = $('<div class="p-2 col-lg-8 col-md-8 col-sm-12 text-left"></div>');
 
-        col2Div.css('background-color', '#b0f0f0');
+        col2Div.css('background-color', 'var(--ui-surface-2, #b0f0f0)');   // follows the background (Appearance)
         
         let subfieldValues = entry.subfield.map(function(subfield) {
             return subfield.value;
@@ -81,7 +81,7 @@ $(document).ready(function(){
         rowDiv.append(col2Div);
 
         let col3Div = $('<div class="p-2 col-lg-10 col-md-10 col-sm-12 text-left"></div>');
-        col3Div.css('background-color', '#b0f0f0');
+        col3Div.css('background-color', 'var(--ui-surface-2, #b0f0f0)');
         let subfieldValues = (entry.subfield || []).map(function(subfield) {
             let code = subfield.code;
             return code.substr(code.length - 2) + subfield.value;

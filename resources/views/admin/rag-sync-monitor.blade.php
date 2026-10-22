@@ -6,7 +6,7 @@
         #syncTbl { font-size: 0.8125rem; width: 100% !important; }
         #syncTbl thead th {
             font-size: 0.6875rem; text-transform: uppercase; letter-spacing: .4px;
-            color: #7987a1; white-space: nowrap; padding: 9px 10px;
+            color: var(--ui-muted, #7987a1); white-space: nowrap; padding: 9px 10px;
         }
         #syncTbl td { vertical-align: middle; }
         /* The admin theme keeps every table cell on one line (.table td { white-space: nowrap }): a
@@ -23,23 +23,23 @@
         @media (max-width: 767.98px) {
             #syncTbl thead { display: none; }
             #syncTbl, #syncTbl tbody, #syncTbl tr, #syncTbl td { display: block; width: 100% !important; }
-            #syncTbl tr { border-bottom: 1px solid #eef0f2; padding: 8px 0; }
+            #syncTbl tr { border-bottom: 1px solid var(--ui-border, #eef0f2); padding: 8px 0; }
             /* DataTables gives cells content-box sizing: the padding would push them past the edge. */
             #syncTbl td { border: 0; padding: 2px 4px; white-space: normal; text-align: left !important; box-sizing: border-box; }
             #syncTbl td[data-label]::before {
                 content: attr(data-label) ": "; margin-right: 4px;
-                font-size: 0.6875rem; text-transform: uppercase; letter-spacing: .4px; color: #7987a1;
+                font-size: 0.6875rem; text-transform: uppercase; letter-spacing: .4px; color: var(--ui-muted, #7987a1);
             }
             #syncTbl td.sync-catalog { min-width: 0; font-weight: 600; }
             #syncTbl td.sync-action { padding-top: 6px; }
         }
         .sync-stat { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
-        .sync-stat .card { border: 1px solid #eef0f2; border-radius: 8px; padding: 10px 16px; min-width: 120px; }
+        .sync-stat .card { border: 1px solid var(--ui-border, #eef0f2); border-radius: 8px; padding: 10px 16px; min-width: 120px; }
         .sync-stat .n { font-size: 1.375rem; font-weight: 700; line-height: 1; }
-        .sync-stat .l { font-size: 0.6875rem; text-transform: uppercase; letter-spacing: .4px; color: #7987a1; }
+        .sync-stat .l { font-size: 0.6875rem; text-transform: uppercase; letter-spacing: .4px; color: var(--ui-muted, #7987a1); }
         .sync-filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: end; margin-bottom: 10px; }
-        .sync-filters label { font-size: 0.6875rem; color: #7987a1; display: block; margin-bottom: 2px; }
-        .sync-filters select { font-size: 0.8125rem; padding: 4px 8px; border-radius: 6px; border: 1px solid #dfe3e8; }
+        .sync-filters label { font-size: 0.6875rem; color: var(--ui-muted, #7987a1); display: block; margin-bottom: 2px; }
+        .sync-filters select { font-size: 0.8125rem; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--ui-border, #dfe3e8); }
     </style>
 @endsection
 

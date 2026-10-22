@@ -110,19 +110,19 @@
         }
 
         /* ---- Material type mapping ---- */
-        .bm-card { border: 1px solid #e4e8f0; border-radius: 8px; background: #fafbfd; padding: 12px 14px; }
-        .bm-hint { color: #7987a1; font-size: 0.75rem; display: block; margin-top: 3px; }
-        .bm-status { font-size: 0.78125rem; margin-top: 6px; color: #55606b; min-height: 18px; }
-        .bm-status.err { color: #c92a4b; }
+        .bm-card { border: 1px solid var(--ui-border, #e4e8f0); border-radius: 8px; background: var(--ui-surface, #fafbfd); padding: 12px 14px; }
+        .bm-hint { color: var(--ui-muted, #7987a1); font-size: 0.75rem; display: block; margin-top: 3px; }
+        .bm-status { font-size: 0.78125rem; margin-top: 6px; color: var(--ui-text-2, #55606b); min-height: 18px; }
+        .bm-status.err { color: var(--ui-danger-ink, #c92a4b); }
         .bm-preset { min-width: 260px; }
-        .bm-table { font-size: 0.78125rem; background: #fff; }
-        .bm-table th { font-size: 0.6875rem; text-transform: uppercase; letter-spacing: .4px; color: #7987a1; }
+        .bm-table { font-size: 0.78125rem; background: var(--ui-surface, #fff); }
+        .bm-table th { font-size: 0.6875rem; text-transform: uppercase; letter-spacing: .4px; color: var(--ui-muted, #7987a1); }
         .bm-table td { vertical-align: middle; }
         .bm-table .form-select { font-size: 0.78125rem; padding-top: 2px; padding-bottom: 2px; }
-        .bm-val { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; background: #eef1f6; border-radius: 4px; padding: 1px 6px; }
-        .bm-summary { font-size: 0.78125rem; color: #33415c; }
-        .bm-summary .chip { display: inline-block; background: #e8eefc; color: #33509c; border-radius: 10px; padding: 1px 8px; margin: 2px 4px 2px 0; font-weight: 600; }
-        .bm-summary .chip.def { background: #f1f3f7; color: #55606b; }
+        .bm-val { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--ui-surface-2, #eef1f6); border-radius: 4px; padding: 1px 6px; }
+        .bm-summary { font-size: 0.78125rem; color: var(--ui-text, #33415c); }
+        .bm-summary .chip { display: inline-block; background: var(--ui-navy-soft, #e8eefc); color: var(--ui-navy, #33509c); border-radius: 10px; padding: 1px 8px; margin: 2px 4px 2px 0; font-weight: 600; }
+        .bm-summary .chip.def { background: var(--ui-surface-2, #f1f3f7); color: var(--ui-text-2, #55606b); }
         .bm-save { max-width: 520px; }
     </style>
 @endsection

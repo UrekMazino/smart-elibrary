@@ -3,20 +3,20 @@
 @section('css')
     <style>
       .ac-head { display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:10px; margin-bottom:18px; }
-      .ac-head h4 { font-weight:700; color:#22283b; margin:0; }
-      .ac-head p  { color:#8a94a6; margin:2px 0 0; font-size:0.8125rem; }
-      .page-content .card { border:1px solid #eef0f4; border-radius:12px; box-shadow:0 1px 2px rgba(20,30,60,.04); }
-      .mono { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:0.6875rem; color:#a3adc2; }
-      .pill { display:inline-block; min-width:24px; text-align:center; background:#eef1f8; color:#4a5a78; border-radius:20px; padding:2px 9px; font-size:0.75rem; font-weight:600; }
+      .ac-head h4 { font-weight:700; color:var(--ui-text, #22283b); margin:0; }
+      .ac-head p  { color:var(--ui-muted, #8a94a6); margin:2px 0 0; font-size:0.8125rem; }
+      .page-content .card { border:1px solid var(--ui-border, #eef0f4); border-radius:12px; box-shadow:0 1px 2px rgba(20,30,60,.04); }
+      .mono { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:0.6875rem; color:var(--ui-muted-2, #a3adc2); }
+      .pill { display:inline-block; min-width:24px; text-align:center; background:var(--ui-surface-2, #eef1f8); color:var(--ui-text-2, #4a5a78); border-radius:20px; padding:2px 9px; font-size:0.75rem; font-weight:600; }
 
       .perm-mod-head { display:flex; align-items:center; gap:10px; margin-bottom:6px; }
       .perm-mod-head h6 { font-size:0.75rem; text-transform:uppercase; letter-spacing:.6px; color:#00a496; font-weight:700; }
-      .perm-mod-head .count { font-size:0.6875rem; color:#9aa4b8; }
+      .perm-mod-head .count { font-size:0.6875rem; color:var(--ui-muted, #9aa4b8); }
       table.perm-tbl { font-size:0.8125rem; width:100%; }
-      table.perm-tbl thead th { font-size:0.6875rem; text-transform:uppercase; letter-spacing:.4px; color:#7987a1; padding:8px 10px; border-bottom:2px solid #eef0f2; white-space:nowrap; }
-      table.perm-tbl tbody td { padding:8px 10px; vertical-align:middle; border-bottom:1px solid #f2f4f8; }
-      table.perm-tbl tbody tr:hover td { background:#f9fbfe; }
-      .perm-name { font-weight:600; color:#22283b; }
+      table.perm-tbl thead th { font-size:0.6875rem; text-transform:uppercase; letter-spacing:.4px; color:var(--ui-muted, #7987a1); padding:8px 10px; border-bottom:2px solid var(--ui-border, #eef0f2); white-space:nowrap; }
+      table.perm-tbl tbody td { padding:8px 10px; vertical-align:middle; border-bottom:1px solid var(--ui-border, #f2f4f8); }
+      table.perm-tbl tbody tr:hover td { background:var(--ui-surface-2, #f9fbfe); }
+      .perm-name { font-weight:600; color:var(--ui-text, #22283b); }
     </style>
 @endsection
 

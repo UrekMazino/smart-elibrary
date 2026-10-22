@@ -5,7 +5,7 @@
 	<style>
 		.admin-page-head { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px; margin-bottom:18px; }
 		.admin-page-head .apt { margin:0; font-size:1rem; font-weight:600; }
-		.admin-page-head .aph-desc { margin:2px 0 0; font-size:0.8125rem; color:#8a94a6; }
+		.admin-page-head .aph-desc { margin:2px 0 0; font-size:0.8125rem; color:var(--ui-muted, #8a94a6); }
 		.inq-msg { max-width:340px; }
 		table td { word-break:break-word; vertical-align:top; white-space:normal !important; }
 		/* Keep the action buttons on one line (the global white-space:normal above was
@@ -15,17 +15,17 @@
 		#tbl td .btn { white-space:nowrap; }
 
 		.chat-thread { max-height:340px; overflow-y:auto; padding:4px; }
-		.container-msg-reply { border:1px solid #e2e6ec; background-color:#f4f6f9; border-radius:10px; padding:10px 14px; margin:8px 0; }
+		.container-msg-reply { border:1px solid var(--ui-border, #e2e6ec); background-color:var(--ui-surface-2, #f4f6f9); border-radius:10px; padding:10px 14px; margin:8px 0; }
 		.container-msg-reply p { margin:0 0 4px; }
 		.container-msg-reply.darker { border-color:#0d6efd; background-color:#0d6efd; color:#fff; }
 		.time-right { display:block; text-align:right; color:rgba(255,255,255,.85); font-size:0.6875rem; }
-		.time-left  { display:block; text-align:left;  color:#8a94a6; font-size:0.6875rem; }
+		.time-left  { display:block; text-align:left;  color:var(--ui-muted, #8a94a6); font-size:0.6875rem; }
 
-		.reply-dot { position:absolute; top:-3px; right:-3px; width:10px; height:10px; background:#ff3366; border-radius:50%; border:2px solid #fff; }
+		.reply-dot { position:absolute; top:-3px; right:-3px; width:10px; height:10px; background:var(--t-danger, #ff3366); border-radius:50%; border:2px solid var(--ui-surface, #fff); }
 		/* Messenger-style "Seen by" admin avatars (stacked, hover for name). */
 		.seen-row { display:flex; align-items:center; justify-content:flex-end; margin-top:6px; padding-right:2px; }
-		.seen-lbl { font-size:0.6875rem; color:#8a94a6; margin-right:6px; }
-		.seen-ava { width:22px; height:22px; border-radius:50%; background:var(--t-primary); color:#fff; font-size:0.59375rem; font-weight:700; display:inline-flex; align-items:center; justify-content:center; box-shadow:0 0 0 2px #fff; cursor:default; margin-left:-6px; }
+		.seen-lbl { font-size:0.6875rem; color:var(--ui-muted, #8a94a6); margin-right:6px; }
+		.seen-ava { width:22px; height:22px; border-radius:50%; background:var(--t-primary); color:#fff; font-size:0.59375rem; font-weight:700; display:inline-flex; align-items:center; justify-content:center; box-shadow:0 0 0 2px var(--ui-surface, #fff); cursor:default; margin-left:-6px; }
 		.seen-ava:first-of-type { margin-left:0; }
 		.seen-ava-patron { background:#00a496; } /* patron read-receipt (distinct from admin avatars) */
 	</style>

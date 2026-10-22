@@ -9,22 +9,22 @@
       #tbl { font-size: 0.8125rem; width: 100% !important; }
       #tbl thead th {
         font-size: 0.6875rem; text-transform: uppercase; letter-spacing: .4px;
-        color: #7987a1; white-space: nowrap; padding: 9px 10px;
-        border-bottom: 2px solid #eef0f2; vertical-align: middle;
+        color: var(--ui-muted, #7987a1); white-space: nowrap; padding: 9px 10px;
+        border-bottom: 2px solid var(--ui-border, #eef0f2); vertical-align: middle;
       }
       #tbl tbody td { padding: 6px 10px; vertical-align: middle !important; white-space: normal; }
       #tbl tbody tr { cursor: pointer; }
-      #tbl tbody tr:hover { background: #f7f9fc; }
-      .tbl-id { color: #a3adc2; font-size: 0.75rem; }
+      #tbl tbody tr:hover { background: var(--ui-surface-2, #f7f9fc); }
+      .tbl-id { color: var(--ui-muted-2, #a3adc2); font-size: 0.75rem; }
       /* Full MARC 245 title (all subfields), wrapped — never cut to one line. */
-      .tbl-title { font-weight: 600; color: #22283b; display: block; white-space: normal; overflow-wrap: anywhere; min-width: 220px; }
+      .tbl-title { font-weight: 600; color: var(--ui-text, #22283b); display: block; white-space: normal; overflow-wrap: anywhere; min-width: 220px; }
       .tbl-authors {
-        color: #7987a1; display: inline-block; max-width: 220px;
+        color: var(--ui-muted, #7987a1); display: inline-block; max-width: 220px;
         overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle;
       }
       /* #tbl prefix beats the template's `.badge { color:#fff }` (same specificity otherwise). */
       #tbl .badge-type {
-        background: #e4e9f2; color: #33415c; font-weight: 600;
+        background: var(--ui-surface-2, #e4e9f2); color: var(--ui-text, #33415c); font-weight: 600;
         font-size: 0.71875rem; letter-spacing: .2px;
       }
       @media (max-width: 1200px) { .tbl-authors { max-width: 150px; } }

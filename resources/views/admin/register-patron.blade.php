@@ -2,32 +2,32 @@
 
 @section('css')
     <style>
-      .form-hint { color: #a3adc2; font-size: 0.71875rem; margin-top: 4px; display: block; }
-      .form-label { font-size: 0.78125rem; font-weight: 600; color: #33415c; margin-bottom: 4px; }
-      .req { color: #c92a4b; }
+      .form-hint { color: var(--ui-muted-2, #a3adc2); font-size: 0.71875rem; margin-top: 4px; display: block; }
+      .form-label { font-size: 0.78125rem; font-weight: 600; color: var(--ui-text, #33415c); margin-bottom: 4px; }
+      .req { color: var(--ui-danger-ink, #c92a4b); }
 
       /* Note explaining what actually happens to the password on save. */
       .note {
-        background: #fff8e8; border: 1px solid #f6e3bc; border-radius: 6px;
-        padding: 10px 12px; font-size: 0.75rem; color: #7a5b16; line-height: 1.5;
+        background: var(--ui-warning-soft, #fff8e8); border: 1px solid var(--ui-warning-line, #f6e3bc); border-radius: 6px;
+        padding: 10px 12px; font-size: 0.75rem; color: var(--ui-warning-ink, #7a5b16); line-height: 1.5;
       }
 
       /* Success modal: library code + QR */
       .code-box {
-        background: #f7f9fc; border: 1px dashed #cfd8e8; border-radius: 8px;
+        background: var(--ui-surface-2, #f7f9fc); border: 1px dashed var(--ui-border, #cfd8e8); border-radius: 8px;
         padding: 14px; text-align: center;
       }
       #qrcodeInput {
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
         font-size: 1rem; font-weight: 700; letter-spacing: 1px;
-        color: #22283b; background: #fff; text-align: center;
+        color: var(--ui-text, #22283b); background: var(--ui-surface, #fff); text-align: center;
       }
       .qr-wrap svg, .qr-wrap img { max-width: 170px; height: auto; }
 
       #popup-message {
         display: none; position: fixed; top: 50%; left: 50%;
         transform: translate(-50%, -50%); padding: 10px 20px;
-        background-color: #f1f1f1; border: 1px solid #ccc; border-radius: 4px;
+        background-color: var(--ui-surface-2, #f1f1f1); border: 1px solid var(--ui-border, #ccc); border-radius: 4px;
         font-size: 1rem; z-index: 2000;
       }
     </style>

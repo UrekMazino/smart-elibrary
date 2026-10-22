@@ -207,8 +207,9 @@
 <script>
 // Inline-styled chips (avoids the admin template's `.badge { color:#fff }` override).
 function driftChip(label, val, tone) {
-    var bg = tone === 'danger' ? '#ffe9ee' : (tone === 'warn' ? '#fff5e0' : '#eef1f8'),
-        fg = tone === 'danger' ? '#c92a4b' : (tone === 'warn' ? '#a06e14' : '#4a5a78');
+    // CSS values (with the theme's roles: App\Services\Appearance), so the chips follow the background.
+    var bg = tone === 'danger' ? 'var(--ui-danger-soft, #ffe9ee)' : (tone === 'warn' ? 'var(--ui-warning-soft, #fff5e0)' : 'var(--ui-surface-2, #eef1f8)'),
+        fg = tone === 'danger' ? 'var(--ui-danger-ink, #c92a4b)' : (tone === 'warn' ? 'var(--ui-warning-ink, #a06e14)' : 'var(--ui-text-2, #4a5a78)');
     return '<span style="display:inline-block;background:' + bg + ';color:' + fg + ';border-radius:20px;' +
            'padding:3px 10px;font-size:0.75rem;font-weight:600;margin:0 6px 6px 0;">' + label + ': ' + val + '</span>';
 }
@@ -252,8 +253,8 @@ function runDriftScan(silent) {
 function renderAiStatus(r) {
     // 'loading' (models still warming up) is an amber in-between, not a hard failure.
     var warming = !r.ok && r.status === 'loading',
-        color = r.ok ? '#1c7c54' : (warming ? '#a06e14' : '#c92a4b'),
-        bg    = r.ok ? '#e8f6ef' : (warming ? '#fff5e0' : '#ffe9ee'),
+        color = r.ok ? 'var(--ui-success-ink, #1c7c54)' : (warming ? 'var(--ui-warning-ink, #a06e14)' : 'var(--ui-danger-ink, #c92a4b)'),
+        bg    = r.ok ? 'var(--ui-success-soft, #e8f6ef)' : (warming ? 'var(--ui-warning-soft, #fff5e0)' : 'var(--ui-danger-soft, #ffe9ee)'),
         label = r.ok ? 'Connected' : (warming ? 'Starting up' : 'Unreachable');
 
     $('#aiStatusBox').html(

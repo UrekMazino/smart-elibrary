@@ -86,30 +86,30 @@
 
         /* ---- Redesign (matches create-record) ---- */
         .cr-section-title {
-            font-size: 0.6875rem; text-transform: uppercase; letter-spacing: .5px; color: #7987a1;
-            font-weight: 700; margin: 0 0 8px; padding-bottom: 5px; border-bottom: 1px solid #eef0f2;
+            font-size: 0.6875rem; text-transform: uppercase; letter-spacing: .5px; color: var(--ui-muted, #7987a1);
+            font-weight: 700; margin: 0 0 8px; padding-bottom: 5px; border-bottom: 1px solid var(--ui-border, #eef0f2);
         }
         .cr-section-title.mt-4 { margin-top: 14px !important; }
-        .cr-label { font-size: 0.78125rem; font-weight: 600; color: #33415c; margin-bottom: 4px; }
-        .cr-req { color: #c92a4b; }
-        .cr-hint { color: #a3adc2; font-size: 0.71875rem; margin-top: 4px; display: block; }
+        .cr-label { font-size: 0.78125rem; font-weight: 600; color: var(--ui-text, #33415c); margin-bottom: 4px; }
+        .cr-req { color: var(--ui-danger-ink, #c92a4b); }
+        .cr-hint { color: var(--ui-muted-2, #a3adc2); font-size: 0.71875rem; margin-top: 4px; display: block; }
 
         /* Fixed Fields (LDR / 008) guided panel — compact grid */
-        .ff-group { border: 1px solid #eef0f2; border-radius: 6px; background: #fbfcfd; padding: 8px 10px; margin-bottom: 6px; }
-        .ff-group-title { font-size: 0.75rem; font-weight: 700; color: #22283b; margin-bottom: 7px; }
+        .ff-group { border: 1px solid var(--ui-border, #eef0f2); border-radius: 6px; background: var(--ui-surface, #fbfcfd); padding: 8px 10px; margin-bottom: 6px; }
+        .ff-group-title { font-size: 0.75rem; font-weight: 700; color: var(--ui-text, #22283b); margin-bottom: 7px; }
         .ff-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px 10px; }
         .ff-cell { display: flex; flex-direction: column; }
-        .ff-label { font-size: 0.65625rem; font-weight: 600; color: #55606b; margin-bottom: 2px; }
+        .ff-label { font-size: 0.65625rem; font-weight: 600; color: var(--ui-text-2, #55606b); margin-bottom: 2px; }
         .ff-group .form-control, .ff-group .form-select { font-size: 0.75rem; padding: 2px 8px; height: 28px; }
         .ff-auto {
-            font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.75rem; color: #33415c;
-            background: #eef1f6; border-radius: 5px; padding: 4px 8px; letter-spacing: .5px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.75rem; color: var(--ui-text, #33415c);
+            background: var(--ui-surface-2, #eef1f6); border-radius: 5px; padding: 4px 8px; letter-spacing: .5px;
         }
-        .ff-hint { font-size: 0.625rem; color: #a3adc2; margin-top: 2px; }
+        .ff-hint { font-size: 0.625rem; color: var(--ui-muted-2, #a3adc2); margin-top: 2px; }
 
         .cr-actions { display: flex; gap: 8px; flex-wrap: wrap; }
         .cr-footer {
-            position: sticky; bottom: 0; background: #fff; border-top: 1px solid #eef0f2;
+            position: sticky; bottom: 0; background: var(--ui-surface, #fff); border-top: 1px solid var(--ui-border, #eef0f2);
             padding: 14px 0 2px; margin-top: 6px;
         }
     </style>

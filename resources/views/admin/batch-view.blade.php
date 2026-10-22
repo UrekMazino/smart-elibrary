@@ -3,11 +3,11 @@
 @section('css')
     <style>
         .even-row {
-            background-color: #f2f2f2; /* Light gray */
+            background-color: var(--ui-surface-2, #f2f2f2); /* Light gray */
         }
 
         .odd-row {
-            background-color: #ffffff; /* White */
+            background-color: var(--ui-surface, #ffffff); /* White */
         }
     </style>
 @endsection

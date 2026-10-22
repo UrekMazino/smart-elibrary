@@ -5,15 +5,15 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <style>
       .ac-head { display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:10px; margin-bottom:18px; }
-      .ac-head h4 { font-weight:700; color:#22283b; margin:0; }
-      .ac-head p  { color:#8a94a6; margin:2px 0 0; font-size:0.8125rem; }
-      .page-content .card { border:1px solid #eef0f4; border-radius:12px; box-shadow:0 1px 2px rgba(20,30,60,.04); }
+      .ac-head h4 { font-weight:700; color:var(--ui-text, #22283b); margin:0; }
+      .ac-head p  { color:var(--ui-muted, #8a94a6); margin:2px 0 0; font-size:0.8125rem; }
+      .page-content .card { border:1px solid var(--ui-border, #eef0f4); border-radius:12px; box-shadow:0 1px 2px rgba(20,30,60,.04); }
       #tbl { font-size:0.8125rem; width:100% !important; }
-      #tbl thead th { font-size:0.6875rem; text-transform:uppercase; letter-spacing:.4px; color:#7987a1; white-space:nowrap; padding:9px 10px; border-bottom:2px solid #eef0f2; }
+      #tbl thead th { font-size:0.6875rem; text-transform:uppercase; letter-spacing:.4px; color:var(--ui-muted, #7987a1); white-space:nowrap; padding:9px 10px; border-bottom:2px solid var(--ui-border, #eef0f2); }
       #tbl tbody td { padding:8px 10px; vertical-align:middle; }
-      #tbl tbody tr:hover { background:#f7f9fc; }
-      .mt-id { color:#a3adc2; font-size:0.75rem; }
-      .mt-name { font-weight:600; color:#22283b; }
+      #tbl tbody tr:hover { background:var(--ui-surface-2, #f7f9fc); }
+      .mt-id { color:var(--ui-muted-2, #a3adc2); font-size:0.75rem; }
+      .mt-name { font-weight:600; color:var(--ui-text, #22283b); }
     </style>
 @endsection
 
