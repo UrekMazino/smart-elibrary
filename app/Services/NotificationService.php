@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\User;
+use App\Models\Circulation;
 use App\Models\View_inquiry_thread;
 use Illuminate\Support\Facades\DB;
 
@@ -57,6 +58,18 @@ class NotificationService
                 url('/patron/transactions'));
         }
 
+        // Other changes the patron hasn't seen on their Transactions page yet (approved ones are
+        // "ready for pickup" above): declined, checked out, returned.
+        $changed = reservationUpdatesQuery($user->id)->where('status', '<>', 2)->pluck('status');
+        if ($changed->isNotEmpty()) {
+            $count += $changed->count();
+            $what = $changed->unique()->sort()->map(fn ($s) => [1 => 'back to For Approval', 3 => 'checked out', 4 => 'declined', 5 => 'returned'][$s] ?? null)->filter();
+            $items[] = self::item('refresh-cw', 'info',
+                $changed->count() . ' ' . self::plural($changed->count(), 'reservation') . ' updated',
+                ucfirst($what->implode(', ')),
+                url('/patron/transactions'));
+        }
+
         // New replies from the library on the patron's inquiries.
         $inq = View_inquiry_thread::where('user_id', $user->id)
             ->where('replied_by', '!=', $user->id)
@@ -100,11 +113,9 @@ class NotificationService
                 url('/admin/reservations'));
         }
 
-        // Unread reservation messages sent by patrons.
-        $resMsg = DB::table('reservation_messages')
-            ->where('sender_role', 'patron')
-            ->whereNull('seen_at')
-            ->count();
+        // Unread reservation messages sent by patrons, on the reservations the Transactions page
+        // lists. Those on declined or closed reservations count with the inquiries below.
+        $resMsg = getReservationUnseenMsgCount();
         if ($resMsg > 0) {
             $count += $resMsg;
             $items[] = self::item('message-square', 'primary',
@@ -117,15 +128,27 @@ class NotificationService
         // thread (clicking Reply) records a per-admin seen and clears it — no reply
         // required. A later patron follow-up makes it unread again.
         $inq = count(self::unreadInquiryIds($user));
-        if ($inq > 0) {
-            $count += $inq;
+        // Reservation conversations with unread patron messages: all are listed in Inquiries; the
+        // ones the Transactions page doesn't list (declined, closed) are announced with them.
+        $resThreads = DB::table('reservation_messages as m')
+            ->join('circulations as c', 'c.reservation_code', '=', 'm.reservation_code')
+            ->where('m.sender_role', 'patron')->whereNull('m.seen_at')
+            ->select('m.reservation_code', DB::raw('MAX(c.status) as status'))->groupBy('m.reservation_code')
+            ->pluck('status', 'm.reservation_code');
+        $closedThreads = $resThreads->reject(fn ($st) => in_array((int) $st, Circulation::ON_RESERVATIONS_PAGE, true))->count();
+
+        $inqItem = $inq + $closedThreads;
+        if ($inqItem > 0) {
+            $count += $inqItem;
             $items[] = self::item('help-circle', 'info',
-                $inq . ' unread ' . self::plural($inq, 'inquiry', 'inquiries'),
+                $inqItem . ' unread ' . self::plural($inqItem, 'inquiry', 'inquiries'),
                 'New questions or replies from patrons',
                 url('/admin/inquiry'));
         }
 
-        return ['count' => $count, 'items' => $items];
+        // 'inquiries' feeds the sidebar's Inquiries badge: inquiries plus every reservation conversation
+        // with unread patron messages, as Inquiries lists them all.
+        return ['count' => $count, 'items' => $items, 'inquiries' => $inq + $resThreads->count()];
     }
 
     /**

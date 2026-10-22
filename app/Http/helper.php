@@ -273,6 +273,16 @@ function reviewPendingQuery($userId)
 		->groupBy('catalog_id');
 }
 
+/**
+ * A patron's reservations and loans whose status changed since they last opened their Reservations
+ * page (circulations.patron_seen_status): approved, declined, checked out or returned by staff.
+ */
+function reservationUpdatesQuery($userId)
+{
+	return \DB::table('circulations')->where('user_id', $userId)
+		->where(fn ($q) => $q->whereNull('patron_seen_status')->orWhereColumn('status', '<>', 'patron_seen_status'));
+}
+
 function getNotif($type)
 {
 	if(Auth::check())
@@ -292,12 +302,14 @@ function getNotif($type)
 				break;
 
 				case "reservation":
-					// Unseen messages from the library (admin) in this patron's reservation chats.
+					// Unseen messages from the library (admin) in this patron's reservation chats, plus
+					// reservations whose status changed since the patron last opened the page.
 					$list = \DB::table('reservation_messages')
 						->where('user_id',Auth::user()->id)
 						->where('sender_role','admin')
 						->whereNull('seen_at')
-						->count();
+						->count()
+						+ reservationUpdatesQuery(Auth::user()->id)->count();
 				break;
 			}
 
