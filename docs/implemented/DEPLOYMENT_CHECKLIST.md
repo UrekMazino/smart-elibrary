@@ -123,6 +123,17 @@ uv pip install --python .venv\Scripts\python.exe -r requirements.txt
 powershell -ExecutionPolicy Bypass -File .\register-projecty-tasks.ps1
 ```
 
+**Who writes AI answers** (Admin → Settings → AI mode → **Answer with**). The default is *Google Gemini,
+with the local AI as backup*, chosen for local development in Oct 2026. Before production, decide:
+- **Local AI only:** nothing leaves the server.
+- **A Gemini option:** the question and its retrieved passages go to Google, so this needs approval
+  under the agency's data policy and a key with **billing enabled**. Free-tier keys let Google use the
+  content to improve its products.
+
+The key goes in `ProjectY\.env` as `GEMINI_API_KEY` (copy `ProjectY\.env.example`). It never goes in
+this app's `.env` or database. After changing it, restart the `ProjectY-rag-api` task. With no key, the
+backup option simply answers locally.
+
 Details: `hermes-with-rag/CATALOG_SYNC_RUNBOOK.md`, `MANUAL_REINDEX_PROCEDURE.md`,
 `STARTING_HERMES_GUIDE.md`.
 

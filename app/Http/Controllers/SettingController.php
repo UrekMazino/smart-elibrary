@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Validation\Rule;
 use App\Models\Setting;
 use App\Models\ViewCatalog;
 use App\Services\AiSearchService;
@@ -96,6 +97,17 @@ class SettingController extends Controller
                 ['key' => 'ai_mode_enabled'],
                 ['value' => $request->boolean('ai_mode_enabled') ? '1' : '0']
             );
+
+            // "Answer with": only a known provider is stored; absent (an older form) leaves it as is.
+            $request->validate([
+                'ai_answer_provider' => ['nullable', Rule::in(array_keys(AiSearchService::PROVIDERS))],
+            ]);
+            if ($request->filled('ai_answer_provider')) {
+                Setting::updateOrCreate(
+                    ['key' => 'ai_answer_provider'],
+                    ['value' => $request->input('ai_answer_provider')]
+                );
+            }
         }
 
         settingsFlush();   // don't serve this request's stale memoised copy
@@ -117,6 +129,8 @@ class SettingController extends Controller
             'ok'       => $health['ok'],
             'status'   => $health['status'],
             'detail'   => $health['detail'],
+            'provider' => $ai->provider(),
+            'gemini'   => $health['gemini'] ?? null,   // {configured, model}: never the key
         ]);
     }
 

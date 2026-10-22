@@ -269,6 +269,9 @@ class ResultController extends Controller
             'stub'      => $res['stub'] ?? false,
             'sources'   => $res['sources'],
             'took_ms'   => $res['usage']['took_ms'] ?? null,
+            // Who wrote it ('gemini' | 'local'), so the answer can say so. The fallback reason
+            // stays server-side.
+            'answered_by' => $res['answered_by']['provider'] ?? null,
         ]);
     }
 

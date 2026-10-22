@@ -37,7 +37,7 @@ These pages are open to everyone. Only published records ever appear; a held, de
 | Search results | `/results?query=…` | Anyone | Keyword search; filters (material type, author, year, full text available) with counts; sort; grid and list views; paging; suggestions while typing |
 | Quick view (on results) | button on each result | Anyone | Opens the record's main details over the list without leaving it |
 | Cite (on results) | button on each result | Anyone | Shows APA, MLA and Chicago; each Copy button copies its citation |
-| AI mode (on results) | switch on the search page | Anyone, when enabled in Settings | Answers a question from the collection with numbered sources; at most 10 questions a minute; when the AI service is off it says "AI mode is temporarily unavailable" |
+| AI mode (on results) | switch on the search page | Anyone, when enabled in Settings | Answers a question from the collection with numbered sources; at most 10 questions a minute; when the AI service is off it says "AI mode is temporarily unavailable"; the answer's footer says who wrote it ("Written by Google Gemini…" or "Written by the library's own AI…", per Settings → Answer with) |
 | Record page | `/full-description/{id}` | Anyone | Redirects to `/full-description/{id}-{title}`. Title, authors, ratings, view and download counts, Full Record table, Citation, Physical Copies, Reviews |
 | Citation box | on the record page | Anyone | APA, MLA, Chicago switch: one shows at a time; Copy copies the one showing; the last style chosen is remembered after a reload |
 | Read | button on the record page | Patron, staff | Opens the PDF reader over the page and shows all pages. Guest gets a sign-in popup. Greyed out when the record has no PDF |
@@ -163,7 +163,7 @@ The rest of the admin, in sidebar order. Staff land on the Dashboard after signi
 | Add or edit news | `/admin/news/add`, `/admin/news/edit/{id}` | `access.news` | Title, body (formatting kept, scripts removed), cover image (JPG, PNG or WEBP up to 2 MB), link (must start with http:// or https://), Featured. Shows under Related News on the OPAC home |
 | Reports | `/admin/report` | `access.reports` | Pick a report and a period, preview, print: Acquisition, Patron, Borrowed Materials, Inquiries, CSF (satisfaction survey), Publication Downloads, Publication Uploads |
 | Visitor log | `/admin/visits` | `access.reports` | Not in the menu; opens by address |
-| Settings | `/admin/settings` | `access.configuration` + `access.settings` | AI mode on/off and its status check (`manage.ai.mode`); hide the site from search engines; Google verification code; generated covers on/off; **Save Settings** |
+| Settings | `/admin/settings` | `access.configuration` + `access.settings` | AI mode on/off, **Answer with** (Google Gemini with the local AI as backup, Gemini only, or local only; an unknown value is refused) and the status check, which also says whether the AI server has a Gemini key (`manage.ai.mode`); hide the site from search engines; Google verification code; generated covers on/off; **Save Settings** |
 | Search index | card on Settings | same | **Scan** reports records missing from search; **Rebuild** re-creates the index (at most 5 a minute) |
 | Sitemap | card on Settings | same | Regenerates `/sitemap.xml` (at most 5 a minute) |
 | Clear cache | card on Settings | same | Home page shelves and counts refresh; patrons and staff stay signed in (at most 10 a minute) |

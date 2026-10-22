@@ -55,6 +55,21 @@
                             either way.
                         </p>
 
+                        <label for="ai_answer_provider" class="form-label mb-1" style="font-size: 0.8125rem;"><strong>Answer with</strong></label>
+                        @php $aiProvider = app(\App\Services\AiSearchService::class)->provider(); @endphp
+                        <select id="ai_answer_provider" name="ai_answer_provider" class="form-select form-select-sm mb-2" style="max-width: 22rem;">
+                            @foreach(\App\Services\AiSearchService::PROVIDERS as $value => $label)
+                                <option value="{{ $value }}" @selected($aiProvider === $value)>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                        <p class="text-muted mb-3" style="font-size: 0.8125rem;">
+                            Finding the passages always runs on this server; this only chooses who writes the
+                            answer from them. With <strong>Gemini</strong>, the question and those passages are
+                            sent to Google (nothing about the patron). With <strong>backup</strong>, the local AI
+                            answers whenever Gemini can't (no key, rate limit, outage). The Gemini key is set on
+                            the AI server (<code>ProjectY\.env</code>), never here.
+                        </p>
+
                         <div id="aiStatusBox" class="mb-3"></div>
                         @endcan
 
@@ -250,6 +265,17 @@ function runDriftScan(silent) {
 @can('manage.ai.mode')
 // AI agent connection status. The endpoint and token live in .env (never the database,
 // never sent to the browser) — this only reports whether the agent answers.
+// Whether the gateway can use Gemini for the saved "Answer with" choice (key set or not; the key
+// itself never leaves the AI server).
+function geminiLine(r) {
+    if (!r.ok) return '';
+    if (!r.gemini) return 'Gemini: not supported by this gateway version &middot; ';
+    var model = $('<div>').text(r.gemini.model || '').html();
+    if (r.gemini.configured) return 'Gemini: key set (<code>' + model + '</code>) &middot; ';
+    return '<span style="color:var(--ui-warning-ink, #a06e14);">Gemini: no key on the AI server' +
+           (r.provider === 'local' ? '' : ', so answers come from the local AI') + '</span> &middot; ';
+}
+
 function renderAiStatus(r) {
     // 'loading' (models still warming up) is an amber in-between, not a hard failure.
     var warming = !r.ok && r.status === 'loading',
@@ -265,7 +291,8 @@ function renderAiStatus(r) {
             '<button type="button" id="aiTestBtn" class="btn btn-outline-secondary btn-sm">Test connection</button>' +
           '</div>' +
           '<div class="text-muted mt-2" style="font-size:0.71875rem;">' +
-            'Agent: Local (Hermes) &middot; Endpoint: <code>' + $('<div>').text(r.endpoint || '—').html() + '</code>' +
+            geminiLine(r) +
+            'Endpoint: <code>' + $('<div>').text(r.endpoint || '—').html() + '</code>' +
             ' &middot; set in <code>.env</code>, not here &mdash; secrets stay out of the database.' +
           '</div>' +
         '</div>'
