@@ -150,6 +150,9 @@ Route::controller(AdminController::class)->group(function () {
     Route::get('/admin/inquiry', 'inquiry')->middleware('can:access.inquiry');
     Route::get('/admin/inquiry/json', 'inquiryjson')->middleware('can:access.inquiry');
 
+    // Administration → Accounts hub. Its Roles and Administrators pages are for super_admin and developer whatever
+    // their permissions say, so the hub is too: unticking access.accounts cannot hide the way back to Roles.
+    Route::get('/admin/accounts', 'accounts')->name('accounts')->middleware('role_or_permission:super_admin|developer|access.accounts');
     Route::get('/admin/patron', 'patron')->name('patrons')->middleware('can:access.accounts');
     Route::post('/admin/user/toggle-flag', 'toggleUserFlag')->middleware('can:manage.patron.status');
 

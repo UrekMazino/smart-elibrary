@@ -124,10 +124,10 @@ class BatchImportReportTest extends TestCase
 
     public function test_an_unreadable_record_is_skipped_and_the_rest_of_the_file_still_imports()
     {
-        // Without the "tag not found" entry, a tag missing from the MARC 21 table can't be read.
+        // Without the "tag not found" entry, a tag missing from the tag tables (090; 900–999 have rows) can't be read.
         DB::table('marctag_subfields_loc')->where('marctags_loc_id', 2500)->delete();
         DB::table('marctags_loc')->where('id', 2500)->delete();
-        $file = $this->marc(['001' => 'U1', '100' => ['a' => 'Cruz, Juan.'], '245' => ['a' => 'Has a local tag'], '977' => ['a' => 'x']])
+        $file = $this->marc(['001' => 'U1', '090' => ['a' => 'x'], '100' => ['a' => 'Cruz, Juan.'], '245' => ['a' => 'Has a local tag']])
               . $this->marc(['001' => 'U2', '100' => ['a' => 'Cruz, Juan.'], '245' => ['a' => 'Fine record'], '260' => ['c' => '2001']]);
 
         $this->actingAs($this->staff)->post('/admin/create-batch/store', [

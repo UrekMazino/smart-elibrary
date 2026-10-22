@@ -19,14 +19,15 @@ $(document).ready(function(){
 
         let rowClass = isEven ? 'even-row' : 'odd-row';
 
+        // The tag's name; a tag outside MARC 21 (942...) is named by its number.
         let description = entry.marctag.description;
+        if (typeof description !== 'string' || description === '') {
+            description = String(entry.marctag.code);
+        }
         rowDiv.addClass(rowClass);
 
         let col1Div = $('<div class="p-2 col-lg-4 col-md-4 col-sm-12 text-left"></div>');
-        if (typeof description !== 'string') {
-            description = description.toString();
-        }
-        col1Div.html('<strong>' + description.toUpperCase()  + '</strong>');
+        col1Div.append($('<strong>').text(description.toUpperCase()));
         rowDiv.append(col1Div);
 
         let col2Div = $('<div class="p-2 col-lg-8 col-md-8 col-sm-12 text-left"></div>');

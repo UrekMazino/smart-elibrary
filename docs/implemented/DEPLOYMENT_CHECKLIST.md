@@ -24,6 +24,9 @@ They share **one MySQL database** (`elibrarydb`) and the eLibrary **`.env`** —
 
 ## 2. Deploy steps (this app)
 
+**PHP 8.5.12 or newer** on the server (and in Laragon): 8.5.12 carries the fix for PHP2Shell
+(CVE-2026-109618 / CVE-2026-109619, 21 Oct 2026), and `composer install` refuses an older PHP.
+
 ```bash
 # 1. code + dependencies
 git pull

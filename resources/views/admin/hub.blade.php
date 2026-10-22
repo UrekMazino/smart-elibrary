@@ -1,7 +1,7 @@
 @extends("admin.layouts.master")
 
-{{-- Administration → Utilities: a hub of admin tools. Each card is one utility the current
-     admin may use (MaterialTypeController::utilities builds the list from their permissions). --}}
+{{-- A hub page of cards under Administration: Accounts (AdminController::accounts) and Utilities
+     (MaterialTypeController::utilities). Each builds the cards this admin may use from their permissions. --}}
 
 @section('css')
     <style>
@@ -26,8 +26,8 @@
 @section('content')
 <div class="page-content">
     <div class="ac-head">
-        <h4>Utilities</h4>
-        <p>Tools for maintaining the library's reference data. More utilities will appear here as they're added.</p>
+        <h4>{{ $title }}</h4>
+        <p>{{ $intro }}</p>
     </div>
 
     @if(count($cards))
@@ -46,8 +46,8 @@
     @else
         <div class="util-empty">
             <i data-feather="lock" class="mb-2"></i>
-            <h6 class="mb-1" style="color:#55606b;">No utilities for your role yet</h6>
-            <p class="mb-0" style="font-size:12.5px;">Ask a Super Administrator to grant you a utility permission (e.g. <em>Manage Material Types</em>) in Administration → Roles.</p>
+            <h6 class="mb-1" style="color:#55606b;">No {{ strtolower($title) }} for your role yet</h6>
+            <p class="mb-0" style="font-size:12.5px;">Ask a Super Administrator to grant your role the permission in Administration → Accounts → Roles.</p>
         </div>
     @endif
 </div>

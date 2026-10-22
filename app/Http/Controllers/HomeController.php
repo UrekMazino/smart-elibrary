@@ -70,13 +70,18 @@ class HomeController extends Controller
             'access.inquiry'               => 'admin/inquiry',
             'access.news'                  => 'admin/news',
             'access.reports'               => 'admin/report',
-            'access.configuration'         => 'admin/settings',
+            'access.settings'              => 'admin/settings',
+            'manage.material.types'        => 'admin/utilities',
+            'view.config.template'         => 'admin/utilities',
+            'access.ai.sync.monitor'       => 'admin/utilities',
         ];
         // Module access is required as well for pages inside a module.
         $module = [
             'create.catalog' => 'access.cataloging', 'view.catalog.list' => 'access.cataloging', 'view.catalog.importlist' => 'access.cataloging',
             'circulation.reservation.view' => 'access.circulation', 'manage.circulation.checkouts' => 'access.circulation',
             'access.circulation.transaction' => 'access.circulation',
+            'access.settings' => 'access.configuration', 'manage.material.types' => 'access.configuration',
+            'view.config.template' => 'access.configuration', 'access.ai.sync.monitor' => 'access.configuration',
         ];
 
         foreach ($pages as $permission => $url) {

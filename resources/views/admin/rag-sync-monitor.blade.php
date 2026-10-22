@@ -47,7 +47,7 @@
 <div class="page-content">
     <nav class="page-breadcrumb">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item">Administration</li>
+            <li class="breadcrumb-item"><a href="{{ route('utilities') }}">Utilities</a></li>
             <li class="breadcrumb-item active" aria-current="page">AI Sync Monitor</li>
         </ol>
     </nav>

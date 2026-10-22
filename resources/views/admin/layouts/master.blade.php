@@ -205,91 +205,46 @@ License: For each use you must have a valid license purchased only from above li
             </a>
           </li> --}}
 
-          @can('access.accounts')
-            <li class="nav-item nav-category">Accounts</li>
-            {{-- <li class="nav-item">
-              <a href="{{ url('/admin/users') }}" class="nav-link">
-                <i class="link-icon" data-feather="users"></i>
-                <span class="link-title">Users</span>
-              </a>
-            </li> --}}
-            @hasanyrole('super_admin|developer')
-              <li class="nav-item">
-                <a href="{{ route('administrators') }}" class="nav-link">
-                  <i class="link-icon" data-feather="shield"></i>
-                  <span class="link-title">Administrators</span>
-                </a>
-              </li>
-            @endhasanyrole
-            <li class="nav-item">
-              <a href="{{ url('/admin/patron') }}" class="nav-link">
-                <i class="link-icon" data-feather="users"></i>
-                <span class="link-title">Patrons</span>
-              </a>
-            </li>
-            @can('create.patron')
-            <li class="nav-item">
-              <a href="{{ url('/admin/register') }}" class="nav-link">
-                <i class="link-icon" data-feather="user-plus"></i>
-                <span class="link-title">Register a Patron</span>
-              </a>
-            </li>
-            @endcan
-          @endcan
-          @can('access.configuration')
+          {{-- Administration: each link has the same checks as its route, and the heading shows only above a link.
+               Accounts (AdminController::accounts): Administrators, Patrons, Roles, Permissions. Utilities
+               (MaterialTypeController::utilities): Material Types, MARC Templates, AI Sync Monitor. Each stays
+               highlighted on its cards' pages. --}}
+          @php
+            $me = auth()->user();
+            $navAccounts  = $me->can('access.accounts') || $me->hasAnyRole(['super_admin', 'developer']);
+            $navSettings  = $me->can('access.configuration') && $me->can('access.settings');
+            $navUtilities = $me->can('access.configuration') && $me->canAny(['manage.material.types', 'view.config.template', 'access.ai.sync.monitor']);
+          @endphp
+          @if($navAccounts || $navSettings || $navUtilities)
             <li class="nav-item nav-category">Administration</li>
+          @endif
 
-            @can('access.settings')
+          @if($navAccounts)
+            <li class="nav-item {{ request()->is('admin/accounts', 'admin/patron*', 'admin/register*', 'superadmin/*', 'admin/roles*', 'admin/permissions*') ? 'active' : '' }}">
+              <a href="{{ route('accounts') }}" class="nav-link">
+                <i class="link-icon" data-feather="users"></i>
+                <span class="link-title">Accounts</span>
+              </a>
+            </li>
+          @endif
+
+          @if($navSettings)
             <li class="nav-item">
               <a href="{{ url('/admin/settings') }}" class="nav-link">
                 <i class="link-icon" data-feather="settings"></i>
                 <span class="link-title">Settings</span>
               </a>
             </li>
-            @endcan
+          @endif
 
-            {{-- Utilities hub: shown when the admin can use at least one utility. --}}
-            @canany(['manage.material.types'])
-            <li class="nav-item">
+          @if($navUtilities)
+            <li class="nav-item {{ request()->is('admin/utilities*', 'admin/marc-templates*', 'admin/ai-sync-monitor*') ? 'active' : '' }}">
               <a href="{{ route('utilities') }}" class="nav-link">
                 <i class="link-icon" data-feather="tool"></i>
                 <span class="link-title">Utilities</span>
               </a>
             </li>
-            @endcanany
-            
-            @can('view.config.template')
-              <li class="nav-item">
-                <a href="{{ url('/admin/marc-templates') }}" class="nav-link">
-                  <i class="link-icon" data-feather="layout"></i>
-                  <span class="link-title">MARC Templates</span>
-                </a>
-              </li>
-            @endcan
-
-            @can('access.ai.sync.monitor')
-              <li class="nav-item">
-                <a href="{{ url('/admin/ai-sync-monitor') }}" class="nav-link">
-                  <i class="link-icon" data-feather="cpu"></i>
-                  <span class="link-title">AI Sync Monitor</span>
-                </a>
-              </li>
-            @endcan
-            @hasanyrole('super_admin|developer')
-            <li class="nav-item">
-              <a href="{{ route('admin.list_roles') }}" class="nav-link">
-                <i class="link-icon" data-feather="user-check"></i>
-                <span class="link-title">Roles</span>
-              </a>
-            </li>
-            <li class="nav-item">
-              <a href="{{ route('admin.list_permissions') }}" class="nav-link">
-                <i class="link-icon" data-feather="key"></i>
-                <span class="link-title">Permissions</span>
-              </a>
-            </li>
-            @endhasanyrole
-          @endcan
+          @endif
         </ul>
       </div>
     </nav>

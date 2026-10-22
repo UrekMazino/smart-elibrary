@@ -310,6 +310,11 @@ function marcLookup(string $question, Closure $answer)
 	return $memo[$question];
 }
 
+// marctags_loc row 2500 ("999 · Marctag not found") stands in for a tag the tables don't have (a local
+// one outside 900–999 such as 090 or 590, an obsolete one): its fields get this id (for the indicator
+// lookups) and their tag number as name. 900–999 have rows of their own, also named by number.
+const MARCTAG_NOT_FOUND_ID = 2500;
+
 function getTagDetails($id, $code = null, $col = null)
 {
 	return marcLookup(__FUNCTION__ . json_encode(func_get_args()), function () use ($id, $code, $col) {
@@ -317,15 +322,16 @@ function getTagDetails($id, $code = null, $col = null)
 			$marcTag = DB::table('marctags_loc')->select('id','code', 'description')->where('id', $id)->first();
 			return $marcTag;
 		} else {
-			$marcTag = DB::table('marctags_loc')->select('id','code', 'description')->where('code',  'like', '%' . $code . '%')->first();
-		
-			if(!is_null($marcTag)){
-				return !is_null($col) ? $marcTag->$col : $marcTag->id;
-			} 
-			// id 2500 meaning Marc Tag not Found
-			$id = 2500;
-			return $id;
-		
+			// The placeholder row carries the code 999 too; the real 999 is a local tag of its own.
+			$marcTag = DB::table('marctags_loc')->select('id','code', 'description')->where('id', '<>', MARCTAG_NOT_FOUND_ID)
+				->where('code',  'like', '%' . $code . '%')->first();
+
+			// Not in the tag tables (a local tag outside 900–999, an obsolete one): the tag number is its name.
+			if (is_null($marcTag)) {
+				return in_array($col, ['code', 'description'], true) ? $code : MARCTAG_NOT_FOUND_ID;
+			}
+			return !is_null($col) ? $marcTag->$col : $marcTag->id;
+
 		}
 	});
 }
@@ -438,10 +444,7 @@ function getSubfieldId($code)
 {
 	return marcLookup(__FUNCTION__ . json_encode(func_get_args()), function () use ($code) {
 		$subfield = DB::table('marctag_subfields_loc')->select('id')->where('code',  'like', '%' . $code . '%')->first();
-		if(is_null($subfield)) {
-			return "MARCTAG ($code) not found!";
-		}
-		return $subfield ? $subfield->id : 0;
+		return $subfield?->id;   // null for a subfield of a tag outside MARC 21: no row to point at
 	});
 }
 
@@ -450,7 +453,7 @@ function getSubfield($code, $col)
 	return marcLookup(__FUNCTION__ . json_encode(func_get_args()), function () use ($code, $col) {
 		$subfield = DB::table('marctag_subfields_loc')->select('id', 'code', 'description')->where('code',  'like', '%' . $code . '%')->first();
 		if(is_null($subfield)) {
-			return "MARCTAG ($code) not found!";
+			return $col === 'id' ? null : $code;   // a subfield of a tag the tables don't have: its code ("090$a") is its name
 		}
 		return $subfield->$col;
 	});
