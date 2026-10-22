@@ -9,6 +9,8 @@
 
 FPRDI/DOST agri-forestry catalog / OPAC (Laravel), built RAG-ready for the **Project Y** local AI stack.
 
+**Requires PHP 8.5.12 or newer** (the PHP2Shell security fix of 21 Oct 2026; `composer.json` refuses an older PHP).
+
 **📖 Documentation**
 - **Full-stack rebuild** (this app + Hermes + RAG): [`DEPLOYMENT_RUNBOOK.md`](https://github.com/UrekMazino/hermes-with-rag/blob/main/DEPLOYMENT_RUNBOOK.md) in the `hermes-with-rag` repo — the single ordered entry point.
 - **Deploying this app:** [`DEPLOYMENT_CHECKLIST.md`](docs/implemented/DEPLOYMENT_CHECKLIST.md) — ordered deploy steps, required `.env`, out-of-git state, and the cross-repo change record.
