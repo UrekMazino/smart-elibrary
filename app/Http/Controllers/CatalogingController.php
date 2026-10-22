@@ -163,7 +163,7 @@ class CatalogingController extends Controller
 
             // Every subfield this tag allows — powers the row picker + Add Subfield. Skipped for
             // the fixed control fields (edited through the guided panel, not the generic card UI).
-            // A tag outside MARC 21 (942...) has no list: it offers the subfield codes it already has.
+            // A tag the tables don't have (090...) has no list: it offers the subfield codes it already has.
             $local   = (int) ($tag['id'] ?? 0) === MARCTAG_NOT_FOUND_ID;
             $allSubfields = [];
             if ($local) {
@@ -973,7 +973,7 @@ class CatalogingController extends Controller
                     }
                     
                     // One field per tag number (the query above gathers its repeats). By number, not id:
-                    // every tag outside MARC 21 (942, 952, 999...) shares the placeholder id.
+                    // every tag the tables don't have (090, 590...) shares the placeholder id.
                     if(!in_array($marcTags[$w], $repeatedMarctags, true)) {
                         $fa[] = array(
                             'marctag' => [

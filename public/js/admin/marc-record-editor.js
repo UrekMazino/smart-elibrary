@@ -519,7 +519,7 @@ var MarcEditor = (function () {
             (f.options.subfields || []).forEach(function (sf) {
                 var opt = $('<option>').val(sf.id == null ? '' : sf.id).attr({ 'data-code': sf.code, 'data-desc': sf.description })
                     .text(codeAndName(sf.code, sf.description));
-                // A local tag's subfields have no id (no MARC 21 row): they match by code.
+                // Subfields of a tag the tables don't have (090...) have no id: they match by code.
                 if (s.id != null ? s.id == sf.id : (sf.id == null && s.code != null && s.code === sf.code)) {
                     opt.attr('selected', 'selected');
                     picked = true;

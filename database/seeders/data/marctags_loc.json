@@ -2488,5 +2488,995 @@
         "Repeatable": 0,
         "created_at": null,
         "updated_at": null
+    },
+    {
+        "id": 2502,
+        "code": "900",
+        "description": "900",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2503,
+        "code": "902",
+        "description": "902",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2504,
+        "code": "903",
+        "description": "903",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2505,
+        "code": "904",
+        "description": "904",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2506,
+        "code": "905",
+        "description": "905",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2507,
+        "code": "906",
+        "description": "906",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2508,
+        "code": "907",
+        "description": "907",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2509,
+        "code": "908",
+        "description": "908",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2510,
+        "code": "909",
+        "description": "909",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2511,
+        "code": "910",
+        "description": "910",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2512,
+        "code": "911",
+        "description": "911",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2513,
+        "code": "912",
+        "description": "912",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2514,
+        "code": "913",
+        "description": "913",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2515,
+        "code": "914",
+        "description": "914",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2516,
+        "code": "915",
+        "description": "915",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2517,
+        "code": "916",
+        "description": "916",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2518,
+        "code": "917",
+        "description": "917",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2519,
+        "code": "918",
+        "description": "918",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2520,
+        "code": "919",
+        "description": "919",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2521,
+        "code": "920",
+        "description": "920",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2522,
+        "code": "921",
+        "description": "921",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2523,
+        "code": "922",
+        "description": "922",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2524,
+        "code": "923",
+        "description": "923",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2525,
+        "code": "924",
+        "description": "924",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2526,
+        "code": "925",
+        "description": "925",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2527,
+        "code": "926",
+        "description": "926",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2528,
+        "code": "927",
+        "description": "927",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2529,
+        "code": "928",
+        "description": "928",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2530,
+        "code": "929",
+        "description": "929",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2531,
+        "code": "930",
+        "description": "930",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2532,
+        "code": "931",
+        "description": "931",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2533,
+        "code": "932",
+        "description": "932",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2534,
+        "code": "933",
+        "description": "933",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2535,
+        "code": "934",
+        "description": "934",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2536,
+        "code": "935",
+        "description": "935",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2537,
+        "code": "936",
+        "description": "936",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2538,
+        "code": "937",
+        "description": "937",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2539,
+        "code": "938",
+        "description": "938",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2540,
+        "code": "939",
+        "description": "939",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2541,
+        "code": "940",
+        "description": "940",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2542,
+        "code": "941",
+        "description": "941",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2543,
+        "code": "942",
+        "description": "942",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2544,
+        "code": "943",
+        "description": "943",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2545,
+        "code": "944",
+        "description": "944",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2546,
+        "code": "945",
+        "description": "945",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2547,
+        "code": "946",
+        "description": "946",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2548,
+        "code": "947",
+        "description": "947",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2549,
+        "code": "948",
+        "description": "948",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2550,
+        "code": "949",
+        "description": "949",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2551,
+        "code": "950",
+        "description": "950",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2552,
+        "code": "951",
+        "description": "951",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2553,
+        "code": "952",
+        "description": "952",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2554,
+        "code": "953",
+        "description": "953",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2555,
+        "code": "954",
+        "description": "954",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2556,
+        "code": "955",
+        "description": "955",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2557,
+        "code": "956",
+        "description": "956",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2558,
+        "code": "957",
+        "description": "957",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2559,
+        "code": "958",
+        "description": "958",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2560,
+        "code": "959",
+        "description": "959",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2561,
+        "code": "960",
+        "description": "960",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2562,
+        "code": "961",
+        "description": "961",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2563,
+        "code": "962",
+        "description": "962",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2564,
+        "code": "963",
+        "description": "963",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2565,
+        "code": "964",
+        "description": "964",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2566,
+        "code": "965",
+        "description": "965",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2567,
+        "code": "966",
+        "description": "966",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2568,
+        "code": "967",
+        "description": "967",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2569,
+        "code": "968",
+        "description": "968",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2570,
+        "code": "969",
+        "description": "969",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2571,
+        "code": "970",
+        "description": "970",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2572,
+        "code": "971",
+        "description": "971",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2573,
+        "code": "972",
+        "description": "972",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2574,
+        "code": "973",
+        "description": "973",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2575,
+        "code": "974",
+        "description": "974",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2576,
+        "code": "975",
+        "description": "975",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2577,
+        "code": "976",
+        "description": "976",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2578,
+        "code": "977",
+        "description": "977",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2579,
+        "code": "978",
+        "description": "978",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2580,
+        "code": "979",
+        "description": "979",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2581,
+        "code": "980",
+        "description": "980",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2582,
+        "code": "981",
+        "description": "981",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2583,
+        "code": "982",
+        "description": "982",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2584,
+        "code": "983",
+        "description": "983",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2585,
+        "code": "984",
+        "description": "984",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2586,
+        "code": "985",
+        "description": "985",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2587,
+        "code": "986",
+        "description": "986",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2588,
+        "code": "987",
+        "description": "987",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2589,
+        "code": "988",
+        "description": "988",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2590,
+        "code": "989",
+        "description": "989",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2591,
+        "code": "990",
+        "description": "990",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2592,
+        "code": "991",
+        "description": "991",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2593,
+        "code": "992",
+        "description": "992",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2594,
+        "code": "993",
+        "description": "993",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2595,
+        "code": "994",
+        "description": "994",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2596,
+        "code": "995",
+        "description": "995",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2597,
+        "code": "996",
+        "description": "996",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2598,
+        "code": "997",
+        "description": "997",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2599,
+        "code": "998",
+        "description": "998",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2600,
+        "code": "999",
+        "description": "999",
+        "first_indictors": "[1]",
+        "second_indicators": "[1]",
+        "Repeatable": 1,
+        "created_at": null,
+        "updated_at": null
     }
 ]
