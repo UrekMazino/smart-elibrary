@@ -119,6 +119,7 @@
         .cr-footer {
             position: sticky; bottom: 0; background: var(--ui-surface, #fff); border-top: 1px solid var(--ui-border, #eef0f2);
             padding: 14px 0 2px; margin-top: 6px;
+            display: flex; flex-wrap: wrap; gap: 8px;
         }
     </style>
     @include('admin.partials.marc-editor-styles')
@@ -224,8 +225,13 @@
                         </div>
 
                         <div class="cr-footer">
+                            {{-- Create Record brings back an empty form for the next record (its notice links to the new
+                                 one); Add and View Record opens the new record's page. --}}
                             <button class="btn btn-primary" type="submit">
                                 <i data-feather="save" class="icon-sm me-1"></i>Create Record
+                            </button>
+                            <button class="btn btn-outline-primary" type="submit" name="after" value="view">
+                                <i data-feather="eye" class="icon-sm me-1"></i>Add and View Record
                             </button>
                         </div>
                     </form>
@@ -255,11 +261,7 @@
 </script>
 <script src="{{ asset('js/admin/marc-record-editor.js') }}"></script>
 <script src="{{ asset('js/admin/import/single-import.js') }}"></script>
-@if(session('success'))
-<script>
-    showSwal('custom-position');
-</script>
-@endif
+@include('admin.partials.saved-toast')
 <script>
     // "ADD" in the Add Tag modal -> append that MARC field to the record.
     $(document).on('click', '.add-field-link', function(event) {

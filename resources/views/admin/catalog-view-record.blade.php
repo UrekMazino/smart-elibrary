@@ -620,6 +620,7 @@
 </form>
 @endsection
 @section('js')
+@include('admin.partials.saved-toast')
 <!-- <script src="{{ asset('js/admin/citation-js/index.js') }}"></script> -->
 <!-- Include @citation-js/core library -->
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/DataTables/DataTables-1.12.1/js/jquery.dataTables.min.js') }}"></script>
@@ -827,6 +828,13 @@ $(function () {
 
     function actionFrm(id,action)
     {
+        // Opening the edit page changes nothing, so it goes straight there; only Delete asks first.
+        if(action == 'edit') {
+            appBusy.show();
+            window.location.href = "{{ route('edit-record', ['id' => ':id']) }}".replace(':id', id);
+            return;
+        }
+
         Swal.fire({
             title: 'Are you sure?',
             text: "",
@@ -839,11 +847,6 @@ $(function () {
             }).then((result) => {
             if (result.value) {
                 appBusy.show();
-
-                if(action == 'edit') {
-                    let act = "{{ route('edit-record', ['id' => ':id']) }}".replace(':id', id);
-                    window.location.href = act;
-                }
 
                 if(action == 'delete') {
                     let act = "{{ route('delete-copy', ['id' => ':id']) }}".replace(':id', id);

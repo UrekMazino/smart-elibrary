@@ -272,6 +272,13 @@ function copyFrm(id)
 
 function actionFrm(id,action)
 {
+  // Opening the edit page changes nothing, so it goes straight there; only Delete asks first.
+  if(action == 'edit') {
+    appBusy.show();
+    window.location.href = "{{ route('edit-record', ['id' => ':id']) }}".replace(':id', id);
+    return;
+  }
+
   $("#action_catalog_id").val(id);
   Swal.fire({
       title: 'Are you sure?',
@@ -285,11 +292,6 @@ function actionFrm(id,action)
     }).then((result) => {
       if (result.value) {
         appBusy.show();
-
-        if(action == 'edit') {
-          let act = "{{ route('edit-record', ['id' => ':id']) }}".replace(':id', id);
-          window.location.href = act;
-        }
 
         if(action == 'delete') {
           let act = "{{ route('delete-record', ['id' => ':id']) }}".replace(':id', id);
