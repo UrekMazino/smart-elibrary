@@ -187,7 +187,7 @@ These are real changes that a `git pull` will **not** give you. They must be app
 | Area | Files |
 |---|---|
 | **RAG sync producer** | `database/migrations/2026_07_19_000000_create_rag_sync_queue_table.php`, `app/Models/RagSyncItem.php`, `app/Services/RagSync.php`, `app/Http/Controllers/CatalogingController.php` (enqueue on every mutation) |
-| **AI Sync Monitor** | `resources/views/admin/rag-sync-monitor.blade.php`, `routes/joe.php`, `resources/views/admin/layouts/master.blade.php` (nav) |
+| **AI Sync Monitor** | `resources/views/admin/rag-sync-monitor.blade.php`, `routes/web.php`, `resources/views/admin/layouts/master.blade.php` (nav) |
 | **Run sync now / re-index UI** | `app/Services/AiSearchService.php` (`drainSyncQueue`), `resources/views/admin/catalog-view-record.blade.php`, `catalog-record-list.blade.php` |
 | **SEO A — metadata** | `resources/views/opac/layout/master.blade.php`, `full-description.blade.php`, `index.blade.php`, + 11 views marked `noindex` |
 | **SEO B — JSON-LD** | `app/Http/helper.php` (`seoRecordJsonLd`, `seoSiteJsonLd`, `seoSchemaType`, …) |
