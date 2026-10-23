@@ -68,6 +68,9 @@ class Appearance
     /** The dark sidebar's background (and NobleUI's dark surface). */
     public const SIDEBAR = '#0c1427';
 
+    /** NobleUI's light page background (the Standard background sets no --ui-page). */
+    private const LIGHT_PAGE = '#f9fafb';
+
     public const MIN_CONTRAST = 4.5;
     public const HIGH_CONTRAST = 7.0;
 
@@ -177,8 +180,15 @@ class Appearance
         $onDark = self::lightenUntil($accent, $darkBg, $min);
         $vars = ['--t-primary' => $accent, '--t-primary-rgb' => self::rgbList($accent), '--t-primary-on-dark' => $onDark, '--t-primary-on-dark-rgb' => self::rgbList($onDark)];
 
+        $standard = $p['status'] === 'standard' && ! $high;
+        // In light schemes a status colour is also text (outline buttons, .text-danger): darker still if needed
+        // to read on the page, the darkest light surface (panels are lighter). The kept warning/info aren't.
+        $lightPage = $scheme === 'light' ? ($roles['--ui-page'] ?? self::LIGHT_PAGE) : null;
         foreach (self::statusBase($p) as $name => $colour) {
-            $on = self::lightenUntil($colour, $darkBg, $min);
+            if ($lightPage && ! ($standard && in_array($name, ['warning', 'info'], true))) $colour = self::darkenUntil($colour, $lightPage, $min);
+            // On dark, the standard palette starts from the template's own colours (they already read there),
+            // so the dark sidebar and dark backgrounds look as before.
+            $on = self::lightenUntil($standard ? self::STATUS['standard'][$name] : $colour, $darkBg, $min);
             $vars += ["--t-$name" => $colour, "--t-$name-rgb" => self::rgbList($colour), "--t-$name-on-dark" => $on, "--t-$name-on-dark-rgb" => self::rgbList($on)];
         }
         $vars['--t-text'] = rtrim(rtrim(number_format($p['text'] / 100, 2, '.', ''), '0'), '.');
@@ -277,13 +287,19 @@ class Appearance
         return self::contrast($hex, '#000000') >= self::contrast($hex, '#ffffff');
     }
 
-    /** The status colours: the palette, darkened for white text when not the template's own. */
+    /**
+     * The status colours, darkened until white text on them reads (4.5:1, 7:1 with high contrast). The
+     * standard palette keeps the template's warning and info, whose buttons carry dark text; its success
+     * and danger carry white text (buttons, badges, the confirm dialogs' Cancel), so they darken too.
+     * The colour-blind and high-contrast palettes darken all four (white text on all: admin-appearance.css).
+     */
     private static function statusBase(array $p): array
     {
         $high = $p['contrast'] === 'high';
         $out = [];
         foreach (self::STATUS[$p['status']] as $name => $colour) {
-            $out[$name] = $p['status'] === 'standard' && ! $high ? $colour : self::forWhiteText($colour, $high ? self::HIGH_CONTRAST : self::MIN_CONTRAST);
+            $keep = $p['status'] === 'standard' && ! $high && in_array($name, ['warning', 'info'], true);
+            $out[$name] = $keep ? $colour : self::forWhiteText($colour, $high ? self::HIGH_CONTRAST : self::MIN_CONTRAST);
         }
         return $out;
     }

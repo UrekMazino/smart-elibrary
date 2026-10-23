@@ -67,6 +67,26 @@ class AppearanceTest extends TestCase
         }
     }
 
+    public function test_white_text_on_status_colours_reads_on_every_palette()
+    {
+        // Success and danger carry white text (buttons, badges, the confirm dialogs' Cancel): darkened until it
+        // reads, standard palette included. Standard warning and info carry dark text and keep their colours.
+        foreach (['standard', 'colorblind'] as $palette) {
+            foreach ([false, true] as $high) {
+                $vars = $this->vars(['status' => $palette, 'contrast' => $high ? 'high' : 'standard']);
+                $min = $high ? 7.0 : 4.5;
+                foreach (['success', 'danger'] as $status) {
+                    $this->assertGreaterThanOrEqual($min, Appearance::contrast($vars["--t-$status"], '#ffffff'), "$palette $status, high=" . (int) $high);
+                }
+            }
+        }
+        $standard = $this->vars([]);
+        $this->assertSame(Appearance::STATUS['standard']['warning'], $standard['--t-warning']);
+        $this->assertSame(Appearance::STATUS['standard']['info'], $standard['--t-info']);
+        $this->assertGreaterThanOrEqual(4.5, Appearance::contrast('#000000', $standard['--t-warning']));   // its dark text
+        $this->assertGreaterThanOrEqual(4.5, Appearance::contrast('#000000', $standard['--t-info']));
+    }
+
     public function test_the_standard_look_sets_no_roles()
     {
         // Nothing chosen: every --ui-* role is unset, so the template's and our own colours stay as they were.
@@ -207,6 +227,40 @@ class AppearanceTest extends TestCase
 
         $this->actingAs($themeAdmin)->post('/admin/utilities/theme', ['reset' => 1]);
         $this->assertSame(Appearance::DEFAULTS, Appearance::siteDefault());
+    }
+
+    public function test_the_theme_page_shows_the_default_it_edits_even_to_an_admin_with_their_own()
+    {
+        $themeAdmin = $this->staff('system_admin');
+        $themeAdmin->forceFill(['appearance' => Appearance::sanitize(['background' => 'cool', 'sidebar' => 'light'])])->save();
+        $this->actingAs($themeAdmin)->post('/admin/utilities/theme', ['background' => 'dim', 'sidebar' => 'dark'])->assertRedirect('/admin/utilities/theme');
+
+        // The Theme page: the default's look, so the form (Dim selected) and the page agree, and a note why.
+        $theme = $this->actingAs($themeAdmin)->get('/admin/utilities/theme')->assertOk()->getContent();
+        $this->assertStringContainsString('data-mode="dark"', $theme);
+        $this->assertStringContainsString('--ui-page: #202329', $theme);
+        $this->assertStringContainsString('<body class="sidebar-dark"', $theme);
+        $this->assertStringContainsString('id="personalNotice"', $theme);
+        $this->assertStringContainsString('Cool grey · light sidebar', $theme);
+
+        // Every other page keeps their own.
+        $page = $this->pageOf($themeAdmin);
+        $this->assertSame(['light', 'light', ''], [$page['attrs']['data-mode'], $page['attrs']['data-sidebar'], $page['body']]);
+        $this->assertStringContainsString('--ui-page: #e7ecf3', $page['vars']);
+    }
+
+    public function test_an_admin_following_the_default_sees_no_note_and_can_follow_it_from_the_theme_page()
+    {
+        $themeAdmin = $this->staff('system_admin');
+        $this->actingAs($themeAdmin)->get('/admin/utilities/theme')->assertOk()->assertDontSee('id="personalNotice"', false);
+
+        $themeAdmin->forceFill(['appearance' => Appearance::sanitize(['accent' => 'crimson'])])->save();
+        $this->actingAs($themeAdmin)->post('/admin/appearance/reset', ['from' => 'theme'])->assertRedirect('/admin/utilities/theme');
+        $this->assertNull($themeAdmin->fresh()->appearance);
+
+        // Someone without manage.theme is sent back to their own Appearance page.
+        $staff = $this->staff('cataloging_admin');
+        $this->actingAs($staff)->post('/admin/appearance/reset', ['from' => 'theme'])->assertRedirect('/admin/appearance');
     }
 
     public function test_only_theme_admins_set_the_default_and_everyone_sets_their_own()

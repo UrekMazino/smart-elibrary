@@ -89,7 +89,7 @@
                   <td class="text-center">{{ $userCounts[$role->id] }}</td>
                   <td class="text-center">
                     <div class="btn-group btn-group-sm">
-                      <button type="button" class="btn btn-outline-info btn-sm edit-role-btn"
+                      <button type="button" class="btn btn-outline-primary btn-sm edit-role-btn"
                         data-id="{{ $role->id }}" data-name="{{ $role->name }}"
                         data-display="{{ $role->display_name }}" data-desc="{{ $role->description }}">Edit</button>
                       @if(in_array($role->name, $systemRoles))

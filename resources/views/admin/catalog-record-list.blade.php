@@ -141,7 +141,7 @@ $(document).ready(function(){
     function actionMenu(row) {
       var escapedTitle = escapeHtml(row.title_statement);
       return '<div class="btn-group btn-group-sm" role="group">' +
-          '<button type="button" class="btn btn-info btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>' +
+          '<button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>' +
           '<div class="dropdown-menu dropdown-menu-end">' +
               '<a class="dropdown-item" href="#" onclick="viewRecord(' + row.id + ', \'' + escapedTitle + '\')">View Details</a>' +
               @can("publish-hold.catalog") '<a class="dropdown-item" href="#" onclick="holdMaterial(' + row.id + ')">Add to On-Hold list</a>' + @endcan

@@ -76,9 +76,6 @@
             font-weight: bold;
         }
  
-        .btn-info {
-            color: #fff !important; 
-        }
         #loadingSpinnerContainer {
           position: fixed; 
           top: 50%; 
@@ -254,7 +251,7 @@
                                 </div>
                             </div>
                         </div>
-                        <button class="btn btn-info" type="button" onclick="saveImport()" style="color:#fff;">Import</button>
+                        <button class="btn btn-primary" type="button" onclick="saveImport()">Import</button>
                     </form>
 				</div>
 			</div>

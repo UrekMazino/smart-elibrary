@@ -164,7 +164,7 @@ $('#tbl').DataTable({
               if (row.is_self) return '<span class="badge bg-light text-muted" title="Manage your own account from Profile">You</span>';
               if (!row.manageable) return '<span class="text-muted small" title="Only a developer can manage this account">—</span>';
               return '<div class="btn-group btn-group-sm" role="group">' +
-                       '<button type="button" class="btn btn-info btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>' +
+                       '<button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>' +
                        '<div class="dropdown-menu dropdown-menu-end">' +
                          '<a class="dropdown-item" href="#" onclick="showEditAdminRoleModal(' + row.id + ')">Change Role</a>' +
                          '<a class="dropdown-item" href="#" data-act="library-code" data-id="' + row.id + '">Generate Library Code</a>' +

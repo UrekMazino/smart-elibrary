@@ -54,7 +54,7 @@
                             <div id="dynamic-rows-container"></div>
                             <div class="row">
                                 <div class="col-md-12 col-sm-12 mb-3 text-center">
-                                    <button type="submit" class="btn btn-info me-2" style="color: white;">Update</button>
+                                    <button type="submit" class="btn btn-primary me-2">Update</button>
                                 </div>
                             </div>
                         </form>

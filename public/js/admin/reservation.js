@@ -43,7 +43,7 @@ $('#tbl').DataTable({
               if (canManageReservation && row.status == 'For Approval') {
                   actions =
                       '<div class="btn-group" role="group">' +
-                        '<button type="button" class="btn btn-info btn-xs approve-reservations" aria-haspopup="true" aria-expanded="false" id="approve-reservation-' + row.id + '" disabled onclick="submitConfirmation(1, ' + jsArg(row.reservation_code) + ')">Approve</button>' +
+                        '<button type="button" class="btn btn-primary btn-xs approve-reservations" aria-haspopup="true" aria-expanded="false" id="approve-reservation-' + row.id + '" disabled onclick="submitConfirmation(1, ' + jsArg(row.reservation_code) + ')">Approve</button>' +
                         '<button type="button" class="btn btn-danger btn-xs" aria-haspopup="true" aria-expanded="false" onclick="submitConfirmation(2, ' + jsArg(row.reservation_code) + ')">Decline</button>' +
                       '</div> ';
               } else if (canManageReservation && row.status == 'Approved') {

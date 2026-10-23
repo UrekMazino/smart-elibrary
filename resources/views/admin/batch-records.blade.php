@@ -125,7 +125,7 @@ function actionMenu(row) {
     @can("edit.catalog")   items += '<a class="dropdown-item" href="#" data-act="edit">Edit</a>'; @endcan
     @can("delete.catalog") items += '<div class="dropdown-divider"></div><a class="dropdown-item text-danger" href="#" data-act="delete">Delete</a>'; @endcan
     return '<div class="btn-group btn-group-sm" role="group">' +
-        '<button type="button" class="btn btn-info btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="color:#fff;">Action</button>' +
+        '<button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>' +
         '<div class="dropdown-menu dropdown-menu-end">' + items + '</div></div>';
 }
 

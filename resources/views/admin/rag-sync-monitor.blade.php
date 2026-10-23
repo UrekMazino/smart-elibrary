@@ -158,7 +158,7 @@ $(document).ready(function () {
             { data: 'synced', orderable: false, className: 'sync-date', createdCell: label('Synced'), render: dayTime },
             { data: 'status', orderable: false, createdCell: label('Status') },
             { data: 'resync', orderable: false, className: 'text-end sync-action', render: function (d) {
-                return '<button type="button" class="btn btn-sm btn-outline-info resync-btn" data-id="' + d + '">Re-sync</button>';
+                return '<button type="button" class="btn btn-sm btn-outline-primary resync-btn" data-id="' + d + '">Re-sync</button>';
             }},
         ],
         drawCallback: function () { if (window.feather) feather.replace(); },

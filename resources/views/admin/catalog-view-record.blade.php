@@ -75,7 +75,7 @@
         <div class="d-flex gap-2">
             {{-- One Action menu, like each row of the Record List and On-Hold List. --}}
             <div class="btn-group btn-group-sm" role="group">
-                <button type="button" class="btn btn-info btn-sm dropdown-toggle" id="recordActionBtn" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
+                <button type="button" class="btn btn-primary btn-sm dropdown-toggle" id="recordActionBtn" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
                 <div class="dropdown-menu dropdown-menu-end" aria-labelledby="recordActionBtn">
                     @can('publish-hold.catalog')
                         <a class="dropdown-item" href="#" onclick="togglePublishOnhold({{ (int) $record->is_published }}, {{ $record->id }}); return false;">{{ $record->is_published ? 'Add to On-Hold list' : 'Add to Record list' }}</a>
@@ -314,7 +314,7 @@
                                             <input type="hidden" value="{{ $title }}" name="title">
                                             <input class="form-control form-control-sm" type="file" id="fulltextUpload" name="fullText" accept="application/pdf,.pdf">
                                             {{-- cropper.js un-hides this once a valid PDF is chosen. --}}
-                                            <button class="btn btn-info btn-sm d-none mt-2" id="fulltext-btn">
+                                            <button class="btn btn-primary btn-sm d-none mt-2" id="fulltext-btn">
                                                 <i data-feather="upload" class="icon-sm me-1"></i>Upload Fulltext
                                             </button>
                                         </form>
@@ -456,7 +456,7 @@
                                             <input type="hidden" value="{{ $title }}" name="title">
                                             <input class="form-control form-control-sm" type="file" id="coverUpload" name="coverImage" accept="image/jpeg,image/png">
                                             {{-- cropper.js un-hides this once a valid image is chosen. --}}
-                                            <button class="btn btn-info btn-sm d-none mt-2" id="cover-photo-btn">
+                                            <button class="btn btn-primary btn-sm d-none mt-2" id="cover-photo-btn">
                                                 <i data-feather="upload" class="icon-sm me-1"></i>Save Cover Photo
                                             </button>
                                         </form>
@@ -524,7 +524,7 @@
                                             </div>
                                             <div class="col-md-1"></div>
                                             <div class="col-md-1 text-center mb-2">
-                                                <button type="button" onclick="searchCopy()" class="btn btn-sm btn-info" id="copy-search-btn">Search</button>
+                                                <button type="button" onclick="searchCopy()" class="btn btn-sm btn-primary" id="copy-search-btn">Search</button>
                                             </div>
                                             <div class="col-md-5 text-center mb-2">
                                                 <input type="text" class="form-control" id="copy-search-input">
@@ -748,7 +748,7 @@ $(function () {
                             { 
                                 "data": function (row, type, val, meta) {
                                     if (!@json(auth()->user()->can('edit.catalog'))) return '<span class="text-muted small">—</span>';   // copies are part of editing the record
-                                    return '<div class="btn-group" role="group"><button id="btnGroupDrop1" type="button" class="btn btn-info dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button><div class="dropdown-menu" aria-labelledby="btnGroupDrop1"><a class="dropdown-item" href="#" onclick="showEditCopyModal('+row.id+')">Edit</a><a class="dropdown-item" href="#" onclick="actionFrm('+row.id+',\'delete\')">Delete</a></div></div>';
+                                    return '<div class="btn-group" role="group"><button id="btnGroupDrop1" type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button><div class="dropdown-menu" aria-labelledby="btnGroupDrop1"><a class="dropdown-item" href="#" onclick="showEditCopyModal('+row.id+')">Edit</a><a class="dropdown-item" href="#" onclick="actionFrm('+row.id+',\'delete\')">Delete</a></div></div>';
                                 }, orderable: false
                             },
                         ]
@@ -809,7 +809,7 @@ $(function () {
                             { 
                                 "data": function (row, type, val, meta) {
                                     if (!@json(auth()->user()->can('edit.catalog'))) return '<span class="text-muted small">—</span>';   // copies are part of editing the record
-                                    return '<div class="btn-group" role="group"><button id="btnGroupDrop1" type="button" class="btn btn-info dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button><div class="dropdown-menu" aria-labelledby="btnGroupDrop1"><a class="dropdown-item" href="#" onclick="showEditCopyModal('+row.id+')">Edit</a><a class="dropdown-item" href="#" onclick="actionFrm('+row.id+',\'delete\')">Delete</a></div></div>';
+                                    return '<div class="btn-group" role="group"><button id="btnGroupDrop1" type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button><div class="dropdown-menu" aria-labelledby="btnGroupDrop1"><a class="dropdown-item" href="#" onclick="showEditCopyModal('+row.id+')">Edit</a><a class="dropdown-item" href="#" onclick="actionFrm('+row.id+',\'delete\')">Delete</a></div></div>';
                                 }, orderable: false
                             },
                         ]

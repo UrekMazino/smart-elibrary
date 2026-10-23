@@ -64,7 +64,7 @@
                     <td class="text-center"><span class="pill">{{ $roleCounts[$perm->id] ?? 0 }}</span></td>
                     <td class="text-center">
                       <div class="btn-group btn-group-sm">
-                        <button type="button" class="btn btn-outline-info btn-sm edit-perm-btn"
+                        <button type="button" class="btn btn-outline-primary btn-sm edit-perm-btn"
                           data-id="{{ $perm->id }}" data-name="{{ $perm->name }}"
                           data-display="{{ $perm->display_name }}" data-desc="{{ $perm->description }}">Edit</button>
                         @hasrole('developer')

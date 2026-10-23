@@ -78,7 +78,7 @@
                                                         </div>
                                                     </div>
                                                     <div class="col-md-2 text-center">
-                                                        <button type="button" class="btn btn-info mb-1 mb-md-0" style="width:100%;" onclick="searchCheckout()">Search</button>    
+                                                        <button type="button" class="btn btn-primary mb-1 mb-md-0" style="width:100%;" onclick="searchCheckout()">Search</button>    
                                                     </div>
                                                 </div>
                                             </div>
@@ -267,7 +267,7 @@
                                             <input type="text" class="form-control text-center mb-2" disabled value="{{ session('transactionCode') ? session('transactionCode') : '0000000' }}" id="transactionCodeInput">
 
                                             <!-- The button used to copy the text -->
-                                            <button class="btn btn-info text-center" onclick="copyToClipBoard()" id="copy-btn">Copy Code</button>
+                                            <button class="btn btn-primary text-center" onclick="copyToClipBoard()" id="copy-btn">Copy Code</button>
                                         </div>
                                         </div>
                                     </div>
@@ -292,7 +292,7 @@
                                                             </div>
                                                         </div>
                                                         <div class="col-md-2 text-center">
-                                                            <button type="button" id="search-transaction" class="btn btn-info mb-1 mb-md-0" style="width:100%;">Search</button>    
+                                                            <button type="button" id="search-transaction" class="btn btn-primary mb-1 mb-md-0" style="width:100%;">Search</button>    
                                                         </div>  
                                                     </div>
                                                 </div>

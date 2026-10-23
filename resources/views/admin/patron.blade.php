@@ -197,7 +197,7 @@ $('#tbl').DataTable({
               if (CAN.deletePatron) groups.push(
                   '<a class="dropdown-item text-danger" href="#" data-act="delete" data-id="'+row.id+'" data-name="'+escapeHtml(row.name)+'">Delete</a>');
               if (!groups.length) return '<span class="text-muted small" title="Your role has no actions for patron accounts">—</span>';
-              return '<div class="btn-group btn-group-sm" role="group"><button type="button" class="btn btn-info btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button><div class="dropdown-menu dropdown-menu-end">' +
+              return '<div class="btn-group btn-group-sm" role="group"><button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button><div class="dropdown-menu dropdown-menu-end">' +
                   groups.join('<div class="dropdown-divider"></div>') +
                   '</div></div>';
           }

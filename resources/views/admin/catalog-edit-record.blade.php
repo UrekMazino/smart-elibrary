@@ -80,10 +80,6 @@
             display: block;
         }
 
-        .btn-info {
-            color: #fff !important;
-        }
-
         /* ---- Redesign (matches create-record) ---- */
         .cr-section-title {
             font-size: 0.6875rem; text-transform: uppercase; letter-spacing: .5px; color: var(--ui-muted, #7987a1);
@@ -134,7 +130,7 @@
                             <button class="btn btn-outline-primary btn-sm" type="button" onclick="showAddFieldModal()">
                                 <i data-feather="plus" class="icon-sm me-1"></i>Add Tag
                             </button>
-                            <button class="btn btn-outline-info btn-sm" type="button" onclick="showImportModal('edit')">
+                            <button class="btn btn-outline-primary btn-sm" type="button" onclick="showImportModal('edit')">
                                 <i data-feather="file-text" class="icon-sm me-1"></i>Parse a Record
                             </button>
                             <a href="{{ route('edit-record', ['id' => $record->id]) }}" class="btn btn-outline-secondary btn-sm">

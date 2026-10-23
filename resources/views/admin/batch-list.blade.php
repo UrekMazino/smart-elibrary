@@ -56,7 +56,7 @@
                             <h6 class="card-title">List of Import Batches</h6>
                         </div>
                         <div class="pull-right">
-                            @can('create.catalog.import')<a href="{{ url('/admin/create-batch/') }}" class="btn btn-info" style="color:white;">+ New Upload</a>@endcan
+                            @can('create.catalog.import')<a href="{{ url('/admin/create-batch/') }}" class="btn btn-primary">+ New Upload</a>@endcan
                           </div>
                     </div>
 
@@ -117,7 +117,7 @@ $(document).ready(function(){
 
     function actionMenu(row) {
       return '<div class="btn-group btn-group-sm" role="group">' +
-          '<button type="button" class="btn btn-info btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>' +
+          '<button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>' +
           '<div class="dropdown-menu dropdown-menu-end">' +
               '<a class="dropdown-item" href="#" onclick="viewRecord(' + row.id + ')">View Details</a>' +
               '<a class="dropdown-item" href="{{ url("/admin/batch-report") }}/' + encodeURIComponent(row.id) + '">Import report</a>' +

@@ -47,18 +47,27 @@ class AppearanceController extends Controller
         return response()->json(Appearance::preview(Appearance::sanitize($request->only(self::FIELDS))));
     }
 
-    /** Back to the library default (and any later change to it). */
-    public function reset()
+    /** Back to the library default (and any later change to it). From Utilities → Theme, back there. */
+    public function reset(Request $request)
     {
         $user = auth()->user();
         $user->appearance = null;
         $user->save();
-        return redirect()->route('appearance')->with('success', 'You now follow the library default.');
+        $back = $request->input('from') === 'theme' && $user->can('manage.theme') ? 'utilities.theme' : 'appearance';
+        return redirect()->route($back)->with('success', 'You now follow the library default.');
     }
 
     public function editDefault()
     {
-        return view('admin.utilities.theme', ['prefs' => Appearance::siteDefault()]);
+        $default = Appearance::siteDefault();
+        $own = auth()->user()->appearance;
+        return view('admin.utilities.theme', [
+            'prefs' => $default,
+            // The page shows the look it edits, so the form and the page agree, even for a staff member
+            // with their own appearance (every other page keeps theirs; the page says so).
+            'pageAppearance' => $default,
+            'personal' => is_array($own) ? Appearance::sanitize($own) : null,
+        ]);
     }
 
     public function updateDefault(Request $request)

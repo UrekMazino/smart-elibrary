@@ -75,7 +75,7 @@ $(document).ready(function () {
             { data: 'name', render: function (d, type) { return type === 'display' ? '<span class="mt-name">' + (d == null ? '' : $('<div>').text(d).html()) + '</span>' : d; } },
             { data: null, orderable: false, className: 'text-center', render: function (d, type, row) {
                 return '<div class="btn-group btn-group-sm" role="group">' +
-                    '<button type="button" class="btn btn-info btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">Action</button>' +
+                    '<button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">Action</button>' +
                     '<div class="dropdown-menu dropdown-menu-end">' +
                     @can("edit.config.template")   '<a class="dropdown-item" href="#" data-edit-url="{{ url("/admin/marc-templates/edit?template_id=") }}' + row.id + '">Edit</a>' + @endcan
                     @can("delete.config.template") '<button type="button" class="dropdown-item text-danger delete-btn" data-template-id="' + row.id + '">Delete</button>' + @endcan

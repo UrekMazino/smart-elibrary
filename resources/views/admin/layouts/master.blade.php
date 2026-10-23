@@ -8,8 +8,9 @@ Contact: nobleui123@gmail.com
 Purchase: https://1.envato.market/nobleui_admin
 License: For each use you must have a valid license purchased only from above link in order to legally use the theme for your project.
 -->
-{{-- This staff member's appearance (App\Services\Appearance), applied before anything is drawn. --}}
-@php $uiAppearance = \App\Services\Appearance::for(Auth::user()); @endphp
+{{-- This staff member's appearance (App\Services\Appearance), applied before anything is drawn. A page can
+     show another instead ($pageAppearance): Utilities → Theme shows the library default it edits. --}}
+@php $uiAppearance = $pageAppearance ?? \App\Services\Appearance::for(Auth::user()); @endphp
 <html lang="en" @foreach(\App\Services\Appearance::attributes($uiAppearance) as $attr => $val){{ $attr }}="{{ $val }}" @endforeach>
 <head>
 	<meta charset="UTF-8">
