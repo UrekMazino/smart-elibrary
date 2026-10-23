@@ -22,6 +22,7 @@ FPRDI/DOST agri-forestry catalog / OPAC (Laravel), built RAG-ready for the **Pro
 - **On GitHub, every push and pull request:** [`.github/workflows/security.yml`](.github/workflows/security.yml) scans for secrets (gitleaks, full history), vulnerable PHP / npm packages (`composer audit`, `npm audit`) and risky code (Semgrep); [`tests.yml`](.github/workflows/tests.yml) runs PHPUnit against a throwaway MySQL. Dependabot ([`.github/dependabot.yml`](.github/dependabot.yml)) opens update PRs weekly.
 - **On your machine:** run `git config core.hooksPath .githooks` once per clone. Then [`.githooks/pre-commit`](.githooks/pre-commit) blocks commits that add a secret, and [`.githooks/pre-push`](.githooks/pre-push) runs the same checks as the workflows ([`scripts/security-check.sh`](scripts/security-check.sh), ~30 s) and stops a push if any fail. Run them by hand with `composer security` (`composer security -- --no-tests` skips PHPUnit). Needs [gitleaks](https://github.com/gitleaks/gitleaks/releases) and `semgrep` (`pip install semgrep==1.178.0`) on PATH or in `~/.local/bin`; tests need the `elibrarydb_test` database.
 - **Never commit** `.env`, private keys or real password hashes. Seeded accounts get `SEED_USER_PASSWORD` from `.env`.
+- **On the server:** one PHP only (8.5.12 or newer, older versions deleted), `session.upload_progress.enabled = 0`, and the production `php.ini` settings: [DEPLOYMENT_CHECKLIST.md](docs/implemented/DEPLOYMENT_CHECKLIST.md), *PHP hardening*.
 
 ---
 
@@ -108,6 +109,10 @@ memory_limit=2048M
 max_execution_time=1200
 
 max_input_time=-1
+
+session.upload_progress.enabled=0   (security: see [DEPLOYMENT_CHECKLIST.md](docs/implemented/DEPLOYMENT_CHECKLIST.md), *PHP hardening*)
+
+Keep only one PHP installed (8.5.12 or newer); reload Apache in Laragon after editing php.ini.
 
 ## uploading large dump file into db using shell
 mysql -h localhost -u username databasename < dump.sql

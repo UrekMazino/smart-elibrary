@@ -84,6 +84,39 @@ Also: HTTPS + force-https, one canonical host (www **or** apex, 301 the other).
 - **`mod_headers` on** (Apache), so static files get `X-Content-Type-Options: nosniff`.
 - `composer install --no-dev` (above) also keeps the Ignition debug pages off the server.
 
+### PHP hardening (`php.ini`)
+`php.ini` is server state, outside git (section 4), so apply this on every machine:
+- **Laragon:** `C:\laragon\bin\php\php-8.5.12-Win32-vs17-x64\php.ini`.
+- **Linux:** both `/etc/php/8.5/fpm/php.ini` and `/etc/php/8.5/cli/php.ini`.
+
+The web server reads it only when it starts, so reload it after every change: Laragon **Apache → Reload**,
+or `sudo systemctl reload php8.5-fpm`.
+
+**Applied** on the Windows development machine (23 Oct 2026):
+
+| Measure | Setting | Why |
+|---|---|---|
+| One PHP version only | PHP 8.5.12; 8.3.16 and 8.3.26 deleted from `C:\laragon\bin\php` | A vulnerable PHP left installed stays one click away in Laragon's PHP menu, and a script or PATH entry can still pick it up. After installing a newer PHP and checking the app on it, delete the old folder. |
+| No upload progress in sessions | `session.upload_progress.enabled = 0` | With it on, any request that posts a `PHP_SESSION_UPLOAD_PROGRESS` field with a session cookie makes PHP write text the sender chose into a session file on the server. This works without signing in, and even though the app never uses PHP's own sessions. Chained with a file-inclusion bug, that is a known route to running code on the server. The eLibrary doesn't need it: Laravel keeps its own sessions, and Batch Import's progress bar comes from the browser. |
+
+**Before production** (not applied on the development machine, which uses development values):
+
+| Setting | Value | Why |
+|---|---|---|
+| `display_errors`, `display_startup_errors` | `Off` | Error details (file paths, SQL) are never shown to visitors. Laravel's `APP_DEBUG=false` is a separate switch; set both. |
+| `log_errors` | `On` (already) | Errors still reach the server log. |
+| `expose_php` | `Off` | Stops the `X-Powered-By: PHP/8.5.12` header, which tells everyone the exact version. |
+| `session.use_strict_mode` | `1` | PHP refuses session IDs it didn't create. This is defence in depth for PHP's own sessions; Laravel's sessions are unaffected. |
+| `allow_url_include` | `Off` (the default) | Keep it off: code is never included from a URL. |
+
+The simplest start is PHP's own `php.ini-production`, then the rows above plus `session.upload_progress.enabled = 0`.
+
+**Check:**
+- **Windows:** `php -i | findstr "upload_progress.enabled expose_php display_errors use_strict_mode"`.
+- **Linux:** `php -i | grep -E "upload_progress.enabled|expose_php|display_errors|use_strict_mode"`.
+- **Web server:** after the reload, `curl -sI https://<site>/ | grep -i x-powered-by` prints nothing once
+  `expose_php` is off.
+
 ### The scheduler (required)
 Without it nothing in `app/Console/Kernel.php` runs: the sitemap is never regenerated (03:30) and the
 nightly search-index reconcile never happens (03:45; it also keeps the *Most viewed* sort current).
@@ -156,6 +189,7 @@ These are real changes that a `git pull` will **not** give you. They must be app
 | Settings and AI Sync Monitor permissions (`access.settings`, `access.ai.sync.monitor`; Roles → Configuration) | `elibrarydb.permissions`, `role_has_permissions` | `php artisan migrate`: creates both and grants them to the roles that could open those pages before (Settings: Configuration access; AI Sync Monitor: Configuration + Cataloging access), then `php artisan permission:cache-reset`. Review the Roles matrix afterwards. |
 | OPAC search page: subjects (MARC 600/610/650/651/653) and numeric publication year for existing records, plus the new Meilisearch filters / sorts | `elibrarydb.view_catalogs`, Meilisearch index | `php artisan migrate` (adds `pub_year_num`, `subjects`, `saved_records`), then `php artisan catalog:rebuild-search-fields` (dry run) and `--apply` — also syncs the index settings and re-indexes every record. Idempotent. |
 | Authors from MARC 100 **and 110**, else **700 / 710**, for existing records (corporate or added-entry-only authors showed as no author) | `elibrarydb.view_catalogs` | `php artisan catalog:rebuild-authors` (dry run) then `--apply` — also re-syncs search, queues RAG, regenerates placeholder covers. Idempotent. |
+| PHP hardening: PHP 8.5.12 only, `session.upload_progress.enabled = 0` (and the production settings) | the server's PHP folder and `php.ini` | Section 2, *PHP hardening*; reload the web server afterwards |
 | `public/{thumb,pdf,fullpage,news_cover,marc_file,marc_file_uploaded}` links | `public/` → `storage/app/public/*` | `php artisan storage:link`. The link *targets* (uploaded covers, PDFs) live in `storage/app/public` and are per-server data — back them up. The app creates a missing target folder on first write. |
 
 > The MARC fixes (mojibake in `marctag_indicators_loc` #243, malformed `388` indicator ref, `842 `

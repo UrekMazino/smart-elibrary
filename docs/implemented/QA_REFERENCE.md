@@ -198,3 +198,4 @@ Repeat these every test round: each one should be refused. A "pass" here means t
 | 6 wrong passwords in a row | Guest | Sign-in locked for a short time with a message |
 | Open any page and check its response headers (browser developer tools, Network tab) | Anyone | `X-Frame-Options: SAMEORIGIN`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin` |
 | Show any eLibrary page inside a frame on another website | Anyone | The browser refuses to show it |
+| On the server: `php -v`, and `php -i \| findstr upload_progress.enabled` (Linux: `grep`) | Server admin | PHP 8.5.12 or newer, the only PHP installed; `session.upload_progress.enabled => Off`. See DEPLOYMENT_CHECKLIST, *PHP hardening* |

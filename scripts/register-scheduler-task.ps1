@@ -7,7 +7,7 @@
 # RUN ONCE (elevate only if a normal run reports Access Denied):
 #   powershell -ExecutionPolicy Bypass -File C:\laragon\www\elibrary\scripts\register-scheduler-task.ps1
 # If php.exe is not on PATH, give its path:
-#   ... register-scheduler-task.ps1 -Php "C:\laragon\bin\php\php-8.3.16-Win32-vs16-x64\php.exe"
+#   ... register-scheduler-task.ps1 -Php "C:\laragon\bin\php\php-8.5.12-Win32-vs17-x64\php.exe"
 param([string]$Php = "php")
 
 $name   = "eLibrary-scheduler"
