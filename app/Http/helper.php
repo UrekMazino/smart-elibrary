@@ -463,8 +463,9 @@ function ensurePublicDir($dir)
 /**
  * Create a downscaled thumbnail copy of an image (JPG/PNG/WEBP).
  * Scales down to $maxWidth (never upscales), preserving aspect ratio + transparency.
+ * $asWebp writes WebP whatever the source was, at $quality.
  */
-function makeThumbnail($sourcePath, $destPath, $maxWidth = 250)
+function makeThumbnail($sourcePath, $destPath, $maxWidth = 250, $asWebp = false, $quality = 85)
 {
 	if (!extension_loaded('gd') || !file_exists($sourcePath)) return false;
 	$info = @getimagesize($sourcePath);
@@ -494,14 +495,25 @@ function makeThumbnail($sourcePath, $destPath, $maxWidth = 250)
 	imagecopyresampled($thumb, $src, 0, 0, 0, 0, $nw, $nh, $w, $h);
 
 	if (!ensurePublicDir(dirname($destPath))) return false;
-	switch ($info['mime']) {
-		case 'image/jpeg': imagejpeg($thumb, $destPath, 85); break;
+	switch ($asWebp ? 'image/webp' : $info['mime']) {
+		case 'image/jpeg': imagejpeg($thumb, $destPath, $quality); break;
 		case 'image/png':  imagepng($thumb, $destPath, 6); break;
-		case 'image/webp': imagewebp($thumb, $destPath, 85); break;
+		case 'image/webp': imagewebp($thumb, $destPath, $quality); break;
 	}
 	imagedestroy($src);
 	imagedestroy($thumb);
 	return true;
+}
+
+/**
+ * The newspaper-size copy of a news cover for the NEWS section on the OPAC home: at most 800 px
+ * wide, WebP, in public/news_print. A cover may be a 2 MB phone photo; this copy is ~60-90 KB and
+ * still sharp at the size the page shows it (the 250 px thumbnail would be blurry there).
+ */
+function makeNewsPrintCopy(string $coverPath): bool
+{
+	$dest = public_path('news_print/'.pathinfo($coverPath, PATHINFO_FILENAME).'.webp');
+	return makeThumbnail($coverPath, $dest, 800, true, 72);
 }
 
 /**
@@ -1158,6 +1170,21 @@ function getLatestNews()
 	return cache()->remember('home_latest_news', 600, function () {
 		return App\Models\News::where('featured', 'Yes')->orderBy('created_at','DESC')->limit(12)->get();
 	});
+}
+
+/** A news cover for the NEWS section: the newspaper-size copy, else the original upload, else null. */
+function newsPrintCoverUrl($news): ?string
+{
+	if (!$news->news_cover) return null;
+	$print = 'news_print/'.pathinfo($news->news_cover, PATHINFO_FILENAME).'.webp';
+	return url('/'.(file_exists(public_path($print)) ? $print : $news->news_cover));
+}
+
+/** The opening of a news article as plain text (a NEWS section page), cut at a word. */
+function newsExcerpt($news, int $limit = 600): string
+{
+	$text = html_entity_decode(preg_replace('/<[^>]*>/', ' ', (string) $news->news_body), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+	return Illuminate\Support\Str::limit(trim(preg_replace('/\s+/u', ' ', $text)), $limit, '…', true);
 }
 
 /**

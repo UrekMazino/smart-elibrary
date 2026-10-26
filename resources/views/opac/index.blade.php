@@ -72,7 +72,7 @@
 .instant-seeall:hover { background: #eef4ff; color: #1d4ed8; }
 
 /* ---- Minimalist section nav: fixed dots on the right, smooth-scroll to each section ---- */
-#sec-search, #sec-shelves, #sec-misc { scroll-margin-top: 110px; }
+#sec-search, #sec-shelves, #sec-misc, #sec-news { scroll-margin-top: 110px; }
 .section-nav { position: fixed; top: 50%; right: 20px; transform: translateY(-50%); z-index: 900; display: flex; flex-direction: column; gap: 16px; }
 .section-nav a { position: relative; display: block; width: 13px; height: 13px; }
 .section-nav a i { position: absolute; inset: 0; border-radius: 50%; border: 2px solid #c32148; background: transparent; transition: background .2s ease, transform .2s ease; }
@@ -134,6 +134,7 @@
 		<a href="#sec-search"  data-label="Search"  class="active"><i></i></a>
 		<a href="#sec-shelves" data-label="Shelves"><i></i></a>
 		<a href="#sec-misc"    data-label="Highlights"><i></i></a>
+		@if(getLatestNews()->isNotEmpty())<a href="#sec-news" data-label="News"><i></i></a>@endif
 	</nav>
 {{-- @if(Auth::user() && !checkCSF()) {{ session(['message' => 'Hello! Can we have a minute of your time to answer our CSF form. Thank you!']); }} @endif --}}
 		@if (session('message'))
@@ -275,7 +276,7 @@
 
 		<div id="sec-shelves">@include('opac.partials.shelf-browser')</div>
 		<style>
-			/* Highlights section — compact, minimalist carousels (Recent Uploads / Top lists / News) */
+			/* Highlights section — compact, minimalist carousels (Recent Uploads / Top lists) */
 			#sec-misc { padding:20px 0 36px; }
 			.cover-carousel { max-width:1680px; margin:0 auto; padding:4px 24px 2px; }
 			.cover-carousel .main_title { text-align:center; margin-bottom:6px; }
@@ -289,7 +290,7 @@
 			.cc-cover img { max-height:178px; max-width:100%; width:auto; border-radius:3px; box-shadow:0 2px 6px rgba(0,0,0,.22); transition:transform .14s ease, box-shadow .14s ease; }
 			.cc-cover:hover img { transform:translateY(-5px); box-shadow:0 10px 18px rgba(0,0,0,.28); }
 			/* Record covers: the figure hugs the image so the save star sits on its corner, and the
-			   whole figure (image + star) lifts on hover. News covers keep the plain link above. */
+			   whole figure (image + star) lifts on hover. */
 			.cv-fig { position:relative; display:block; line-height:0; transition:transform .14s ease; }
 			.cv-link { display:block; }
 			.cv-fig img { max-width:132px; }
@@ -353,23 +354,6 @@
 				<button type="button" class="cc-arrow next" aria-label="Next">&#8250;</button>
 			</div>
 		</div>
-		<div class="cover-carousel">
-			<div class="main_title"><h2>Related News</h2></div>
-			<div class="cc-strip">
-				<button type="button" class="cc-arrow prev" aria-label="Previous">&#8249;</button>
-				<div class="cc-track">
-					@foreach(getLatestNews() as $news)
-						<div class="cc-item">
-							<a class="cc-cover" href="{{ $news->redirect_url ?? '#' }}" @if($news->redirect_url) target="_blank" rel="noopener" @endif>
-								<img loading="lazy" src="{{ $news->news_cover ? url('/'.$news->news_cover) : url('/frontpages/no-preview.jpg') }}" alt="{{ $news->news_title ?? '' }}">
-							</a>
-							<a class="cc-cap" href="{{ $news->redirect_url ?? '#' }}" @if($news->redirect_url) target="_blank" rel="noopener" @endif title="{{ $news->news_title ?? '' }}">{{ $news->news_title ?? '' }}</a>
-						</div>
-					@endforeach
-				</div>
-				<button type="button" class="cc-arrow next" aria-label="Next">&#8250;</button>
-			</div>
-		</div>
 		<script nonce="{{ cspNonce() }}" type="text/javascript">
 		(function(){
 			function wire(strip){
@@ -396,6 +380,7 @@
 		})();
 		</script>
 		</div>{{-- /#sec-misc --}}
+		@include('opac.partials.news-paper', ['items' => getLatestNews()])
 			<!-- /app_section -->
 		<!-- /Hero -->
 <!-- Modal -->

@@ -18,9 +18,10 @@ class RouteSecurityTest extends TestCase
 {
     use RefreshDatabase, SeedsReferenceData;
 
-    /** Routes anyone may open without signing in (reviewed 2026-10-21; inquiry/general, the chat button, 2026-10-26). */
+    /** Routes anyone may open without signing in (reviewed 2026-10-21; inquiry/general, the chat button, 2026-10-26;
+     *  news/{id}, a featured article for the home page's NEWS section, 2026-10-27). */
     private const PUBLIC = [
-        '/', 'home', 'results', 'full-description', 'full-description/{holdingsid}', 'read/view',
+        '/', 'home', 'news/{id}', 'results', 'full-description', 'full-description/{holdingsid}', 'read/view',
         'search/suggest', 'search/facet', 'search/cite/{catalogId}', 'search/quick/{catalogId}', 'search/ai-answer',
         'inquiry/general',
         'login', 'register', 'forgot-password', 'reset-password', 'reset-password/{token}',

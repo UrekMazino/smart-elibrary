@@ -41,6 +41,7 @@ use App\Http\Controllers\SettingController;
 
 Route::get('/home', [HomeController::class, 'index']);
 Route::get('/', [HomeController::class, 'index2']);
+Route::get('/news/{id}', [HomeController::class, 'news'])->whereNumber('id')->middleware('throttle:60,1'); // NEWS section: Read more
 // Staff open the OPAC from the admin navbar, and come back with its "Return to admin" button.
 Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin/opac', [HomeController::class, 'openOpac'])->name('admin.opac');

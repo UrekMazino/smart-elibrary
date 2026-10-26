@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
+use App\Models\News;
 use App\Providers\RouteServiceProvider;
 
 use Illuminate\Http\Request;
@@ -98,5 +99,14 @@ class HomeController extends Controller
     public function index2()
     {
         return redirect(RouteServiceProvider::HOME);
+    }
+
+    /** NEWS section "Read more": one featured article, rendered into the home page's dialog. */
+    public function news($id)
+    {
+        $news = News::where('id', (int) $id)->where('featured', 'Yes')->first();
+        abort_unless($news, 404);
+
+        return view('opac.partials.news-article', ['news' => $news]);
     }
 }

@@ -32,7 +32,7 @@ They share **one MySQL database** (`elibrarydb`) and the eLibrary **`.env`** —
 git pull
 composer install --no-dev --optimize-autoloader
 npm ci && npm run build                               # Vite -> public/build (also committed, so optional)
-php artisan storage:link                              # public/thumb, frontpages, news_cover, ... -> storage/app/public
+php artisan storage:link                              # public/thumb, frontpages, news_cover, news_print, ... -> storage/app/public
 php artisan fulltext:make-private                     # once (safe to re-run): full-text PDFs -> storage/app/private/pdf
 
 # 2. database  — see the landmine note below before running this
@@ -204,7 +204,7 @@ These are real changes that a `git pull` will **not** give you. They must be app
 | OPAC search page: subjects (MARC 600/610/650/651/653) and numeric publication year for existing records, plus the new Meilisearch filters / sorts | `elibrarydb.view_catalogs`, Meilisearch index | `php artisan migrate` (adds `pub_year_num`, `subjects`, `saved_records`), then `php artisan catalog:rebuild-search-fields` (dry run) and `--apply` — also syncs the index settings and re-indexes every record. Idempotent. |
 | Authors from MARC 100 **and 110**, else **700 / 710**, for existing records (corporate or added-entry-only authors showed as no author) | `elibrarydb.view_catalogs` | `php artisan catalog:rebuild-authors` (dry run) then `--apply` — also re-syncs search, queues RAG, regenerates placeholder covers. Idempotent. |
 | PHP hardening: PHP 8.5.12 only, `session.upload_progress.enabled = 0` (and the production settings) | the server's PHP folder and `php.ini` | Section 2, *PHP hardening*; reload the web server afterwards |
-| `public/{thumb,pdf,fullpage,news_cover,marc_file,marc_file_uploaded}` links | `public/` → `storage/app/public/*` | `php artisan storage:link`. The link *targets* (uploaded covers, PDFs) live in `storage/app/public` and are per-server data — back them up. The app creates a missing target folder on first write. |
+| `public/{thumb,pdf,fullpage,news_cover,news_print,marc_file,marc_file_uploaded}` links | `public/` → `storage/app/public/*` | `php artisan storage:link`. The link *targets* (uploaded covers, PDFs) live in `storage/app/public` and are per-server data — back them up. The app creates a missing target folder on first write. |
 
 > The MARC fixes (mojibake in `marctag_indicators_loc` #243, malformed `388` indicator ref, `842 `
 > trailing space, 25 duplicate subfields) were applied to **both** the seed JSON *and* the live dev
