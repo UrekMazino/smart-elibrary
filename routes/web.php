@@ -381,6 +381,7 @@ Route::controller(ReviewController::class)->group(function () {
     // Quick review popup (after a download, or after reading for a minute).
     Route::get('/review/quick/{catalog_id}', 'quickStatus')->whereNumber('catalog_id');
     Route::post('/review/quick', 'quickStore')->middleware('throttle:10,1');
+    Route::post('/review/quick/{catalog_id}/skip', 'quickSkip')->whereNumber('catalog_id')->middleware('throttle:30,1');   // "Not now"
 });
 
 

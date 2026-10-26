@@ -4,7 +4,8 @@
        QuickReview.startRead(catalogId, title)   when the reader opens
        QuickReview.endRead()                     when the reader closes (asks if it was open >= 1 min)
      It only opens when the patron hasn't reviewed the material yet and hasn't dismissed the
-     popup for it before ("Not now" is remembered per patron + material in this browser).
+     popup for it before ("Not now" is kept on the server, in review_prompt_skips, so it holds on
+     every device and nothing about the patron's reading stays in the browser).
      After a save it fires a `quickreview:saved` event on document. --}}
 @php
     // Quick picks: one tap submits that review (its stars + text) straight away. Patrons who want
@@ -55,7 +56,6 @@ window.QuickReview = (function () {
     'use strict';
     var BASE      = @json(url('/review/quick'));
     var CSRF      = @json(csrf_token());
-    var USER      = @json(Auth::id());
     var TEMPLATES = @json($qrTemplates);
     var READ_MS   = 60 * 1000;   // reading at least this long earns the prompt
     var LABELS    = ['Tap a star to rate', 'Poor', 'Fair', 'Good', 'Very good', 'Excellent'];
@@ -64,19 +64,26 @@ window.QuickReview = (function () {
     var reading = null;   // { id, title, since } while the reader is open
     var asking  = null;   // catalog id with a prompt pending or showing
 
-    function skipKey(id) { return 'qr-skip:' + USER + ':' + id; }
-    function skipped(id) { try { return localStorage.getItem(skipKey(id)) === '1'; } catch (e) { return false; } }
-    function skip(id) { try { localStorage.setItem(skipKey(id), '1'); } catch (e) {} }
+    // "Not now": the server remembers it (ReviewController::quickSkip).
+    function skip(id) {
+        fetch(BASE + '/' + encodeURIComponent(id) + '/skip', { method: 'POST', headers: { 'X-CSRF-TOKEN': CSRF, 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } })
+            .catch(function () {});
+    }
+    // Earlier versions kept "Not now" in localStorage (qr-skip:<patron>:<record>), where it outlived
+    // sign-out and showed what the patron had read: remove any left in this browser.
+    try {
+        Object.keys(localStorage).forEach(function (k) { if (k.indexOf('qr-skip:') === 0) localStorage.removeItem(k); });
+    } catch (e) {}
     // Titles can carry markup; DOMParser reads the text without running or loading anything.
     function plain(s) { return (new DOMParser().parseFromString(String(s || ''), 'text/html').body.textContent || '').trim(); }
     function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 
     function ask(id, title, context) {
-        if (!window.Swal || !id || asking === id || skipped(id)) return;
+        if (!window.Swal || !id || asking === id) return;
         asking = id;
         fetch(BASE + '/' + encodeURIComponent(id), { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
             .then(function (r) { return r.ok ? r.json() : { reviewed: true }; })
-            .then(function (s) { if (s.reviewed) asking = null; else show(id, plain(title), context); })
+            .then(function (s) { if (s.reviewed || s.skipped) asking = null; else show(id, plain(title), context); })
             .catch(function () { asking = null; });
     }
 
