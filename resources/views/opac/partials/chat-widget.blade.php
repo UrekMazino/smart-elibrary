@@ -178,7 +178,20 @@
     var form = document.getElementById('lc-form'), done = document.getElementById('lc-done');
     var alertBox = document.getElementById('lc-alert'), send = document.getElementById('lc-send');
     var URL_SEND = @json(url('/inquiry/general'));
-    var DRAFT = 'lc-chat-draft';
+
+    // A draft (subject and message only, never a guest's name, phone or email) is kept in this tab while
+    // the visitor moves between pages. It belongs to whoever is signed in: a draft of anyone else is
+    // dropped on load, and all of them at sign-out (OWASP ASVS 14.3.1, 14.3.3).
+    var DRAFT = 'lc-chat-draft:' + @json($lcUser ? 'u' . $lcUser->id : 'guest');
+    function dropDrafts(keep) {
+        try {
+            Object.keys(sessionStorage).forEach(function (k) {
+                if (k.indexOf('lc-chat-') === 0 && k !== keep) sessionStorage.removeItem(k);
+            });
+        } catch (e) {}
+    }
+    dropDrafts(DRAFT);
+    document.addEventListener('click', function (e) { if (e.target.closest('[data-logout]')) dropDrafts(null); }, true);
 
     function setOpen(open) {
         panel.hidden = !open;
@@ -197,15 +210,17 @@
 
     if (!form) return;   // blocked account: the panel only explains
 
-    // Keep what was typed while the visitor moves between pages (this tab only).
     var fields = [].slice.call(form.querySelectorAll('input:not([name=website]), textarea'));
+    var drafted = fields.filter(function (el) { return el.name === 'subject' || el.name === 'message'; });
     try {
         var saved = JSON.parse(sessionStorage.getItem(DRAFT) || '{}');
-        fields.forEach(function (el) { if (saved[el.name]) el.value = saved[el.name]; });
+        drafted.forEach(function (el) { if (saved[el.name]) el.value = saved[el.name]; });
     } catch (e) {}
     function saveDraft() {
-        try { var d = {}; fields.forEach(function (el) { d[el.name] = el.value; }); sessionStorage.setItem(DRAFT, JSON.stringify(d)); } catch (e) {}
+        try { var d = {}; drafted.forEach(function (el) { d[el.name] = el.value; }); sessionStorage.setItem(DRAFT, JSON.stringify(d)); } catch (e) {}
     }
+    // A guest's name, phone and email, kept in this page only (not in the browser's storage) for "Send another".
+    var guestDetails = {};
     var msg = document.getElementById('lc-message'), count = document.getElementById('lc-count');
     function updCount() { count.textContent = msg.value.length + ' / 5000'; }
     updCount();
@@ -260,6 +275,7 @@
         }).then(function (res) {
             if (res.status === 200 && res.data.ok) {
                 var name = form.querySelector('[name=fullname]'), email = form.querySelector('[name=email]');
+                ['fullname', 'contactnum', 'email'].forEach(function (n) { var el = form.querySelector('[name=' + n + ']'); if (el) guestDetails[n] = el.value; });
                 if (name && document.getElementById('lc-done-name')) document.getElementById('lc-done-name').textContent = ', ' + name.value.trim().split(/\s+/)[0];
                 if (email && document.getElementById('lc-done-email')) document.getElementById('lc-done-email').textContent = email.value.trim();
                 form.reset(); updCount();
@@ -276,7 +292,7 @@
             } else if (res.status === 429) {
                 showAlert('You have sent several messages in a short time. Please wait a minute and try again.');
             } else if (res.status === 419) {
-                showAlert('This page has been open for a long time. Reload it and send again; what you typed is kept.');
+                showAlert('This page has been open for a long time. Reload it and send again; your subject and message are kept.');
             } else {
                 showAlert(res.data.message || 'Your message could not be sent. Please try again.');
             }
@@ -290,20 +306,9 @@
     done.addEventListener('click', function (e) {
         if (!e.target.closest('[data-lc-again]')) return;
         done.hidden = true; form.hidden = false;
-        // Keep the guest's name, number and email for the next message.
-        try {
-            var keep = JSON.parse(sessionStorage.getItem('lc-chat-guest') || '{}');
-            fields.forEach(function (el) { if (keep[el.name]) el.value = keep[el.name]; });
-        } catch (err) {}
+        fields.forEach(function (el) { if (guestDetails[el.name]) el.value = guestDetails[el.name]; });   // the same guest again
         document.getElementById('lc-subject').focus();
     });
-    // Remember a guest's contact details (this tab) for "Send another".
-    form.addEventListener('submit', function () {
-        try {
-            var g = {}; ['fullname', 'contactnum', 'email'].forEach(function (n) { var el = form.querySelector('[name=' + n + ']'); if (el) g[n] = el.value; });
-            sessionStorage.setItem('lc-chat-guest', JSON.stringify(g));
-        } catch (e) {}
-    }, true);
 })();
 </script>
 @endif
