@@ -181,12 +181,6 @@ class AdminController extends Controller
         return view('admin.inquiry', ['list' => $list, 'threads' => $threads, 'userFlags' => $userFlags, 'patronTypes' => $patronTypes, 'unread' => $unread]);
     }
 
-    public function inquiryjson()
-    {
-        $list = App\Models\View_inquiry::get();
-        return $list;
-    }
-
     // Toggle a patron's ban/block flag (used by Patrons, Inquiry and Reservation pages).
     //   flag=banned  -> cannot log in AND cannot use the Read feature
     //   flag=blocked -> cannot use chat / inquiry
@@ -438,7 +432,8 @@ class AdminController extends Controller
         $totalRecordswithFilter = $applySearch($applyStatus($base()))->count();
 
         $records = $applySearch($applyStatus($base()))
-            ->select('id', 'username', 'name', 'email', 'contactnum', 'library_code', 'location', 'created_at', 'is_banned', 'is_blocked')
+            // Only what the Patrons table shows (OWASP ASVS 15.3.1).
+            ->select('id', 'name', 'email', 'contactnum', 'library_code', 'location', 'created_at', 'is_banned', 'is_blocked')
             ->orderBy($columnName, $columnSortOrder)
             ->skip($start)
             ->take($rowperpage)
@@ -449,7 +444,6 @@ class AdminController extends Controller
         foreach ($records as $record) {
             $data_arr[] = array(
                 "id"           => $record->id,
-                "username"     => $record->username,
                 "name"         => $record->name,
                 "email"        => $record->email,
                 "contactnum"   => $record->contactnum,
@@ -515,7 +509,7 @@ class AdminController extends Controller
         // Eager-load roles + their permissions: without this each row fires its own
         // queries for getRoleNames()/getPermissionsViaRoles() (N+1).
         $records = $applySearch($base())
-            ->select('id', 'username', 'name', 'email', 'contactnum', 'location', 'created_at')
+            ->select('id', 'name', 'email', 'contactnum', 'location', 'created_at')   // what the table shows (ASVS 15.3.1)
             ->with('roles.permissions')
             ->orderBy($columnName, $columnSortOrder)
             ->skip($start)
@@ -538,7 +532,6 @@ class AdminController extends Controller
 
             $data_arr[] = array(
                 "id"          => $record->id,
-                "username"    => $record->username,
                 "name"        => $record->name,
                 "email"       => $record->email,
                 "contactnum"  => $record->contactnum,

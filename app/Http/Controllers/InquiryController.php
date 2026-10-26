@@ -30,10 +30,11 @@ class InquiryController extends Controller
             return redirect()->back()->with('error', 'Please enter both a subject and your inquiry message.');
         }
 
-        // Cap length to prevent oversized-payload abuse.
-        if(mb_strlen((string) request()->inquiry_subject) > 255 || mb_strlen((string) request()->inquiry_message) > 5000)
+        // Cap length to prevent oversized-payload abuse. 125 is the subject column's size (a longer one
+        // failed at the database instead of getting this message).
+        if(mb_strlen((string) request()->inquiry_subject) > 125 || mb_strlen((string) request()->inquiry_message) > 5000)
         {
-            return redirect()->back()->with('error', 'Your subject (max 255) or message (max 5000) is too long.');
+            return redirect()->back()->with('error', 'Your subject (max 125 characters) or message (max 5000) is too long.');
         }
 
         $inq = new App\Models\Inquiry;
@@ -177,8 +178,21 @@ class InquiryController extends Controller
         // separately via the markSeen() POST so this GET has no side effects.
         $this->authorizeInquiry($id);
 
-        $inq = App\Models\View_inquiry_thread::where('id',$id)->orderBy('thread_date')->get();
-        return $inq;
+        $rows = App\Models\View_inquiry_thread::where('id',$id)->orderBy('thread_date')
+            ->get(['replied_by', 'replied_by_name', 'replied_msg', 'thread_date']);
+
+        // A patron sees their own messages and "Library": not which staff member answered, or their
+        // account id (OWASP ASVS 15.3.1). Staff see the names.
+        $user = Auth::user();
+        if ($user->usertype === 'Patron') {
+            $rows = $rows->map(fn ($r) => [
+                'replied_by'      => (int) $r->replied_by === $user->id ? $user->id : null,
+                'replied_by_name' => (int) $r->replied_by === $user->id ? $user->name : 'Library',
+                'replied_msg'     => $r->replied_msg,
+                'thread_date'     => $r->thread_date,
+            ]);
+        }
+        return $rows;
     }
 
     /**

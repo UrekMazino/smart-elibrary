@@ -394,7 +394,6 @@ Route::controller(AdminController::class)->group(function () {
     Route::get('/admin/visits', 'visit')->middleware('can:access.reports');
 
     Route::get('/admin/inquiry', 'inquiry')->middleware('can:access.inquiry');
-    Route::get('/admin/inquiry/json', 'inquiryjson')->middleware('can:access.inquiry');
 
     // Administration → Accounts hub. Its Roles and Administrators pages are for super_admin and developer whatever
     // their permissions say, so the hub is too: unticking access.accounts cannot hide the way back to Roles.
