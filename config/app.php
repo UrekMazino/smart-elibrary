@@ -58,6 +58,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | HTTPS only (HSTS)
+    |--------------------------------------------------------------------------
+    |
+    | How long, in seconds, browsers keep to HTTPS for this site and its
+    | subdomains after an HTTPS visit (Strict-Transport-Security, sent by
+    | App\Http\Middleware\SecurityHeaders on HTTPS responses only; OWASP ASVS
+    | 3.4.1 asks for at least a year). 0 tells browsers to forget it: the way
+    | back if the site ever has to leave HTTPS.
+    |
+    */
+
+    'hsts_max_age' => (int) env('HSTS_MAX_AGE', 31536000),
+
+    /*
+    |--------------------------------------------------------------------------
     | System Administrator Email
     |--------------------------------------------------------------------------
     |

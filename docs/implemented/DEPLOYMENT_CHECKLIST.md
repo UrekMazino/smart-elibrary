@@ -71,6 +71,15 @@ php artisan permission:cache-reset                    # roles/permissions are ca
 
 Also: HTTPS + force-https, one canonical host (www **or** apex, 301 the other).
 
+**HTTPS only (HSTS).** On HTTPS the app sends `Strict-Transport-Security: max-age=31536000; includeSubDomains`
+(`SecurityHeaders`; static files from `public/.htaccess`), so browsers refuse plain HTTP to this host for a year.
+- Have HTTPS working on this host, and on any subdomain of it, before the first HTTPS visit: browsers remember.
+- Behind a load balancer or proxy that ends TLS, list it in `app/Http/Middleware/TrustProxies.php` (`$proxies`),
+  or Laravel sees plain HTTP and sends no HSTS.
+- Check: `curl -sI https://<site>/ | grep -i strict-transport` prints the header; over `http://` it does not.
+- To back out, set `HSTS_MAX_AGE=0` (and the `.htaccess` line to `max-age=0`) while HTTPS still works, so
+  returning browsers forget it.
+
 ### Web server
 - **Full texts stay private.** They live in `storage/app/private/pdf`, outside `public/`: only Read,
   Download (signed in, published records) and the staff preview serve them. Never link or copy that

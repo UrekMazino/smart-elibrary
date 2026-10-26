@@ -148,6 +148,19 @@ class SecurityFixesTest extends TestCase
             ->assertHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
     }
 
+    public function test_https_pages_tell_browsers_to_keep_to_https()
+    {
+        $this->get('https://localhost/home')->assertOk()
+            ->assertHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+
+        // Over plain HTTP the header means nothing to browsers, and isn't sent (local development).
+        $this->get('http://localhost/home')->assertOk()->assertHeaderMissing('Strict-Transport-Security');
+
+        // The way back: browsers are told to forget it.
+        config(['app.hsts_max_age' => 0]);
+        $this->get('https://localhost/home')->assertHeader('Strict-Transport-Security', 'max-age=0');
+    }
+
     public function test_a_news_link_must_be_a_web_address_and_a_cover_is_named_by_what_it_is()
     {
         $news = ['news_title' => 'Seminar', 'news_body' => '<p>Body</p>'];
