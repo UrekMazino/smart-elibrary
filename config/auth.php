@@ -108,4 +108,18 @@ return [
 
     'password_timeout' => 10800,
 
+    /*
+    |--------------------------------------------------------------------------
+    | Breached Password Check
+    |--------------------------------------------------------------------------
+    |
+    | New passwords are checked against passwords known from data breaches
+    | (Have I Been Pwned, OWASP ASVS 6.2.12; see AppServiceProvider). Only the
+    | first 5 characters of the password's SHA-1 hash are sent. Turned off in
+    | the tests so they never call the internet.
+    |
+    */
+
+    'breached_password_check' => (bool) env('PASSWORD_BREACH_CHECK', true),
+
 ];

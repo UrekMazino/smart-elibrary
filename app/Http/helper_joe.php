@@ -71,12 +71,19 @@ function generateReservationCode() {
 
 }
 
+/**
+ * A password the system gives someone (an admin resetting a patron's password, a new staff account).
+ * It follows the password policy (OWASP ASVS 6.4.1: 12 characters or more) with room to spare:
+ * 16 random characters in groups of 4, e.g. "K7QM-X2RD-9HTW-4PNE" (about 80 bits). Letters and digits
+ * that look alike when read out or copied by hand (0/O, 1/I/L) are left out.
+ */
 function generateRandomPassword() {
-	
-	$randomString = strtoupper(Str::random(8));
-
-	return $randomString;
-
+	$alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+	$chars = '';
+	for ($i = 0; $i < 16; $i++) {
+		$chars .= $alphabet[random_int(0, strlen($alphabet) - 1)];
+	}
+	return implode('-', str_split($chars, 4));
 }
 
 function searchMaterial($transaction) {

@@ -127,9 +127,10 @@ class SchemaIntegrityTest extends TestCase
     {
         $this->post('/register', [
             'name' => 'Test Patron', 'email' => 'patron@example.org', 'contactnum' => '09170000000',
-            'password' => 'password', 'password_confirmation' => 'password',
+            'password' => self::GOOD_PASSWORD, 'password_confirmation' => self::GOOD_PASSWORD,
         ]);
 
+        $this->assertTrue(User::where('email', 'patron@example.org')->exists());
         $this->assertNull(User::where('email', 'patron@example.org')->value('patrontypes_id'));
     }
 

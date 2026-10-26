@@ -100,7 +100,15 @@ return [
     'not_in' => 'The selected :attribute is invalid.',
     'not_regex' => 'The :attribute format is invalid.',
     'numeric' => 'The :attribute must be a number.',
-    'password' => 'The password is incorrect.',
+    // The Password rule (App\Providers\AppServiceProvider sets the policy). An array, as Laravel's own
+    // file has it: a plain string here hid the breach message ("validation.password.uncompromised").
+    'password' => [
+        'letters' => 'The :attribute must contain at least one letter.',
+        'mixed' => 'The :attribute must contain at least one uppercase and one lowercase letter.',
+        'numbers' => 'The :attribute must contain at least one number.',
+        'symbols' => 'The :attribute must contain at least one symbol.',
+        'uncompromised' => 'This password has appeared in a data breach, so attackers try it first. Choose a different one.',
+    ],
     'present' => 'The :attribute field must be present.',
     'prohibited' => 'The :attribute field is prohibited.',
     'prohibited_if' => 'The :attribute field is prohibited when :other is :value.',

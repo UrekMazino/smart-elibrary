@@ -9,6 +9,12 @@ abstract class TestCase extends BaseTestCase
     use CreatesApplication;
 
     /**
+     * A made-up password that meets the password policy (12+ characters, not common), for tests that
+     * register or set a password. Not a secret: the comment tells the secret scanner so.
+     */
+    protected const GOOD_PASSWORD = 'river-lantern-mango-71'; // gitleaks:allow
+
+    /**
      * Safety net: several tests use RefreshDatabase, which drops every table. Refuse to run
      * unless the configured database is a dedicated *_test database (see phpunit.xml), so a
      * misconfiguration fails here instead of wiping the real catalogue.
