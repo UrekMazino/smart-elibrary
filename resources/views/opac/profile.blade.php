@@ -162,8 +162,8 @@
 					</form>
 
 					<div class="pf-actions">
-						<button type="button" class="pf-btn pf-btn-pass" onclick="showChangePasswordModal()">Change Password</button>
-						<button type="button" class="pf-btn pf-btn-save" onclick="submitForm()">Save Changes</button>
+						<button type="button" class="pf-btn pf-btn-pass" data-pf="password">Change Password</button>
+						<button type="button" class="pf-btn pf-btn-save" data-pf="save">Save Changes</button>
 					</div>
 				</div>
 			</div>
@@ -180,6 +180,14 @@
 			$("#patrontypes_id").val("{{ Auth::user()->patrontypes_id }}");
 			// Quoted: an unset sex produced [value=], an invalid selector that threw.
 			$('input[name=sex][value="{{ Auth::user()->sex }}"]').prop('checked', true);
+
+			// Change Password / Save Changes (a listener, not onclick=: the Content Security Policy).
+			document.addEventListener('click', function (e) {
+				var b = e.target.closest('[data-pf]');
+				if (!b) return;
+				if (b.dataset.pf === 'password') showChangePasswordModal();
+				else if (b.dataset.pf === 'save') submitForm();
+			});
 
 			function submitForm()
 			{

@@ -82,7 +82,7 @@
 								{{-- Changed by the library since the patron last opened this page. --}}
 								<span>@if(in_array($lists->id, $updated ?? []))<span class="tx-updated">Updated</span>@endif<span class="tx-status {{ $st[1] }}">{{ $st[0] }}</span></span>
 								@if($lists->reservation_code)
-									<button type="button" class="tx-msg-btn" onclick="openResChat('{{ $lists->reservation_code }}')">
+									<button type="button" class="tx-msg-btn" data-res-chat="{{ $lists->reservation_code }}">
 										<i class="pe-7s-chat"></i> Messages
 										@if($rcUnread > 0)<span class="tx-unread" id="resbadge-{{ $lists->reservation_code }}">{{ $rcUnread }}</span>@endif
 									</button>
@@ -112,7 +112,7 @@
 				</div>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
-					<button type="button" class="btn btn-success" onclick="sendResChat()">Send</button>
+					<button type="button" class="btn btn-success" data-res-send>Send</button>
 				</div>
 			</div>
 		</div>
@@ -125,6 +125,13 @@ var resChatCode = null;
 var resChatJsonUrl = '{{ url("/patron/reservation/chat-json") }}';
 var resChatReplyUrl = '{{ url("/patron/reservation/chat/reply") }}';
 var resChatToken = '{{ csrf_token() }}';
+
+// Messages / Send (a listener, not onclick=: the Content Security Policy).
+document.addEventListener('click', function (e) {
+	var b = e.target.closest('[data-res-chat]');
+	if (b) { openResChat(b.dataset.resChat); return; }
+	if (e.target.closest('[data-res-send]')) sendResChat();
+});
 
 function openResChat(code) {
 	resChatCode = code;

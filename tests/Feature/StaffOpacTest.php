@@ -107,11 +107,11 @@ class StaffOpacTest extends TestCase
 
         $this->recordPage($this->staff)
             ->assertSee('Inquiries are sent by patrons. You are signed in as staff.')
-            ->assertDontSee("inquire('{$this->catalogId}')", false)
+            ->assertDontSee('data-fd="inquire"', false)
             ->assertSee('Reservations are made by patrons.')
             ->assertSee('<fieldset disabled>', false)
             ->assertSee('Reviews are written by patrons. You are signed in as staff.')
-            ->assertDontSee("getElementById('frm_review').submit()", false);
+            ->assertDontSee('data-fd="submit-review"', false);
 
         $this->actingAs($this->staff)->post('/inquiry/submit', [
             'inquiry_subject' => 'Copies', 'inquiry_message' => 'Is it available?', 'catalog_id_inquiry' => $this->catalogId,
@@ -123,7 +123,7 @@ class StaffOpacTest extends TestCase
         $this->assertSame([0, 0], [DB::table('inquiries')->count(), DB::table('circulations')->count()]);
 
         // Patrons keep both.
-        $this->recordPage($this->patron)->assertSee("inquire('{$this->catalogId}')", false)->assertDontSee('<fieldset disabled>', false)
-            ->assertSee("getElementById('frm_review').submit()", false);
+        $this->recordPage($this->patron)->assertSee('data-fd="inquire" data-id="' . $this->catalogId . '"', false)->assertDontSee('<fieldset disabled>', false)
+            ->assertSee('data-fd="submit-review"', false);
     }
 }

@@ -83,7 +83,7 @@
 								</div>
 							</div>
 							<div class="tx-aside">
-								<button type="button" class="tx-msg-btn" data-general="{{ $general ? 1 : 0 }}" data-subject="{{ $lists->subject }}" data-message="{{ $lists->message }}" data-date="{{ \Carbon\Carbon::parse($lists->created_at)->format('M d, Y g:i A') }}" onclick="showThread({{ $lists->id }}, {{ Auth::user()->id }}, this)">
+								<button type="button" class="tx-msg-btn" data-general="{{ $general ? 1 : 0 }}" data-subject="{{ $lists->subject }}" data-message="{{ $lists->message }}" data-date="{{ \Carbon\Carbon::parse($lists->created_at)->format('M d, Y g:i A') }}" data-thread="{{ $lists->id }}">
 									<i class="pe-7s-chat"></i> Messages
 									@if($lists->new_reply > 0)<span class="tx-unread">{{ $lists->new_reply }}</span>@endif
 								</button>
@@ -104,6 +104,11 @@
 
 @section('js')
 <script nonce="{{ cspNonce() }}" type="text/javascript">
+// Messages buttons (a listener, not onclick=: the Content Security Policy).
+document.addEventListener('click', function (e) {
+	var b = e.target.closest('[data-thread]');
+	if (b) showThread(+b.dataset.thread, {{ Auth::user()->id }}, b);
+});
 function showThread(id, userid, btn) {
 	var esc = function (s) { return $('<div>').text(s == null ? '' : s).html(); };
 	$("#catalog_id_inquiry_reply").val(id);

@@ -153,8 +153,7 @@
 									<form method="POST" id="frmLogout" action="{{ route('logout') }}">
 		                                @csrf
 		                            </form>
-									<li data-logout onclick="event.preventDefault();
-                                                getElementById('frmLogout').submit();"><a href="#">Logout</a></li>
+									<li data-logout><a href="#">Logout</a></li>
 								</ul>
 
 							</li>
@@ -352,6 +351,20 @@
 	{{-- Ask the library: the chat button at the lower right (General inquiries; guests answered by email). --}}
 	@include('opac.partials.chat-widget')
 
+	{{-- Logout and the "back" breadcrumb, as listeners rather than onclick= (the Content Security Policy). --}}
+	<script nonce="{{ cspNonce() }}">
+		document.addEventListener('click', function (e) {
+			if (!e.target.closest('[data-logout]')) return;
+			e.preventDefault();
+			document.getElementById('frmLogout').submit();
+		});
+		// A "back" breadcrumb (e.g. Search Results) returns to the search the visitor came from, if any.
+		document.addEventListener('click', function (e) {
+			if (!e.target.closest('[data-crumb-back]') || document.referrer.indexOf('/results') === -1) return;
+			e.preventDefault();
+			history.back();
+		});
+	</script>
 	@yield('js')
 
 

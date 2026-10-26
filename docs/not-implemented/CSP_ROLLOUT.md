@@ -47,14 +47,21 @@ report them only when they run, so the counts come from the code and from the re
 | 7 more admin pages and `/patron/profile` | 2 to 3 each | 0 to 1 |
 | Every other page (the sign-out link only) | 1 | 0 to 1 |
 
+## Progress
+
+| Date | Done | Handlers | `javascript:` links |
+|---|---|---|---|
+| 2026-10-26 | Policy Report-Only, nonces on every inline script | 98 | 103 |
+| 2026-10-26 | Steps 1 to 3: unused theme files deleted, sign-out links, all OPAC pages | 76 (admin only) | 2 (admin inventory pages) |
+
 ## Order of work
 
-1. **Delete unused theme files:** nothing renders them, and they hold about 95 of the 103 `javascript:`
+1. **Done 2026-10-26.** **Delete unused theme files:** nothing renders them, and they hold about 95 of the 103 `javascript:`
    links. They are `resources/views/index.blade.php`, `dashboard.blade.php`, `authentication-signin.blade.php`,
    `layouts/app.blade.php`, `layouts/header.blade.php`, `layouts/nav.blade.php`, `admin/layouts/header.blade.php`
    and `admin/layouts/nav.blade.php`, plus `App\View\Components\AppLayout`. Check each with a search first.
-2. **The two layouts' sign-out links** (`opac/layout/master`, `admin/layouts/master`): one handler on every page.
-3. **OPAC pages:** the record page (11), transactions (2), profile (2), inquiries, to review, the shelf
+2. **Done 2026-10-26.** **The two layouts' sign-out links** (`opac/layout/master`, `admin/layouts/master`): one handler on every page.
+3. **Done 2026-10-26.** **OPAC pages:** the record page (11), transactions (2), profile (2), inquiries, to review, the shelf
    browser and the breadcrumb (1 each).
 4. **Admin pages,** largest first: the record view (14), `public/js/admin/reservation.js` (10), inquiries (7),
    borrowed and check-out/in (5 each), then the record, on-hold and batch lists. Their table buttons are

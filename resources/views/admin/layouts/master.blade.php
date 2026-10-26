@@ -331,27 +331,12 @@ License: For each use you must have a valid license purchased only from above li
                       </a>
                     </li>
 
-                   {{-- <li class="dropdown-item py-2">
-                    <a href="javascript:;" class="text-body ms-0">
-                      <i class="me-2 icon-md" data-feather="edit"></i>
-                      <span>Edit Profile</span>
-                    </a>
-                  </li>
-                  <li class="dropdown-item py-2">
-                    <a href="javascript:;" class="text-body ms-0">
-                      <i class="me-2 icon-md" data-feather="repeat"></i>
-                      <span>Switch User</span>
-                    </a>
-                  </li> --}}
-                  
                   <li class="dropdown-item py-2">
                     <form method="POST" id="frmLogout" action="{{ route('logout') }}">
                         @csrf
                     </form>
-                        <a href="javascript:;" class="text-body ms-0" onclick="event.preventDefault();
-                                        getElementById('frmLogout').submit();"><i class="me-2 icon-md" data-feather="log-out"></i>
+                        <a href="#" class="text-body ms-0" data-logout><i class="me-2 icon-md" data-feather="log-out"></i>
                       <span>Log Out</span></a>
-                        </a>
                   </li>
                 </ul>
 							</div>
@@ -486,6 +471,13 @@ License: For each use you must have a valid license purchased only from above li
       document.body.style.removeProperty('overflow'); document.body.style.removeProperty('padding-right');
       ['loadingOverlay', 'loadingSpinnerContainer'].forEach(function (id) { var x = document.getElementById(id); if (x) x.style.display = 'none'; });
       if (window.Swal) Swal.close();
+    });
+
+    // Log Out submits the sign-out form (a listener, not onclick=: the Content Security Policy).
+    document.addEventListener('click', function (e) {
+      if (!e.target.closest('[data-logout]')) return;
+      e.preventDefault();
+      document.getElementById('frmLogout').submit();
     });
 
     // DataTables: report load failures through the handler above instead of a browser alert().

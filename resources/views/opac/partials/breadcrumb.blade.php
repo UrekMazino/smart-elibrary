@@ -22,7 +22,7 @@
 @foreach($crumbs as $i => $crumb)
     @if($i)<span aria-hidden="true">›</span>@endif
     @if($crumb[1] ?? null)
-        <a href="{{ $crumb[1] }}" @if(!empty($crumb['back'])) onclick="if (document.referrer.indexOf('/results') !== -1) { history.back(); return false; }" @endif>{{ $crumb[0] }}</a>
+        <a href="{{ $crumb[1] }}" @if(!empty($crumb['back'])) data-crumb-back @endif>{{ $crumb[0] }}</a>
     @else
         <span aria-current="page">{{ $crumb[0] }}</span>
     @endif

@@ -63,7 +63,7 @@
 								</div>
 							</div>
 							<div class="tx-aside">
-								<button type="button" class="tx-review-btn" onclick="toReview('{{ $lists->catalog_id }}')">
+								<button type="button" class="tx-review-btn" data-review="{{ $lists->catalog_id }}">
 									<i class="pe-7s-star"></i> Write a review
 								</button>
 							</div>
@@ -87,6 +87,11 @@
 
 @section('js')
 <script nonce="{{ cspNonce() }}" type="text/javascript">
+// Review buttons (a listener, not onclick=: the Content Security Policy).
+document.addEventListener('click', function (e) {
+	var b = e.target.closest('[data-review]');
+	if (b) toReview(b.dataset.review);
+});
 function toReview(catalog_id) {
 	$("#catalog_id").val(catalog_id);
 	$("#frm_review").submit();
