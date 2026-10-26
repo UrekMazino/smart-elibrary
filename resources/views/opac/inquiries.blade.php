@@ -24,6 +24,10 @@
 	.tx-msg-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: #fff; background: #00857a; border: 0; border-radius: 7px; padding: 8px 16px; cursor: pointer; transition: background .15s; white-space: nowrap; }
 	.tx-msg-btn:hover { background: #006f65; }
 	.tx-msg-btn .tx-unread { background: #e5484d; color: #fff; font-size: 10px; font-weight: 700; border-radius: 20px; padding: 1px 6px; line-height: 1.4; }
+	/* A General inquiry (the chat button) has no material: a chat icon instead of a cover. */
+	.tx-cover-general { width: 70px; height: 98px; border-radius: 6px; background: #e8f4f2; color: #00857a; display: flex; align-items: center; justify-content: center; }
+	.tx-cover-general svg { width: 30px; height: 30px; }
+	.tx-tag { display: inline-block; vertical-align: 1px; margin-right: 6px; padding: 1px 8px; border-radius: 999px; background: #00857a; color: #fff; font-size: 11px; font-weight: 700; }
 	.tx-empty { text-align: center; color: #8a94a6; padding: 48px 16px; background: #fff; border: 1px dashed #dfe3e8; border-radius: 10px; }
 	.tx-pagination { margin-top: 18px; }
 	@media (max-width: 576px) {
@@ -48,21 +52,30 @@
 			<div class="col-9">
 				<div class="tx-head">
 					<h1>Inquiries</h1>
-					<p>Questions you've sent about materials, and the library's replies.</p>
+					<p>Questions you've sent about materials or through the chat button, and the library's replies.</p>
 				</div>
 
 				@if($flag)
 					@foreach($list AS $lists)
 						@php
-							$holdings = getPublicationDetail($lists->catalog_id);
-							$cover    = coverBase($lists->catalog_id) ?: 'frontpages/no-preview.jpg';
+							$general  = $lists->kind === 'general' || ! $lists->catalog_id;
+							$holdings = $general ? null : getPublicationDetail($lists->catalog_id);
+							$cover    = $general ? '' : (coverBase($lists->catalog_id) ?: 'frontpages/no-preview.jpg');
 						@endphp
 						<div class="tx-card">
 							<div class="tx-cover">
-								<img src="{{ url('/' . $cover) }}" alt="cover">
+								@if($general)
+									<div class="tx-cover-general" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-5 4v-4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm3 6.5a1.5 1.5 0 1 0 0 .01zm5 0a1.5 1.5 0 1 0 0 .01zm5 0a1.5 1.5 0 1 0 0 .01z"/></svg></div>
+								@else
+									<img src="{{ url('/' . $cover) }}" alt="cover">
+								@endif
 							</div>
 							<div class="tx-body">
-								<h3 class="tx-title"><a href="{{ recordUrl($lists->catalog_id, $holdings['title_statement']) }}">{{ $holdings['title_statement'] }}</a></h3>
+								@if($general)
+									<h3 class="tx-title"><span class="tx-tag">General</span>{{ $lists->subject }}</h3>
+								@else
+									<h3 class="tx-title"><a href="{{ recordUrl($lists->catalog_id, $holdings['title_statement']) }}">{{ $holdings['title_statement'] }}</a></h3>
+								@endif
 								<div class="tx-msg"><span class="q">Q:</span>{{ $lists->message }}</div>
 								<div class="tx-meta">
 									<span>{{ \Carbon\Carbon::parse($lists->created_at)->format('M d, Y') }}</span>
@@ -70,7 +83,7 @@
 								</div>
 							</div>
 							<div class="tx-aside">
-								<button type="button" class="tx-msg-btn" onclick="showThread({{ $lists->id }}, {{ Auth::user()->id }})">
+								<button type="button" class="tx-msg-btn" data-general="{{ $general ? 1 : 0 }}" data-subject="{{ $lists->subject }}" data-message="{{ $lists->message }}" data-date="{{ \Carbon\Carbon::parse($lists->created_at)->format('M d, Y g:i A') }}" onclick="showThread({{ $lists->id }}, {{ Auth::user()->id }}, this)">
 									<i class="pe-7s-chat"></i> Messages
 									@if($lists->new_reply > 0)<span class="tx-unread">{{ $lists->new_reply }}</span>@endif
 								</button>
@@ -91,13 +104,17 @@
 
 @section('js')
 <script type="text/javascript">
-function showThread(id, userid) {
+function showThread(id, userid, btn) {
 	var esc = function (s) { return $('<div>').text(s == null ? '' : s).html(); };
 	$("#catalog_id_inquiry_reply").val(id);
+	var d = btn ? btn.dataset : {};
+	$('#inquireReplyModal .modal-header .title').text(d.general === '1' ? 'General inquiry' : 'Inquiry on this material');
+	// The thread holds the replies; your first message (subject and question) heads it.
+	var first = d.subject ? '<div class="container-msg-reply darker"><p><strong>' + esc(d.subject) + '</strong></p><p>' + esc(d.message) + '</p><span class="time-right"><small>You | ' + esc(d.date) + '</small></span></div>' : '';
 
 	$.getJSON("{{ url('inquiry/json/') }}/" + id, function (datajson) {
 	}).done(function (datajson) {
-		$("#inquiry_message").text('');
+		$("#inquiry_message").html(first);
 		jQuery.each(datajson, function (i, obj) {
 			// Patron perspective: your own messages show "You"; every library/admin reply
 			// shows "Library" (the specific admin's name is only revealed in the admin UI).

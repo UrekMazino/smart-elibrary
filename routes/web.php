@@ -361,6 +361,10 @@ Route::controller(MaterialTypeController::class)->middleware('can:access.configu
 Route::controller(InquiryController::class)->group(function () {
     // Signed-in users only (the form is shown only to them); the sender's details come from their account.
     Route::post('/inquiry/submit', 'create')->middleware(['auth', 'throttle:5,1']); // max 5 inquiry submits/min
+    // The chat button's General inquiry: guests too (they give their name, contact no. and email).
+    Route::post('/inquiry/general', 'general')->middleware('throttle:5,1');
+    // A guest's inquiry is answered by email: staff mark it as replied (or undo that).
+    Route::post('/admin/inquiry/{id}/emailed', 'markEmailed')->whereNumber('id')->middleware(['auth', 'admin', 'can:access.inquiry']);
     // Reply + thread endpoints require auth; ownership is enforced in the controller.
     Route::post('/inquiry/reply', 'reply')->middleware(['auth', 'throttle:20,1']);
     Route::get('/inquiry/json/{id}', 'json2')->middleware('auth');

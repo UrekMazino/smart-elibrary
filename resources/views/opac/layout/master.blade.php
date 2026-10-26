@@ -349,6 +349,8 @@
 	@endauth
 	<!-- CHATBOT -->
 	{{-- <script src="https://account.snatchbot.me/script.js"></script><script>window.sntchChat.Init(257292)</script>  --}}
+	{{-- Ask the library: the chat button at the lower right (General inquiries; guests answered by email). --}}
+	@include('opac.partials.chat-widget')
 
 	@yield('js')
 

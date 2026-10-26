@@ -21,13 +21,22 @@
 		.time-right { display:block; text-align:right; color:rgba(255,255,255,.85); font-size:0.6875rem; }
 		.time-left  { display:block; text-align:left;  color:var(--ui-muted, #8a94a6); font-size:0.6875rem; }
 
-		.reply-dot { position:absolute; top:-3px; right:-3px; width:10px; height:10px; background:var(--t-danger, #ff3366); border-radius:50%; border:2px solid var(--ui-surface, #fff); }
+		/* Unread dot on Reply / Email. It sits on the button's top-left corner, mostly over the card, so it reads
+		   on any accent (a red accent such as Crimson hid a dot drawn on the button), and clear of the Manage
+		   arrow at the button's right. The surface-coloured ring separates it from the button. */
+		.reply-dot { position:absolute; top:-7px; left:-7px; z-index:2; width:14px; height:14px; background:var(--t-danger, #ff3366); border-radius:50%; border:2px solid var(--ui-surface, #fff); box-shadow:0 1px 3px rgba(0,0,0,.25); pointer-events:none; }
 		/* Messenger-style "Seen by" admin avatars (stacked, hover for name). */
 		.seen-row { display:flex; align-items:center; justify-content:flex-end; margin-top:6px; padding-right:2px; }
 		.seen-lbl { font-size:0.6875rem; color:var(--ui-muted, #8a94a6); margin-right:6px; }
 		.seen-ava { width:22px; height:22px; border-radius:50%; background:var(--t-primary); color:#fff; font-size:0.59375rem; font-weight:700; display:inline-flex; align-items:center; justify-content:center; box-shadow:0 0 0 2px var(--ui-surface, #fff); cursor:default; margin-left:-6px; }
 		.seen-ava:first-of-type { margin-left:0; }
 		.seen-ava-patron { background:#00a496; } /* patron read-receipt (distinct from admin avatars) */
+		/* Subject cell: the General label (chat button) and a second line (the material, or the guest's email status). */
+		.inq-sub2 { margin-top:3px; font-size:0.75rem; color:var(--ui-muted, #8a94a6); }
+		.gi-details { display:grid; grid-template-columns:110px minmax(0,1fr); gap:4px 12px; margin:12px 0 8px; font-size:0.8125rem; }
+		.gi-details dt { font-weight:500; color:var(--ui-muted, #8a94a6); }
+		.gi-details dd { margin:0; word-break:break-word; }
+		#gi-message { white-space:pre-wrap; }
 	</style>
 @endsection
 
@@ -47,7 +56,7 @@
 					<div class="admin-page-head">
 						<div>
 							<h6 class="apt">Inquiries</h6>
-							<p class="aph-desc">Questions patrons sent about materials, and their messages about reservations — reply to keep the conversation going.</p>
+							<p class="aph-desc">Questions about materials, <strong>General</strong> questions from the OPAC chat button, and messages about reservations. Reply to keep the conversation going; guests have no account, so answer them by email.</p>
 						</div>
 						<span class="badge bg-primary rounded-pill" style="font-size:0.8125rem;">{{ count($list) + count($threads) }} total</span>
 					</div>
@@ -57,7 +66,7 @@
 							<thead>
 								<tr>
 									<th>Subject</th>
-									<th>Material Title</th>
+									<th>User type</th>
 									<th>User</th>
 									<th>Contact No.</th>
 									<th>Email</th>
@@ -67,11 +76,21 @@
 							</thead>
 							<tbody>
 								@foreach($list AS $lists)
-									@php $uf = $userFlags[$lists->user_id] ?? null; @endphp
+									@php
+										$uf = $userFlags[$lists->user_id] ?? null;
+										$isGuest = ! $lists->user_id;
+										$material = $lists->catalog_id ? trim(strip_tags((string) getTitle($lists->catalog_id))) : '';
+										$emailedAt = $isGuest && $lists->guest_replied_at ? \Carbon\Carbon::parse($lists->guest_replied_at)->format('M d, Y g:i A') : '';
+									@endphp
 									<tr>
-										<td><div class="inq-msg">{{ $lists->subject }}</div></td>
-										@php $fullTitle = trim(strip_tags((string) getTitle($lists->catalog_id))); @endphp
-										<td><span title="{{ $fullTitle }}">{{ \Illuminate\Support\Str::limit($fullTitle, 55) }}</span></td>
+										<td>
+											<div class="inq-msg">
+												@if($lists->kind === 'general')<span class="badge bg-primary me-1">General</span>@endif{{ $lists->subject }}
+												@if($material)<div class="inq-sub2" title="{{ $material }}">Material: {{ \Illuminate\Support\Str::limit($material, 55) }}</div>@endif
+												@if($isGuest)<div class="inq-sub2">@if($emailedAt)<span class="badge bg-success">Replied by email</span> {{ $emailedAt }}@else Not replied yet @endif</div>@endif
+											</div>
+										</td>
+										<td>@if($isGuest)<span class="badge bg-secondary">Guest</span>@else{{ $patronTypes[$uf->patrontypes_id ?? 0] ?? 'Patron' }}@endif</td>
 										<td>
 											{{ $lists->fullname }}
 											@if($uf && $uf->is_banned)<span class="badge bg-danger ms-1">Banned</span>@endif
@@ -82,7 +101,12 @@
 										<td data-order="{{ strtotime($lists->created_at) }}">{{ \Carbon\Carbon::parse($lists->created_at)->format('M d, Y g:i A') }}</td>
 										<td class="text-center">
 											<div class="btn-group">
+												@if($isGuest)
+													{{-- A guest can't read an in-app reply: show the inquiry and answer it by email. --}}
+													<button class="btn btn-primary btn-sm position-relative" data-subject="{{ $lists->subject }}" data-message="{{ $lists->message }}" data-name="{{ $lists->fullname }}" data-email="{{ $lists->email }}" data-contact="{{ $lists->contactnum }}" data-date="{{ \Carbon\Carbon::parse($lists->created_at)->format('M d, Y g:i A') }}" data-replied="{{ $emailedAt }}" onclick="openGuestInquiry(this,{{ $lists->id }})">@if(isset($unread[$lists->id]))<span class="reply-dot" title="Unseen message"></span>@endif<i data-feather="mail" class="icon-sm me-1"></i>Email</button>
+												@else
 												<button class="btn btn-primary btn-sm position-relative" data-subject="{{ $lists->subject }}" data-message="{{ $lists->message }}" onclick="replyInquiry(this,{{ $lists->id }},{{ Auth::user()->id }})">@if(isset($unread[$lists->id]))<span class="reply-dot" title="Unseen message"></span>@endif<i data-feather="corner-up-left" class="icon-sm me-1"></i>Reply</button>
+												@endif
 												@if($lists->user_id && auth()->user()->can('manage.patron.status'))
 													<button type="button" class="btn btn-primary btn-sm dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false"><span class="visually-hidden">Manage</span></button>
 													<div class="dropdown-menu dropdown-menu-end">
@@ -110,9 +134,13 @@
 											? url('/admin/reservations') . '?q=' . urlencode($t->reservation_code) : '';
 									@endphp
 									<tr>
-										<td><div class="inq-msg">{{ $subject }}</div></td>
 										@php $fullTitle = trim(strip_tags((string) getTitle($t->catalog_id))); @endphp
-										<td><span title="{{ $fullTitle }}">{{ \Illuminate\Support\Str::limit($fullTitle, 55) }}</span></td>
+										<td>
+											<div class="inq-msg">{{ $subject }}
+												@if($fullTitle)<div class="inq-sub2" title="{{ $fullTitle }}">Material: {{ \Illuminate\Support\Str::limit($fullTitle, 55) }}</div>@endif
+											</div>
+										</td>
+										<td>{{ $patronTypes[$uf->patrontypes_id ?? 0] ?? 'Patron' }}</td>
 										<td>
 											{{ $t->fullname }}
 											@if($uf && $uf->is_banned)<span class="badge bg-danger ms-1">Banned</span>@endif
@@ -165,6 +193,33 @@
 					<button type="submit" class="btn btn-primary"><i data-feather="send" class="icon-sm me-1"></i>Send reply</button>
 				</div>
 			</form>
+		</div>
+	</div>
+</div>
+
+{{-- A guest's General inquiry: no account to reply to in the app, so it is answered by email. --}}
+<div class="modal fade" id="guestInquiryModal" tabindex="-1" role="dialog" aria-labelledby="guestInquiryTitle" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="guestInquiryTitle">Guest inquiry <span class="badge bg-primary ms-1">General</span></h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<div class="container-msg-reply"><p><span class="text-muted small">Subject</span><br><strong id="gi-subject"></strong></p><p id="gi-message"></p><span class="time-left"><small id="gi-date"></small></span></div>
+				<dl class="gi-details">
+					<dt>Name</dt><dd id="gi-name"></dd>
+					<dt>Contact no.</dt><dd id="gi-contact"></dd>
+					<dt>Email</dt><dd id="gi-email"></dd>
+				</dl>
+				<p class="small mb-1" id="gi-status"></p>
+				<p class="small text-muted mb-0">Guests have no account, so they can't read a reply here. Answer by email, then mark the inquiry as replied.</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+				<button type="button" class="btn btn-outline-primary" id="gi-mark">Mark as replied</button>
+				<a class="btn btn-primary" id="gi-mailto" href="#"><i data-feather="mail" class="icon-sm me-1"></i>Reply by email</a>
+			</div>
 		</div>
 	</div>
 </div>
@@ -257,6 +312,40 @@
 			});
 		});
 	}
+
+	// A guest's inquiry: shown here, answered in the admin's email app (mailto, with their message quoted),
+	// then marked as replied. The row's label updates when the dialog closes.
+	var giId = null, giBtn = null, giChanged = false;
+	function setGuestStatus(replied) {
+		$('#gi-status').html(replied ? '<span class="badge bg-success">Replied by email</span> ' + $('<div>').text(replied).html() : 'Not marked as replied yet.');
+		$('#gi-mark').text(replied ? 'Mark as not replied' : 'Mark as replied').data('undo', !!replied);
+	}
+	function openGuestInquiry(btn, id) {
+		giId = id; giBtn = btn;
+		$(btn).find('.reply-dot').remove();
+		var d = btn.dataset;
+		$('#gi-subject').text(d.subject);
+		$('#gi-message').text(d.message);
+		$('#gi-date').text('Sent ' + d.date);
+		$('#gi-name').text(d.name);
+		$('#gi-contact').text(d.contact);
+		$('#gi-email').empty().append($('<a>').attr('href', 'mailto:' + d.email).text(d.email));
+		setGuestStatus(d.replied);
+		// Their message is quoted below the space for the answer (kept short: email apps cap mailto links).
+		var quoted = d.message.length > 1500 ? d.message.slice(0, 1500) + '…' : d.message;
+		var body = 'Dear ' + d.name + ',\r\n\r\n\r\n\r\n--- Your message of ' + d.date + ' ---\r\nSubject: ' + d.subject + '\r\n' + quoted;
+		$('#gi-mailto').attr('href', 'mailto:' + d.email + '?subject=' + encodeURIComponent('Re: ' + d.subject) + '&body=' + encodeURIComponent(body));
+		$('#guestInquiryModal').modal('show');
+		// Opening it counts as seen (the bell and the red dot), as for a patron's inquiry.
+		$.ajax({ type: 'POST', url: "{{ url('inquiry/mark-seen') }}/" + id, data: { _token: "{{ csrf_token() }}" }, dataType: 'json' });
+	}
+	$('#gi-mark').on('click', function () {
+		var undo = !!$(this).data('undo');
+		$.post("{{ url('admin/inquiry') }}/" + giId + '/emailed', { _token: "{{ csrf_token() }}", undo: undo ? 1 : 0 })
+			.done(function (res) { giBtn.dataset.replied = res.replied_at || ''; setGuestStatus(res.replied_at); giChanged = true; })
+			.fail(function () { Swal.fire('Error', 'Could not update the inquiry. Please try again.', 'error'); });
+	});
+	$('#guestInquiryModal').on('hidden.bs.modal', function () { if (giChanged) location.reload(); });
 
 	// A reservation reply is sent in place (the inquiry form posts and reloads the page).
 	$(document).on('submit', '#frm_inquiry_reply', function (e) {

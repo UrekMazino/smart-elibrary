@@ -150,8 +150,8 @@ class AdminController extends Controller
 
     public function inquiry()
     {
-        // Inquiries now only come from registered users (guests are directed to email),
-        // so we surface each patron's ban/block state for the admin controls.
+        // Inquiries from patrons (about a material, or General from the chat button) and General ones
+        // from guests (no account; answered by email). Each patron's ban/block state feeds the controls.
         $list = App\Models\View_inquiry::get();
 
         // Reservation conversations a patron wrote in (the Messages chat on their Transactions page,
@@ -170,13 +170,15 @@ class AdminController extends Controller
                    DB::raw("SUM(m.sender_role = 'patron' AND m.seen_at IS NULL) as unread")]);
 
         $userFlags = App\Models\User::whereIn('id', $list->pluck('user_id')->merge($threads->pluck('user_id'))->filter()->unique()->values())
-                        ->get(['id', 'is_banned', 'is_blocked'])->keyBy('id');
+                        ->get(['id', 'is_banned', 'is_blocked', 'patrontypes_id'])->keyBy('id');
+        // The User type column: the sender's patron type (Student, Professional, ...), or Guest without an account.
+        $patronTypes = DB::table('patrontypes')->pluck('types', 'id');
 
         // Inquiries the current admin hasn't opened since the latest patron message
         // (drives the red "unseen" dot on each Reply button). array_flip -> O(1) lookup.
         $unread = array_flip(App\Services\NotificationService::unreadInquiryIds(Auth::user()));
 
-        return view('admin.inquiry', ['list' => $list, 'threads' => $threads, 'userFlags' => $userFlags, 'unread' => $unread]);
+        return view('admin.inquiry', ['list' => $list, 'threads' => $threads, 'userFlags' => $userFlags, 'patronTypes' => $patronTypes, 'unread' => $unread]);
     }
 
     public function inquiryjson()

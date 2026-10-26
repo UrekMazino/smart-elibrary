@@ -171,7 +171,8 @@ class OPACController extends Controller
 
     public function inquiries()
     {
-        $list = App\Models\View_inquiry::where('user_id',Auth::user()->id)->paginate(5);
+        // Newest first: the chat button adds General inquiries here too, and the latest is the one to check.
+        $list = App\Models\View_inquiry::where('user_id',Auth::user()->id)->orderByDesc('created_at')->paginate(5);
         $flag = true;
         if(count($list) == 0)
         {

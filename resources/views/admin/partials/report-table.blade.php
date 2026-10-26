@@ -44,7 +44,7 @@
 		<thead><tr><th>#</th><th>Inquiry</th><th>Material</th><th>Name</th><th>Contact No.</th><th>Email</th><th>Date</th></tr></thead>
 		<tbody>
 			@foreach($list as $i => $r)
-				<tr><td>{{ $i+1 }}</td><td>{{ $r->message }}</td><td>{{ $r->title_statement ? formatTitle1($r->title_statement) : getTitle($r->catalog_id) }}</td><td>{{ $r->fullname }}</td><td>{{ $r->contactnum }}</td><td>{{ $r->email }}</td><td>{{ $r->created_at }}</td></tr>
+				<tr><td>{{ $i+1 }}</td><td>{{ $r->message }}</td><td>{{ $r->catalog_id ? ($r->title_statement ? formatTitle1($r->title_statement) : getTitle($r->catalog_id)) : 'General' }}</td><td>{{ $r->fullname }}{{ $r->user_id ? '' : ' (guest)' }}</td><td>{{ $r->contactnum }}</td><td>{{ $r->email }}</td><td>{{ $r->created_at }}</td></tr>
 			@endforeach
 		</tbody>
 	@elseif($table == 5)
