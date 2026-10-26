@@ -161,25 +161,37 @@ class SecurityFixesTest extends TestCase
         $this->get('https://localhost/home')->assertHeader('Strict-Transport-Security', 'max-age=0');
     }
 
-    public function test_pages_send_a_content_security_policy_whose_nonce_their_scripts_carry()
+    public function test_pages_enforce_a_content_security_policy_whose_nonce_their_scripts_carry()
     {
-        $response = $this->get('/home')->assertOk()
-            ->assertHeader('Content-Security-Policy', "frame-ancestors 'self'; object-src 'none'; base-uri 'none'; form-action 'self'");
+        $response = $this->get('/home')->assertOk()->assertHeaderMissing('Content-Security-Policy-Report-Only');
 
-        $full = $response->headers->get('Content-Security-Policy-Report-Only');
-        $this->assertMatchesRegularExpression("/script-src 'self' 'nonce-([A-Za-z0-9+\/=]{24})'/", $full);
-        preg_match("/'nonce-([^']+)'/", $full, $m);
+        $policy = $response->headers->get('Content-Security-Policy');
+        foreach (["default-src 'self'", "object-src 'none'", "base-uri 'none'", "form-action 'self'", "frame-ancestors 'self'"] as $part) {
+            $this->assertStringContainsString($part, $policy);
+        }
+        $this->assertStringNotContainsString("'unsafe-inline' https://cdn", $policy);   // no inline scripts without the nonce
+        $this->assertMatchesRegularExpression("/script-src 'self' 'nonce-([A-Za-z0-9+\\/=]{24})'/", $policy);
+        preg_match("/'nonce-([^']+)'/", $policy, $m);
         preg_match_all('/<script nonce="([^"]+)"/', $response->getContent(), $tags);
         $this->assertNotEmpty($tags[1]);
         $this->assertSame([$m[1]], array_values(array_unique($tags[1])), 'every inline script carries this response\'s nonce');
 
         // A new nonce for every response.
-        $this->assertNotSame($full, $this->get('/home')->headers->get('Content-Security-Policy-Report-Only'));
+        $this->assertNotSame($policy, $this->get('/home')->headers->get('Content-Security-Policy'));
+    }
 
-        // Once enforced, the full policy is the one browsers apply.
-        config(['app.csp_enforce' => true]);
-        $enforced = $this->get('/home')->headers->get('Content-Security-Policy');
-        $this->assertStringContainsString("script-src 'self' 'nonce-", $enforced);
+    public function test_the_emergency_switch_only_reports_and_debug_error_pages_keep_their_scripts()
+    {
+        config(['app.csp_enforce' => false]);
+        $response = $this->get('/home');
+        $this->assertSame("frame-ancestors 'self'; object-src 'none'; base-uri 'none'; form-action 'self'", $response->headers->get('Content-Security-Policy'));
+        $this->assertStringContainsString("script-src 'self' 'nonce-", $response->headers->get('Content-Security-Policy-Report-Only'));
+
+        // Laravel's debug error page (APP_DEBUG, a server error) runs inline scripts of its own.
+        config(['app.csp_enforce' => true, 'app.debug' => true]);
+        \Illuminate\Support\Facades\Route::get('/__csp-test-error', fn () => throw new \RuntimeException('boom'))->middleware('web');
+        $error = $this->get('/__csp-test-error')->assertStatus(500);
+        $this->assertSame("frame-ancestors 'self'; object-src 'none'; base-uri 'none'; form-action 'self'", $error->headers->get('Content-Security-Policy'));
     }
 
     public function test_the_policy_is_only_sent_with_pages()

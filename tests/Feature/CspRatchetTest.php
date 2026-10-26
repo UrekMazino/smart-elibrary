@@ -5,10 +5,9 @@ namespace Tests\Feature;
 use Tests\TestCase;
 
 /**
- * The Content Security Policy (SecurityHeaders) runs Report-Only until no page needs inline JavaScript
- * outside a nonce-tagged <script>: docs/not-implemented/CSP_ROLLOUT.md. This test only lets those counts
- * go down. After converting handlers, lower the baseline to the new count (the message says it); once
- * both reach 0, the policy can be enforced (CSP_ENFORCE=true).
+ * The Content Security Policy (SecurityHeaders) is enforced: a page runs no inline JavaScript outside a
+ * nonce-tagged <script> (docs/implemented/CSP_ROLLOUT.md). This test keeps it that way: every inline
+ * script carries the nonce, and no inline event handlers or javascript: links come back (both 0).
  */
 class CspRatchetTest extends TestCase
 {

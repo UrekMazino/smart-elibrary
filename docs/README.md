@@ -15,6 +15,7 @@ Move a document across when that changes.
 | [QA_REFERENCE.md](implemented/QA_REFERENCE.md) | Every page and action for QA testing: address, who may use it, what to check, and the security checks to repeat. Also as a PDF to send: [QA_REFERENCE.pdf](implemented/QA_REFERENCE.pdf) | — (kept current with the app; `tests/Feature/RouteSecurityTest.php` checks every route automatically) |
 | [database/](implemented/database/) | Database documentation; its findings R1–R16 are all fixed | Re-export the PDF from Word (the .docx is newer) |
 | [SECURITY_NOTES.md](implemented/SECURITY_NOTES.md) | The security rules in force: input rules, sign-in and rate limits, who may do what (roles), deadlines for patching vulnerable packages (OWASP ASVS 2.1.1, 6.1.1, 8.1.1, 15.1.1) | — (update it in the same commit as a rule change) |
+| [CSP_ROLLOUT.md](implemented/CSP_ROLLOUT.md) | The Content Security Policy (OWASP ASVS 3.4.3): what it allows, how pages run scripts under it (nonces, `data-call`), the emergency switch, and how it was rolled out | Later: tighter `style-src`; a policy for the static PDF reader |
 
 ## [not-implemented/](not-implemented/)
 
@@ -26,5 +27,4 @@ Move a document across when that changes.
 | [Z3950_SRU_INTEGRATION_PLAN.md](not-implemented/Z3950_SRU_INTEGRATION_PLAN.md) | Copy cataloguing from other libraries over Z39.50 / SRU | Nothing (planning only) |
 | [PATRON_IMPROVEMENT_IDEAS.md](not-implemented/PATRON_IMPROVEMENT_IDEAS.md) | 17 ideas to help people use the collection, from quick wins (local names in search, "cite this", search alerts) to wild ones (myth checker, research radio, DOST research commons), each with what it builds on | Nothing (ideas only; write a plan before building one) |
 | [ACCESSIBILITY_PLAN.md](not-implemented/ACCESSIBILITY_PLAN.md) | Screen readers and braille displays (WCAG 2.2 AA): the 2026-10-22 audit, rules for deafblind readers, 4 phases for the public side plus accessible text of the scanned full texts (from ProjectY's OCR), and the pdf.js security upgrade | Nothing (planning only) |
-| [CSP_ROLLOUT.md](not-implemented/CSP_ROLLOUT.md) | Content Security Policy (OWASP ASVS 3.4.3): what is enforced, what runs Report-Only, and the inline handlers to convert, page by page, before enforcing | Enforced: frame-ancestors, object-src, base-uri, form-action. Nonces on all 93 inline scripts; full policy Report-Only. 98 handlers and 103 `javascript:` links to go |
 | [WINDOWS_UPDATE_2026-10-20.md](not-implemented/WINDOWS_UPDATE_2026-10-20.md) | Steps to bring the Windows machine up to date (private PDF storage) | The code is done; run the steps on Windows, then delete the file |

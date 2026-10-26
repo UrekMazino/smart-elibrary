@@ -16,12 +16,12 @@ use Illuminate\Http\Request;
  *   the browser uses HTTPS for the site and its subdomains for a year (config app.hsts_max_age), so a
  *   later visit can't be quietly downgraded to plain HTTP on the way (public Wi-Fi). Browsers ignore it
  *   over HTTP, so local development on http:// is unaffected.
- * - Content Security Policy (OWASP ASVS 3.4.3, 3.4.6), on HTML pages:
- *   - enforced now: only this site may frame our pages (frame-ancestors), no plugins (object-src), no
- *     <base> tag (base-uri), forms post only to this site (form-action);
- *   - the full policy (scripts only from this site, the CDNs we use and inline scripts carrying this
- *     request's nonce, cspNonce()) as Report-Only until every page passes it, then enforced with
- *     CSP_ENFORCE=true. Inline onclick= handlers are what it still reports: CSP_ROLLOUT.md.
+ * - Content Security Policy (OWASP ASVS 3.4.3, 3.4.6), on HTML pages: scripts only from this site,
+ *   jsDelivr and inline scripts carrying this request's nonce (cspNonce()); no plugins, no <base> tag,
+ *   forms post only to this site, and only this site may frame our pages. CSP_ENFORCE=false sends the
+ *   full policy Report-Only instead, keeping the last four enforced (docs/implemented/CSP_ROLLOUT.md).
+ *   Laravel's debug error page (APP_DEBUG, a 5xx) runs inline scripts of its own, so it gets only those
+ *   four.
  * Static files under public/ get the same from public/.htaccess.
  */
 class SecurityHeaders
@@ -49,7 +49,9 @@ class SecurityHeaders
         ];
         if (str_starts_with((string) $response->headers->get('Content-Type'), 'text/html')) {
             $full = str_replace('{nonce}', cspNonce(), self::CSP_FULL);
-            if (config('app.csp_enforce')) {
+            if (config('app.debug') && $response->getStatusCode() >= 500) {
+                $headers['Content-Security-Policy'] = self::CSP_BASE;   // the debug error page's own scripts
+            } elseif (config('app.csp_enforce')) {
                 $headers['Content-Security-Policy'] = $full;
             } else {
                 $headers['Content-Security-Policy'] = self::CSP_BASE;

@@ -1,18 +1,25 @@
-# Content Security Policy rollout
+# Content Security Policy
 
 Goal: enforce a Content Security Policy that runs only this site's scripts and inline scripts carrying the
 request's nonce (OWASP ASVS 3.4.3, Level 2), so a script injected into a page can't run.
 
-## Where it stands (26 October 2026)
+## Where it stands: enforced since 26 October 2026
 
-- **Enforced:** `frame-ancestors 'self'; object-src 'none'; base-uri 'none'; form-action 'self'` on every
-  page. Only this site can frame our pages (ASVS 3.4.6), and no page can load plugins, change its base
-  address or post a form to another site. `X-Frame-Options` stays for older browsers.
-- **Report-Only:** the full policy below. Browsers report what it would block but block nothing.
-- **Nonces:** all 93 inline `<script>` tags carry `nonce="{{ cspNonce() }}"`. A crawl of every page as a
-  guest, a patron and staff reported no violation at page load.
-- **Guard:** `tests/Feature/CspRatchetTest.php` fails if an inline script lacks the nonce, or if inline
-  handlers or `javascript:` links increase. Lower its two baselines as they come down.
+- **Enforced on every page:** the full policy below (`CSP_ENFORCE`, default true). Only this site's scripts,
+  jsDelivr and inline scripts carrying the request's nonce run; no plugins, no `<base>` tag, forms post only
+  to this site, and only this site can frame our pages (ASVS 3.4.3, 3.4.6). `X-Frame-Options` stays for
+  older browsers.
+- **Nonces:** every inline `<script>` carries `nonce="{{ cspNonce() }}"`; no page has an inline event
+  handler or `javascript:` link (admin pages use `data-call`, see below).
+- **Checked enforced, 26 October 2026:** every page as a guest, a patron and staff (165 visits) with nothing
+  blocked and no script errors; every button's wiring; search filters, suggestions, Quick view, Cite, the
+  homepage advanced search and chat button, the PDF reader, TinyMCE, dashboard charts, the Appearance
+  preview and the date pickers.
+- **Guard:** `tests/Feature/CspRatchetTest.php` fails if an inline script lacks the nonce or anyone adds an
+  inline handler or `javascript:` link (both baselines are 0).
+- **Emergency switch:** `CSP_ENFORCE=false` sends the full policy Report-Only (browsers report, nothing is
+  blocked) and keeps `frame-ancestors`, `object-src`, `base-uri` and `form-action` enforced. Laravel's debug
+  error page (`APP_DEBUG=true`, a server error) gets only those four, since it runs inline scripts of its own.
 
 The full policy (`App\Http\Middleware\SecurityHeaders`, `{nonce}` = `cspNonce()`):
 
@@ -25,7 +32,7 @@ img-src 'self' data: blob:; connect-src 'self'; frame-src 'self'; media-src 'sel
 object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'
 ```
 
-## What still blocks enforcing
+## What blocked enforcing (now done)
 
 Inline event handlers (`onclick="…"`) and `href="javascript:…"` links: a nonce can't cover them. Browsers
 report them only when they run, so the counts come from the code and from the rendered pages.
@@ -55,6 +62,7 @@ report them only when they run, so the counts come from the code and from the re
 | 2026-10-26 | Steps 1 to 3: unused theme files deleted, sign-out links, all OPAC pages | 76 (admin only) | 2 (admin inventory pages) |
 | 2026-10-26 | Step 4: every admin page (data-call buttons, `AdminActions` in the admin layout) | 0 | 0 |
 | 2026-10-26 | Step 5: the CSF page uses the site's jQuery 3.6 (not 1.11.1 from Google); `ajax.googleapis.com` dropped from the policy | 0 | 0 |
+| 2026-10-26 | Step 6: the policy enforced (`CSP_ENFORCE` default true) | 0 | 0 |
 
 ## Order of work
 
@@ -74,7 +82,7 @@ report them only when they run, so the counts come from the code and from the re
      cross-site-scripting flaws. Use the site's own jQuery 3.6, then drop `ajax.googleapis.com` from the
      policy.
    - The borrowed page loads moment.js from jsDelivr: keep it, or serve it from `public/`.
-6. **Enforce** when both baselines are 0 and a crawl reports nothing:
+6. **Done 2026-10-26.** **Enforce** when both baselines are 0 and a crawl reports nothing:
    - set `CSP_ENFORCE=true`, which moves the full policy into the enforced header;
    - watch the browser console on the busiest pages for a week.
 

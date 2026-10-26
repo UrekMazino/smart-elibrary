@@ -80,6 +80,11 @@ Also: HTTPS + force-https, one canonical host (www **or** apex, 301 the other).
 - To back out, set `HSTS_MAX_AGE=0` (and the `.htaccess` line to `max-age=0`) while HTTPS still works, so
   returning browsers forget it.
 
+**Content Security Policy.** Enforced on every page (`CSP_ENFORCE`, default true; `docs/implemented/CSP_ROLLOUT.md`).
+- Check: `curl -sI https://<site>/home | grep -i content-security-policy` shows `script-src 'self' 'nonce-…'`.
+- If a page breaks after a change, the browser console says what was refused. `CSP_ENFORCE=false` turns
+  blocking off (the policy only reports) while you fix it; then turn it back on.
+
 ### Web server
 - **Full texts stay private.** They live in `storage/app/private/pdf`, outside `public/`: only Read,
   Download (signed in, published records) and the staff preview serve them. Never link or copy that
