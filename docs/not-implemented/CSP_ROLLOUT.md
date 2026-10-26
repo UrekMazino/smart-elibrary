@@ -53,6 +53,7 @@ report them only when they run, so the counts come from the code and from the re
 |---|---|---|---|
 | 2026-10-26 | Policy Report-Only, nonces on every inline script | 98 | 103 |
 | 2026-10-26 | Steps 1 to 3: unused theme files deleted, sign-out links, all OPAC pages | 76 (admin only) | 2 (admin inventory pages) |
+| 2026-10-26 | Step 4: every admin page (data-call buttons, `AdminActions` in the admin layout) | 0 | 0 |
 
 ## Order of work
 
@@ -63,7 +64,7 @@ report them only when they run, so the counts come from the code and from the re
 2. **Done 2026-10-26.** **The two layouts' sign-out links** (`opac/layout/master`, `admin/layouts/master`): one handler on every page.
 3. **Done 2026-10-26.** **OPAC pages:** the record page (11), transactions (2), profile (2), inquiries, to review, the shelf
    browser and the breadcrumb (1 each).
-4. **Admin pages,** largest first: the record view (14), `public/js/admin/reservation.js` (10), inquiries (7),
+4. **Done 2026-10-26.** **Admin pages,** largest first: the record view (14), `public/js/admin/reservation.js` (10), inquiries (7),
    borrowed and check-out/in (5 each), then the record, on-hold and batch lists. Their table buttons are
    built in JavaScript: give each button a `data-action` and the record id, and handle all of them with
    one listener per table.
@@ -76,7 +77,13 @@ report them only when they run, so the counts come from the code and from the re
    - set `CSP_ENFORCE=true`, which moves the full policy into the enforced header;
    - watch the browser console on the busiest pages for a week.
 
-**Converting a handler:**
+**Admin pages** use a small dispatcher in `admin/layouts/master.blade.php`: a button carries
+`data-call="functionName"` and `data-args="[JSON]"` (`"$this"` = the button, `"$event"` = the event), and
+each page lists the functions its buttons may call with `AdminActions.allow([...])`, so injected HTML can't
+call anything else. Tables built in JavaScript write the attributes with `AdminActions.attrs(name, args)`.
+(`data-call`, not `data-act`: a few pages already use `data-act` with listeners of their own.)
+
+**Converting a handler (OPAC pages: one listener per page):**
 
 ```html
 <!-- before -->

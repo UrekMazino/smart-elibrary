@@ -96,6 +96,9 @@
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net/jquery.dataTables.js') }}"></script>
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net-bs5/dataTables.bootstrap5.js') }}"></script>
 <script nonce="{{ cspNonce() }}">
+// This page's buttons (data-call; onclick= is blocked by the Content Security Policy).
+AdminActions.allow(['showEditAdminRoleModal']);
+
 
 function escapeHtml(text) {
   return (text == null ? '' : String(text))
@@ -166,7 +169,7 @@ $('#tbl').DataTable({
               return '<div class="btn-group btn-group-sm" role="group">' +
                        '<button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>' +
                        '<div class="dropdown-menu dropdown-menu-end">' +
-                         '<a class="dropdown-item" href="#" onclick="showEditAdminRoleModal(' + row.id + ')">Change Role</a>' +
+                         '<a class="dropdown-item" href="#" ' + AdminActions.attrs('showEditAdminRoleModal', [row.id]) + '>Change Role</a>' +
                          '<a class="dropdown-item" href="#" data-act="library-code" data-id="' + row.id + '">Generate Library Code</a>' +
                          '<a class="dropdown-item" href="#" data-act="reset-password" data-id="' + row.id + '">Reset Password</a>' +
                          '<div class="dropdown-divider"></div>' +

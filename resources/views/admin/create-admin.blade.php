@@ -161,7 +161,7 @@
               <input type="text" class="form-control cred-value mb-2" readonly
                      value="{{ session('new_admin_password') }}" id="passwordInput">
               <div class="text-center">
-                <button type="button" class="btn btn-outline-primary btn-sm" onclick="copyToClipBoard('passwordInput')">
+                <button type="button" class="btn btn-outline-primary btn-sm" data-call="copyToClipBoard" data-args='["passwordInput"]'>
                     <i data-feather="copy" class="icon-sm me-1"></i>Copy password
                 </button>
               </div>
@@ -175,7 +175,7 @@
               <input type="text" class="form-control cred-value mb-2" readonly
                      value="{{ session('user_library_code') ? session('user_library_code') : '0000000' }}" id="qrcodeInput">
               <div class="text-center">
-                <button type="button" class="btn btn-outline-primary btn-sm" onclick="copyToClipBoard('qrcodeInput')">
+                <button type="button" class="btn btn-outline-primary btn-sm" data-call="copyToClipBoard" data-args='["qrcodeInput"]'>
                     <i data-feather="copy" class="icon-sm me-1"></i>Copy code
                 </button>
               </div>
@@ -196,6 +196,9 @@
 
 @section('js')
 <script nonce="{{ cspNonce() }}">
+// This page's buttons (data-call; onclick= is blocked by the Content Security Policy).
+AdminActions.allow(['copyToClipBoard']);
+
 $(document).ready(function(){
     if (window.feather) feather.replace();
 

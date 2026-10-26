@@ -12,11 +12,11 @@ use Tests\TestCase;
  */
 class CspRatchetTest extends TestCase
 {
-    /** onclick="…" and the like, in templates and in admin scripts that build HTML (98 on 2026-10-26). */
-    private const HANDLERS = 76;
+    /** onclick="…" and the like, in templates and in admin scripts that build HTML (98 on 2026-10-26; none left). */
+    private const HANDLERS = 0;
 
-    /** href="javascript:…" links (103 on 2026-10-26). */
-    private const JAVASCRIPT_LINKS = 2;
+    /** href="javascript:…" links (103 on 2026-10-26; none left). */
+    private const JAVASCRIPT_LINKS = 0;
 
     /** @return array<string, string> file => contents */
     private function sources(): array

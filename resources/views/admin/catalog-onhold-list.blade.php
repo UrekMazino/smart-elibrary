@@ -138,15 +138,16 @@ $(document).ready(function(){
     var NO_BADGE = '<span class="badge rounded-pill border border-danger text-danger">&#10007;</span>';
     @include('admin.partials.cover-placeholder-tag-js')
 
+    // The Action menu's items (data-call; onclick= is blocked by the Content Security Policy).
+    AdminActions.allow(['viewRecord', 'holdMaterial', 'publishMaterial', 'actionFrm']);
     function actionMenu(row) {
-      var escapedTitle = escapeHtml(row.title_statement);
       return '<div class="btn-group btn-group-sm" role="group">' +
           '<button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>' +
           '<div class="dropdown-menu dropdown-menu-end">' +
-              '<a class="dropdown-item" href="#" onclick="viewRecord(' + row.id + ', \'' + escapedTitle + '\')">View Details</a>' +
-              @can("publish-hold.catalog") '<a class="dropdown-item" href="#" onclick="publishMaterial(' + row.id + ')">Add to Record list</a>' + @endcan
-              @can("edit.catalog") '<a class="dropdown-item" href="#" onclick="actionFrm(' + row.id + ',\'edit\')">Edit</a>' + @endcan
-              @can("delete.catalog") '<a class="dropdown-item" href="#" onclick="actionFrm(' + row.id + ',\'delete\')">Delete</a>' + @endcan
+              '<a class="dropdown-item" href="#" ' + AdminActions.attrs('viewRecord', [row.id, row.title_statement]) + '>View Details</a>' +
+              @can("publish-hold.catalog") '<a class="dropdown-item" href="#" ' + AdminActions.attrs('publishMaterial', [row.id]) + '>Add to Record list</a>' + @endcan
+              @can("edit.catalog") '<a class="dropdown-item" href="#" ' + AdminActions.attrs('actionFrm', [row.id, 'edit']) + '>Edit</a>' + @endcan
+              @can("delete.catalog") '<a class="dropdown-item" href="#" ' + AdminActions.attrs('actionFrm', [row.id, 'delete']) + '>Delete</a>' + @endcan
           '</div>' +
       '</div>';
     }

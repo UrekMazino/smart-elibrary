@@ -126,7 +126,7 @@
               </div>
               <input type="text" class="form-control mb-2" readonly
                      value="{{ session('user_library_code') ? session('user_library_code') : '0000000' }}" id="qrcodeInput">
-              <button type="button" class="btn btn-outline-primary btn-sm" onclick="copyToClipBoard()" id="copy-btn">
+              <button type="button" class="btn btn-outline-primary btn-sm" data-call="copyToClipBoard" id="copy-btn">
                   <i data-feather="copy" class="icon-sm me-1"></i>Copy code
               </button>
             </div>
@@ -146,6 +146,9 @@
 
 @section('js')
 <script nonce="{{ cspNonce() }}">
+// This page's buttons (data-call; onclick= is blocked by the Content Security Policy).
+AdminActions.allow(['copyToClipBoard']);
+
 $(document).ready(function(){
     if (window.feather) feather.replace();
 

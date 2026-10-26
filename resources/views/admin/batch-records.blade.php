@@ -34,7 +34,7 @@
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="{{ url('/admin/batch-list') }}">Batch list</a></li>
             {{-- View Batch Details is a POST page: the link submits #viewBatchFrm. --}}
-            <li class="breadcrumb-item"><a href="#" onclick="document.getElementById('viewBatchFrm').submit(); return false;">Batch #{{ $batch->id }} details</a></li>
+            <li class="breadcrumb-item"><a href="#" data-call="submitFormById" data-args='["viewBatchFrm"]'>Batch #{{ $batch->id }} details</a></li>
             <li class="breadcrumb-item active" aria-current="page">Records</li>
         </ol>
     </nav>
@@ -103,6 +103,9 @@
 @include('admin.partials.catalog-list-filters-js')
 @include('admin.partials.catalog-bulk-js', ['list' => 'batch', 'batchId' => $batch->id])
 <script nonce="{{ cspNonce() }}">
+// This page's buttons (data-call; onclick= is blocked by the Content Security Policy).
+AdminActions.allow(['submitFormById']);
+
 var CSRF = '{{ csrf_token() }}';
 var CAN_PUBLISH_HOLD = @json(auth()->user()->can('publish-hold.catalog'));
 

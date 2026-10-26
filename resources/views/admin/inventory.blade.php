@@ -51,7 +51,7 @@
                     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
                       <a class="dropdown-item d-flex align-items-center" href="{{url('/admin/inventory/reportpresented')}}" target="_blank"><i class="icon-sm me-2 mdi mdi-file-excel-box"></i> <span class="">Excel File</span></a>
 
-                      <a class="dropdown-item d-flex align-items-center text-danger" href="javascript:;" onclick="resetInventory()"><i class="icon-sm me-2 mdi mdi-information text-danger"></i> <span class="">Reset</span></a>
+                      <a class="dropdown-item d-flex align-items-center text-danger" href="#" data-call="resetInventory"><i class="icon-sm me-2 mdi mdi-information text-danger"></i> <span class="">Reset</span></a>
 
                       </div>
                   </div>
@@ -136,6 +136,9 @@
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net/jquery.dataTables.js') }}"></script>
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net-bs5/dataTables.bootstrap5.js') }}"></script>
 <script nonce="{{ cspNonce() }}">
+// This page's buttons (data-call; onclick= is blocked by the Content Security Policy).
+AdminActions.allow(['resetInventory']);
+
   
   $(document).ready(function(){
 

@@ -407,6 +407,35 @@ License: For each use you must have a valid license purchased only from above li
   <script  src="{{ asset('admintemplate/nobleui/template/assets/vendors/jquery-number/jquery.number.js') }}"></script>
 
   <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/select2/select2.min.js') }}"></script>
+  <script nonce="{{ cspNonce() }}">
+  // Buttons call page functions with data-call="fnName" (+ data-args="[JSON array]") instead of onclick=,
+  // which the Content Security Policy blocks. Each page names the functions its buttons may call:
+  //   AdminActions.allow(['viewRecord', 'actionFrm']);
+  // In data-args, "$this" stands for the clicked element and "$event" for the event. A link's default
+  // action (following its href) is cancelled. data-call-change does the same on a change event.
+  // (data-call, not data-act: some pages already use data-act with listeners of their own.)
+  // HTML built in JavaScript gets the attributes from AdminActions.attrs('fnName', [args]).
+  window.AdminActions = (function () {
+    var allowed = {};
+    function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+    function run(e, el, attr) {
+      var name = el.getAttribute(attr), fn = allowed[name] ? window[name] : null;
+      if (typeof fn !== 'function') { console.warn('AdminActions: ' + name + ' is not allowed on this page'); return; }
+      var args;
+      try { args = JSON.parse(el.getAttribute('data-args') || '[]'); } catch (err) { console.warn('AdminActions: bad data-args', err); return; }
+      if (el.tagName === 'A') e.preventDefault();
+      fn.apply(el, args.map(function (a) { return a === '$this' ? el : (a === '$event' ? e : a); }));
+    }
+    document.addEventListener('click', function (e) { var el = e.target.closest('[data-call]'); if (el) run(e, el, 'data-call'); });
+    document.addEventListener('change', function (e) { var el = e.target.closest('[data-call-change]'); if (el) run(e, el, 'data-call-change'); });
+    // A shared action: submit the form with this id (e.g. a "Re-index" link).
+    window.submitFormById = function (id) { var f = document.getElementById(id); if (f) f.submit(); };
+    return {
+      allow: function (names) { names.forEach(function (n) { allowed[n] = true; }); },
+      attrs: function (name, args) { return 'data-call="' + esc(name) + '" data-args="' + esc(JSON.stringify(args || [])) + '"'; }
+    };
+  })();
+  </script>
     @yield('js')
 
 	<!-- inject:js -->

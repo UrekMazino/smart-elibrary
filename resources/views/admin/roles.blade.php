@@ -62,7 +62,7 @@
         <h4>Roles &amp; Access</h4>
         <p>Define roles, then grant or revoke permissions in the matrix — changes save instantly.</p>
       </div>
-      <button class="btn btn-primary btn-sm" onclick="viewCreateRoleModal()"><i data-feather="plus" class="icon-sm me-1"></i>New role</button>
+      <button class="btn btn-primary btn-sm" data-call="viewCreateRoleModal"><i data-feather="plus" class="icon-sm me-1"></i>New role</button>
     </div>
 
     {{-- ===== Roles (metadata) ===== --}}
@@ -169,6 +169,9 @@
 
 @section('js')
 <script nonce="{{ cspNonce() }}">
+// This page's buttons (data-call; onclick= is blocked by the Content Security Policy).
+AdminActions.allow(['viewCreateRoleModal']);
+
 $(function () {
     if (window.feather) feather.replace();
 

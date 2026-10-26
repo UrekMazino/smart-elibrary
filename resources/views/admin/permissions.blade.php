@@ -35,7 +35,7 @@
         <p>The individual capabilities you assign to roles, grouped by module. Manage who gets them in <a href="{{ route('admin.list_roles') }}">Roles &amp; Access</a>.</p>
       </div>
       @hasrole('developer')
-        <button class="btn btn-primary btn-sm" onclick="viewCreatePermissionModal()"><i data-feather="plus" class="icon-sm me-1"></i>New permission</button>
+        <button class="btn btn-primary btn-sm" data-call="viewCreatePermissionModal"><i data-feather="plus" class="icon-sm me-1"></i>New permission</button>
       @endhasrole
     </div>
 
@@ -97,6 +97,9 @@
 
 @section('js')
 <script nonce="{{ cspNonce() }}">
+// This page's buttons (data-call; onclick= is blocked by the Content Security Policy).
+AdminActions.allow(['viewCreatePermissionModal']);
+
 $(function () {
     if (window.feather) feather.replace();
 

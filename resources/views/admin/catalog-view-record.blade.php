@@ -78,24 +78,24 @@
                 <button type="button" class="btn btn-primary btn-sm dropdown-toggle" id="recordActionBtn" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
                 <div class="dropdown-menu dropdown-menu-end" aria-labelledby="recordActionBtn">
                     @can('publish-hold.catalog')
-                        <a class="dropdown-item" href="#" onclick="togglePublishOnhold({{ (int) $record->is_published }}, {{ $record->id }}); return false;">{{ $record->is_published ? 'Add to On-Hold list' : 'Add to Record list' }}</a>
+                        <a class="dropdown-item" href="#" data-call="togglePublishOnhold" data-args="{{ json_encode([(int) $record->is_published, $record->id]) }}">{{ $record->is_published ? 'Add to On-Hold list' : 'Add to Record list' }}</a>
                     @endcan
                     @can('edit.catalog')
-                        <a class="dropdown-item" href="#" onclick="actionFrm({{ $record->id }}, 'edit'); return false;">Edit</a>
+                        <a class="dropdown-item" href="#" data-call="actionFrm" data-args="{{ json_encode([$record->id, 'edit']) }}">Edit</a>
                     @endcan
                     <div class="dropdown-divider"></div>
                     <h6 class="dropdown-header">Export</h6>
                     <a class="dropdown-item" href="{{ route('export-record', ['id' => $record->id, 'format' => 'mrc']) }}">MARC21 binary (.mrc)</a>
                     <a class="dropdown-item" href="{{ route('export-record', ['id' => $record->id, 'format' => 'xml']) }}">MARCXML (.xml)</a>
                     <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="#" title="Queue this record for AI (RAG) re-indexing" onclick="document.getElementById('reindexFrm').submit(); return false;">Re-index for AI</a>
+                    <a class="dropdown-item" href="#" title="Queue this record for AI (RAG) re-indexing" data-call="submitFormById" data-args='["reindexFrm"]'>Re-index for AI</a>
                     @can('delete.catalog')
                         <div class="dropdown-divider"></div>
-                        <a class="dropdown-item text-danger" href="#" onclick="deleteRecord(); return false;">Delete</a>
+                        <a class="dropdown-item text-danger" href="#" data-call="deleteRecord">Delete</a>
                     @endcan
                 </div>
             </div>
-            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="goBack()">
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-call="goBack">
                 <i data-feather="arrow-left" class="icon-sm"></i> Back
             </button>
         </div>
@@ -193,7 +193,7 @@
                                 <div class="p-2 col-lg-2 col-md-2 col-sm-12 text-left"><strong>{{ $style }}</strong></div>
                                 <div class="p-2 col-lg-9 col-md-9 col-sm-10 text-left" id="cite-{{ $style }}">{!! $text !!}</div>
                                 <div class="p-2 col-lg-1 col-md-1 col-sm-2 text-end">
-                                    <button type="button" class="btn btn-sm btn-outline-secondary" title="Copy" onclick="copyCitation('cite-{{ $style }}')"><i data-feather="copy" class="icon-sm"></i></button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" title="Copy" data-call="copyCitation" data-args="{{ json_encode(['cite-' . $style]) }}"><i data-feather="copy" class="icon-sm"></i></button>
                                 </div>
                             </div>
                         @empty
@@ -402,7 +402,7 @@
                                         <div class="d-flex flex-wrap gap-2 mt-3">
                                             @if($coverPage && $cvExists)
                                                 <button type="button" class="btn btn-primary btn-sm"
-                                                        onclick="viewCoverPhoto()">
+                                                        data-call="viewCoverPhoto">
                                                     <i data-feather="image" class="icon-sm me-1"></i>View Coverphoto
                                                 </button>
                                                 <a href="{{ $cvUrl }}" target="_blank" rel="noopener" class="btn btn-outline-secondary btn-sm">
@@ -431,7 +431,7 @@
                                             <div class="form-check form-switch mb-0">
                                                 <input class="form-check-input" type="checkbox" role="switch" id="placeholderSwitch"
                                                        @checked($placeholderPref) @disabled(! $placeholdersOn)
-                                                       onchange="document.getElementById('placeholderOn').value = this.checked ? 1 : 0; if (window.appBusy) appBusy.show(); this.form.submit();">
+                                                       data-call-change="togglePlaceholderCover" data-args='["$this"]'>
                                                 <label class="form-check-label" for="placeholderSwitch">Placeholder cover</label>
                                             </div>
                                             <div class="text-muted" style="font-size: 0.75rem;">
@@ -524,7 +524,7 @@
                                             </div>
                                             <div class="col-md-1"></div>
                                             <div class="col-md-1 text-center mb-2">
-                                                <button type="button" onclick="searchCopy()" class="btn btn-sm btn-primary" id="copy-search-btn">Search</button>
+                                                <button type="button" data-call="searchCopy" class="btn btn-sm btn-primary" id="copy-search-btn">Search</button>
                                             </div>
                                             <div class="col-md-5 text-center mb-2">
                                                 <input type="text" class="form-control" id="copy-search-input">
@@ -533,7 +533,7 @@
                                             <div class="col-md-2 float-right text-center mb-2">
                                                 
                                                 @can('edit.catalog')
-                                                <a href="#" type="button" onclick="showAddCopyModal()" class="btn btn-sm btn-outline-primary">+ Copy/ies</a>
+                                                <a href="#" role="button" data-call="showAddCopyModal" class="btn btn-sm btn-outline-primary">+ Copy/ies</a>
                                                 @endcan
                                             </div>
                                         </div>
@@ -631,6 +631,17 @@
 <script nonce="{{ cspNonce() }}">
 // Return to the list the admin came from (record-list or on-hold-list);
 // fall back to the record list if there's no history to go back to.
+// The buttons on this page (data-call; onclick= is blocked by the Content Security Policy).
+AdminActions.allow(['togglePublishOnhold', 'actionFrm', 'submitFormById', 'deleteRecord', 'goBack', 'copyCitation',
+    'viewCoverPhoto', 'togglePlaceholderCover', 'searchCopy', 'showAddCopyModal', 'showEditCopyModal']);
+
+// The "Placeholder cover" switch saves at once.
+function togglePlaceholderCover(input) {
+    document.getElementById('placeholderOn').value = input.checked ? 1 : 0;
+    if (window.appBusy) appBusy.show();
+    input.form.submit();
+}
+
 function goBack() {
     if (document.referrer && window.history.length > 1) {
         window.history.back();
@@ -749,7 +760,7 @@ $(function () {
                             { 
                                 "data": function (row, type, val, meta) {
                                     if (!@json(auth()->user()->can('edit.catalog'))) return '<span class="text-muted small">—</span>';   // copies are part of editing the record
-                                    return '<div class="btn-group" role="group"><button id="btnGroupDrop1" type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button><div class="dropdown-menu" aria-labelledby="btnGroupDrop1"><a class="dropdown-item" href="#" onclick="showEditCopyModal('+row.id+')">Edit</a><a class="dropdown-item" href="#" onclick="actionFrm('+row.id+',\'delete\')">Delete</a></div></div>';
+                                    return '<div class="btn-group" role="group"><button id="btnGroupDrop1" type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button><div class="dropdown-menu" aria-labelledby="btnGroupDrop1"><a class="dropdown-item" href="#" '+AdminActions.attrs('showEditCopyModal', [row.id])+'>Edit</a><a class="dropdown-item" href="#" '+AdminActions.attrs('actionFrm', [row.id, 'delete'])+'>Delete</a></div></div>';
                                 }, orderable: false
                             },
                         ]
@@ -810,7 +821,7 @@ $(function () {
                             { 
                                 "data": function (row, type, val, meta) {
                                     if (!@json(auth()->user()->can('edit.catalog'))) return '<span class="text-muted small">—</span>';   // copies are part of editing the record
-                                    return '<div class="btn-group" role="group"><button id="btnGroupDrop1" type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button><div class="dropdown-menu" aria-labelledby="btnGroupDrop1"><a class="dropdown-item" href="#" onclick="showEditCopyModal('+row.id+')">Edit</a><a class="dropdown-item" href="#" onclick="actionFrm('+row.id+',\'delete\')">Delete</a></div></div>';
+                                    return '<div class="btn-group" role="group"><button id="btnGroupDrop1" type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button><div class="dropdown-menu" aria-labelledby="btnGroupDrop1"><a class="dropdown-item" href="#" '+AdminActions.attrs('showEditCopyModal', [row.id])+'>Edit</a><a class="dropdown-item" href="#" '+AdminActions.attrs('actionFrm', [row.id, 'delete'])+'>Delete</a></div></div>';
                                 }, orderable: false
                             },
                         ]

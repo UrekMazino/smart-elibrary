@@ -140,10 +140,10 @@
                     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-1">
                         <h6 class="card-title mb-0">Create Record</h6>
                         <div class="cr-actions">
-                            <button class="btn btn-outline-primary btn-sm" type="button" onclick="showAddFieldModal()">
+                            <button class="btn btn-outline-primary btn-sm" type="button" data-call="showAddFieldModal">
                                 <i data-feather="plus" class="icon-sm me-1"></i>Add Tag
                             </button>
-                            <button class="btn btn-outline-primary btn-sm" type="button" onclick="showImportModal('create')">
+                            <button class="btn btn-outline-primary btn-sm" type="button" data-call="showImportModal" data-args='["create"]'>
                                 <i data-feather="file-text" class="icon-sm me-1"></i>Parse a Record
                             </button>
                             <a href="{{ url('/admin/create-record') }}" class="btn btn-outline-secondary btn-sm">
@@ -252,6 +252,9 @@
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net-bs5/dataTables.bootstrap5.js') }}"></script>
 {{-- Config before the scripts that consume it. --}}
 <script nonce="{{ cspNonce() }}">
+// This page's buttons (data-call; onclick= is blocked by the Content Security Policy).
+AdminActions.allow(['showAddFieldModal', 'showImportModal']);
+
   let getTemplateDetailsUrl = '{{ url("/admin/get-marc-template-details") }}';
   let getMarcDetailsUrl     = '{{ url("/admin/get-marc-tag-details") }}';
   let marcEditorMode        = 'create';

@@ -64,7 +64,7 @@
                     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-1">
                         <h6 class="card-title mb-0">{{ $template ? 'Edit Template' : 'Create Template' }}</h6>
                         <div class="cr-actions">
-                            <button class="btn btn-outline-primary btn-sm" type="button" onclick="showAddFieldModal()">
+                            <button class="btn btn-outline-primary btn-sm" type="button" data-call="showAddFieldModal">
                                 <i data-feather="plus" class="icon-sm me-1"></i>Add Tag
                             </button>
                         </div>
@@ -129,6 +129,9 @@
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net-bs5/dataTables.bootstrap5.js') }}"></script>
 {{-- Config before the scripts that consume it. --}}
 <script nonce="{{ cspNonce() }}">
+// This page's buttons (data-call; onclick= is blocked by the Content Security Policy).
+AdminActions.allow(['showAddFieldModal']);
+
   let getMarcDetailsUrl = '{{ url("/admin/get-marc-tag-details") }}';
   let marcEditorMode    = 'template';
   // The template's tags in MarcEditor source shape (empty on create; re-posted fields after a validation error).

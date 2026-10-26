@@ -103,16 +103,16 @@
 											<div class="btn-group">
 												@if($isGuest)
 													{{-- A guest can't read an in-app reply: show the inquiry and answer it by email. --}}
-													<button class="btn btn-primary btn-sm position-relative" data-subject="{{ $lists->subject }}" data-message="{{ $lists->message }}" data-name="{{ $lists->fullname }}" data-email="{{ $lists->email }}" data-contact="{{ $lists->contactnum }}" data-date="{{ \Carbon\Carbon::parse($lists->created_at)->format('M d, Y g:i A') }}" data-replied="{{ $emailedAt }}" onclick="openGuestInquiry(this,{{ $lists->id }})">@if(isset($unread[$lists->id]))<span class="reply-dot" title="Unseen message"></span>@endif<i data-feather="mail" class="icon-sm me-1"></i>Email</button>
+													<button class="btn btn-primary btn-sm position-relative" data-subject="{{ $lists->subject }}" data-message="{{ $lists->message }}" data-name="{{ $lists->fullname }}" data-email="{{ $lists->email }}" data-contact="{{ $lists->contactnum }}" data-date="{{ \Carbon\Carbon::parse($lists->created_at)->format('M d, Y g:i A') }}" data-replied="{{ $emailedAt }}" data-call="openGuestInquiry" data-args='["$this", {{ (int) $lists->id }}]'>@if(isset($unread[$lists->id]))<span class="reply-dot" title="Unseen message"></span>@endif<i data-feather="mail" class="icon-sm me-1"></i>Email</button>
 												@else
-												<button class="btn btn-primary btn-sm position-relative" data-subject="{{ $lists->subject }}" data-message="{{ $lists->message }}" onclick="replyInquiry(this,{{ $lists->id }},{{ Auth::user()->id }})">@if(isset($unread[$lists->id]))<span class="reply-dot" title="Unseen message"></span>@endif<i data-feather="corner-up-left" class="icon-sm me-1"></i>Reply</button>
+												<button class="btn btn-primary btn-sm position-relative" data-subject="{{ $lists->subject }}" data-message="{{ $lists->message }}" data-call="replyInquiry" data-args='["$this", {{ (int) $lists->id }}, {{ (int) Auth::user()->id }}]'>@if(isset($unread[$lists->id]))<span class="reply-dot" title="Unseen message"></span>@endif<i data-feather="corner-up-left" class="icon-sm me-1"></i>Reply</button>
 												@endif
 												@if($lists->user_id && auth()->user()->can('manage.patron.status'))
 													<button type="button" class="btn btn-primary btn-sm dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false"><span class="visually-hidden">Manage</span></button>
 													<div class="dropdown-menu dropdown-menu-end">
 														<h6 class="dropdown-header">Manage account</h6>
-														<a class="dropdown-item text-warning" href="#" onclick="toggleUserFlag({{ $lists->user_id }},'blocked');return false;">{{ $uf && $uf->is_blocked ? 'Unblock account' : 'Block account' }}</a>
-														<a class="dropdown-item text-danger" href="#" onclick="toggleUserFlag({{ $lists->user_id }},'banned');return false;">{{ $uf && $uf->is_banned ? 'Unban account' : 'Ban account' }}</a>
+														<a class="dropdown-item text-warning" href="#" data-call="toggleUserFlag" data-args='[{{ (int) $lists->user_id }}, "blocked"]'>{{ $uf && $uf->is_blocked ? 'Unblock account' : 'Block account' }}</a>
+														<a class="dropdown-item text-danger" href="#" data-call="toggleUserFlag" data-args='[{{ (int) $lists->user_id }}, "banned"]'>{{ $uf && $uf->is_banned ? 'Unban account' : 'Ban account' }}</a>
 													</div>
 												@endif
 											</div>
@@ -151,13 +151,13 @@
 										<td data-order="{{ strtotime($t->created_at) }}">{{ \Carbon\Carbon::parse($t->created_at)->format('M d, Y g:i A') }}</td>
 										<td class="text-center">
 											<div class="btn-group">
-												<button class="btn btn-primary btn-sm position-relative" data-subject="{{ $subject }}" data-message="{{ $context }}" data-code="{{ $t->reservation_code }}" data-patron="{{ $t->fullname }}" data-open="{{ $open }}" onclick="replyReservation(this)">@if($t->unread > 0)<span class="reply-dot" title="Unseen message"></span>@endif<i data-feather="corner-up-left" class="icon-sm me-1"></i>Reply</button>
+												<button class="btn btn-primary btn-sm position-relative" data-subject="{{ $subject }}" data-message="{{ $context }}" data-code="{{ $t->reservation_code }}" data-patron="{{ $t->fullname }}" data-open="{{ $open }}" data-call="replyReservation" data-args='["$this"]'>@if($t->unread > 0)<span class="reply-dot" title="Unseen message"></span>@endif<i data-feather="corner-up-left" class="icon-sm me-1"></i>Reply</button>
 												@if($t->user_id && auth()->user()->can('manage.patron.status'))
 													<button type="button" class="btn btn-primary btn-sm dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false"><span class="visually-hidden">Manage</span></button>
 													<div class="dropdown-menu dropdown-menu-end">
 														<h6 class="dropdown-header">Manage account</h6>
-														<a class="dropdown-item text-warning" href="#" onclick="toggleUserFlag({{ $t->user_id }},'blocked');return false;">{{ $uf && $uf->is_blocked ? 'Unblock account' : 'Block account' }}</a>
-														<a class="dropdown-item text-danger" href="#" onclick="toggleUserFlag({{ $t->user_id }},'banned');return false;">{{ $uf && $uf->is_banned ? 'Unban account' : 'Ban account' }}</a>
+														<a class="dropdown-item text-warning" href="#" data-call="toggleUserFlag" data-args='[{{ (int) $t->user_id }}, "blocked"]'>{{ $uf && $uf->is_blocked ? 'Unblock account' : 'Block account' }}</a>
+														<a class="dropdown-item text-danger" href="#" data-call="toggleUserFlag" data-args='[{{ (int) $t->user_id }}, "banned"]'>{{ $uf && $uf->is_banned ? 'Unban account' : 'Ban account' }}</a>
 													</div>
 												@endif
 											</div>
@@ -229,6 +229,9 @@
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net/jquery.dataTables.js') }}"></script>
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net-bs5/dataTables.bootstrap5.js') }}"></script>
 <script nonce="{{ cspNonce() }}">
+	// The table's buttons (data-call; onclick= is blocked by the Content Security Policy).
+	AdminActions.allow(['openGuestInquiry', 'replyInquiry', 'replyReservation', 'toggleUserFlag']);
+
 	// A reservation conversation opens in the same modal; its thread and replies go through the
 	// reservation chat (the patron reads them under Messages on their Transactions page).
 	var resCode = null;

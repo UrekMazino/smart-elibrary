@@ -26,7 +26,7 @@
 		</div>
 		<div class="d-flex gap-2">
 			<a href="{{ url('/admin/news') }}" class="btn btn-outline-secondary"><i data-feather="arrow-left" class="icon-sm me-1"></i>Back</a>
-			<button type="button" class="btn btn-primary" onclick="saveArticle()"><i data-feather="save" class="icon-sm me-1"></i>Save Article</button>
+			<button type="button" class="btn btn-primary" data-call="saveArticle"><i data-feather="save" class="icon-sm me-1"></i>Save Article</button>
 		</div>
 	</div>
 
@@ -66,7 +66,7 @@
 					<div class="card-body">
 						<h6 class="card-title">Cover photo</h6>
 						<img id="cover_preview" src="{{ asset('assets/images/placeholder.jpg') }}" alt="Cover preview" class="mb-2">
-						<input class="form-control" type="file" id="news_cover" name="news_cover" onchange="previewImage(event)" accept="image/jpeg,image/png,image/webp">
+						<input class="form-control" type="file" id="news_cover" name="news_cover" data-call-change="previewImage" data-args='["$event"]' accept="image/jpeg,image/png,image/webp">
 						<small class="text-muted">JPG, PNG or WEBP.</small>
 					</div>
 				</div>
@@ -79,6 +79,9 @@
 @section('js')
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/tinymce/tinymce.min.js') }}"></script>
 <script nonce="{{ cspNonce() }}">
+// This page's buttons (data-call; onclick= is blocked by the Content Security Policy).
+AdminActions.allow(['saveArticle', 'previewImage']);
+
 	$(function () {
 		'use strict';
 		if (window.feather) feather.replace();

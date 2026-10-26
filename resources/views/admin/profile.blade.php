@@ -201,7 +201,7 @@
                         <span class="text-muted" style="font-size: 0.78125rem;">
                             Change the password you use to sign in.
                         </span>
-                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="showChangePasswordModal()">
+                        <button type="button" class="btn btn-outline-danger btn-sm" data-call="showChangePasswordModal">
                             <i data-feather="lock" class="icon-sm me-1"></i>Change Password
                         </button>
                     </div>
@@ -216,6 +216,9 @@
 
 @section('js')
 <script nonce="{{ cspNonce() }}">
+// This page's buttons (data-call; onclick= is blocked by the Content Security Policy).
+AdminActions.allow(['showChangePasswordModal']);
+
     function showChangePasswordModal()
     {
         $('#changePasswordModal').modal('show');

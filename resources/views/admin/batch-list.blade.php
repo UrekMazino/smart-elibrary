@@ -115,15 +115,17 @@ $(document).ready(function(){
 
     function esc(s) { return $('<div>').text(s == null ? '' : s).html(); }
 
+    // The Action menu's items (data-call; onclick= is blocked by the Content Security Policy).
+    AdminActions.allow(['viewRecord', 'togglePublishFrm', 'actionFrm']);
     function actionMenu(row) {
       return '<div class="btn-group btn-group-sm" role="group">' +
           '<button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>' +
           '<div class="dropdown-menu dropdown-menu-end">' +
-              '<a class="dropdown-item" href="#" onclick="viewRecord(' + row.id + ')">View Details</a>' +
+              '<a class="dropdown-item" href="#" ' + AdminActions.attrs('viewRecord', [row.id]) + '>View Details</a>' +
               '<a class="dropdown-item" href="{{ url("/admin/batch-report") }}/' + encodeURIComponent(row.id) + '">Import report</a>' +
-              @can("publish-hold.catalog") '<a class="dropdown-item" href="#" onclick="togglePublishFrm(' + row.id + ',\'1\')">Publish All</a>' + @endcan
-              @can("publish-hold.catalog") '<a class="dropdown-item" href="#" onclick="togglePublishFrm(' + row.id + ',\'2\')">Hold All</a>' + @endcan
-              @can("delete.catalog.import") '<a class="dropdown-item text-danger" href="#" onclick="actionFrm(' + row.id + ',\'delete\')">Delete Batch</a>' + @endcan
+              @can("publish-hold.catalog") '<a class="dropdown-item" href="#" ' + AdminActions.attrs('togglePublishFrm', [row.id, '1']) + '>Publish All</a>' + @endcan
+              @can("publish-hold.catalog") '<a class="dropdown-item" href="#" ' + AdminActions.attrs('togglePublishFrm', [row.id, '2']) + '>Hold All</a>' + @endcan
+              @can("delete.catalog.import") '<a class="dropdown-item text-danger" href="#" ' + AdminActions.attrs('actionFrm', [row.id, 'delete']) + '>Delete Batch</a>' + @endcan
           '</div>' +
       '</div>';
     }

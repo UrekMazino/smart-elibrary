@@ -251,7 +251,7 @@
                                 </div>
                             </div>
                         </div>
-                        <button class="btn btn-primary" type="button" onclick="saveImport()">Import</button>
+                        <button class="btn btn-primary" type="button" data-call="saveImport">Import</button>
                     </form>
 				</div>
 			</div>
@@ -269,6 +269,9 @@
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net/jquery.dataTables.js') }}"></script>
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net-bs5/dataTables.bootstrap5.js') }}"></script>
 <script nonce="{{ cspNonce() }}">
+// This page's buttons (data-call; onclick= is blocked by the Content Security Policy).
+AdminActions.allow(['saveImport']);
+
 // ---- Batch Import: material type mapping ----------------------------------------------
 // Choosing a file analyzes it (nothing is imported): fields that can identify a record's
 // material type, with their values. Map values -> Material Type; unmapped values and records

@@ -74,7 +74,7 @@
           <div class="modal-footer">
             <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
             @can('manage.circulation.reservation')
-            <button type="button" class="btn btn-primary" onclick="sendReservationChat()"><i data-feather="send" class="icon-sm me-1"></i>Send</button>
+            <button type="button" class="btn btn-primary" data-call="sendReservationChat"><i data-feather="send" class="icon-sm me-1"></i>Send</button>
             @endcan
           </div>
         </div>

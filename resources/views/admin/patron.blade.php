@@ -109,6 +109,9 @@
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net/jquery.dataTables.js') }}"></script>
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net-bs5/dataTables.bootstrap5.js') }}"></script>
 <script nonce="{{ cspNonce() }}">
+// This page's buttons (data-call; onclick= is blocked by the Content Security Policy).
+AdminActions.allow(['toggleUserFlag']);
+
 
 var statusFilter = 'all';   // which chip is selected; sent with every table request
 
@@ -192,8 +195,8 @@ $('#tbl').DataTable({
                   '<a class="dropdown-item" href="#" data-act="library-code" data-id="'+row.id+'">Generate Library Code</a>' +
                   '<a class="dropdown-item" href="#" data-act="reset-password" data-id="'+row.id+'">Reset Password</a>');
               if (CAN.patronStatus) groups.push(
-                  '<a class="dropdown-item text-warning" href="#" onclick="toggleUserFlag('+row.id+',\'blocked\')">'+(row.is_blocked == 1 ? 'Unblock account' : 'Block account')+'</a>' +
-                  '<a class="dropdown-item text-danger" href="#" onclick="toggleUserFlag('+row.id+',\'banned\')">'+(row.is_banned == 1 ? 'Unban account' : 'Ban account')+'</a>');
+                  '<a class="dropdown-item text-warning" href="#" '+AdminActions.attrs('toggleUserFlag', [row.id, 'blocked'])+'>'+(row.is_blocked == 1 ? 'Unblock account' : 'Block account')+'</a>' +
+                  '<a class="dropdown-item text-danger" href="#" '+AdminActions.attrs('toggleUserFlag', [row.id, 'banned'])+'>'+(row.is_banned == 1 ? 'Unban account' : 'Ban account')+'</a>');
               if (CAN.deletePatron) groups.push(
                   '<a class="dropdown-item text-danger" href="#" data-act="delete" data-id="'+row.id+'" data-name="'+escapeHtml(row.name)+'">Delete</a>');
               if (!groups.length) return '<span class="text-muted small" title="Your role has no actions for patron accounts">—</span>';

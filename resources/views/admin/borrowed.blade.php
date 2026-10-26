@@ -77,8 +77,10 @@ function esc(s) {
         return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
 }
-// An argument inside onclick="f(...)": a JS string literal, escaped again for the attribute.
-function jsArg(s) { return esc(JSON.stringify(s == null ? '' : String(s))); }
+// Buttons call their function through data-call / data-args (AdminActions in the admin layout), not
+// onclick=: the Content Security Policy blocks inline handlers. str() keeps an id a string, as before.
+function str(s) { return s == null ? '' : String(s); }
+AdminActions.allow(['viewMaterial', 'viewPatron', 'viewTransaction', 'viewReservation']);
 
 $('#tbl').DataTable({
     processing: true,
@@ -88,18 +90,18 @@ $('#tbl').DataTable({
     columns: [
         { data: 'title_statement',
             render: function(data, type, row) {
-                return '<a href="#" onclick="viewMaterial(' + jsArg(row.catalog_id) + ', ' + jsArg(row.circulation_number) + ', 0)" >' + esc(data) + '</a>';
+                return '<a href="#" ' + AdminActions.attrs('viewMaterial', [str(row.catalog_id), str(row.circulation_number), 0]) + '>' + esc(data) + '</a>';
             }
         
         },
         { data: 'patron_name',
             render: function(data, type, row) {
-                return '<a href="#" onclick="viewPatron(' + jsArg(row.user_id) + ')" >' + esc(data) + '</a>';
+                return '<a href="#" ' + AdminActions.attrs('viewPatron', [str(row.user_id)]) + '>' + esc(data) + '</a>';
             }
         },
         { data: 'transaction_code',
             render: function(data, type, row) {
-                return '<a href="#" onclick="viewTransaction(' + jsArg(row.transaction_code) + ')" >' + esc(data) + '</a>';
+                return '<a href="#" ' + AdminActions.attrs('viewTransaction', [str(row.transaction_code)]) + '>' + esc(data) + '</a>';
             } 
         },
        
@@ -109,7 +111,7 @@ $('#tbl').DataTable({
                 if(data == 'Walk-in') {
                   return esc(data);
                 } else {
-                  return '<a href="#" onclick="viewReservation(' + jsArg(row.reservation_code) + ')" >' + esc(data) + '</a>';
+                  return '<a href="#" ' + AdminActions.attrs('viewReservation', [str(row.reservation_code)]) + '>' + esc(data) + '</a>';
                 }
 
             } },
