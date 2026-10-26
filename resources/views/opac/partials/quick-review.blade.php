@@ -51,7 +51,7 @@
         color: #333; padding: 9px 11px; border: 1px solid #d5dde0; border-radius: 8px; }
     .qr-text:focus { outline: none; border-color: #00857a; box-shadow: 0 0 0 3px rgba(0, 133, 122, .15); }
 </style>
-<script>
+<script nonce="{{ cspNonce() }}">
 window.QuickReview = (function () {
     'use strict';
     var BASE      = @json(url('/review/quick'));

@@ -13,7 +13,7 @@
 {{-- JSON-LD must be emitted RAW (it is already JSON_HEX_TAG-encoded), so it goes through a
      stack rather than @yield, which would HTML-escape the quotes and break the JSON. --}}
 @push('json_ld')
-<script type="application/ld+json">{!! seoRecordJsonLd($result) !!}</script>
+<script nonce="{{ cspNonce() }}" type="application/ld+json">{!! seoRecordJsonLd($result) !!}</script>
 @endpush
 
 {{-- Breadcrumb, as on the search results page: in the site header on desktop, a slim strip under
@@ -526,7 +526,7 @@
 
 @section('js')
 @include('opac.partials.guest-login-js')
-<script type="text/javascript">
+<script nonce="{{ cspNonce() }}" type="text/javascript">
 var inquiryIsGuest = {{ Auth::check() ? 'false' : 'true' }};
 var inquiryIsBlocked = {{ Auth::check() && Auth::user()->is_blocked ? 'true' : 'false' }};
 var libraryEmail = 'info@fprdi.dost.gov.ph';

@@ -109,7 +109,7 @@
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/DataTables/buttons/js/buttons.html5.min.js') }}"></script>
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/DataTables/buttons/js/buttons.print.min.js') }}"></script>
 
-<script>
+<script nonce="{{ cspNonce() }}">
 
 $(document).ready(function(){
 
@@ -273,7 +273,7 @@ function actionFrm(id,action)
 
 </script>
 @if(session('success'))
-<script>
+<script nonce="{{ cspNonce() }}">
   // Result of a Batch Import (with the per-material breakdown). When records were skipped or
   // flagged, offer the import report.
   $(function () {

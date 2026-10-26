@@ -128,14 +128,14 @@
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net/jquery.dataTables.js') }}"></script>
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net-bs5/dataTables.bootstrap5.js') }}"></script>
 {{-- Config before the scripts that consume it. --}}
-<script>
+<script nonce="{{ cspNonce() }}">
   let getMarcDetailsUrl = '{{ url("/admin/get-marc-tag-details") }}';
   let marcEditorMode    = 'template';
   // The template's tags in MarcEditor source shape (empty on create; re-posted fields after a validation error).
   let marcInitialFields = @json($initialFields);
 </script>
 <script src="{{ asset('js/admin/marc-record-editor.js') }}"></script>
-<script>
+<script nonce="{{ cspNonce() }}">
     // "Add" in the Add Tag modal -> append that MARC field to the template.
     $(document).on('click', '.add-field-link', function(event) {
         event.preventDefault();

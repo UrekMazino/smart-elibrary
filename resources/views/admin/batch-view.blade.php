@@ -72,7 +72,7 @@
 @endsection
 
 @section('js')
-<script>
+<script nonce="{{ cspNonce() }}">
 // script here
 </script>
 @endsection

@@ -34,7 +34,7 @@
 
 @section('js')
 @if (session('account_banned'))
-<script type="text/javascript">
+<script nonce="{{ cspNonce() }}" type="text/javascript">
 // Banned accounts cannot log in (AuthenticatedSessionController::store). Remind the patron of
 // the account's status, and that the ban is lifted only after they email the system admin.
 (function () {

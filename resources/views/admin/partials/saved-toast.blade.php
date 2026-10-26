@@ -3,7 +3,7 @@
      Record). SweetAlert loads at the end of the admin layout, after the page's own scripts, so this waits
      for the page; the timer pauses while the pointer is on the notice, so the link can be clicked. --}}
 @if(session('success'))
-<script>
+<script nonce="{{ cspNonce() }}">
     document.addEventListener('DOMContentLoaded', function () {
         if (!window.Swal) return;
         var link = @json(session('success_link'));

@@ -54,5 +54,5 @@
 @endsection
 
 @section('js')
-<script>$(function () { if (window.feather) feather.replace(); });</script>
+<script nonce="{{ cspNonce() }}">$(function () { if (window.feather) feather.replace(); });</script>
 @endsection

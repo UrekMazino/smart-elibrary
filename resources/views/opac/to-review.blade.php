@@ -86,7 +86,7 @@
 @endsection
 
 @section('js')
-<script type="text/javascript">
+<script nonce="{{ cspNonce() }}" type="text/javascript">
 function toReview(catalog_id) {
 	$("#catalog_id").val(catalog_id);
 	$("#frm_review").submit();

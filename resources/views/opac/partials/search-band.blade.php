@@ -116,7 +116,7 @@
     </div>
 </div>
 
-<script>
+<script nonce="{{ cspNonce() }}">
 (function () {
     'use strict';
     var SUGGEST = @json(url('/search/suggest'));

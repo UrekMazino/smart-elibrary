@@ -140,7 +140,7 @@
 @endsection
 
 @section('js')
-<script>
+<script nonce="{{ cspNonce() }}">
 var MT_URL = '{{ url("/admin/utilities/material-types") }}';
 var CSRF   = '{{ csrf_token() }}';
 // All types (for the merge target list).

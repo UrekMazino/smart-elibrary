@@ -439,7 +439,7 @@ License: For each use you must have a valid license purchased only from above li
   <script src="{{ asset('admintemplate/nobleui/template/assets/js/datepicker.js') }}"></script>
 	<!-- End custom js for this page -->
 
-  <script>
+  <script nonce="{{ cspNonce() }}">
   // App-wide feedback for AJAX calls the server refuses, so nothing fails silently:
   //   403 -> the role lacks the permission (routes enforce every permission server-side)
   //   419 -> the session / CSRF token expired

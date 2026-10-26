@@ -64,13 +64,13 @@
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net-bs5/dataTables.bootstrap5.js') }}"></script>
 <script src="https://cdn.jsdelivr.net/npm/moment@2.31.0/min/moment.min.js"></script>
 <script src="{{ asset('js/admin/view-modals.js') }}"></script>
-<script> 
+<script nonce="{{ cspNonce() }}"> 
   let viewMaterialUrl = '{{ url("/admin/reservation/material-json") }}';
   let viewPatronUrl = '{{ url("/admin/reservation/patron-json") }}';
   let viewTransactionUrl = '{{ url("/admin/reservation/transaction-json") }}';
   let viewReservationUrl = '{{ url("/admin/reservation/view-json") }}';
 </script>
-<script>
+<script nonce="{{ cspNonce() }}">
 // Values go into the table as text: patron names and titles are not trusted markup.
 function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {

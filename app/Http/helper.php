@@ -1814,3 +1814,16 @@ function dataTableLength(Illuminate\Http\Request $request): int
 	$length = (int) $request->input('length', 10);
 	return $length > 0 ? $length : PHP_INT_MAX;
 }
+
+/**
+ * This request's Content Security Policy nonce: inline <script> tags carry nonce="{{ cspNonce() }}" and
+ * App\Http\Middleware\SecurityHeaders puts the same value in the policy, so those scripts run and any
+ * script injected into a page does not (OWASP ASVS 3.4.3). A fresh random value per request.
+ */
+function cspNonce(): string
+{
+	if (! app()->bound('csp.nonce')) {
+		app()->instance('csp.nonce', base64_encode(random_bytes(16)));
+	}
+	return app('csp.nonce');
+}

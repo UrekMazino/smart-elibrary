@@ -28,7 +28,7 @@
     .gl-out { animation: gl-out .12s ease-in forwards; }
     @media (prefers-reduced-motion: reduce) { .gl-in, .gl-out { animation: none; } }
 </style>
-<script>
+<script nonce="{{ cspNonce() }}">
 window.promptGuestLogin = function (action) {
     var login = @json(route('login')), register = @json(route('register'));
     var svg = function (paths) {

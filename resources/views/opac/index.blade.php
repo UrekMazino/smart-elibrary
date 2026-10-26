@@ -1,7 +1,7 @@
 @extends('opac.layout.master')
 
 @push('json_ld')
-<script type="application/ld+json">{!! seoSiteJsonLd() !!}</script>
+<script nonce="{{ cspNonce() }}" type="application/ld+json">{!! seoSiteJsonLd() !!}</script>
 @endpush
 
 @section('meta_title', 'DOST-PCAARRD eLibrary — AANR research collection')
@@ -370,7 +370,7 @@
 				<button type="button" class="cc-arrow next" aria-label="Next">&#8250;</button>
 			</div>
 		</div>
-		<script type="text/javascript">
+		<script nonce="{{ cspNonce() }}" type="text/javascript">
 		(function(){
 			function wire(strip){
 				var track = strip.querySelector('.cc-track');
@@ -422,7 +422,7 @@
 
 @section('js')
 @include('opac.partials.guest-login-js')
-<script type="text/javascript">
+<script nonce="{{ cspNonce() }}" type="text/javascript">
 	// ---- Minimalist section nav: smooth-scroll (offset for the sticky header) + scrollspy ----
 	(function () {
 		var nav = document.querySelector('.section-nav');
@@ -464,7 +464,7 @@
 </script>
 {{-- The client satisfaction survey is for patrons, not staff browsing the OPAC. --}}
 @if(Auth::user() && ! Auth::user()->isStaff() && !checkCSF())
-<script type="text/javascript">
+<script nonce="{{ cspNonce() }}" type="text/javascript">
 
     $(window).on('load', function() {
         $('#csfModal').modal('show');
@@ -472,7 +472,7 @@
 </script>
 @endif
 
-<script type="text/javascript">
+<script nonce="{{ cspNonce() }}" type="text/javascript">
 // OPAC instant search (search-as-you-type) -> /search/suggest -> Meilisearch
 (function () {
 	var $form   = $('#frm');
@@ -587,7 +587,7 @@
 </script>
 
 @if(settingEnabled('ai_mode_enabled', false))
-<script type="text/javascript">
+<script nonce="{{ cspNonce() }}" type="text/javascript">
 // Search-engine toggle: Classic (Meilisearch) <-> AI mode (Hermes/RAG).
 // Only swaps which engine the form targets — the search box itself is shared.
 // Not emitted at all when AI mode is off, so a remembered 'ai' choice in localStorage
@@ -651,7 +651,7 @@
 </script>
 @endif
 
-<script type="text/javascript">
+<script nonce="{{ cspNonce() }}" type="text/javascript">
 // Advanced search under the home search box: rows of field + match + words (opac/partials/search-adv-row),
 // sent with the search words and types to /results. Keyword search only, so hidden in AI mode.
 (function () {
@@ -752,7 +752,7 @@
 
 {{-- Save stars on the homepage covers (shelves, Top 10 lists, Recent Uploads). The same record can
      appear in several places (and in the shelf clones), so every star for it changes together. --}}
-<script type="text/javascript">
+<script nonce="{{ cspNonce() }}" type="text/javascript">
 (function () {
 	var SAVE = @json(url('/search/saved'));
 	var isGuest = !@json(auth()->check());

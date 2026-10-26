@@ -96,7 +96,7 @@
 @endsection
 
 @section('js')
-<script>
+<script nonce="{{ cspNonce() }}">
 $(function () {
     if (window.feather) feather.replace();
 
@@ -132,7 +132,7 @@ function showSwal(type, message, icon) {
     Swal.fire({ position: 'top-end', toast: true, icon: icon, title: message, showConfirmButton: false, timer: 2000 });
 }
 </script>
-@if (session('error'))   <script>$(function(){ Swal.fire({ icon: 'error', title: 'Not done', text: @json(session('error')) }); });</script> @endif
-@if (session('success')) <script>$(function(){ showSwal('t', "{{ session('success') }}", 'success'); });</script> @endif
-@if ($errors->any())     <script>$(function(){ Swal.fire({ icon: 'error', title: 'Not saved', text: @json($errors->first()) }); });</script> @endif
+@if (session('error'))   <script nonce="{{ cspNonce() }}">$(function(){ Swal.fire({ icon: 'error', title: 'Not done', text: @json(session('error')) }); });</script> @endif
+@if (session('success')) <script nonce="{{ cspNonce() }}">$(function(){ showSwal('t', "{{ session('success') }}", 'success'); });</script> @endif
+@if ($errors->any())     <script nonce="{{ cspNonce() }}">$(function(){ Swal.fire({ icon: 'error', title: 'Not saved', text: @json($errors->first()) }); });</script> @endif
 @endsection

@@ -215,7 +215,7 @@
 @endsection
 
 @section('js')
-<script>
+<script nonce="{{ cspNonce() }}">
     function showChangePasswordModal()
     {
         $('#changePasswordModal').modal('show');

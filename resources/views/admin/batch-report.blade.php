@@ -174,7 +174,7 @@
 @section('js')
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/DataTables/DataTables-1.12.1/js/jquery.dataTables.min.js') }}"></script>
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/DataTables/DataTables-1.12.1/js/dataTables.bootstrap5.min.js') }}"></script>
-<script>
+<script nonce="{{ cspNonce() }}">
 $(function () {
     // Search and paging only when a list is long enough to need them.
     function opts(table) {

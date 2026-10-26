@@ -594,7 +594,7 @@
 
 @section('js')
 <script src="{{ asset('js/admin/check-out-in.js') }}"></script>
-<script> 
+<script nonce="{{ cspNonce() }}"> 
     let findMaterialUrl = '{{ url("/admin/check-out-in/find-material") }}';
     let csrf ='{{ csrf_token() }}';
     let findPatronUrl = '{{ url("/admin/check-out-in/find-patron") }}';
@@ -603,7 +603,7 @@
     let updateCheckout = "{{ url('/admin/check-out/update') }}";
     let storeCheckout = "{{ url('/admin/check-out/store') }}";
 </script> 
-<script>
+<script nonce="{{ cspNonce() }}">
     function refreshPage()
     {
         location.reload();

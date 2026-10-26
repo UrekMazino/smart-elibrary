@@ -257,7 +257,7 @@
 @endsection
 
 @section('js')
-  <script>
+  <script nonce="{{ cspNonce() }}">
     window.DASHBOARD = {
       activityUrl: @json(url('/admin/dashboard/activity')),
       ranges: @json($ranges),

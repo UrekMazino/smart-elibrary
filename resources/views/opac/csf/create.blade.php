@@ -268,7 +268,7 @@
 
 @section('js')
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
-	<script>
+	<script nonce="{{ cspNonce() }}">
 		$("input:checkbox").on('click', function() {
 		var $box = $(this);
 		if ($box.is(":checked")) {

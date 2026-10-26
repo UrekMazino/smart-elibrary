@@ -170,7 +170,7 @@
     </section>
 </div>
 
-<script>
+<script nonce="{{ cspNonce() }}">
 (function () {
     var root = document.getElementById('lc-chat');
     if (!root) return;

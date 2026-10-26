@@ -251,7 +251,7 @@
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net/jquery.dataTables.js') }}"></script>
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net-bs5/dataTables.bootstrap5.js') }}"></script>
 {{-- Config before the scripts that consume it. --}}
-<script>
+<script nonce="{{ cspNonce() }}">
   let getTemplateDetailsUrl = '{{ url("/admin/get-marc-template-details") }}';
   let getMarcDetailsUrl     = '{{ url("/admin/get-marc-tag-details") }}';
   let marcEditorMode        = 'create';
@@ -262,14 +262,14 @@
 <script src="{{ asset('js/admin/marc-record-editor.js') }}"></script>
 <script src="{{ asset('js/admin/import/single-import.js') }}"></script>
 @include('admin.partials.saved-toast')
-<script>
+<script nonce="{{ cspNonce() }}">
     // "ADD" in the Add Tag modal -> append that MARC field to the record.
     $(document).on('click', '.add-field-link', function(event) {
         event.preventDefault();
         addTag($(this).data('row-id'));
     });
 </script>
-<script>
+<script nonce="{{ cspNonce() }}">
 
 $(document).ready(function(){
     $('#marc-table').DataTable({

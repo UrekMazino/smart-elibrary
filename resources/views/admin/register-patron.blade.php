@@ -145,7 +145,7 @@
 @endsection
 
 @section('js')
-<script>
+<script nonce="{{ cspNonce() }}">
 $(document).ready(function(){
     if (window.feather) feather.replace();
 

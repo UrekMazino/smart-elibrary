@@ -87,7 +87,7 @@
 	<!--plugins-->
 	<script src="assets/js/jquery.min.js"></script>
 
-    <script>
+    <script nonce="{{ cspNonce() }}">
         $(document).ready(function () {
             $("#show_hide_password a").on('click', function (event) {
                 event.preventDefault();

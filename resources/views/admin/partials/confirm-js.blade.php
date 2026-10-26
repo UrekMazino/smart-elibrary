@@ -1,4 +1,4 @@
-<script>
+<script nonce="{{ cspNonce() }}">
 /*
  * Ask before a delete or remove. Mark a <form> (asked when it is submitted) or a link / button
  * (asked when it is clicked):

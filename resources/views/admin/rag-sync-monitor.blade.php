@@ -127,7 +127,7 @@
 @section('js')
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/DataTables/DataTables-1.12.1/js/jquery.dataTables.min.js') }}"></script>
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/DataTables/DataTables-1.12.1/js/dataTables.bootstrap5.min.js') }}"></script>
-<script>
+<script nonce="{{ cspNonce() }}">
 $(document).ready(function () {
     // The column name on each cell, shown before the value when phones show rows as cards.
     function label(name) { return function (td) { td.setAttribute('data-label', name); }; }

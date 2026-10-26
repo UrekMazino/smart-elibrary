@@ -228,7 +228,7 @@
 @section('js')
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net/jquery.dataTables.js') }}"></script>
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net-bs5/dataTables.bootstrap5.js') }}"></script>
-<script>
+<script nonce="{{ cspNonce() }}">
 	// A reservation conversation opens in the same modal; its thread and replies go through the
 	// reservation chat (the patron reads them under Messages on their Transactions page).
 	var resCode = null;

@@ -108,7 +108,7 @@
 @section('js')
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net/jquery.dataTables.js') }}"></script>
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net-bs5/dataTables.bootstrap5.js') }}"></script>
-<script>
+<script nonce="{{ cspNonce() }}">
 
 var statusFilter = 'all';   // which chip is selected; sent with every table request
 

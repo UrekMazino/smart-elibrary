@@ -176,7 +176,7 @@
 
 @section('js')
 <script src="{{ asset('admin/nobleui/template/assets/vendors/select2/select2.min.js') }}"></script>
-<script>
+<script nonce="{{ cspNonce() }}">
 $(function () {
 	'use strict';
 	if (window.feather) feather.replace();

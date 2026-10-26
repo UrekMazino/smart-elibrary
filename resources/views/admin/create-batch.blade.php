@@ -268,7 +268,7 @@
 @section('js')
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net/jquery.dataTables.js') }}"></script>
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net-bs5/dataTables.bootstrap5.js') }}"></script>
-<script>
+<script nonce="{{ cspNonce() }}">
 // ---- Batch Import: material type mapping ----------------------------------------------
 // Choosing a file analyzes it (nothing is imported): fields that can identify a record's
 // material type, with their values. Map values -> Material Type; unmapped values and records

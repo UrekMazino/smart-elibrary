@@ -269,7 +269,7 @@
 
 @section('js')
 @include('opac.partials.guest-login-js')
-<script>
+<script nonce="{{ cspNonce() }}">
 (function () {
     'use strict';
     var RESULTS = @json(url('/results'));

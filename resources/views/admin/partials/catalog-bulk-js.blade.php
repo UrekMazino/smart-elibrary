@@ -12,7 +12,7 @@
   .bulk-banner .btn-link { padding: 0 2px; font-size: 0.8125rem; vertical-align: baseline; }
   #bulkBtn .badge { font-weight: 600; }
 </style>
-<script>
+<script nonce="{{ cspNonce() }}">
 window.bulkSelect = (function () {
     var CFG = {
         list:      @json($list),

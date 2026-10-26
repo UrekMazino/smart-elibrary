@@ -73,6 +73,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Content Security Policy
+    |--------------------------------------------------------------------------
+    |
+    | App\Http\Middleware\SecurityHeaders always enforces the parts that can't
+    | break a page (frame-ancestors, object-src, base-uri, form-action) and
+    | sends the full policy (scripts only from this site and nonce-tagged
+    | inline scripts) as Report-Only: browsers report what it would block but
+    | block nothing. Set CSP_ENFORCE=true once no page reports a violation
+    | (docs/not-implemented/CSP_ROLLOUT.md).
+    |
+    */
+
+    'csp_enforce' => (bool) env('CSP_ENFORCE', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | System Administrator Email
     |--------------------------------------------------------------------------
     |

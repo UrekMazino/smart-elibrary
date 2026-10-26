@@ -94,7 +94,7 @@
 @section('js')
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net/jquery.dataTables.js') }}"></script>
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net-bs5/dataTables.bootstrap5.js') }}"></script>
-<script>
+<script nonce="{{ cspNonce() }}">
   let message = "{{ session('message') }}";
   let header = "{{ session('header') }}";
   let viewMaterialUrl = '{{ url("/admin/reservation/material-json") }}';
@@ -111,7 +111,7 @@
 </script>
 <script src="{{ asset('js/admin/reservation.js') }}?v={{ filemtime(public_path('js/admin/reservation.js')) }}"></script>
 <script src="{{ asset('js/admin/view-modals.js') }}"></script>
-<script>
+<script nonce="{{ cspNonce() }}">
 $(document).ready(function() {
     @if(session('message'))
         timerNoReloadModal(message, header);

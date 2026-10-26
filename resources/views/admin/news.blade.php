@@ -62,7 +62,7 @@
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/DataTables/buttons/js/buttons.colVis.min.js') }}"></script>
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/DataTables/buttons/js/buttons.html5.min.js') }}"></script>
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/DataTables/buttons/js/buttons.print.min.js') }}"></script>
-<script>
+<script nonce="{{ cspNonce() }}">
 	const editUrlBase = '{{ url("/admin/news/edit") }}';
 	const deleteUrlBase = '{{ url("/admin/news/delete") }}';
 	const csrfToken = '{{ csrf_token() }}';

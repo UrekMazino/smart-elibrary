@@ -219,7 +219,7 @@
 @endsection
 
 @section('js')
-<script>
+<script nonce="{{ cspNonce() }}">
 // Inline-styled chips (avoids the admin template's `.badge { color:#fff }` override).
 function driftChip(label, val, tone) {
     // CSS values (with the theme's roles: App\Services\Appearance), so the chips follow the background.

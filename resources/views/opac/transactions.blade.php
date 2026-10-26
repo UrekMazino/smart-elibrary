@@ -120,7 +120,7 @@
 @endsection
 
 @section('js')
-<script>
+<script nonce="{{ cspNonce() }}">
 var resChatCode = null;
 var resChatJsonUrl = '{{ url("/patron/reservation/chat-json") }}';
 var resChatReplyUrl = '{{ url("/patron/reservation/chat/reply") }}';

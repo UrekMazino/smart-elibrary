@@ -78,7 +78,7 @@
 
 @section('js')
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/tinymce/tinymce.min.js') }}"></script>
-<script>
+<script nonce="{{ cspNonce() }}">
 	$(function () {
 		'use strict';
 		if (window.feather) feather.replace();

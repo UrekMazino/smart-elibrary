@@ -143,7 +143,7 @@
 @endsection
 
 @section('js')
-<script>
+<script nonce="{{ cspNonce() }}">
 (function () {
 	var endpoint  = "{{ url('/search/ai-answer') }}";
 	var query     = @json($query);

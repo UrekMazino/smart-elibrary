@@ -119,7 +119,7 @@
 @include('admin.partials.catalog-list-filters-js')
 @include('admin.partials.catalog-bulk-js', ['list' => 'onhold'])
 
-<script>
+<script nonce="{{ cspNonce() }}">
 
 $(document).ready(function(){
 

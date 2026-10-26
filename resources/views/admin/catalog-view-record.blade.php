@@ -628,7 +628,7 @@
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/DataTables/buttons/js/dataTables.buttons.min.js') }}"></script>
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/DataTables/buttons/js/buttons.bootstrap5.min.js') }}"></script>
 
-<script>
+<script nonce="{{ cspNonce() }}">
 // Return to the list the admin came from (record-list or on-hold-list);
 // fall back to the record list if there's no history to go back to.
 function goBack() {
@@ -704,10 +704,10 @@ $(function () {
 </script>
 <script type="text/javascript" src="{{ asset('assets/js/cropper.js') }}"></script>
 <script type="text/javascript" src="{{ asset('assets/js/cropper.min.js') }}"></script>
-<script> let pdfDefaultThumb = "{{ asset('assets/images/pdf-placeholder.jfif') }}";</script>
-<script> let copyTblUrl = "{{ url('/admin/copy-list-json') }}";</script>
+<script nonce="{{ cspNonce() }}"> let pdfDefaultThumb = "{{ asset('assets/images/pdf-placeholder.jfif') }}";</script>
+<script nonce="{{ cspNonce() }}"> let copyTblUrl = "{{ url('/admin/copy-list-json') }}";</script>
 <script src="{{ asset('js/admin/catalog-view-record.js') }}?v={{ filemtime(public_path('js/admin/catalog-view-record.js')) }}"></script>
-<script>
+<script nonce="{{ cspNonce() }}">
     $(document).ready(function(){
         let searchValue = "";
         let catalogId = $('#catalog-id').val();

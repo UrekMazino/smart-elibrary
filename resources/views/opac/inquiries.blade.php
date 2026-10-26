@@ -103,7 +103,7 @@
 @endsection
 
 @section('js')
-<script type="text/javascript">
+<script nonce="{{ cspNonce() }}" type="text/javascript">
 function showThread(id, userid, btn) {
 	var esc = function (s) { return $('<div>').text(s == null ? '' : s).html(); };
 	$("#catalog_id_inquiry_reply").val(id);

@@ -102,7 +102,7 @@
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/DataTables/DataTables-1.12.1/js/dataTables.bootstrap5.min.js') }}"></script>
 @include('admin.partials.catalog-list-filters-js')
 @include('admin.partials.catalog-bulk-js', ['list' => 'batch', 'batchId' => $batch->id])
-<script>
+<script nonce="{{ cspNonce() }}">
 var CSRF = '{{ csrf_token() }}';
 var CAN_PUBLISH_HOLD = @json(auth()->user()->can('publish-hold.catalog'));
 

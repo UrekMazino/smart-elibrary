@@ -161,6 +161,32 @@ class SecurityFixesTest extends TestCase
         $this->get('https://localhost/home')->assertHeader('Strict-Transport-Security', 'max-age=0');
     }
 
+    public function test_pages_send_a_content_security_policy_whose_nonce_their_scripts_carry()
+    {
+        $response = $this->get('/home')->assertOk()
+            ->assertHeader('Content-Security-Policy', "frame-ancestors 'self'; object-src 'none'; base-uri 'none'; form-action 'self'");
+
+        $full = $response->headers->get('Content-Security-Policy-Report-Only');
+        $this->assertMatchesRegularExpression("/script-src 'self' 'nonce-([A-Za-z0-9+\/=]{24})'/", $full);
+        preg_match("/'nonce-([^']+)'/", $full, $m);
+        preg_match_all('/<script nonce="([^"]+)"/', $response->getContent(), $tags);
+        $this->assertNotEmpty($tags[1]);
+        $this->assertSame([$m[1]], array_values(array_unique($tags[1])), 'every inline script carries this response\'s nonce');
+
+        // A new nonce for every response.
+        $this->assertNotSame($full, $this->get('/home')->headers->get('Content-Security-Policy-Report-Only'));
+
+        // Once enforced, the full policy is the one browsers apply.
+        config(['app.csp_enforce' => true]);
+        $enforced = $this->get('/home')->headers->get('Content-Security-Policy');
+        $this->assertStringContainsString("script-src 'self' 'nonce-", $enforced);
+    }
+
+    public function test_the_policy_is_only_sent_with_pages()
+    {
+        $this->getJson('/search/quick/999999')->assertHeaderMissing('Content-Security-Policy')->assertHeaderMissing('Content-Security-Policy-Report-Only');
+    }
+
     public function test_the_session_cookie_is_secure_and_host_prefixed_and_there_is_no_xsrf_cookie()
     {
         config(['session.driver' => 'cookie']);   // a driver that sends the cookie (the tests' array driver doesn't)

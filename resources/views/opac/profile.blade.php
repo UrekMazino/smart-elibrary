@@ -175,7 +175,7 @@
 
 
 @section('js')
-		<script>
+		<script nonce="{{ cspNonce() }}">
 			$("#region_id").val("{{ Auth::user()->region_id }}");
 			$("#patrontypes_id").val("{{ Auth::user()->patrontypes_id }}");
 			// Quoted: an unset sex produced [value=], an invalid selector that threw.
@@ -265,14 +265,14 @@
 			});
 		</script>
 		@if (session('success'))
-			<script>
+			<script nonce="{{ cspNonce() }}">
 				$(document).ready(function(){
 					showSwal("{{ session('success') }}", "success");
 				});
 			</script>
 		@endif
 		@if ($errors->getBag('default')->any())
-			<script>
+			<script nonce="{{ cspNonce() }}">
 				$(document).ready(function(){
 					showSwal("{{ $errors->getBag('default')->first() }}", "error");
 				});

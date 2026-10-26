@@ -114,7 +114,7 @@
 		</div>
 	</div>
 </section>
-<script type="text/javascript">
+<script nonce="{{ cspNonce() }}" type="text/javascript">
 (function () {
 	var root = document.querySelector('.shelf-browser');
 	if (!root) return;
