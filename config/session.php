@@ -2,6 +2,13 @@
 
 use Illuminate\Support\Str;
 
+// The session cookie is Secure unless SESSION_SECURE_COOKIE=false (local development on plain http://,
+// where browsers refuse Secure cookies), and then carries a name prefix browsers enforce (OWASP ASVS 3.3.1,
+// 3.3.3): __Host- = only accepted over HTTPS, for Path=/ and with no Domain, so plain HTTP or another
+// subdomain can't plant or overwrite it (session fixation). With SESSION_DOMAIN set it is __Secure-.
+$secureCookie = (bool) env('SESSION_SECURE_COOKIE', true);
+$cookiePrefix = ! $secureCookie ? '' : (env('SESSION_DOMAIN') ? '__Secure-' : '__Host-');
+
 return [
 
     /*
@@ -126,7 +133,7 @@ return [
     |
     */
 
-    'cookie' => env(
+    'cookie' => $cookiePrefix.env(
         'SESSION_COOKIE',
         Str::slug(env('APP_NAME', 'laravel'), '_').'_session'
     ),
@@ -168,7 +175,7 @@ return [
     |
     */
 
-    'secure' => env('SESSION_SECURE_COOKIE'),
+    'secure' => $secureCookie,   // see the top of this file
 
     /*
     |--------------------------------------------------------------------------

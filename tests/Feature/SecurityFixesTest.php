@@ -161,6 +161,29 @@ class SecurityFixesTest extends TestCase
         $this->get('https://localhost/home')->assertHeader('Strict-Transport-Security', 'max-age=0');
     }
 
+    public function test_the_session_cookie_is_secure_and_host_prefixed_and_there_is_no_xsrf_cookie()
+    {
+        config(['session.driver' => 'cookie']);   // a driver that sends the cookie (the tests' array driver doesn't)
+
+        $cookies = collect($this->get('/home')->assertOk()->headers->getCookies())->keyBy(fn ($c) => $c->getName());
+
+        $this->assertStringStartsWith('__Host-', config('session.cookie'));
+        $session = $cookies->get(config('session.cookie'));
+        $this->assertNotNull($session, 'no session cookie was sent');
+        $this->assertSame([true, true, '/', null, 'lax'],
+            [$session->isSecure(), $session->isHttpOnly(), $session->getPath(), $session->getDomain(), $session->getSameSite()]);
+        $this->assertFalse($cookies->has('XSRF-TOKEN'));
+    }
+
+    public function test_the_search_view_is_read_from_the_https_cookie_name_too()
+    {
+        $view = fn (array $cookies) => \App\Services\CatalogSearchParams::fromRequest(\Illuminate\Http\Request::create('/results', 'GET', [], $cookies))->view;
+
+        $this->assertSame('grid', $view(['__Host-sr_view' => 'grid']));
+        $this->assertSame('grid', $view(['sr_view' => 'grid']));
+        $this->assertSame('list', $view([]));
+    }
+
     public function test_a_news_link_must_be_a_web_address_and_a_cover_is_named_by_what_it_is()
     {
         $news = ['news_title' => 'Seminar', 'news_body' => '<p>Body</p>'];

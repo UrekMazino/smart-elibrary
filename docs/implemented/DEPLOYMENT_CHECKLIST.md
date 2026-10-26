@@ -67,7 +67,7 @@ php artisan permission:cache-reset                    # roles/permissions are ca
 | `MEILISEARCH_*` | host/key | OPAC keyword search |
 | `HERMES_GATEWAY_URL` | `http://127.0.0.1:8090` | AI mode gateway |
 | `HERMES_GATEWAY_TOKEN` | shared secret | **must match** what `start-rag-api.ps1` uses |
-| `SESSION_SECURE_COOKIE` | `true` | the sign-in cookie is only ever sent over HTTPS |
+| `SESSION_SECURE_COOKIE` | `true` (the default; leave it out) | the sign-in cookie is only ever sent over HTTPS, and is named `__Host-…` so plain HTTP or another subdomain can't plant one; `false` only for local development on `http://` |
 
 Also: HTTPS + force-https, one canonical host (www **or** apex, 301 the other).
 
