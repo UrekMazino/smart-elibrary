@@ -14,6 +14,7 @@ Move a document across when that changes.
 | [RAG_CATALOG_SYNC_PLAN.md](implemented/RAG_CATALOG_SYNC_PLAN.md) | Catalog changes → AI index: outbox, worker, reconcile, AI Sync Monitor | Optional: content-hash re-sync, record-list badge, purge policy |
 | [QA_REFERENCE.md](implemented/QA_REFERENCE.md) | Every page and action for QA testing: address, who may use it, what to check, and the security checks to repeat. Also as a PDF to send: [QA_REFERENCE.pdf](implemented/QA_REFERENCE.pdf) | — (kept current with the app; `tests/Feature/RouteSecurityTest.php` checks every route automatically) |
 | [database/](implemented/database/) | Database documentation; its findings R1–R16 are all fixed | Re-export the PDF from Word (the .docx is newer) |
+| [SECURITY_NOTES.md](implemented/SECURITY_NOTES.md) | The security rules in force: input rules, sign-in and rate limits, who may do what (roles), deadlines for patching vulnerable packages (OWASP ASVS 2.1.1, 6.1.1, 8.1.1, 15.1.1) | — (update it in the same commit as a rule change) |
 
 ## [not-implemented/](not-implemented/)
 
