@@ -267,7 +267,8 @@
 @endsection
 
 @section('js')
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+	{{-- Uses the layout's jQuery 3.6. This page used to load jQuery 1.11.1 from ajax.googleapis.com on top of it:
+	     an outdated copy with known cross-site scripting flaws, and a second outside script host. --}}
 	<script nonce="{{ cspNonce() }}">
 		$("input:checkbox").on('click', function() {
 		var $box = $(this);

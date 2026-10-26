@@ -18,7 +18,7 @@ The full policy (`App\Http\Middleware\SecurityHeaders`, `{nonce}` = `cspNonce()`
 
 ```
 default-src 'self';
-script-src 'self' 'nonce-{nonce}' 'report-sample' https://cdn.jsdelivr.net https://ajax.googleapis.com;
+script-src 'self' 'nonce-{nonce}' 'report-sample' https://cdn.jsdelivr.net;
 style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
 font-src 'self' data: https://fonts.gstatic.com;
 img-src 'self' data: blob:; connect-src 'self'; frame-src 'self'; media-src 'self';
@@ -54,6 +54,7 @@ report them only when they run, so the counts come from the code and from the re
 | 2026-10-26 | Policy Report-Only, nonces on every inline script | 98 | 103 |
 | 2026-10-26 | Steps 1 to 3: unused theme files deleted, sign-out links, all OPAC pages | 76 (admin only) | 2 (admin inventory pages) |
 | 2026-10-26 | Step 4: every admin page (data-call buttons, `AdminActions` in the admin layout) | 0 | 0 |
+| 2026-10-26 | Step 5: the CSF page uses the site's jQuery 3.6 (not 1.11.1 from Google); `ajax.googleapis.com` dropped from the policy | 0 | 0 |
 
 ## Order of work
 
@@ -68,7 +69,7 @@ report them only when they run, so the counts come from the code and from the re
    borrowed and check-out/in (5 each), then the record, on-hold and batch lists. Their table buttons are
    built in JavaScript: give each button a `data-action` and the record id, and handle all of them with
    one listener per table.
-5. **Outside scripts:**
+5. **Done 2026-10-26.** **Outside scripts:**
    - The CSF page loads jQuery **1.11.1** from `ajax.googleapis.com`; that version has known
      cross-site-scripting flaws. Use the site's own jQuery 3.6, then drop `ajax.googleapis.com` from the
      policy.

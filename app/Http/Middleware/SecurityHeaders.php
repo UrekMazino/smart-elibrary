@@ -31,7 +31,7 @@ class SecurityHeaders
 
     /** The full policy; {nonce} is this request's cspNonce(). */
     private const CSP_FULL = "default-src 'self'; "
-        . "script-src 'self' 'nonce-{nonce}' 'report-sample' https://cdn.jsdelivr.net https://ajax.googleapis.com; "
+        . "script-src 'self' 'nonce-{nonce}' 'report-sample' https://cdn.jsdelivr.net; "
         . "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
         . "font-src 'self' data: https://fonts.gstatic.com; "
         . "img-src 'self' data: blob:; connect-src 'self'; frame-src 'self'; media-src 'self'; "
