@@ -88,6 +88,7 @@ return [
         public_path('fullpage') => storage_path('app/public/fullpage'),
         public_path('frontpages') => storage_path('app/public/frontpages'),
         public_path('news_cover') => storage_path('app/public/news_cover'),
+        public_path('news_print') => storage_path('app/public/news_print'),   // the NEWS section's 800 px copies of the covers
     ],
 
 ];

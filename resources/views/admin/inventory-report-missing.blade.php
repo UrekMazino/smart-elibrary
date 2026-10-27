@@ -91,7 +91,7 @@ License: For each use you must have a valid license purchased only from above li
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/DataTables/buttons/js/buttons.print.min.js') }}"></script>
 
 
-<script>
+<script nonce="{{ cspNonce() }}">
 $(document).ready(function() {
     var t = $('#tbl').DataTable( {
         dom: 'Bfrtip',

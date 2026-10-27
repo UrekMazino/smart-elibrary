@@ -18,7 +18,7 @@
 	.instant-seeall:hover { background: #eef7f4; }
 </style>
 
-<script type="text/javascript">
+<script nonce="{{ cspNonce() }}" type="text/javascript">
 (function () {
 	var endpoint = "{{ url('/search/suggest') }}";
 	function esc(s) { return $('<div>').text(s == null ? '' : String(s)).html(); }

@@ -63,6 +63,7 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'is_banned'  => 'boolean',
         'is_blocked' => 'boolean',
+        'appearance' => 'array',   // App\Services\Appearance; null = the library default
     ];
 
     /**

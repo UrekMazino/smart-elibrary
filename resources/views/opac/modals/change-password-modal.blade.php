@@ -32,7 +32,7 @@
                             <span class="pw-error" role="alert">{{ $message }}</span>
                         @enderror
                         @unless($errors->updatePassword->has('password'))
-                            <span class="pw-hint">At least 8 characters.</span>
+                            <span class="pw-hint">At least 12 characters. A few unrelated words make a strong password that is easy to remember.</span>
                         @endunless
                     </div>
 

@@ -58,6 +58,36 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | HTTPS only (HSTS)
+    |--------------------------------------------------------------------------
+    |
+    | How long, in seconds, browsers keep to HTTPS for this site and its
+    | subdomains after an HTTPS visit (Strict-Transport-Security, sent by
+    | App\Http\Middleware\SecurityHeaders on HTTPS responses only; OWASP ASVS
+    | 3.4.1 asks for at least a year). 0 tells browsers to forget it: the way
+    | back if the site ever has to leave HTTPS.
+    |
+    */
+
+    'hsts_max_age' => (int) env('HSTS_MAX_AGE', 31536000),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Content Security Policy
+    |--------------------------------------------------------------------------
+    |
+    | App\Http\Middleware\SecurityHeaders enforces the full policy: scripts
+    | only from this site, jsDelivr and inline scripts carrying the request's
+    | nonce (docs/implemented/CSP_ROLLOUT.md). CSP_ENFORCE=false is the
+    | emergency switch: the full policy then only reports (Report-Only) and
+    | just frame-ancestors, object-src, base-uri and form-action are enforced.
+    |
+    */
+
+    'csp_enforce' => (bool) env('CSP_ENFORCE', true),
+
+    /*
+    |--------------------------------------------------------------------------
     | System Administrator Email
     |--------------------------------------------------------------------------
     |

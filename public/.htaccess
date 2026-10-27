@@ -47,8 +47,10 @@
     RewriteRule ^ index.php [L]
 </IfModule>
 
-# ----- Static files: browsers use the declared type, never guess one (the app's own pages get
-# this and more from App\Http\Middleware\SecurityHeaders) -----
+# ----- Static files: browsers use the declared type, never guess one, and keep to HTTPS (the app's
+# own pages get this and more from App\Http\Middleware\SecurityHeaders; keep the HSTS max-age here
+# equal to its HSTS_MAX_AGE) -----
 <IfModule mod_headers.c>
     Header set X-Content-Type-Options "nosniff"
+    Header set Strict-Transport-Security "max-age=31536000; includeSubDomains" "expr=%{HTTPS} == 'on'"
 </IfModule>

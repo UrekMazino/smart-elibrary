@@ -16,9 +16,9 @@ Test every page with the account its **Who** column names, and once with an acco
 
 | Role (staff) | Permissions (default) | Use it to test |
 | --- | --- | --- |
-| `super_admin` | All 35 | Everything, including administrators, roles and permissions |
-| `developer` | All 35, and passes every check | Same as super admin |
-| `system_admin` | 31: all except AI mode, material types, blocking/banning patrons, editing imports | Most admin pages |
+| `super_admin` | All 36 | Everything, including administrators, roles and permissions |
+| `developer` | All 36, and passes every check | Same as super admin |
+| `system_admin` | 32: all except AI mode, material types, blocking/banning patrons, editing imports | Most admin pages |
 | `cataloging_admin` | Records (create, edit, delete), batch import, record list, MARC template create | Cataloguing |
 | `circulation_admin` | Reservations (view, manage), check-out/in, block/ban patrons | Circulation |
 | `faculty` | Records (create, edit, delete), no record list | Record editing without lists |
@@ -37,7 +37,7 @@ These pages are open to everyone. Only published records ever appear; a held, de
 | Search results | `/results?query=…` | Anyone | Keyword search; filters (material type, author, year, full text available) with counts; sort; grid and list views; paging; suggestions while typing |
 | Quick view (on results) | button on each result | Anyone | Opens the record's main details over the list without leaving it |
 | Cite (on results) | button on each result | Anyone | Shows APA, MLA and Chicago; each Copy button copies its citation |
-| AI mode (on results) | switch on the search page | Anyone, when enabled in Settings | Answers a question from the collection with numbered sources; at most 10 questions a minute; when the AI service is off it says "AI mode is temporarily unavailable" |
+| AI mode (on results) | switch on the search page | Anyone, when enabled in Settings | Answers a question from the collection with numbered sources; at most 10 questions a minute; when the AI service is off it says "AI mode is temporarily unavailable"; the answer's footer says who wrote it ("Written by Google Gemini…" or "Written by the library's own AI…", per Settings → Answer with) |
 | Record page | `/full-description/{id}` | Anyone | Redirects to `/full-description/{id}-{title}`. Title, authors, ratings, view and download counts, Full Record table, Citation, Physical Copies, Reviews |
 | Citation box | on the record page | Anyone | APA, MLA, Chicago switch: one shows at a time; Copy copies the one showing; the last style chosen is remembered after a reload |
 | Read | button on the record page | Patron, staff | Opens the PDF reader over the page and shows all pages. Guest gets a sign-in popup. Greyed out when the record has no PDF |
@@ -98,10 +98,10 @@ Every page here needs a staff account with `access.cataloging`, plus the permiss
 | Delete a batch | on the batch list | `delete.catalog.import` | Asks for confirmation; removes the import's records |
 | Local MARC tags | a record with 942, 952 or 999 (Koha exports have them), by Batch Import or **Import MARC file** in Create New Record | `create.catalog.import` / `create.catalog` | Local tags are named by their number: "942" on the admin Full Record tab and as the editor heading, subfields by code ("942$c"). Every one is kept (not only the first), the import does not fail, and **Update Record** keeps them. **Add Tag** (Create New Record, Edit, MARC Templates) offers 900–999, each with subfields $0–$9 and $a–$z. The OPAC hides 9XX tags |
 | Import report | `/admin/batch-report/{id}` | `view.catalog.importlist` | Skipped records and imported-but-flagged records, each with its problems (no title, no author, possible duplicate…). **Download skipped records** gives a `.mrc` of the skipped ones |
-| MARC Templates | Utilities card; `/admin/marc-templates` | `access.configuration` + `view.config.template` | List and search templates |
+| MARC Templates | Utilities card; `/admin/marc-templates` | `access.utilities` + `view.config.template` | List and search templates |
 | Create / edit template | `/admin/marc-templates/create`, `/admin/marc-templates/edit` | `create.config.template`, `edit.config.template` | Add MARC tags and subfields; the template appears in Create New Record |
 | Delete template | on the template list | `delete.config.template` | Asks for confirmation |
-| Material Types | `/admin/utilities/material-types` | `access.configuration` + `manage.material.types` | Add, rename, hide or show, merge into another type, delete. A type still in use cannot be deleted (the message says to merge it); MARC record types can only be hidden |
+| Material Types | `/admin/utilities/material-types` | `access.utilities` + `manage.material.types` | Add, rename, hide or show, merge into another type, delete. A type still in use cannot be deleted (the message says to merge it); MARC record types can only be hidden |
 
 ## Admin: circulation and inventory
 
@@ -143,9 +143,11 @@ All of these open from **Accounts** under Administration in the sidebar. Patron 
 | Create administrator | button on Administrators; `/superadmin/admin-create` | same | Name, email, role; the new account opens the admin |
 | Change role | on Administrators | same | Only a developer can give the `developer` role. The last super admin cannot be changed to another role |
 | Reset password, library code, delete | actions on Administrators | same | As for patrons; delete asks for confirmation |
-| Roles | Accounts card; `/admin/roles` | same | Create, rename, delete roles; tick or untick each permission of a role. A staff member's menus change accordingly at their next page load |
+| Roles | Accounts card; `/admin/roles` | same | Create, rename, delete roles. The access matrix lists modules first, each with a switch per role (its access permission) and a count ("6 of 9"); open a module to tick what each role may do inside it. Inside a module that is off for a role, cells show a lock; a tick there is "waiting" (counted on the module's row). Clicking a locked cell offers to turn the module on and allow it; turning off a module with ticks inside asks first (the ticks stay); a waiting tick offers "Turn … on" or "Remove the tick". Ban / Block Patrons works without Accounts & Patrons, so it never locks. Find a permission filters the rows; Open all / Close all, and the modules left open are remembered on that browser. A staff member's menus change at their next page load |
 | Permissions | Accounts card; `/admin/permissions` | `super_admin` or `developer`; add and delete: `developer` only | List and edit permission names |
 | My profile | `/admin/profile` | Any staff | Edit own name and email (must be unused); change password with the current one (at most 10 tries a minute) |
+| Appearance | profile menu → **Appearance**; `/admin/appearance` | Any staff | Colour theme (9 ready-made, the ones marked AA keep text on them at 4.5:1 or more; or a custom colour, darkened until text on it reads), status colours (standard or colour-blind safe), text size 100–150% (the sidebar widens to fit), motion (follow the device, or always reduce), font (standard or Atkinson Hyperlegible). Each choice previews at once; **Save** keeps it on the account, on any computer; **Use the library default** goes back to Theme's. At 150% dropdowns still open under their buttons |
+| Appearance: background, sidebar, contrast | same page | Any staff | **Background**: Standard, White, Warm cream, Cool grey; Dark, Dim, Black; **Follow my device** (light or dark with the computer's own setting, switching without a reload); or a custom colour, made light or dark enough for text on it to read at 7:1 (a note under Contrast says when it was adjusted). Panels, tables, menus, fields, badges and the dashboard charts follow it, and text stays readable on every admin page. **Sidebar**: dark, or light like the page (the logo then has dark lettering); always dark with a dark background. **High contrast**: pure white or black, text and links at 7:1 or more, underlined links, stronger borders and a thicker focus outline. With the standard choices every page looks exactly as before |
 
 ## Admin: dashboard, news, inquiries, reports, settings
 
@@ -161,12 +163,13 @@ The rest of the admin, in sidebar order. Staff land on the Dashboard after signi
 | Add or edit news | `/admin/news/add`, `/admin/news/edit/{id}` | `access.news` | Title, body (formatting kept, scripts removed), cover image (JPG, PNG or WEBP up to 2 MB), link (must start with http:// or https://), Featured. Shows under Related News on the OPAC home |
 | Reports | `/admin/report` | `access.reports` | Pick a report and a period, preview, print: Acquisition, Patron, Borrowed Materials, Inquiries, CSF (satisfaction survey), Publication Downloads, Publication Uploads |
 | Visitor log | `/admin/visits` | `access.reports` | Not in the menu; opens by address |
-| Settings | `/admin/settings` | `access.configuration` + `access.settings` | AI mode on/off and its status check (`manage.ai.mode`); hide the site from search engines; Google verification code; generated covers on/off; **Save Settings** |
-| Search index | card on Settings | same | **Scan** reports records missing from search; **Rebuild** re-creates the index (at most 5 a minute) |
-| Sitemap | card on Settings | same | Regenerates `/sitemap.xml` (at most 5 a minute) |
-| Clear cache | card on Settings | same | Home page shelves and counts refresh; patrons and staff stay signed in (at most 10 a minute) |
-| Utilities | `/admin/utilities` | `access.configuration` | Cards for the tools the role may use: Material Types, MARC Templates, AI Sync Monitor. The sidebar's Utilities stays highlighted on those pages, and their breadcrumb leads back here. "No utilities for your role yet" otherwise |
-| AI Sync Monitor | Utilities card; `/admin/ai-sync-monitor` | `access.configuration` + `access.ai.sync.monitor` | Pending, Failed and Synced counts; filter by change type and status; long titles wrap, and phones show each change as a card. **Re-sync** queues one record; **Run sync now** processes the queue (needs the AI service running) |
+| Settings | `/admin/settings` | `access.configuration` + `access.settings` | **Now in effect** shows the saved values. **Options**, saved together with **Save changes**: Covers (made for records without one, or "No preview available"); AI answers on/off, **Who writes the answers** (Google Gemini with the local AI as backup, Gemini only, or local only; an unknown value is refused) and the AI server status, which also says whether it has a Gemini key (`manage.ai.mode`); search engines asked not to list the site; Google verification code (a whole pasted tag keeps only its code; anything but letters, digits and `- _ + / = .` is refused). The save bar names the sections with unsaved changes, **Discard changes** restores the saved values, and leaving the page with unsaved changes asks first. After a save the page says what changed ("Nothing to save" when nothing did); a refused save changes nothing and keeps the edits |
+| Catalogue search | Tools card on Settings | same | **Check search** compares the search index with the catalogue in words ("up to date", or how many records need fixing); **Rebuild search index** asks first, then re-creates the index (at most 5 a minute) |
+| Sitemap for search engines | Tools card on Settings | same | **Rebuild sitemap** regenerates `/sitemap.xml` and updates the line and the Now in effect tile in place; warns when it lists another address (at most 5 a minute) |
+| Cached pages | Tools card on Settings | same | **Refresh cached pages**: home page shelves and counts refresh; patrons and staff stay signed in (at most 10 a minute) |
+| Utilities | `/admin/utilities` | `access.utilities` (Roles: "Utilities Module Access") | Cards for the tools the role may use: Material Types, MARC Templates, AI Sync Monitor, Theme. The sidebar's Utilities stays highlighted on those pages, and their breadcrumb leads back here. "No utilities for your role yet" otherwise |
+| Theme | Utilities card; `/admin/utilities/theme` | `access.utilities` + `manage.theme` | The same choices as Appearance, as the library default for every staff member without their own; **Back to original** restores the template's look. Staff who chose their own keep it. With nothing chosen, every page looks exactly as before |
+| AI Sync Monitor | Utilities card; `/admin/ai-sync-monitor` | `access.utilities` + `access.ai.sync.monitor` | Pending, Failed and Synced counts; filter by change type and status; long titles wrap, and phones show each change as a card. **Re-sync** queues one record; **Run sync now** processes the queue (needs the AI service running) |
 
 ## Must not work: security checks
 
@@ -195,3 +198,4 @@ Repeat these every test round: each one should be refused. A "pass" here means t
 | 6 wrong passwords in a row | Guest | Sign-in locked for a short time with a message |
 | Open any page and check its response headers (browser developer tools, Network tab) | Anyone | `X-Frame-Options: SAMEORIGIN`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin` |
 | Show any eLibrary page inside a frame on another website | Anyone | The browser refuses to show it |
+| On the server: `php -v`, and `php -i \| findstr upload_progress.enabled` (Linux: `grep`) | Server admin | PHP 8.5.12 or newer, the only PHP installed; `session.upload_progress.enabled => Off`. See DEPLOYMENT_CHECKLIST, *PHP hardening* |

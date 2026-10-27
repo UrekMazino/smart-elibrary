@@ -1,12 +1,14 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Auth\BrowserSessionController;
 use App\Http\Controllers\Auth\ConfirmablePasswordController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\Auth\SessionStatusController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
 
@@ -56,4 +58,18 @@ Route::middleware('auth')->group(function () {
 
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
                 ->name('logout');
+
+    // The staff warning before a sign-out: the time left (not counted as activity), and "Stay signed in".
+    Route::get('session/status', [SessionStatusController::class, 'show'])
+                ->middleware('throttle:60,1')
+                ->name('session.status');
+
+    Route::post('session/stay', [SessionStatusController::class, 'stay'])
+                ->middleware('throttle:60,1')
+                ->name('session.stay');
+
+    // "Where you're signed in" (profile pages): sign out one other session, or all of them. Takes the password.
+    Route::delete('sessions', [BrowserSessionController::class, 'destroy'])
+                ->middleware('throttle:10,1')
+                ->name('sessions.end');
 });

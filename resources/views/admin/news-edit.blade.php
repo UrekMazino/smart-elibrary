@@ -3,9 +3,9 @@
 @section('css')
 	<style>
 		.admin-page-head { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px; margin-bottom:18px; }
-		.admin-page-head .apt { margin:0; font-size:16px; font-weight:600; }
-		.admin-page-head .aph-desc { margin:2px 0 0; font-size:13px; color:#8a94a6; }
-		#cover_preview { max-height:220px; width:100%; object-fit:cover; border-radius:8px; border:1px solid #e6e9ef; background:#f6f8fa; }
+		.admin-page-head .apt { margin:0; font-size:1rem; font-weight:600; }
+		.admin-page-head .aph-desc { margin:2px 0 0; font-size:0.8125rem; color:var(--ui-muted, #8a94a6); }
+		#cover_preview { max-height:220px; width:100%; object-fit:cover; border-radius:8px; border:1px solid var(--ui-border, #e6e9ef); background:var(--ui-surface-2, #f6f8fa); }
 	</style>
 @endsection
 
@@ -26,7 +26,7 @@
 		</div>
 		<div class="d-flex gap-2">
 			<a href="{{ url('/admin/news') }}" class="btn btn-outline-secondary"><i data-feather="arrow-left" class="icon-sm me-1"></i>Back</a>
-			<button type="button" class="btn btn-primary" onclick="saveArticle()"><i data-feather="save" class="icon-sm me-1"></i>Save Changes</button>
+			<button type="button" class="btn btn-primary" data-call="saveArticle"><i data-feather="save" class="icon-sm me-1"></i>Save Changes</button>
 		</div>
 	</div>
 
@@ -69,7 +69,7 @@
 					<div class="card-body">
 						<h6 class="card-title">Cover photo</h6>
 						<img id="cover_preview" src="@if($article->news_cover){{ asset($article->news_cover) }}@else{{ asset('assets/images/placeholder.jpg') }}@endif" alt="Cover preview" class="mb-2">
-						<input class="form-control @error('news_cover') is-invalid @enderror" type="file" id="news_cover" name="news_cover" onchange="previewImage(event)" accept="image/jpeg,image/png,image/webp">
+						<input class="form-control @error('news_cover') is-invalid @enderror" type="file" id="news_cover" name="news_cover" data-call-change="previewImage" data-args='["$event"]' accept="image/jpeg,image/png,image/webp">
 						<small class="text-muted">Leave empty to keep the current cover. JPG, PNG or WEBP.</small>
 						@error('news_cover')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
 					</div>
@@ -82,20 +82,23 @@
 
 @section('js')
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/tinymce/tinymce.min.js') }}"></script>
-<script>
+@include('admin.partials.editor-look-js')
+<script nonce="{{ cspNonce() }}">
+// This page's buttons (data-call; onclick= is blocked by the Content Security Policy).
+AdminActions.allow(['saveArticle', 'previewImage']);
+
 	$(function () {
 		'use strict';
 		if (window.feather) feather.replace();
 		if ($("#tinymceExample").length) {
-			tinymce.init({
+			tinymce.init(Object.assign({
 				selector: '#tinymceExample',
 				height: 420,
 				menubar: false,
 				plugins: 'advlist autolink lists link image charmap preview anchor pagebreak searchreplace wordcount visualblocks visualchars code fullscreen',   // one string: in an array it was read as one plugin name, so none loaded
 				toolbar: 'undo redo | styles | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image | code fullscreen',
-				image_advtab: true,
-				content_css: []
-			});
+				image_advtab: true
+			}, editorLook()));   // the toolbar and the text follow the staff member's appearance (dark backgrounds too)
 		}
 	});
 

@@ -1,0 +1,127 @@
+/* Each staff member's Appearance (App\Services\Appearance): the admin layout puts their choices on
+   <html> as data-text / data-motion / data-font / data-status, and the colours (--t-primary...,
+   --t-text) in its style attribute. Colours themselves are applied by admin-theme.css. */
+
+/* ---- Text size: rem sizes follow the root; pixel sizes multiply by --t-text (admin-theme.css). ---- */
+html { font-size: calc(100% * var(--t-text, 1)); }
+
+/* ---- Reduce motion: always, or when the device asks for it ("Follow my device"). Spinners keep
+   turning, slowly, so a page still shows it is busy. ---- */
+html[data-motion="reduce"] *,
+html[data-motion="reduce"] *::before,
+html[data-motion="reduce"] *::after {
+  animation-duration: .01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: .01ms !important;
+  transition-delay: 0s !important;
+  scroll-behavior: auto !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-motion="auto"] *,
+  html[data-motion="auto"] *::before,
+  html[data-motion="auto"] *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    transition-delay: 0s !important;
+    scroll-behavior: auto !important;
+  }
+  html[data-motion="auto"] .spinner-border,
+  html[data-motion="auto"] .spinner-grow { animation-duration: 1.5s !important; animation-iteration-count: infinite !important; }
+}
+html[data-motion="reduce"] .spinner-border,
+html[data-motion="reduce"] .spinner-grow { animation-duration: 1.5s !important; animation-iteration-count: infinite !important; }
+
+/* ---- Easier-to-read font: Atkinson Hyperlegible (Braille Institute, SIL OFL 1.1, public/fonts/
+   atkinson-hyperlegible), designed so similar letters (I l 1, O 0, rn m) are easy to tell apart. ---- */
+@font-face { font-family: "Atkinson Hyperlegible"; font-style: normal; font-weight: 400; font-display: swap; src: url("../fonts/atkinson-hyperlegible/atkinson-hyperlegible-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "Atkinson Hyperlegible"; font-style: normal; font-weight: 700; font-display: swap; src: url("../fonts/atkinson-hyperlegible/atkinson-hyperlegible-latin-700-normal.woff2") format("woff2"); }
+@font-face { font-family: "Atkinson Hyperlegible"; font-style: italic; font-weight: 400; font-display: swap; src: url("../fonts/atkinson-hyperlegible/atkinson-hyperlegible-latin-400-italic.woff2") format("woff2"); }
+@font-face { font-family: "Atkinson Hyperlegible"; font-style: italic; font-weight: 700; font-display: swap; src: url("../fonts/atkinson-hyperlegible/atkinson-hyperlegible-latin-700-italic.woff2") format("woff2"); }
+html[data-font="readable"] { --t-font: "Atkinson Hyperlegible", "Roboto", Helvetica, sans-serif; }
+html[data-font="readable"] body { letter-spacing: .01em; word-spacing: .05em; }
+
+/* ---- A dark sidebar (the light page's dark sidebar, and the dark mode's): status colours and the
+   accent as text or borders there use their lighter variants (the same as the standard ones unless a
+   palette needs them lighter to read on it). ---- */
+.sidebar-dark .sidebar .text-success { color: var(--t-success-on-dark) !important; }
+.sidebar-dark .sidebar .text-danger  { color: var(--t-danger-on-dark) !important; }
+.sidebar-dark .sidebar .text-warning { color: var(--t-warning-on-dark) !important; }
+.sidebar-dark .sidebar .text-info    { color: var(--t-info-on-dark) !important; }
+.sidebar-dark .sidebar .border-primary { border-color: var(--t-primary-on-dark) !important; }
+@media (prefers-color-scheme: dark) {
+  html[data-mode="auto"] .sidebar .text-success { color: var(--t-success-on-dark) !important; }
+  html[data-mode="auto"] .sidebar .text-danger  { color: var(--t-danger-on-dark) !important; }
+  html[data-mode="auto"] .sidebar .text-warning { color: var(--t-warning-on-dark) !important; }
+  html[data-mode="auto"] .sidebar .text-info    { color: var(--t-info-on-dark) !important; }
+  html[data-mode="auto"] .sidebar .border-primary { border-color: var(--t-primary-on-dark) !important; }
+}
+
+/* ---- A light sidebar: the logo with dark lettering (the standard one's is white), and the count badges'
+   info text (the template's light teal, made for the dark sidebar) darkened to read on it. ---- */
+.sidebar-brand .brand-on-light { display: none; }
+html[data-sidebar="light"][data-mode="light"] .sidebar-brand .brand-on-dark { display: none; }
+html[data-sidebar="light"][data-mode="light"] .sidebar-brand .brand-on-light { display: inline; }
+html[data-sidebar="light"][data-mode="light"] .sidebar .nav-badges .text-info { color: color-mix(in srgb, var(--t-info), #000 45%) !important; }
+@media (prefers-color-scheme: light) {
+  html[data-sidebar="light"][data-mode="auto"] .sidebar-brand .brand-on-dark { display: none; }
+  html[data-sidebar="light"][data-mode="auto"] .sidebar-brand .brand-on-light { display: inline; }
+  html[data-sidebar="light"][data-mode="auto"] .sidebar .nav-badges .text-info { color: color-mix(in srgb, var(--t-info), #000 45%) !important; }
+}
+
+/* ---- Dark mode: the accent as text, an outline or a fine line in our own components takes its lighter
+   variant. ---- */
+html[data-mode="dark"] { --dsh-accent-ink: var(--t-primary-on-dark); --rv-accent-ink: var(--t-primary-on-dark); }
+html[data-mode="dark"] .dsh, html[data-mode="dark"] .rv { --dsh-accent-ink: var(--t-primary-on-dark); --rv-accent-ink: var(--t-primary-on-dark); }
+@media (prefers-color-scheme: dark) {
+  html[data-mode="auto"] .dsh, html[data-mode="auto"] .rv { --dsh-accent-ink: var(--t-primary-on-dark); --rv-accent-ink: var(--t-primary-on-dark); }
+}
+
+/* ---- Bootstrap's text and border utilities (.text-danger...) take their colour from --bs-*-rgb, shared
+   with backgrounds: on a dark background they use the lighter variants. ---- */
+html[data-mode="dark"] .text-primary { color: var(--t-primary-on-dark) !important; }
+html[data-mode="dark"] .text-success { color: var(--t-success-on-dark) !important; }
+html[data-mode="dark"] .text-danger  { color: var(--t-danger-on-dark) !important; }
+html[data-mode="dark"] .text-warning { color: var(--t-warning-on-dark) !important; }
+html[data-mode="dark"] .text-info    { color: var(--t-info-on-dark) !important; }
+html[data-mode="dark"] .border-danger { border-color: var(--t-danger-on-dark) !important; }
+html[data-mode="dark"] .bg-white.text-primary { color: var(--t-primary) !important; }   /* accent text on a white badge stays dark */
+html[data-mode="dark"] code { color: #f48fc0; }   /* Bootstrap's code pink, lightened to read on every dark background */
+@media (prefers-color-scheme: dark) {
+  html[data-mode="auto"] .bg-white.text-primary { color: var(--t-primary) !important; }
+  html[data-mode="auto"] code { color: #f48fc0; }
+  html[data-mode="auto"] .text-primary { color: var(--t-primary-on-dark) !important; }
+  html[data-mode="auto"] .text-success { color: var(--t-success-on-dark) !important; }
+  html[data-mode="auto"] .text-danger  { color: var(--t-danger-on-dark) !important; }
+  html[data-mode="auto"] .text-warning { color: var(--t-warning-on-dark) !important; }
+  html[data-mode="auto"] .text-info    { color: var(--t-info-on-dark) !important; }
+  html[data-mode="auto"] .border-danger { border-color: var(--t-danger-on-dark) !important; }
+}
+
+/* ---- Colour-blind-safe and high-contrast status colours are darkened for white text: buttons and badges
+   in them use white text (the template writes some, such as its info buttons, in black). ---- */
+html[data-status="colorblind"] :is(.btn-success, .btn-danger, .btn-warning, .btn-info, .badge.bg-success, .badge.bg-danger, .badge.bg-warning, .badge.bg-info),
+html[data-contrast="high"] :is(.btn-success, .btn-danger, .btn-warning, .btn-info, .badge.bg-success, .badge.bg-danger, .badge.bg-warning, .badge.bg-info) {
+  color: #fff !important;
+}
+
+/* ---- Keyboard focus: a clear outline in the accent colour (the template's focus glow is faint). Only
+   for keyboard focus (:focus-visible), so mouse clicks look as before. ---- */
+:focus-visible { outline: 3px solid var(--t-primary, #6571ff); outline-offset: 2px; }
+.sidebar-dark .sidebar :focus-visible, html[data-mode="dark"] :focus-visible { outline-color: var(--t-primary-on-dark, #6571ff); }
+@media (prefers-color-scheme: dark) { html[data-mode="auto"] :focus-visible { outline-color: var(--t-primary-on-dark, #6571ff); } }
+
+/* ---- High contrast (the colours come from the roles): underlined links in the page, a thicker focus
+   outline, and buttons with an edge that shows on a black background. ---- */
+html[data-contrast="high"] .page-content a:not(.btn):not(.nav-link):not(.dropdown-item):not(.badge):not(.page-link):not(.util-card):not([class*="dsh-"]) {
+  text-decoration: underline; text-underline-offset: 2px;
+}
+html[data-contrast="high"] :focus-visible { outline-width: 4px; }
+html[data-contrast="high"][data-mode="dark"] .btn:not(.btn-link) { box-shadow: 0 0 0 1px var(--ui-border); }
+@media (prefers-color-scheme: dark) {
+  html[data-contrast="high"][data-mode="auto"] .btn:not(.btn-link) { box-shadow: 0 0 0 1px var(--ui-border); }
+}
+
+/* ---- The news editor (TinyMCE): its Paragraph / Heading dropdown keeps TinyMCE's own light grey, which
+   the dark stylesheet's light toolbar text did not read on; it takes the raised panel colour instead. ---- */
+.tox.tox-tinymce .tox-tbtn--bespoke { background: var(--ui-surface-2, #f7f7f7); }

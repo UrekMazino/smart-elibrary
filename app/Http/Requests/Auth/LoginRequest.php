@@ -45,7 +45,11 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
+        // "Keep me signed in" is for patrons: staff keep their 30-minute and 8-hour limits (App\Services\SessionLimits).
+        $credentials = $this->only('email', 'password');
+        $remember = $this->boolean('remember') && ! Auth::getProvider()->retrieveByCredentials($credentials)?->isStaff();
+
+        if (! Auth::attempt($credentials, $remember)) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([

@@ -18,16 +18,19 @@ class RouteSecurityTest extends TestCase
 {
     use RefreshDatabase, SeedsReferenceData;
 
-    /** Routes anyone may open without signing in (reviewed 2026-10-21). */
+    /** Routes anyone may open without signing in (reviewed 2026-10-21; inquiry/general, the chat button, 2026-10-26;
+     *  news/{id}, a featured article for the home page's NEWS section, 2026-10-27). */
     private const PUBLIC = [
-        '/', 'home', 'results', 'full-description', 'full-description/{holdingsid}', 'read/view',
+        '/', 'home', 'news/{id}', 'results', 'full-description', 'full-description/{holdingsid}', 'read/view',
         'search/suggest', 'search/facet', 'search/cite/{catalogId}', 'search/quick/{catalogId}', 'search/ai-answer',
+        'inquiry/general',
         'login', 'register', 'forgot-password', 'reset-password', 'reset-password/{token}',
     ];
 
-    /** Admin routes any staff account may use: its own profile, the OPAC button, MARC lookups for the editor. */
+    /** Admin routes any staff account may use: its own profile and appearance, the OPAC button, MARC lookups for the editor. */
     private const ANY_STAFF = [
         'admin/opac', 'admin/opac/return', 'admin/profile', 'admin/profile/update', 'admin/profile/update/password',
+        'admin/appearance', 'admin/appearance/reset', 'admin/appearance/preview',
         'admin/profile/validate-email', 'admin/get-marc-tag-details', 'admin/get-marc-template-details', 'admin/marc-tags-list/json',
     ];
 

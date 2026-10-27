@@ -35,37 +35,37 @@
 
 <style>
     #viewAddFieldModal .modal-header { align-items: flex-start; }
-    #viewAddFieldModal .modal-title { font-size: 15px; font-weight: 700; color: #22283b; }
-    #viewAddFieldModal .aft-sub { margin: 3px 0 0; font-size: 12px; color: #8a94a6; }
+    #viewAddFieldModal .modal-title { font-size: 0.9375rem; font-weight: 700; color: var(--ui-text, #22283b); }
+    #viewAddFieldModal .aft-sub { margin: 3px 0 0; font-size: 0.75rem; color: var(--ui-muted, #8a94a6); }
 
-    #viewAddFieldModal .aft-table { font-size: 13px; margin-bottom: 0; }
+    #viewAddFieldModal .aft-table { font-size: 0.8125rem; margin-bottom: 0; }
     #viewAddFieldModal .aft-table thead th {
-        font-size: 10.5px; text-transform: uppercase; letter-spacing: .4px; color: #7987a1;
-        border-bottom: 2px solid #eef0f2; padding: 8px 10px; white-space: nowrap;
+        font-size: 0.65625rem; text-transform: uppercase; letter-spacing: .4px; color: var(--ui-muted, #7987a1);
+        border-bottom: 2px solid var(--ui-border, #eef0f2); padding: 8px 10px; white-space: nowrap;
     }
-    #viewAddFieldModal .aft-table tbody td { padding: 6px 10px; vertical-align: middle; border-color: #f0f2f4; }
-    #viewAddFieldModal .aft-table tbody tr:hover { background: #f4f9fb; }
+    #viewAddFieldModal .aft-table tbody td { padding: 6px 10px; vertical-align: middle; border-color: var(--ui-border, #f0f2f4); }
+    #viewAddFieldModal .aft-table tbody tr:hover { background: var(--ui-surface-2, #f4f9fb); }
 
     /* Tag code as a mono chip */
     #viewAddFieldModal .mtag-code {
-        font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; font-size: 12.5px;
-        color: #1c6b57; background: #e4eff1; border-radius: 5px; padding: 2px 8px; display: inline-block;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; font-size: 0.78125rem;
+        color: var(--ui-success-ink, #1c6b57); background: var(--ui-surface-2, #e4eff1); border-radius: 5px; padding: 2px 8px; display: inline-block;
     }
-    #viewAddFieldModal .mtag-desc { color: #33415c; text-decoration: none; }
+    #viewAddFieldModal .mtag-desc { color: var(--ui-text, #33415c); text-decoration: none; }
     #viewAddFieldModal .mtag-desc:hover { color: #0d6efd; text-decoration: underline; }
 
     /* DataTable chrome: search, length, info, paging */
     #viewAddFieldModal .dataTables_filter { text-align: left; margin-bottom: 10px; }
     #viewAddFieldModal .dataTables_filter label { font-size: 0; }   /* hide the "Search:" text */
     #viewAddFieldModal .dataTables_filter input {
-        border: 1px solid #dfe3e8; border-radius: 20px; padding: 6px 14px; font-size: 13px;
+        border: 1px solid var(--ui-border, #dfe3e8); border-radius: 20px; padding: 6px 14px; font-size: 0.8125rem;
         margin-left: 0; min-width: 240px;
     }
     #viewAddFieldModal .dataTables_filter input:focus { border-color: #0d6efd; box-shadow: 0 0 0 3px rgba(13,110,253,.12); outline: none; }
-    #viewAddFieldModal .dataTables_length { font-size: 12px; color: #8a94a6; }
-    #viewAddFieldModal .dataTables_length select { font-size: 12px; padding: 2px 6px; border-radius: 5px; }
-    #viewAddFieldModal .dataTables_info { font-size: 11.5px; color: #a3adc2; padding-top: 10px; }
+    #viewAddFieldModal .dataTables_length { font-size: 0.75rem; color: var(--ui-muted, #8a94a6); }
+    #viewAddFieldModal .dataTables_length select { font-size: 0.75rem; padding: 2px 6px; border-radius: 5px; }
+    #viewAddFieldModal .dataTables_info { font-size: 0.71875rem; color: var(--ui-muted-2, #a3adc2); padding-top: 10px; }
     #viewAddFieldModal .dataTables_paginate { padding-top: 8px; }
-    #viewAddFieldModal .dataTables_paginate .paginate_button { font-size: 12px; padding: 3px 9px !important; }
-    #viewAddFieldModal .dataTables_empty { color: #a3adc2; font-size: 13px; }
+    #viewAddFieldModal .dataTables_paginate .paginate_button { font-size: 0.75rem; padding: 3px 9px !important; }
+    #viewAddFieldModal .dataTables_empty { color: var(--ui-muted-2, #a3adc2); font-size: 0.8125rem; }
 </style>

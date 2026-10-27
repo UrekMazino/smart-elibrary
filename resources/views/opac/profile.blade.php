@@ -27,6 +27,7 @@
 	.pf-btn-save:hover { background: #006f65; color: #fff; }
 	.pf-btn-pass { background: #fff; color: #c0392b; border: 1px solid #f0c8c2; }
 	.pf-btn-pass:hover { background: #fdecea; border-color: #e2b3ab; }
+	.pf-section { font-size: 16px; font-weight: 700; color: #222; margin: 0 0 6px; }
 
 	/* Change-password modal — matches the card above it */
 	.pw-modal { border: 0; border-radius: 10px; }
@@ -162,24 +163,44 @@
 					</form>
 
 					<div class="pf-actions">
-						<button type="button" class="pf-btn pf-btn-pass" onclick="showChangePasswordModal()">Change Password</button>
-						<button type="button" class="pf-btn pf-btn-save" onclick="submitForm()">Save Changes</button>
+						<button type="button" class="pf-btn pf-btn-pass" data-pf="password">Change Password</button>
+						<button type="button" class="pf-btn pf-btn-save" data-pf="save">Save Changes</button>
 					</div>
 				</div>
+
+				@if ($browserSessions->isNotEmpty())
+					<div class="pf-card mt-4">
+						<div class="pf-body">
+							<h2 class="pf-section">Where you’re signed in</h2>
+							@include('partials.browser-sessions', ['sessions' => $browserSessions])
+						</div>
+					</div>
+				@endif
 			</div>
 			@include('opac.side')
 		</div>
 	</div>
 @include('opac.modals.change-password-modal')
+@if ($browserSessions->isNotEmpty())
+	@include('partials.browser-sessions-modal', ['sessions' => $browserSessions, 'modalClass' => 'pw-modal'])
+@endif
 @endsection
 
 
 @section('js')
-		<script>
+		<script nonce="{{ cspNonce() }}">
 			$("#region_id").val("{{ Auth::user()->region_id }}");
 			$("#patrontypes_id").val("{{ Auth::user()->patrontypes_id }}");
 			// Quoted: an unset sex produced [value=], an invalid selector that threw.
 			$('input[name=sex][value="{{ Auth::user()->sex }}"]').prop('checked', true);
+
+			// Change Password / Save Changes (a listener, not onclick=: the Content Security Policy).
+			document.addEventListener('click', function (e) {
+				var b = e.target.closest('[data-pf]');
+				if (!b) return;
+				if (b.dataset.pf === 'password') showChangePasswordModal();
+				else if (b.dataset.pf === 'save') submitForm();
+			});
 
 			function submitForm()
 			{
@@ -265,14 +286,14 @@
 			});
 		</script>
 		@if (session('success'))
-			<script>
+			<script nonce="{{ cspNonce() }}">
 				$(document).ready(function(){
 					showSwal("{{ session('success') }}", "success");
 				});
 			</script>
 		@endif
 		@if ($errors->getBag('default')->any())
-			<script>
+			<script nonce="{{ cspNonce() }}">
 				$(document).ready(function(){
 					showSwal("{{ $errors->getBag('default')->first() }}", "error");
 				});

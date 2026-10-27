@@ -26,7 +26,8 @@
             <div class="mt-4">
                 <x-label for="password" :value="__('Password')" />
 
-                <x-input id="password" class="block mt-1 w-full" type="password" name="password" required />
+                <x-input id="password" class="block mt-1 w-full" type="password" name="password" minlength="12" maxlength="128" autocomplete="new-password" aria-describedby="password-hint" required />
+                <p id="password-hint" class="mt-1 text-sm text-gray-600">At least 12 characters. A few unrelated words make a strong password that is easy to remember.</p>
             </div>
 
             <!-- Confirm Password -->

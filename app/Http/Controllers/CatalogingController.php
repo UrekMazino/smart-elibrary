@@ -2060,9 +2060,14 @@ class CatalogingController extends Controller
 
         clearHomeCache();
 
-        // Post/Redirect/Get: land on the new record's view page (a redirect, so a refresh
-        // won't re-submit the form and create a duplicate).
-        return redirect()->route('show-record', ['id' => $catalog->id]);
+        // Post/Redirect/Get (a redirect, so a refresh won't re-submit the form and create a duplicate).
+        // "Add and View Record" (after=view) opens the new record's page; Create Record brings back an
+        // empty Create page for the next record, its notice linking to the one just made.
+        if ($request->input('after') === 'view') {
+            return redirect()->route('show-record', ['id' => $catalog->id])->with('success', 'Record created.');
+        }
+        return redirect('/admin/create-record')->with('success', 'Record created.')
+            ->with('success_link', ['url' => route('show-record', ['id' => $catalog->id]), 'label' => 'View record']);
     }
 
     public function destroyRecord(Request $request)
@@ -2349,8 +2354,10 @@ class CatalogingController extends Controller
 
         clearHomeCache();
 
-        // Post/Redirect/Get: land on the record's view page after saving (same as create).
-        return redirect()->route('show-record', ['id' => $id]);
+        // Post/Redirect/Get, as create. "Update and View Record" (after=view) opens the record's page;
+        // Update Record keeps the cataloguer in the editor.
+        return redirect()->route($request->input('after') === 'view' ? 'show-record' : 'edit-record', ['id' => $id])
+            ->with('success', 'Record saved.');
     }
 
     public function recordList(Request $request)

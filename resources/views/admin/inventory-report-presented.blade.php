@@ -75,7 +75,7 @@ License: For each use you must have a valid license purchased only from above li
                                 <td>{{$item->circulation_number}}</td>
                                 <td>{{$item->title}}</td>
                                 <td>{{$item->created_at}}</td>
-                                <td><a href="javascript:void(0)" onclick="deleteFromList({{$item->id}})"><i class="mdi mdi-delete text-danger"></i></a></td>
+                                <td><a href="#" data-delete-item="{{ (int) $item->id }}"><i class="mdi mdi-delete text-danger"></i></a></td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -107,7 +107,15 @@ License: For each use you must have a valid license purchased only from above li
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/DataTables/buttons/js/buttons.print.min.js') }}"></script>
 
 
-<script>
+<script nonce="{{ cspNonce() }}">
+// The delete icons (a listener, not onclick=: the Content Security Policy). This report page has no
+// admin layout, so no AdminActions.
+document.addEventListener('click', function (e) {
+    var a = e.target.closest('[data-delete-item]');
+    if (!a) return;
+    e.preventDefault();
+    deleteFromList(+a.dataset.deleteItem);
+});
 $(document).ready(function() {
     var t = $('#tbl').DataTable( {
         dom: 'Bfrtip',

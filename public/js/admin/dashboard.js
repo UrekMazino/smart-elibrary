@@ -56,7 +56,13 @@
   var root = document.getElementById('dsh-activity');
   if (!root) return;
 
-  var ACCENT = '#6571ff', PREV = '#8a94a6', GRID = '#eceff4', MUTED = '#8a94a6';
+  // The staff member's colours (Appearance), as the page shows them: the accent (its lighter variant on a
+  // dark background) and the theme's text and line roles (unset for the standard look: the old colours).
+  var page = document.documentElement, css = getComputedStyle(page);
+  var role = function (name, fallback) { return css.getPropertyValue(name).trim() || fallback; };
+  var dark = page.dataset.mode === 'dark' || (page.dataset.mode === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  var ACCENT = role(dark ? '--t-primary-on-dark' : '--t-primary', '#6571ff'), PREV = role('--ui-muted', '#8a94a6'), GRID = role('--ui-border', '#eceff4'),
+      MUTED = role('--ui-muted', '#8a94a6'), SURFACE = role('--ui-surface', '#fff'), AXIS = role('--ui-border', '#dfe3eb'), CROSS = role('--ui-muted-2', '#c3c9d6');
   var METRICS = {
     views:     { title: 'Record views', noun: 'views' },
     downloads: { title: 'Downloads', noun: 'downloads' },
@@ -203,7 +209,7 @@
       colors: hasPrev ? [ACCENT, PREV] : [ACCENT],
       stroke: { width: 2, curve: 'straight', lineCap: 'round' },
       fill: { type: 'solid', opacity: hasPrev ? [0.1, 1] : [0.1] },
-      markers: { size: n === 1 ? 5 : 0, strokeWidth: 2, strokeColors: '#fff', hover: { size: 5 } },
+      markers: { size: n === 1 ? 5 : 0, strokeWidth: 2, strokeColors: SURFACE, hover: { size: 5 } },
       dataLabels: { enabled: false },
       legend: { show: false },
       states: { hover: { filter: { type: 'none' } }, active: { filter: { type: 'none' } } },
@@ -212,9 +218,9 @@
         categories: data.labels,
         tickAmount: n > 10 ? 7 : undefined,
         labels: { rotate: 0, hideOverlappingLabels: true, style: { colors: MUTED, fontSize: '11px' } },
-        axisBorder: { color: '#dfe3eb' }, axisTicks: { show: false },
+        axisBorder: { color: AXIS }, axisTicks: { show: false },
         tooltip: { enabled: false },
-        crosshairs: { stroke: { color: '#c3c9d6', width: 1, dashArray: 0 } }
+        crosshairs: { stroke: { color: CROSS, width: 1, dashArray: 0 } }
       },
       yaxis: {
         min: 0, max: function (max) { return max < 4 ? 4 : max; }, tickAmount: 4, forceNiceScale: true,

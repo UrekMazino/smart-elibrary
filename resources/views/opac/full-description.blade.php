@@ -13,7 +13,7 @@
 {{-- JSON-LD must be emitted RAW (it is already JSON_HEX_TAG-encoded), so it goes through a
      stack rather than @yield, which would HTML-escape the quotes and break the JSON. --}}
 @push('json_ld')
-<script type="application/ld+json">{!! seoRecordJsonLd($result) !!}</script>
+<script nonce="{{ cspNonce() }}" type="application/ld+json">{!! seoRecordJsonLd($result) !!}</script>
 @endpush
 
 {{-- Breadcrumb, as on the search results page: in the site header on desktop, a slim strip under
@@ -220,7 +220,7 @@
 							@php $pdfUrl = getReadUrl($result->catalog_id); @endphp
 							<div class="fd-actions">
 								@if($pdfUrl)
-									<button type="button" class="btn_1 fd-btn" onclick="openReader('{{ $pdfUrl }}', @js($result->title_statement))"><i class="icon-book"></i> Read</button>
+									<button type="button" class="btn_1 fd-btn" data-fd="read" data-pdf="{{ $pdfUrl }}" data-title="{{ $result->title_statement }}"><i class="icon-book"></i> Read</button>
 									<form method="post" action="{{ url('/download') }}" id="frm_download" @auth target="_blank" @endauth>
 										@csrf
 										<input type="hidden" name="holdings_download_id" value="{{ $result->catalog_id }}">
@@ -234,19 +234,19 @@
 								{{-- Staff browsing the OPAC: inquiries come from patrons. --}}
 								<button type="button" class="btn_1 fd-btn" disabled title="Inquiries are sent by patrons. You are signed in as staff."><i class="icon-info-3"></i> Inquire</button>
 								@else
-								<button type="button" class="btn_1 fd-btn" onclick="inquire('{{ $result->catalog_id }}')"><i class="icon-info-3"></i> Inquire</button>
+								<button type="button" class="btn_1 fd-btn" data-fd="inquire" data-id="{{ $result->catalog_id }}"><i class="icon-info-3"></i> Inquire</button>
 								@endif
-								<button type="button" class="btn_1 fd-btn" data-share-url="{{ recordUrl($result) }}" data-share-title="{{ $result->title_statement }}" onclick="shareRecord(this)" title="Copy link to this record"><i class="pe-7s-link"></i> Share</button>
+								<button type="button" class="btn_1 fd-btn" data-share-url="{{ recordUrl($result) }}" data-share-title="{{ $result->title_statement }}" data-fd="share" title="Copy link to this record"><i class="pe-7s-link"></i> Share</button>
 								{{-- Save to the patron's list (same toggle as the search results / homepage stars). --}}
 								@auth
 									@php $fdSaved = isSavedRecord($result->catalog_id); @endphp
 									<button type="button" class="btn_1 fd-btn fd-save{{ $fdSaved ? ' is-saved' : '' }}" data-fd-save="{{ $result->catalog_id }}"
-										aria-pressed="{{ $fdSaved ? 'true' : 'false' }}" title="{{ $fdSaved ? 'Saved — click to remove from your list' : 'Save to your list' }}" onclick="toggleFdSave(this)">
+										aria-pressed="{{ $fdSaved ? 'true' : 'false' }}" title="{{ $fdSaved ? 'Saved — click to remove from your list' : 'Save to your list' }}" data-fd="save">
 										<svg class="fd-save-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z"/></svg>
 										<span class="fd-save-label">{{ $fdSaved ? 'Saved' : 'Save' }}</span>
 									</button>
 								@else
-									<a class="btn_1 fd-btn fd-save" href="{{ route('login') }}" title="Log in to save records" onclick="event.preventDefault(); promptGuestLogin('save')">
+									<a class="btn_1 fd-btn fd-save" href="{{ route('login') }}" title="Log in to save records" data-fd="guest-save">
 										<svg class="fd-save-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z"/></svg>
 										<span class="fd-save-label">Save</span>
 									</a>
@@ -283,7 +283,7 @@
 							<div class="fd-citation">
 								<div class="fd-cite-styles" role="group" aria-label="Citation style">
 									@foreach($citations as $style => $text)
-									<button type="button" class="fd-cite-style" data-cite-style="{{ $style }}" aria-pressed="{{ $loop->first ? 'true' : 'false' }}" onclick="showFdCitation(this.dataset.citeStyle)">{{ $style }}</button>
+									<button type="button" class="fd-cite-style" data-cite-style="{{ $style }}" aria-pressed="{{ $loop->first ? 'true' : 'false' }}" data-fd="cite-style">{{ $style }}</button>
 									@endforeach
 								</div>
 								<div aria-live="polite">
@@ -291,7 +291,7 @@
 									<p class="fd-cite-text" data-cite-style="{{ $style }}"{{ $loop->first ? '' : ' hidden' }}>{!! $text !!}</p>
 									@endforeach
 								</div>
-								<button type="button" class="btn_1 fd-copy-btn" onclick="copyFdCitation(this)">Copy citation</button>
+								<button type="button" class="btn_1 fd-copy-btn" data-fd="copy-cite">Copy citation</button>
 							</div>
 						</div>
 						@endif
@@ -396,7 +396,7 @@
                                         </div> --}}
                                         <!-- /row -->
 
-                                            <button type="button" class="btn_1 full-width" onclick="confirmReservation()">Send Request</button>
+                                            <button type="button" class="btn_1 full-width" data-fd="confirm-reservation">Send Request</button>
                                     </div>
                                     </fieldset>
 								</form>
@@ -453,7 +453,7 @@
 						{{-- Staff browsing the OPAC: reviews come from patrons. --}}
 						<button type="button" class="btn_1 full-width text-center fd-staff-off" disabled title="Reviews are written by patrons. You are signed in as staff.">Submit review</button>
 						@else
-						<a href="#" class="btn_1 full-width text-center" onclick="getElementById('frm_review').submit()">Submit review</a>
+						<a href="#" class="btn_1 full-width text-center" data-fd="submit-review">Submit review</a>
 						@endif
 					</div>
 					</div>
@@ -477,7 +477,7 @@
 					<div class="modal-body">
 						{{-- Inquiry form is for registered users only; guests are shown a reminder to email the library. --}}
 						<span>Subject : </span>
-						<input type="text" class="form-control mb-3" name="inquiry_subject" maxlength="150" placeholder="Subject of your inquiry..." required>
+						<input type="text" class="form-control mb-3" name="inquiry_subject" maxlength="125" placeholder="Subject of your inquiry..." required>
 						<span>Message : </span>
 						<textarea class="form-control" name="inquiry_message" rows="4" placeholder="Type your inquiry about this material..." required></textarea>
 					</div>
@@ -507,7 +507,7 @@
 					<p class="text-muted mb-0" style="font-size:13px;">Your request will be sent to the library for approval.</p>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-success" onclick="submitReservation(this)">Confirm &amp; send</button>
+					<button type="button" class="btn btn-success" data-fd="submit-reservation">Confirm &amp; send</button>
 					<button type="button" class="btn btn-danger" data-bs-dismiss="modal">Cancel</button>
 				</div>
 			</div>
@@ -518,7 +518,7 @@
 	<div id="ol-reader" class="ol-reader">
 		<div class="ol-reader-bar">
 			<span class="ol-reader-title" id="ol-reader-title"></span>
-			<button type="button" class="ol-reader-close" onclick="closeReader()" aria-label="Close reader">&times;</button>
+			<button type="button" class="ol-reader-close" data-fd="close-reader" aria-label="Close reader">&times;</button>
 		</div>
 		<iframe id="ol-reader-frame" class="ol-reader-frame" src="about:blank" title="Online reader"></iframe>
 	</div>
@@ -526,10 +526,29 @@
 
 @section('js')
 @include('opac.partials.guest-login-js')
-<script type="text/javascript">
+<script nonce="{{ cspNonce() }}" type="text/javascript">
 var inquiryIsGuest = {{ Auth::check() ? 'false' : 'true' }};
 var inquiryIsBlocked = {{ Auth::check() && Auth::user()->is_blocked ? 'true' : 'false' }};
 var libraryEmail = 'info@fprdi.dost.gov.ph';
+
+// The page's buttons (data-fd), wired here rather than with onclick= (Content Security Policy).
+document.addEventListener('click', function (e) {
+	var el = e.target.closest('[data-fd]');
+	if (!el) return;
+	switch (el.dataset.fd) {
+		case 'read':               openReader(el.dataset.pdf, el.dataset.title); break;
+		case 'inquire':            inquire(el.dataset.id); break;
+		case 'share':              shareRecord(el); break;
+		case 'save':               toggleFdSave(el); break;
+		case 'guest-save':         e.preventDefault(); promptGuestLogin('save'); break;
+		case 'cite-style':         showFdCitation(el.dataset.citeStyle); break;
+		case 'copy-cite':          copyFdCitation(el); break;
+		case 'confirm-reservation': confirmReservation(); break;
+		case 'submit-review':      e.preventDefault(); document.getElementById('frm_review').submit(); break;
+		case 'submit-reservation': submitReservation(el); break;
+		case 'close-reader':       closeReader(); break;
+	}
+});
 
 function inquire(holdingsid)
 {

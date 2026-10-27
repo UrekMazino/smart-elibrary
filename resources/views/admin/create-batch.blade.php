@@ -76,9 +76,6 @@
             font-weight: bold;
         }
  
-        .btn-info {
-            color: #fff !important; 
-        }
         #loadingSpinnerContainer {
           position: fixed; 
           top: 50%; 
@@ -110,19 +107,19 @@
         }
 
         /* ---- Material type mapping ---- */
-        .bm-card { border: 1px solid #e4e8f0; border-radius: 8px; background: #fafbfd; padding: 12px 14px; }
-        .bm-hint { color: #7987a1; font-size: 12px; display: block; margin-top: 3px; }
-        .bm-status { font-size: 12.5px; margin-top: 6px; color: #55606b; min-height: 18px; }
-        .bm-status.err { color: #c92a4b; }
+        .bm-card { border: 1px solid var(--ui-border, #e4e8f0); border-radius: 8px; background: var(--ui-surface, #fafbfd); padding: 12px 14px; }
+        .bm-hint { color: var(--ui-muted, #7987a1); font-size: 0.75rem; display: block; margin-top: 3px; }
+        .bm-status { font-size: 0.78125rem; margin-top: 6px; color: var(--ui-text-2, #55606b); min-height: 18px; }
+        .bm-status.err { color: var(--ui-danger-ink, #c92a4b); }
         .bm-preset { min-width: 260px; }
-        .bm-table { font-size: 12.5px; background: #fff; }
-        .bm-table th { font-size: 11px; text-transform: uppercase; letter-spacing: .4px; color: #7987a1; }
+        .bm-table { font-size: 0.78125rem; background: var(--ui-surface, #fff); }
+        .bm-table th { font-size: 0.6875rem; text-transform: uppercase; letter-spacing: .4px; color: var(--ui-muted, #7987a1); }
         .bm-table td { vertical-align: middle; }
-        .bm-table .form-select { font-size: 12.5px; padding-top: 2px; padding-bottom: 2px; }
-        .bm-val { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; background: #eef1f6; border-radius: 4px; padding: 1px 6px; }
-        .bm-summary { font-size: 12.5px; color: #33415c; }
-        .bm-summary .chip { display: inline-block; background: #e8eefc; color: #33509c; border-radius: 10px; padding: 1px 8px; margin: 2px 4px 2px 0; font-weight: 600; }
-        .bm-summary .chip.def { background: #f1f3f7; color: #55606b; }
+        .bm-table .form-select { font-size: 0.78125rem; padding-top: 2px; padding-bottom: 2px; }
+        .bm-val { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--ui-surface-2, #eef1f6); border-radius: 4px; padding: 1px 6px; }
+        .bm-summary { font-size: 0.78125rem; color: var(--ui-text, #33415c); }
+        .bm-summary .chip { display: inline-block; background: var(--ui-navy-soft, #e8eefc); color: var(--ui-navy, #33509c); border-radius: 10px; padding: 1px 8px; margin: 2px 4px 2px 0; font-weight: 600; }
+        .bm-summary .chip.def { background: var(--ui-surface-2, #f1f3f7); color: var(--ui-text-2, #55606b); }
         .bm-save { max-width: 520px; }
     </style>
 @endsection
@@ -172,7 +169,7 @@
                         @csrf
                         <div class="container" id="main-el">
                             @if ($errors->any())
-                            <div class="alert alert-danger py-2" style="font-size: 13px;">{{ $errors->first() }}</div>
+                            <div class="alert alert-danger py-2" style="font-size: 0.8125rem;">{{ $errors->first() }}</div>
                             @endif
 							<div class="mb-3">
                                 <label class="form-label" for="batchFile"><strong>MARC file</strong> <span class="text-muted">(.mrc, max 40 MB)</span></label>
@@ -191,7 +188,7 @@
                             <div id="mapCard" class="bm-card mb-3" style="display:none;">
                                 <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-1">
                                     <div>
-                                        <h6 class="mb-0">Material type mapping <span class="text-muted fw-normal" style="font-size:12px;">(optional)</span></h6>
+                                        <h6 class="mb-0">Material type mapping <span class="text-muted fw-normal" style="font-size:0.75rem;">(optional)</span></h6>
                                         <p class="bm-hint mb-2">Give each record its own Material Type from a value in the file, e.g. Koha's item type (942$c).
                                             Values you leave on <em>Use default</em>, and records without the field, get the <strong>Default Material Type</strong> below.</p>
                                     </div>
@@ -254,7 +251,7 @@
                                 </div>
                             </div>
                         </div>
-                        <button class="btn btn-info" type="button" onclick="saveImport()" style="color:#fff;">Import</button>
+                        <button class="btn btn-primary" type="button" data-call="saveImport">Import</button>
                     </form>
 				</div>
 			</div>
@@ -271,7 +268,10 @@
 @section('js')
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net/jquery.dataTables.js') }}"></script>
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net-bs5/dataTables.bootstrap5.js') }}"></script>
-<script>
+<script nonce="{{ cspNonce() }}">
+// This page's buttons (data-call; onclick= is blocked by the Content Security Policy).
+AdminActions.allow(['saveImport']);
+
 // ---- Batch Import: material type mapping ----------------------------------------------
 // Choosing a file analyzes it (nothing is imported): fields that can identify a record's
 // material type, with their values. Map values -> Material Type; unmapped values and records

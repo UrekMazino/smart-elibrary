@@ -4,23 +4,23 @@
      Script: admin.partials.catalog-list-filters-js. --}}
 <style>
     .cl-filters { display: flex; flex-wrap: wrap; gap: 10px 12px; align-items: flex-end; padding: 12px 14px; margin-bottom: 12px;
-                  background: #f8fafc; border: 1px solid #eef0f4; border-radius: 10px; }
+                  background: var(--ui-surface-2, #f8fafc); border: 1px solid var(--ui-border, #eef0f4); border-radius: 10px; }
     .cl-f { display: flex; flex-direction: column; flex: 1 1 150px; min-width: 140px; max-width: 220px; }
     .cl-f-wide { flex: 2 1 240px; max-width: 360px; }
-    .cl-f label { font-size: 10.5px; text-transform: uppercase; letter-spacing: .5px; color: #7987a1; font-weight: 700; margin-bottom: 4px; }
-    .cl-f .form-select { font-size: 13px; }
+    .cl-f label { font-size: 0.65625rem; text-transform: uppercase; letter-spacing: .5px; color: var(--ui-muted, #7987a1); font-weight: 700; margin-bottom: 4px; }
+    .cl-f .form-select { font-size: 0.8125rem; }
     /* A filter that's in use is outlined, so it's obvious why the list is shorter. */
     .cl-f.is-active .form-select,
-    .cl-f.is-active .select2-container .select2-selection { border-color: #6571ff; box-shadow: 0 0 0 2px rgba(101, 113, 255, .14); }
+    .cl-f.is-active .select2-container .select2-selection { border-color: var(--t-primary); box-shadow: 0 0 0 2px rgba(var(--t-primary-rgb), .14); }
     /* Author (select2) matches the native selects next to it: 34px, same border, text centred. */
-    .cl-f .select2-container .select2-selection--single { height: 34px; border-color: #e9ecef; border-radius: 4px; }
-    .cl-f .select2-container .select2-selection--single .select2-selection__rendered { line-height: 32px; padding: 0 28px 0 12.8px; font-size: 13px; color: #212529; }
+    .cl-f .select2-container .select2-selection--single { height: 34px; border-color: var(--ui-border, #e9ecef); border-radius: 4px; }
+    .cl-f .select2-container .select2-selection--single .select2-selection__rendered { line-height: 32px; padding: 0 28px 0 12.8px; font-size: 0.8125rem; color: var(--ui-text, #212529); }
     .cl-f .select2-container .select2-selection--single .select2-selection__arrow { height: 32px; right: 8px; width: 16px;
         background: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e") no-repeat center / 16px 12px; }
     .cl-f .select2-container .select2-selection--single .select2-selection__arrow b { display: none; }   /* Bootstrap's chevron instead */
     .cl-tail { display: flex; align-items: center; gap: 12px; margin-left: auto; min-height: 31px; }
-    .cl-summary { font-size: 12.5px; color: #55606b; white-space: nowrap; }
-    #fClear { font-size: 12.5px; padding: 0; text-decoration: none; }
+    .cl-summary { font-size: 0.78125rem; color: var(--ui-text-2, #55606b); white-space: nowrap; }
+    #fClear { font-size: 0.78125rem; padding: 0; text-decoration: none; }
     @media (max-width: 575.98px) {
         .cl-f, .cl-f-wide { max-width: none; flex-basis: 100%; }
         .cl-tail { margin-left: 0; width: 100%; justify-content: space-between; }

@@ -1,4 +1,4 @@
-{{-- Included inside a <script> next to OK_BADGE / NO_BADGE: the Cover column's tag for a generated
+{{-- Included inside a <script nonce="{{ cspNonce() }}"> next to OK_BADGE / NO_BADGE: the Cover column's tag for a generated
      placeholder cover. A placeholder counts as a cover; the tag tells staff it is not a real one. --}}
 @php
     $placeholderTag = settingEnabled('enable_placeholder_covers')

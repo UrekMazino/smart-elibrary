@@ -269,7 +269,7 @@
 
 @section('js')
 @include('opac.partials.guest-login-js')
-<script>
+<script nonce="{{ cspNonce() }}">
 (function () {
     'use strict';
     var RESULTS = @json(url('/results'));
@@ -447,7 +447,9 @@
     main.addEventListener('click', function (e) {
         var b = e.target.closest('[data-view]');
         if (!b || b.getAttribute('aria-pressed') === 'true') return;
-        document.cookie = 'sr_view=' + b.dataset.view + '; path=/; max-age=31536000; samesite=lax';
+        // On HTTPS a Secure cookie named __Host-sr_view (OWASP ASVS 3.3.1); plain sr_view on local http://.
+        var https = location.protocol === 'https:';
+        document.cookie = (https ? '__Host-sr_view=' : 'sr_view=') + b.dataset.view + '; path=/; max-age=31536000; samesite=lax' + (https ? '; secure' : '');
         load(location.href, { push: false });
     });
 

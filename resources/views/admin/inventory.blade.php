@@ -33,7 +33,7 @@
                 <div class="row">
                   <div class="col-12">
                     <input type="hidden" id="total_copies" value="{{getAllCopies()}}">
-                    <h3 style="font-size: 70px">{{ number_format(getAllCopies()) }}</h3>
+                    <h3 style="font-size: 4.375rem">{{ number_format(getAllCopies()) }}</h3>
                   </div>
                 </div>
               </div>
@@ -51,14 +51,14 @@
                     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
                       <a class="dropdown-item d-flex align-items-center" href="{{url('/admin/inventory/reportpresented')}}" target="_blank"><i class="icon-sm me-2 mdi mdi-file-excel-box"></i> <span class="">Excel File</span></a>
 
-                      <a class="dropdown-item d-flex align-items-center text-danger" href="javascript:;" onclick="resetInventory()"><i class="icon-sm me-2 mdi mdi-information text-danger"></i> <span class="">Reset</span></a>
+                      <a class="dropdown-item d-flex align-items-center text-danger" href="#" data-call="resetInventory"><i class="icon-sm me-2 mdi mdi-information text-danger"></i> <span class="">Reset</span></a>
 
                       </div>
                   </div>
                 </div>
                 <div class="row">
                   <div class="col-12">
-                    <h3 style="font-size: 70px" id="copypresented">{{ getCopiesPresented() }}</h3>
+                    <h3 style="font-size: 4.375rem" id="copypresented">{{ getCopiesPresented() }}</h3>
                   </div>
                 </div>
               </div>
@@ -80,7 +80,7 @@
                 </div>
                 <div class="row">
                   <div class="col-12">
-                    <h3 class="text-danger" style="font-size: 70px" id="copymissing"></h3>
+                    <h3 class="text-danger" style="font-size: 4.375rem" id="copymissing"></h3>
                     
                   </div>
                 </div>
@@ -135,7 +135,10 @@
 @section('js')
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net/jquery.dataTables.js') }}"></script>
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net-bs5/dataTables.bootstrap5.js') }}"></script>
-<script>
+<script nonce="{{ cspNonce() }}">
+// This page's buttons (data-call; onclick= is blocked by the Content Security Policy).
+AdminActions.allow(['resetInventory']);
+
   
   $(document).ready(function(){
 

@@ -94,9 +94,10 @@
 									<div class="col-row">
 										@foreach($rowItems as $it)
 											<div class="col-book{{ empty($it['url']) ? ' no-link' : '' }}">
-												<a class="col-link" href="{{ $it['url'] ?? '#' }}" @if(empty($it['url'])) onclick="return false" @endif title="{{ $it['title'] }}">
+												{{-- A book without a record page is a plain picture, not a dead link. --}}
+												@if(!empty($it['url']))<a class="col-link" href="{{ $it['url'] }}" title="{{ $it['title'] }}">@else<span class="col-link" title="{{ $it['title'] }}">@endif
 													<img loading="lazy" src="{{ $it['thumb'] }}" alt="{{ $it['title'] }}">
-												</a>
+												@if(!empty($it['url']))</a>@else</span>@endif
 												@if(!empty($it['catalog_id']))
 													@include('opac.partials.save-star', ['id' => $it['catalog_id'], 'title' => $it['title']])
 												@endif
@@ -114,7 +115,7 @@
 		</div>
 	</div>
 </section>
-<script type="text/javascript">
+<script nonce="{{ cspNonce() }}" type="text/javascript">
 (function () {
 	var root = document.querySelector('.shelf-browser');
 	if (!root) return;

@@ -283,6 +283,16 @@ function reservationUpdatesQuery($userId)
 		->where(fn ($q) => $q->whereNull('patron_seen_status')->orWhereColumn('status', '<>', 'patron_seen_status'));
 }
 
+/**
+ * asset() with the file's modification time as ?v=, so browsers fetch a changed file again instead of
+ * keeping an old copy. Without the stamp when the file isn't there.
+ */
+function versionedAsset(string $path): string
+{
+	$file = public_path($path);
+	return asset($path) . (is_file($file) ? '?v=' . filemtime($file) : '');
+}
+
 function getNotif($type)
 {
 	if(Auth::check())
@@ -453,8 +463,9 @@ function ensurePublicDir($dir)
 /**
  * Create a downscaled thumbnail copy of an image (JPG/PNG/WEBP).
  * Scales down to $maxWidth (never upscales), preserving aspect ratio + transparency.
+ * $asWebp writes WebP whatever the source was, at $quality.
  */
-function makeThumbnail($sourcePath, $destPath, $maxWidth = 250)
+function makeThumbnail($sourcePath, $destPath, $maxWidth = 250, $asWebp = false, $quality = 85)
 {
 	if (!extension_loaded('gd') || !file_exists($sourcePath)) return false;
 	$info = @getimagesize($sourcePath);
@@ -484,14 +495,25 @@ function makeThumbnail($sourcePath, $destPath, $maxWidth = 250)
 	imagecopyresampled($thumb, $src, 0, 0, 0, 0, $nw, $nh, $w, $h);
 
 	if (!ensurePublicDir(dirname($destPath))) return false;
-	switch ($info['mime']) {
-		case 'image/jpeg': imagejpeg($thumb, $destPath, 85); break;
+	switch ($asWebp ? 'image/webp' : $info['mime']) {
+		case 'image/jpeg': imagejpeg($thumb, $destPath, $quality); break;
 		case 'image/png':  imagepng($thumb, $destPath, 6); break;
-		case 'image/webp': imagewebp($thumb, $destPath, 85); break;
+		case 'image/webp': imagewebp($thumb, $destPath, $quality); break;
 	}
 	imagedestroy($src);
 	imagedestroy($thumb);
 	return true;
+}
+
+/**
+ * The newspaper-size copy of a news cover for the NEWS section on the OPAC home: at most 800 px
+ * wide, WebP, in public/news_print. A cover may be a 2 MB phone photo; this copy is ~60-90 KB and
+ * still sharp at the size the page shows it (the 250 px thumbnail would be blurry there).
+ */
+function makeNewsPrintCopy(string $coverPath): bool
+{
+	$dest = public_path('news_print/'.pathinfo($coverPath, PATHINFO_FILENAME).'.webp');
+	return makeThumbnail($coverPath, $dest, 800, true, 72);
 }
 
 /**
@@ -517,15 +539,19 @@ function getThumbnailResult($catalog_id)
  */
 function getThumbnailLink($catalog_id)
 {
+	return url('/')."/".getThumbnailPath($catalog_id);
+}
+
+/** The cover thumbnail's path in public/ ("thumb/x.jpg"): the same for every host, so it can be cached. */
+function getThumbnailPath($catalog_id)
+{
 	$loc = coverBase($catalog_id);
 	if ($loc) {
 		$thumb = 'thumb/'.basename($loc);
-		$url = file_exists(public_path($thumb)) ? $thumb : $loc;
-	} else {
-		$url = 'frontpages/no-preview.jpg';
+		return file_exists(public_path($thumb)) ? $thumb : $loc;
 	}
 
-	return url('/')."/".$url;
+	return 'frontpages/no-preview.jpg';
 }
 
 function getFrontpageLink($catalog_id)
@@ -1150,6 +1176,21 @@ function getLatestNews()
 	});
 }
 
+/** A news cover for the NEWS section: the newspaper-size copy, else the original upload, else null. */
+function newsPrintCoverUrl($news): ?string
+{
+	if (!$news->news_cover) return null;
+	$print = 'news_print/'.pathinfo($news->news_cover, PATHINFO_FILENAME).'.webp';
+	return url('/'.(file_exists(public_path($print)) ? $print : $news->news_cover));
+}
+
+/** The opening of a news article as plain text (a NEWS section page), cut at a word. */
+function newsExcerpt($news, int $limit = 600): string
+{
+	$text = html_entity_decode(preg_replace('/<[^>]*>/', ' ', (string) $news->news_body), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+	return Illuminate\Support\Str::limit(trim(preg_replace('/\s+/u', ' ', $text)), $limit, '…', true);
+}
+
 /**
  * Bust the 10-minute homepage/sidebar caches so content changes show immediately
  * (news add/edit/delete, material create/publish/update/delete, transferring an
@@ -1178,7 +1219,7 @@ function homeCacheKeys()
 }
 
 /**
- * Every cache key this app owns — what the Settings "Clear cache" button drops.
+ * Every cache key this app owns — what Settings → "Refresh cached pages" drops.
  * ADD NEW KEYS HERE when you add a cache, or the button silently won't clear it.
  *
  * Enumerated rather than Cache::flush() on purpose: the cache store also holds the
@@ -1211,7 +1252,8 @@ function getLatestMaterial()
 
 /**
  * Shape aggregate rows (each with catalog_id + title_statement) into homepage ranked-carousel
- * items: cover thumbnail, link, title, and a hover "detail" string built by $detailFn.
+ * items: cover thumbnail, link, title, and a hover "detail" string built by $detailFn. The cover
+ * and link are paths, for the cache; withSiteUrls() makes them addresses.
  */
 function rankItemsMap($rows, callable $detailFn)
 {
@@ -1219,17 +1261,28 @@ function rankItemsMap($rows, callable $detailFn)
 		return [
 			'catalog_id' => $r->catalog_id,
 			'title'      => $r->title_statement,
-			'thumb'      => getThumbnailLink($r->catalog_id),
-			'url'        => recordUrl($r),
+			'thumb'      => getThumbnailPath($r->catalog_id),
+			'url'        => recordPath($r),
 			'detail'     => $detailFn($r),
 		];
 	})->all();
 }
 
+/**
+ * Cached homepage items keep paths ('thumb', 'url'), made into this request's addresses here. An
+ * address names the host it was made on: covers cached from a visit on 127.0.0.1 were refused on
+ * localhost (the Content Security Policy loads images from the page's own host only), and in
+ * production one cached over http:// would be on https://.
+ */
+function withSiteUrls(array $items): array
+{
+	return array_map(fn ($item) => ['thumb' => url('/') . '/' . $item['thumb'], 'url' => url('/') . '/' . $item['url']] + $item, $items);
+}
+
 // Top-N most downloaded published materials (with total download count).
 function getMostDownloaded($limit = 10)
 {
-	return cache()->remember('home_top_downloaded', 600, function () use ($limit) {
+	return withSiteUrls(cache()->remember('home_top_downloaded', 600, function () use ($limit) {
 		$rows = DB::table('downloads as d')
 			->join('view_catalogs as v', 'v.catalog_id', '=', 'd.catalog_id')
 			->where('v.is_published', 1)->whereNull('v.deleted_at')
@@ -1237,13 +1290,13 @@ function getMostDownloaded($limit = 10)
 			->groupBy('d.catalog_id', 'v.title_statement')
 			->orderByDesc('total')->limit($limit)->get();
 		return rankItemsMap($rows, function ($r) { return number_format($r->total) . ' download' . ($r->total == 1 ? '' : 's'); });
-	});
+	}));
 }
 
 // Top-N most viewed published materials (with total view count).
 function getMostViewed($limit = 10)
 {
-	return cache()->remember('home_top_viewed', 600, function () use ($limit) {
+	return withSiteUrls(cache()->remember('home_top_viewed', 600, function () use ($limit) {
 		$rows = DB::table('views as vw')
 			->join('view_catalogs as v', 'v.catalog_id', '=', 'vw.catalog_id')
 			->where('v.is_published', 1)->whereNull('v.deleted_at')
@@ -1251,13 +1304,13 @@ function getMostViewed($limit = 10)
 			->groupBy('vw.catalog_id', 'v.title_statement')
 			->orderByDesc('total')->limit($limit)->get();
 		return rankItemsMap($rows, function ($r) { return number_format($r->total) . ' view' . ($r->total == 1 ? '' : 's'); });
-	});
+	}));
 }
 
 // Top-N highest average rating (published), tie-broken by number of votes.
 function getHighestRated($limit = 10)
 {
-	return cache()->remember('home_top_rated', 600, function () use ($limit) {
+	return withSiteUrls(cache()->remember('home_top_rated', 600, function () use ($limit) {
 		$rows = DB::table('ratings as r')
 			->join('view_catalogs as v', 'v.catalog_id', '=', 'r.catalog_id')
 			->where('v.is_published', 1)->whereNull('v.deleted_at')
@@ -1265,7 +1318,7 @@ function getHighestRated($limit = 10)
 			->groupBy('r.catalog_id', 'v.title_statement')
 			->orderByDesc('rating')->orderByDesc('votes')->limit($limit)->get();
 		return rankItemsMap($rows, function ($r) { return '★ ' . number_format($r->rating, 1) . ' · ' . $r->votes . ' rating' . ($r->votes == 1 ? '' : 's'); });
-	});
+	}));
 }
 
 /**
@@ -1285,11 +1338,12 @@ function isSavedRecord($catalogId): bool
  * Thumbnails only. Each shelf:
  *   ['key' => ..., 'label' => ..., 'items' => [ ['catalog_id','thumb','url','title'], ... ]].
  *
- * Every shelf is catalog-driven, so each item links to its record.
+ * Every shelf is catalog-driven, so each item links to its record. The cache keeps paths; the
+ * addresses are this request's (withSiteUrls).
  */
 function getShelves($limit = 45)
 {
-    return cache()->remember('home_shelves_' . $limit, 600, function () use ($limit) {
+    $shelves = cache()->remember('home_shelves_' . $limit, 600, function () use ($limit) {
     $shelves = [];
 
     // Only material types that have published records (most-populated first), so no empty shelves.
@@ -1311,8 +1365,8 @@ function getShelves($limit = 45)
         $items = $rows->map(function ($r) {
             return [
                 'catalog_id' => $r->catalog_id,
-                'thumb' => getThumbnailLink($r->catalog_id),
-                'url'   => recordUrl($r),
+                'thumb' => getThumbnailPath($r->catalog_id),
+                'url'   => recordPath($r),
                 'title' => $r->title_statement,
             ];
         })->all();
@@ -1331,6 +1385,8 @@ function getShelves($limit = 45)
 
     return $shelves;
     });
+
+    return array_map(fn ($shelf) => ['items' => withSiteUrls($shelf['items'])] + $shelf, $shelves);
 }
 
 
@@ -1771,7 +1827,13 @@ function seoRecordSegment($record, $title = null): string
 /** Absolute canonical URL for a record page. */
 function recordUrl($record, $title = null): string
 {
-	return url('/full-description/' . seoRecordSegment($record, $title));
+	return url('/' . recordPath($record, $title));
+}
+
+/** recordUrl() without the host ("full-description/…"), for values that are cached. */
+function recordPath($record, $title = null): string
+{
+	return 'full-description/' . seoRecordSegment($record, $title);
 }
 
 /**
@@ -1803,4 +1865,17 @@ function dataTableLength(Illuminate\Http\Request $request): int
 {
 	$length = (int) $request->input('length', 10);
 	return $length > 0 ? $length : PHP_INT_MAX;
+}
+
+/**
+ * This request's Content Security Policy nonce: inline <script> tags carry nonce="{{ cspNonce() }}" and
+ * App\Http\Middleware\SecurityHeaders puts the same value in the policy, so those scripts run and any
+ * script injected into a page does not (OWASP ASVS 3.4.3). A fresh random value per request.
+ */
+function cspNonce(): string
+{
+	if (! app()->bound('csp.nonce')) {
+		app()->instance('csp.nonce', base64_encode(random_bytes(16)));
+	}
+	return app('csp.nonce');
 }

@@ -42,7 +42,7 @@
                                         </div>
                                         <div class="row">
                                             <div class="col-md-12 col-sm-12 mb-3 text-center">
-                                                <button type="submit" class="btn btn-info me-2" style="color: white;">Save</button>
+                                                <button type="submit" class="btn btn-primary me-2">Save</button>
                                             </div>
                                         </div>
                                     </div>

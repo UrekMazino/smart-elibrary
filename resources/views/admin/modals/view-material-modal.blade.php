@@ -10,7 +10,7 @@
                     <div class="modal-body">
                         <div class="row">
                             <div class="col-sm-12 mb-3 mb-3">
-                                <label for="material-circulation-numbers" class="form-label">Circulation Number <sup><span style="color:red; font-size:14px;">*</span></sup></label>
+                                <label for="material-circulation-numbers" class="form-label">Circulation Number <sup><span style="color:red; font-size:0.875rem;">*</span></sup></label>
                                 <select class="form-select" id="material-circulation-numbers">
                                     <option selected disabled>Select a circulation number</option>
                                 </select>

@@ -6,26 +6,26 @@
 
     <style>
       /* Compact, readable catalog table */
-      #tbl { font-size: 13px; width: 100% !important; }
+      #tbl { font-size: 0.8125rem; width: 100% !important; }
       #tbl thead th {
-        font-size: 11px; text-transform: uppercase; letter-spacing: .4px;
-        color: #7987a1; white-space: nowrap; padding: 9px 10px;
-        border-bottom: 2px solid #eef0f2; vertical-align: middle;
+        font-size: 0.6875rem; text-transform: uppercase; letter-spacing: .4px;
+        color: var(--ui-muted, #7987a1); white-space: nowrap; padding: 9px 10px;
+        border-bottom: 2px solid var(--ui-border, #eef0f2); vertical-align: middle;
       }
       #tbl tbody td { padding: 6px 10px; vertical-align: middle !important; white-space: normal; }
       #tbl tbody tr { cursor: pointer; }
-      #tbl tbody tr:hover { background: #f7f9fc; }
-      .tbl-id { color: #a3adc2; font-size: 12px; }
+      #tbl tbody tr:hover { background: var(--ui-surface-2, #f7f9fc); }
+      .tbl-id { color: var(--ui-muted-2, #a3adc2); font-size: 0.75rem; }
       /* Full MARC 245 title (all subfields), wrapped — never cut to one line. */
-      .tbl-title { font-weight: 600; color: #22283b; display: block; white-space: normal; overflow-wrap: anywhere; min-width: 220px; }
+      .tbl-title { font-weight: 600; color: var(--ui-text, #22283b); display: block; white-space: normal; overflow-wrap: anywhere; min-width: 220px; }
       .tbl-authors {
-        color: #7987a1; display: inline-block; max-width: 220px;
+        color: var(--ui-muted, #7987a1); display: inline-block; max-width: 220px;
         overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle;
       }
       /* #tbl prefix beats the template's `.badge { color:#fff }` (same specificity otherwise). */
       #tbl .badge-type {
-        background: #e4e9f2; color: #33415c; font-weight: 600;
-        font-size: 11.5px; letter-spacing: .2px;
+        background: var(--ui-surface-2, #e4e9f2); color: var(--ui-text, #33415c); font-weight: 600;
+        font-size: 0.71875rem; letter-spacing: .2px;
       }
       @media (max-width: 1200px) { .tbl-authors { max-width: 150px; } }
       @media (max-width: 768px)  { .tbl-authors { max-width: 110px; } }
@@ -60,7 +60,7 @@
                   <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
                     <div>
                       <h6 class="card-title mb-1">On-Hold</h6>
-                      <p class="text-muted mb-0" style="font-size: 12.5px;">Records not published yet — hidden from the OPAC until you publish them.</p>
+                      <p class="text-muted mb-0" style="font-size: 0.78125rem;">Records not published yet — hidden from the OPAC until you publish them.</p>
                     </div>
                     @include('admin.partials.catalog-bulk-toolbar', ['list' => 'onhold'])
 
@@ -119,7 +119,7 @@
 @include('admin.partials.catalog-list-filters-js')
 @include('admin.partials.catalog-bulk-js', ['list' => 'onhold'])
 
-<script>
+<script nonce="{{ cspNonce() }}">
 
 $(document).ready(function(){
 
@@ -138,15 +138,16 @@ $(document).ready(function(){
     var NO_BADGE = '<span class="badge rounded-pill border border-danger text-danger">&#10007;</span>';
     @include('admin.partials.cover-placeholder-tag-js')
 
+    // The Action menu's items (data-call; onclick= is blocked by the Content Security Policy).
+    AdminActions.allow(['viewRecord', 'holdMaterial', 'publishMaterial', 'actionFrm']);
     function actionMenu(row) {
-      var escapedTitle = escapeHtml(row.title_statement);
       return '<div class="btn-group btn-group-sm" role="group">' +
-          '<button type="button" class="btn btn-info btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>' +
+          '<button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>' +
           '<div class="dropdown-menu dropdown-menu-end">' +
-              '<a class="dropdown-item" href="#" onclick="viewRecord(' + row.id + ', \'' + escapedTitle + '\')">View Details</a>' +
-              @can("publish-hold.catalog") '<a class="dropdown-item" href="#" onclick="publishMaterial(' + row.id + ')">Add to Record list</a>' + @endcan
-              @can("edit.catalog") '<a class="dropdown-item" href="#" onclick="actionFrm(' + row.id + ',\'edit\')">Edit</a>' + @endcan
-              @can("delete.catalog") '<a class="dropdown-item" href="#" onclick="actionFrm(' + row.id + ',\'delete\')">Delete</a>' + @endcan
+              '<a class="dropdown-item" href="#" ' + AdminActions.attrs('viewRecord', [row.id, row.title_statement]) + '>View Details</a>' +
+              @can("publish-hold.catalog") '<a class="dropdown-item" href="#" ' + AdminActions.attrs('publishMaterial', [row.id]) + '>Add to Record list</a>' + @endcan
+              @can("edit.catalog") '<a class="dropdown-item" href="#" ' + AdminActions.attrs('actionFrm', [row.id, 'edit']) + '>Edit</a>' + @endcan
+              @can("delete.catalog") '<a class="dropdown-item" href="#" ' + AdminActions.attrs('actionFrm', [row.id, 'delete']) + '>Delete</a>' + @endcan
           '</div>' +
       '</div>';
     }
@@ -272,6 +273,13 @@ function copyFrm(id)
 
 function actionFrm(id,action)
 {
+  // Opening the edit page changes nothing, so it goes straight there; only Delete asks first.
+  if(action == 'edit') {
+    appBusy.show();
+    window.location.href = "{{ route('edit-record', ['id' => ':id']) }}".replace(':id', id);
+    return;
+  }
+
   $("#action_catalog_id").val(id);
   Swal.fire({
       title: 'Are you sure?',
@@ -285,11 +293,6 @@ function actionFrm(id,action)
     }).then((result) => {
       if (result.value) {
         appBusy.show();
-
-        if(action == 'edit') {
-          let act = "{{ route('edit-record', ['id' => ':id']) }}".replace(':id', id);
-          window.location.href = act;
-        }
 
         if(action == 'delete') {
           let act = "{{ route('delete-record', ['id' => ':id']) }}".replace(':id', id);

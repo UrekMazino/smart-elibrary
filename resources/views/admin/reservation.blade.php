@@ -28,7 +28,7 @@
             <div class="card">
                 <div class="card-body">
                     <h6 class="card-title text-secondary mb-1">TRANSACTIONS</h6>
-                    <p class="text-muted mb-3" style="font-size: 12.5px;">Open reservations and checked-out materials: approve or decline a request, check it out, message the patron. Returned and declined ones are in History.</p>
+                    <p class="text-muted mb-3" style="font-size: 0.78125rem;">Open reservations and checked-out materials: approve or decline a request, check it out, message the patron. Returned and declined ones are in History.</p>
                     <div class="table-responsive">
                         <table id="tbl" class="table">
                           <thead>
@@ -74,7 +74,7 @@
           <div class="modal-footer">
             <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
             @can('manage.circulation.reservation')
-            <button type="button" class="btn btn-primary" onclick="sendReservationChat()"><i data-feather="send" class="icon-sm me-1"></i>Send</button>
+            <button type="button" class="btn btn-primary" data-call="sendReservationChat"><i data-feather="send" class="icon-sm me-1"></i>Send</button>
             @endcan
           </div>
         </div>
@@ -94,7 +94,7 @@
 @section('js')
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net/jquery.dataTables.js') }}"></script>
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net-bs5/dataTables.bootstrap5.js') }}"></script>
-<script>
+<script nonce="{{ cspNonce() }}">
   let message = "{{ session('message') }}";
   let header = "{{ session('header') }}";
   let viewMaterialUrl = '{{ url("/admin/reservation/material-json") }}';
@@ -111,7 +111,7 @@
 </script>
 <script src="{{ asset('js/admin/reservation.js') }}?v={{ filemtime(public_path('js/admin/reservation.js')) }}"></script>
 <script src="{{ asset('js/admin/view-modals.js') }}"></script>
-<script>
+<script nonce="{{ cspNonce() }}">
 $(document).ready(function() {
     @if(session('message'))
         timerNoReloadModal(message, header);

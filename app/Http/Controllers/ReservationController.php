@@ -371,7 +371,8 @@ class ReservationController extends Controller
             ->leftJoin('users', 'users.id', '=', 'reservation_messages.sender_id')
             ->where('reservation_messages.reservation_code', $reservation_code)
             ->orderBy('reservation_messages.created_at')
-            ->select('reservation_messages.*', 'users.name as sender_name')
+            // What the chat shows (OWASP ASVS 15.3.1).
+            ->select('reservation_messages.sender_role', 'reservation_messages.message', 'reservation_messages.created_at', 'users.name as sender_name')
             ->get();
 
         // Opening the thread marks the patron's messages as seen (clears the admin badge).
