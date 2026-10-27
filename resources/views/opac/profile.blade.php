@@ -27,6 +27,7 @@
 	.pf-btn-save:hover { background: #006f65; color: #fff; }
 	.pf-btn-pass { background: #fff; color: #c0392b; border: 1px solid #f0c8c2; }
 	.pf-btn-pass:hover { background: #fdecea; border-color: #e2b3ab; }
+	.pf-section { font-size: 16px; font-weight: 700; color: #222; margin: 0 0 6px; }
 
 	/* Change-password modal — matches the card above it */
 	.pw-modal { border: 0; border-radius: 10px; }
@@ -166,11 +167,23 @@
 						<button type="button" class="pf-btn pf-btn-save" data-pf="save">Save Changes</button>
 					</div>
 				</div>
+
+				@if ($browserSessions->isNotEmpty())
+					<div class="pf-card mt-4">
+						<div class="pf-body">
+							<h2 class="pf-section">Where you’re signed in</h2>
+							@include('partials.browser-sessions', ['sessions' => $browserSessions])
+						</div>
+					</div>
+				@endif
 			</div>
 			@include('opac.side')
 		</div>
 	</div>
 @include('opac.modals.change-password-modal')
+@if ($browserSessions->isNotEmpty())
+	@include('partials.browser-sessions-modal', ['sessions' => $browserSessions, 'modalClass' => 'pw-modal'])
+@endif
 @endsection
 
 

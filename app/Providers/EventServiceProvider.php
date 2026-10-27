@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Services\SessionLimits;
+use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
@@ -27,6 +29,12 @@ class EventServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        //
+        // A sign-in starts the clocks for the session limits. One made by the "Keep me signed in" cookie
+        // comes with remember = true, as does a sign-in with the box ticked.
+        Event::listen(Login::class, function (Login $event) {
+            if (request()->hasSession()) {
+                SessionLimits::start(request()->session(), $event->remember);
+            }
+        });
     }
 }

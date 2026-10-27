@@ -350,6 +350,8 @@
 	{{-- <script src="https://account.snatchbot.me/script.js"></script><script nonce="{{ cspNonce() }}">window.sntchChat.Init(257292)</script>  --}}
 	{{-- Ask the library: the chat button at the lower right (General inquiries; guests answered by email). --}}
 	@include('opac.partials.chat-widget')
+	{{-- Staff browsing the OPAC: the warning 2 minutes before a session limit signs them out. --}}
+	@include('partials.session-timeout')
 
 	{{-- Logout and the "back" breadcrumb, as listeners rather than onclick= (the Content Security Policy). --}}
 	<script nonce="{{ cspNonce() }}">

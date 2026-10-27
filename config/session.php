@@ -23,9 +23,13 @@ return [
     | Supported: "file", "cookie", "database", "apc",
     |            "memcached", "redis", "dynamodb", "array"
     |
+    | "database": the profile pages' "Where you're signed in" list reads the
+    | sessions table (App\Services\BrowserSessions). With another driver it
+    | shows nothing.
+    |
     */
 
-    'driver' => env('SESSION_DRIVER', 'file'),
+    'driver' => env('SESSION_DRIVER', 'database'),
 
     /*
     |--------------------------------------------------------------------------
@@ -36,11 +40,35 @@ return [
     | to be allowed to remain idle before it expires. If you want them
     | to immediately expire on the browser closing, set that option.
     |
+    | Keep it above the longest idle limit below (2 hours): a session that is
+    | gone can't tell the sign-in page why its user was signed out.
+    |
     */
 
-    'lifetime' => env('SESSION_LIFETIME', 120),
+    'lifetime' => env('SESSION_LIFETIME', 180),
 
     'expire_on_close' => false,
+
+    /*
+    |--------------------------------------------------------------------------
+    | Sign-in Limits
+    |--------------------------------------------------------------------------
+    |
+    | Minutes after which a signed-in user is signed out: "idle" minutes
+    | without a request, or "absolute" minutes after signing in, however
+    | active (OWASP ASVS 7.3.1, 7.3.2). Staff see a warning "warning"
+    | minutes before. A patron who ticks "Keep me signed in" stays signed in
+    | on that device for auth.guards.web.remember minutes instead, with no
+    | idle limit. App\Services\SessionLimits; the written policy is in
+    | docs/implemented/SECURITY_NOTES.md section 5.
+    |
+    */
+
+    'limits' => [
+        'staff' => ['idle' => 30, 'absolute' => 8 * 60],
+        'patron' => ['idle' => 2 * 60, 'absolute' => 12 * 60],
+        'warning' => 2,
+    ],
 
     /*
     |--------------------------------------------------------------------------
@@ -137,6 +165,9 @@ return [
         'SESSION_COOKIE',
         Str::slug(env('APP_NAME', 'laravel'), '_').'_session'
     ),
+
+    // The same prefix for the "Keep me signed in" cookie (App\Auth\SessionGuard).
+    'cookie_prefix' => $cookiePrefix,
 
     /*
     |--------------------------------------------------------------------------

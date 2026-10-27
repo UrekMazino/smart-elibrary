@@ -2,6 +2,12 @@
 
 @section('robots', 'noindex, nofollow')
 
+@section('css')
+<style>
+	#login .form-check-input:checked { background-color: #00a496; border-color: #00a496; }
+</style>
+@endsection
+
 
 @section('content')
         <div class="bg_color_2">
@@ -9,13 +15,37 @@
                 <div id="login">
                     <center><h3><img src="{{ asset('opac/img/elibrary-06.png') }}" alt="" width="200"class="img-fluid"></h3></center>
                     <div class="box_form">
+                        {{-- Why the session ended: a session limit (EnforceSessionLimits) or a password change (AuthenticateSession). --}}
+                        @if (session('signed_out'))
+                            <div class="alert alert-info" role="status">{{ session('signed_out') }}</div>
+                        @endif
+                        {{-- After a reset link: "Your password has been reset." --}}
+                        @if (session('status'))
+                            <div class="alert alert-success" role="status">{{ session('status') }}</div>
+                        @endif
+                        {{-- Wrong email or password, too many tries (LoginRequest), a banned account. --}}
+                        @if ($errors->any())
+                            <div class="alert alert-danger" role="alert" id="login-errors">
+                                @foreach ($errors->all() as $error)
+                                    <div>{{ $error }}</div>
+                                @endforeach
+                            </div>
+                        @endif
                         <form method="POST" action="{{ route('login') }}">
                         @csrf
                             <div class="form-group">
-                                <input type="email" class="form-control" name="email" placeholder="Your email address">
+                                <input type="email" class="form-control" name="email" value="{{ old('email') }}" placeholder="Your email address"
+                                       autocomplete="username" @if ($errors->any()) aria-describedby="login-errors" @endif>
                             </div>
                             <div class="form-group">
-                                <input type="password" class="form-control" placeholder="Your password" name="password" id="password">
+                                <input type="password" class="form-control" placeholder="Your password" name="password" id="password"
+                                       autocomplete="current-password" @if ($errors->any()) aria-describedby="login-errors" @endif>
+                            </div>
+                            {{-- Patrons only: LoginRequest ignores it for staff, who keep their limits. --}}
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" name="remember" value="1" id="remember" aria-describedby="remember-hint">
+                                <label class="form-check-label" for="remember">Keep me signed in on this device ({{ \App\Services\SessionLimits::duration(config('auth.guards.web.remember')) }})</label>
+                                <small class="form-text text-muted d-block mt-0" id="remember-hint">Not on a shared computer. Staff accounts can’t stay signed in.</small>
                             </div>
                             <a href="#0"><small>Forgot password?</small></a>
                             <div class="form-group text-center add_top_20">

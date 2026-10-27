@@ -43,6 +43,23 @@ class AuthenticationTest extends TestCase
         $this->assertGuest();
     }
 
+    public function test_a_failed_sign_in_says_why_and_keeps_the_email()
+    {
+        $user = User::factory()->create();
+
+        $this->from('/login')->post('/login', ['email' => $user->email, 'password' => 'wrong-password'])->assertRedirect('/login');
+
+        $this->get('/login')
+            ->assertSee('These credentials do not match our records.')
+            ->assertSee('value="' . $user->email . '"', false);
+    }
+
+    public function test_the_sign_in_page_confirms_a_password_reset()
+    {
+        $this->withSession(['status' => 'Your password has been reset.'])->get('/login')
+            ->assertSee('Your password has been reset.');
+    }
+
     public function test_banned_users_can_not_authenticate_and_see_the_banned_popup()
     {
         $user = User::factory()->create();

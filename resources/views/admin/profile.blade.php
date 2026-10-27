@@ -205,6 +205,11 @@
                             <i data-feather="lock" class="icon-sm me-1"></i>Change Password
                         </button>
                     </div>
+
+                    @if ($browserSessions->isNotEmpty())
+                        <div class="form-section mt-4">Where you’re signed in</div>
+                        @include('partials.browser-sessions', ['sessions' => $browserSessions])
+                    @endif
                 </div>
             </div>
         </div>
@@ -212,6 +217,9 @@
 
 </div>
 @include('admin.modals.change-password-modal')
+@if ($browserSessions->isNotEmpty())
+    @include('partials.browser-sessions-modal', ['sessions' => $browserSessions])
+@endif
 @endsection
 
 @section('js')

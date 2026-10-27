@@ -26,6 +26,7 @@ use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\ViewCatalog;
+use App\Services\BrowserSessions;
 use App\Services\DashboardService;
 
 class AdminController extends Controller
@@ -35,10 +36,10 @@ class AdminController extends Controller
         $this->middleware(['auth','admin']);
     }
 
-    public function profile()
+    public function profile(Request $request)
     {
         $user = Auth::user();
-        return view('admin.profile', ['user' => $user]);
+        return view('admin.profile', ['user' => $user, 'browserSessions' => BrowserSessions::of($request)]);
     }
 
     public function validateEmail(Request $request)

@@ -455,11 +455,13 @@ License: For each use you must have a valid license purchased only from above li
 
   <script nonce="{{ cspNonce() }}">
   // App-wide feedback for AJAX calls the server refuses, so nothing fails silently:
+  //   401 -> signed out (a session limit, or the password changed elsewhere): the sign-in page says why
   //   403 -> the role lacks the permission (routes enforce every permission server-side)
   //   419 -> the session / CSRF token expired
   (function () {
     var DEFAULT_403 = ['This action is unauthorized.', 'User does not have the right permissions.', 'User does not have the right roles.'];
     $(document).ajaxError(function (event, xhr) {
+      if (xhr.status === 401) { location.assign(@json(route('login'))); return; }
       if (!window.Swal || (xhr.status !== 403 && xhr.status !== 419)) return;
       if (xhr.status === 419) {
         Swal.fire({ icon: 'warning', title: 'Session expired', text: 'Please reload the page and try again.',
@@ -513,6 +515,9 @@ License: For each use you must have a valid license purchased only from above li
     if ($.fn.dataTable) $.fn.dataTable.ext.errMode = function (settings, techNote, message) { console.warn(message); };
   })();
   </script>
+
+  {{-- The warning 2 minutes before a session limit signs a staff member out. --}}
+  @include('partials.session-timeout')
 
 </body>
 </html>    

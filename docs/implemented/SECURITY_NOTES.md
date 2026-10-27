@@ -1,9 +1,9 @@
 # Security notes
 
 The rules the eLibrary enforces, written down as OWASP ASVS 5.0 asks: input rules (2.1.1), sign-in and
-rate limits (6.1.1), who may do what (8.1.1), and how fast vulnerable packages are patched (15.1.1).
-Checked against the code on 2026-10-26 (branch `FNRI-Week-4`). When a rule in the code changes, change
-it here in the same commit.
+rate limits (6.1.1), who may do what (8.1.1), how fast vulnerable packages are patched (15.1.1), and how
+long a sign-in lasts (7.1.1, 7.5.2). Checked against the code on 2026-10-27 (branch `FNRI-Week-4`). When a rule
+in the code changes, change it here in the same commit.
 
 ## 1. Input rules (ASVS 2.1.1)
 
@@ -54,6 +54,8 @@ separately (`app/Http/Middleware/ThrottleRequests.php`):
 | Admin: bulk record actions and exports | 30 (export downloads 60) |
 | Admin Settings: clear cache 10, AI status 20, index check 10, re-index 5, sitemap 5 | as listed |
 | Admin Appearance preview | 120 |
+| Staff session warning: time left; "Stay signed in" | 60 each |
+| Sign out one of your sessions, or all the others (takes the password) | 10 |
 
 Not limited by the app: the public search results, search suggestions and record pages. In production
 the web server or a proxy in front of it should cap requests per IP address.
@@ -116,3 +118,54 @@ or Developer, with one or more roles).
   or by the deadlines above for a critical or high advisory.
 
 **Exceptions.** None at present.
+
+## 5. Sessions (ASVS 7.1.1, 7.3.1, 7.3.2, 7.4.3, 7.5.2)
+
+**How long a sign-in lasts.**
+
+| Account | Signed out after this long without activity | Signed out this long after signing in, however active |
+|---|---|---|
+| Staff | 30 minutes | 8 hours |
+| Patron | 2 hours | 12 hours |
+| Patron who ticked "Keep me signed in" | No limit, on that device | 30 days |
+
+- **Activity** is any request to the site: opening a page, saving, searching. The staff warning asking
+  how much time is left does not count.
+- **Staff warning.** 2 minutes before a limit, a dialog counts down. Before the idle limit, "Stay signed
+  in" (or Esc) starts the 30 minutes again. Before the 8-hour limit it can only warn: save your work.
+  It checks with the server first, so working in another tab keeps it away. Staff browsing the OPAC get
+  it too.
+- **After a sign-out** the sign-in page says why, and signing in again returns to the page.
+- **"Keep me signed in on this device (30 days)"** on the sign-in page is for patrons. A staff account
+  that ticks it is not remembered, and a remember cookie made while an account was a patron's stops
+  working once it is a staff account. The page says not to use it on a shared computer. The cookie is
+  `__Host-remember_web`: Secure, HttpOnly, 30 days. Signing out on any device ends it on every device
+  (Laravel keeps one remember token per account).
+- **Password change.** Every other session of the account ends at its next request, and "Keep me signed
+  in" stops working on every device. This covers a change in the profile, a reset link and a librarian's
+  reset (Accounts → a patron or staff member → Reset Password). The device where someone changed their
+  own password stays signed in. A change to the password hashing settings has the same effect once per
+  account, when its stored hash is upgraded at the next sign-in.
+- **Compared with NIST SP 800-63B (2017).** Staff limits are within AAL2: sign in again every 12 hours,
+  and after 30 minutes without activity. Patron accounts hold only the patron's own loans, inquiries,
+  reservations and reviews, so they follow AAL1: sign in again at least every 30 days, the length of
+  "Keep me signed in".
+- **Where you're signed in** (the profile page, staff and patrons): every browser signed in to the
+  account, with when it was last active and its IP address; "Sign out" for each, and "Sign out all other
+  sessions". Both ask for the current password first (ASVS 7.5.2). Signing out one session deletes it. If
+  "Keep me signed in" was ticked on that device, the account also gets a new remember token, which ends
+  "Keep me signed in" on the other devices too (each stays signed in until its session ends). "Sign out
+  all other sessions" is Laravel's `logoutOtherDevices` (a new hash of the same password), and deletes
+  the other sessions. A device kept signed in by its cookie is listed only while it has a session; the
+  patron page says so. The page never shows a session id, only an HMAC of it.
+- **Kept in the database** (`SESSION_DRIVER=database`, table `sessions`): for every visitor, signed in or
+  not, the IP address, the browser (user agent), the last activity and the session's data. A row goes
+  when its session ends (sign-out, a limit) or `SESSION_LIFETIME` after its last request. Switching from
+  files signs everyone out once.
+- **Where.** `config/session.php` ("limits"), `config/auth.php` (`remember`),
+  `App\Services\SessionLimits`, `App\Http\Middleware\EnforceSessionLimits`,
+  `resources/views/partials/session-timeout.blade.php`, `App\Services\BrowserSessions` and
+  `partials/browser-sessions*.blade.php`; the password check is Laravel's `AuthenticateSession`
+  (`app/Http/Kernel.php`). `SESSION_LIFETIME` (how long an unused session is kept, 180 minutes) must stay
+  above the longest idle limit, or the sign-in page cannot say why a patron was signed out. Tests:
+  `tests/Feature/SessionLimitsTest.php`, `tests/Feature/BrowserSessionsTest.php`.
