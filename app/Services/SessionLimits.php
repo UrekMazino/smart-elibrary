@@ -64,6 +64,12 @@ class SessionLimits
         return ($left['idle'] !== null && $left['idle'] <= 0) || $left['absolute'] <= 0;
     }
 
+    /** Another session, from its stored data: when did its sign-in start? (Null for one from before the limits.) */
+    public static function signedInAtIn(array $sessionData): ?int
+    {
+        return $sessionData[self::KEY]['at'] ?? null;
+    }
+
     /** Another session, from its stored data: was "Keep me signed in" ticked for it? */
     public static function rememberedIn(array $sessionData): bool
     {

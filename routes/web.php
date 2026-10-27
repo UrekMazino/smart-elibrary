@@ -23,6 +23,7 @@ use App\Http\Controllers\ResultController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\RolePermissionController;
 use App\Http\Controllers\SettingController;
+use App\Http\Controllers\SignedInNowController;
 
 
 /*
@@ -398,7 +399,8 @@ Route::controller(AdminController::class)->group(function () {
 
     // Administration → Accounts hub. Its Roles and Administrators pages are for super_admin and developer whatever
     // their permissions say, so the hub is too: unticking access.accounts cannot hide the way back to Roles.
-    Route::get('/admin/accounts', 'accounts')->name('accounts')->middleware('role_or_permission:super_admin|developer|access.accounts');
+    // Signed in now (access.sessions) is one of its cards.
+    Route::get('/admin/accounts', 'accounts')->name('accounts')->middleware('role_or_permission:super_admin|developer|access.accounts|access.sessions');
     Route::get('/admin/patron', 'patron')->name('patrons')->middleware('can:access.accounts');
     Route::post('/admin/user/toggle-flag', 'toggleUserFlag')->middleware('can:manage.patron.status');
 
@@ -416,6 +418,12 @@ Route::controller(AdminController::class)->group(function () {
     Route::get('/admin/patron/json', 'patronjson')->middleware('can:access.accounts');
 
 
+});
+
+// Administration → Accounts → Signed in now: who is signed in; sign one person or everyone out (takes the password).
+Route::controller(SignedInNowController::class)->middleware(['auth', 'admin', 'can:access.sessions'])->group(function () {
+    Route::get('/admin/sessions', 'index')->name('admin.sessions');
+    Route::delete('/admin/sessions', 'signOut')->middleware('throttle:10,1')->name('admin.sessions.sign-out');
 });
 
 //BORROWED (Circulation → Transactions)

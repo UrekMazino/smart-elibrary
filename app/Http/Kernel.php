@@ -47,6 +47,8 @@ class Kernel extends HttpKernel
             \Illuminate\Session\Middleware\StartSession::class,
             // A password change (own, reset link or admin reset) ends every other session of the account (ASVS 7.4.3).
             \Illuminate\Session\Middleware\AuthenticateSession::class,
+            // A banned account is signed out everywhere, "Keep me signed in" included (ASVS 7.4.2).
+            \App\Http\Middleware\EndBannedSessions::class,
             // Idle and absolute limits on a sign-in (ASVS 7.3.1, 7.3.2).
             \App\Http\Middleware\EnforceSessionLimits::class,
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,

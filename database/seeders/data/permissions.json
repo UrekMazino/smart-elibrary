@@ -322,5 +322,14 @@
         "description": "Open Administration → Utilities → Theme: set the appearance every staff member starts with (each can still choose their own)",
         "created_at": "2026-10-22 17:00:00",
         "updated_at": "2026-10-22 17:00:00"
+    },
+    {
+        "id": 42,
+        "name": "access.sessions",
+        "guard_name": "web",
+        "display_name": "Signed in now",
+        "description": "Open Administration \u2192 Accounts \u2192 Signed in now: see who is signed in, and sign one person or everyone out",
+        "created_at": "2026-10-27 12:00:00",
+        "updated_at": "2026-10-27 12:00:00"
     }
 ]

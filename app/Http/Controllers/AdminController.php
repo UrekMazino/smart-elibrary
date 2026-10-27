@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules;
@@ -212,6 +213,13 @@ class AdminController extends Controller
             ]);
         });
 
+        // A ban signs the account out everywhere (ASVS 7.4.2): EndBannedSessions refuses its next request from any
+        // device and shows the sign-in page's banned popup, so its sessions are left for that rather than deleted.
+        // A new remember token ends "Keep me signed in" for good, also after the ban is lifted.
+        if ($request->flag === 'banned' && $user->is_banned) {
+            Auth::getProvider()->updateRememberToken($user, Str::random(60));
+        }
+
         return response()->json(['ok' => true, 'flag' => $request->flag, 'value' => (bool) $user->$col, 'declined' => $declined]);
     }
 
@@ -258,6 +266,17 @@ class AdminController extends Controller
                 'url'   => route('admin.list_permissions'),
                 'text'  => 'The permissions roles are built from, grouped by module, with their display names.',
                 'meta'  => Permission::count() . ' permissions',
+            ];
+        }
+        if (auth()->user()->can('access.sessions')) {
+            $signedIn = BrowserSessions::everyone(request());
+            $cards[] = [
+                'title' => 'Signed in now',
+                'icon'  => 'activity',
+                'url'   => route('admin.sessions'),
+                'text'  => 'Who is signed in right now, and on which browsers. Sign one person out everywhere, or everyone.',
+                'meta'  => $signedIn->where('staff', true)->count() . ' staff · '
+                         . ($patronsIn = $signedIn->where('staff', false)->count()) . ' ' . Str::plural('patron', $patronsIn) . ' signed in',
             ];
         }
 

@@ -56,6 +56,7 @@ separately (`app/Http/Middleware/ThrottleRequests.php`):
 | Admin Appearance preview | 120 |
 | Staff session warning: time left; "Stay signed in" | 60 each |
 | Sign out one of your sessions, or all the others (takes the password) | 10 |
+| Signed in now: sign one person or everyone out (takes the password) | 10 |
 
 Not limited by the app: the public search results, search suggestions and record pages. In production
 the web server or a proxy in front of it should cap requests per IP address.
@@ -72,11 +73,11 @@ or Developer, with one or more roles).
 - Permissions belong to roles. The matrix lives in Administration → Accounts → Roles, and its seed copy
   in `database/seeders/data/role_has_permissions.json`.
 
-| Role | Permissions (of 36) |
+| Role | Permissions (of 37) |
 |---|---|
 | `developer` | Everything, including permissions added later (`Gate::before`) |
-| `super_admin` | All 36 |
-| `system_admin` | 32: all except AI mode, material types, patron ban/block and editing import batches |
+| `super_admin` | All 37 |
+| `system_admin` | 32: all except AI mode, material types, patron ban/block, editing import batches and Signed in now |
 | `cataloging_admin` | 10: cataloguing, records, imports, MARC templates |
 | `circulation_admin` | 7: reservations, check-out/in, patron ban/block |
 | `faculty` | 6: create, edit and delete records |
@@ -90,7 +91,8 @@ or Developer, with one or more roles).
 - Staff browsing the OPAC cannot inquire, reserve or review, and their visits are not counted.
 - Full texts: read and download only published records, signed in and not banned; held records only
   in the staff preview.
-- Account states: banned = cannot sign in, read or download; blocked = cannot send inquiries or chat.
+- Account states: banned = signed out everywhere and cannot sign in, read or download (section 5); blocked =
+  cannot send inquiries or chat.
 
 ## 4. Patching vulnerable packages (ASVS 15.1.1)
 
@@ -119,7 +121,7 @@ or Developer, with one or more roles).
 
 **Exceptions.** None at present.
 
-## 5. Sessions (ASVS 7.1.1, 7.3.1, 7.3.2, 7.4.3, 7.5.2)
+## 5. Sessions (ASVS 7.1.1, 7.3.1, 7.3.2, 7.4.2, 7.4.3, 7.4.5, 7.5.2)
 
 **How long a sign-in lasts.**
 
@@ -162,10 +164,24 @@ or Developer, with one or more roles).
   not, the IP address, the browser (user agent), the last activity and the session's data. A row goes
   when its session ends (sign-out, a limit) or `SESSION_LIFETIME` after its last request. Switching from
   files signs everyone out once.
+- **Banned accounts** are signed out everywhere as soon as the ban is set, "Keep me signed in" included,
+  and any request a banned account still makes is refused: the sign-in page then shows the banned popup
+  (`EndBannedSessions`, ASVS 7.4.2). The ban used to be checked only when signing in with the password. A
+  deleted account is signed out too: it can no longer be found to sign in.
+- **Signed in now** (Administration → Accounts; permission `access.sessions`: super admin and developer):
+  how many staff and patrons are signed in, visitors not signed in over the last 30 minutes (roughly: one
+  per browser, crawlers left out), and each person with their browsers, when they signed in, when they
+  were last active and whether "Keep me signed in" is on. No IP addresses. "Sign out" ends all of one
+  person's sessions and their "Keep me signed in"; "Sign out everyone" does that for everyone but your
+  own session. Both ask for your password first (ASVS 7.4.5). Not your own account (use Log Out, or your
+  profile), and only a developer can sign out a developer. The page doesn't refresh by itself, which
+  would keep the viewer's own session active. Who signed whom out is not recorded yet: that is the
+  security event log (assessment gap 10).
 - **Where.** `config/session.php` ("limits"), `config/auth.php` (`remember`),
-  `App\Services\SessionLimits`, `App\Http\Middleware\EnforceSessionLimits`,
-  `resources/views/partials/session-timeout.blade.php`, `App\Services\BrowserSessions` and
-  `partials/browser-sessions*.blade.php`; the password check is Laravel's `AuthenticateSession`
-  (`app/Http/Kernel.php`). `SESSION_LIFETIME` (how long an unused session is kept, 180 minutes) must stay
-  above the longest idle limit, or the sign-in page cannot say why a patron was signed out. Tests:
-  `tests/Feature/SessionLimitsTest.php`, `tests/Feature/BrowserSessionsTest.php`.
+  `App\Services\SessionLimits`, `App\Http\Middleware\EnforceSessionLimits`, `EndBannedSessions`,
+  `resources/views/partials/session-timeout.blade.php`, `App\Services\BrowserSessions`,
+  `partials/browser-sessions*.blade.php` and `SignedInNowController`; the password check is Laravel's
+  `AuthenticateSession` (`app/Http/Kernel.php`). `SESSION_LIFETIME` (how long an unused session is kept,
+  180 minutes) must stay above the longest idle limit, or the sign-in page cannot say why a patron was
+  signed out. Tests: `SessionLimitsTest`, `BrowserSessionsTest`, `BanEndsSessionsTest`, `SignedInNowTest`
+  (`tests/Feature`).

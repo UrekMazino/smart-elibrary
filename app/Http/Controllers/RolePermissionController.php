@@ -52,6 +52,7 @@ class RolePermissionController extends Controller
             'access.configuration' => 'Configuration', 'view.config.template' => 'Configuration', 'create.config.template' => 'Configuration', 'edit.config.template' => 'Configuration', 'delete.config.template' => 'Configuration', 'manage.ai.mode' => 'Configuration', 'manage.material.types' => 'Configuration',
             'access.settings' => 'Configuration', 'access.ai.sync.monitor' => 'Configuration',
             'access.inquiry' => 'Inquiry', 'access.inventory' => 'Inventory', 'access.news' => 'News', 'access.reports' => 'Reports',
+            'access.sessions' => 'Security',
         ];
         return $map[$name] ?? 'Other';
     }
@@ -59,7 +60,7 @@ class RolePermissionController extends Controller
     /** All permissions grouped by module, in a sensible display order. */
     private function groupedPermissions(): array
     {
-        $order = ['Dashboard','Cataloging','Circulation','Accounts & Patrons','Configuration','Inquiry','Inventory','News','Reports','Other'];
+        $order = ['Dashboard','Cataloging','Circulation','Accounts & Patrons','Security','Configuration','Inquiry','Inventory','News','Reports','Other'];
         $grouped = [];
         foreach (Permission::orderBy('display_name')->get() as $p) {
             $grouped[$this->moduleOf($p->name)][] = $p;

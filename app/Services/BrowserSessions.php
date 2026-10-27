@@ -8,6 +8,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /**
  * "Where you're signed in" on the profile pages (OWASP ASVS 7.5.2): the account's sessions, each browser with when
@@ -27,8 +28,7 @@ class BrowserSessions
         $current = $request->session()->getId();
         $rows = self::rows($user);
         if (! $rows->contains('id', $current)) {
-            // A session is saved after its request: on its first one it isn't in the table yet.
-            $rows->push((object) ['id' => $current, 'user_agent' => $request->userAgent(), 'ip_address' => $request->ip(), 'last_activity' => now()->getTimestamp()]);
+            $rows->push(self::currentRow($request));
         }
 
         return $rows
@@ -38,11 +38,92 @@ class BrowserSessions
                 'browser' => self::describe($row->user_agent),
                 'mobile' => (bool) preg_match('/Mobi|iPhone|Android/', (string) $row->user_agent),
                 'ip' => $row->ip_address,
-                'last_active' => Carbon::createFromTimestamp($row->last_activity),
+                'last_active' => self::time($row->last_activity),
                 'current' => $row->id === $current,
             ])
             ->sortBy([['current', 'desc'], ['last_active', 'desc']])
             ->values();
+    }
+
+    /**
+     * Everyone signed in now (Administration → Accounts → Signed in now, OWASP ASVS 7.4.5): each person with their
+     * sessions, the most recently active first. No IP addresses: staff see who and on which browsers, not where.
+     *
+     * @return Collection<int, object{user: User, staff: bool, you: bool, last_active: Carbon, sessions: Collection}>
+     */
+    public static function everyone(Request $request): Collection
+    {
+        if (config('session.driver') !== 'database') {
+            return collect();
+        }
+        $current = $request->session()->getId();
+        $rows = self::table()->whereNotNull('user_id')->get();
+        if ($request->user() && ! $rows->contains('id', $current)) {
+            $rows->push(self::currentRow($request));
+        }
+        $users = User::with('roles')->whereIn('id', $rows->pluck('user_id')->unique())->get()->keyBy('id');   // not deleted accounts
+
+        return $rows
+            ->filter(fn ($row) => isset($users[$row->user_id]) && ($row->id === $current || self::stillSignedIn($users[$row->user_id], $row)))
+            ->groupBy('user_id')
+            ->map(function (Collection $rows, $id) use ($users, $request) {
+                $sessions = $rows->map(fn ($row) => (object) [
+                    'browser' => self::describe($row->user_agent),
+                    'mobile' => (bool) preg_match('/Mobi|iPhone|Android/', (string) $row->user_agent),
+                    'signed_in_at' => ($at = SessionLimits::signedInAtIn(self::data($row))) ? self::time($at) : null,
+                    'last_active' => self::time($row->last_activity),
+                    'remembered' => SessionLimits::rememberedIn(self::data($row)),
+                ])->sortByDesc('last_active')->values();
+
+                return (object) [
+                    'user' => $users[$id],
+                    'staff' => $users[$id]->isStaff(),
+                    'you' => (int) $id === (int) $request->user()?->getAuthIdentifier(),
+                    'last_active' => $sessions->first()->last_active,
+                    'sessions' => $sessions,
+                ];
+            })
+            ->sortByDesc('last_active')
+            ->values();
+    }
+
+    /** Visitors not signed in who sent a request in the last $minutes: one session per browser, crawlers left out. */
+    public static function visitors(int $minutes = 30): int
+    {
+        if (config('session.driver') !== 'database') {
+            return 0;
+        }
+
+        return self::table()
+            ->whereNull('user_id')
+            ->where('last_activity', '>=', now()->subMinutes($minutes)->getTimestamp())
+            ->pluck('user_agent')
+            ->reject(fn ($agent) => trim((string) $agent) === ''
+                || preg_match('/bot|crawl|spider|slurp|preview|headless|curl|wget|python|java\/|go-http|okhttp|httpclient/i', $agent))
+            ->count();
+    }
+
+    /**
+     * Signs out everyone signed in but this session (Signed in now), and ends "Keep me signed in" on every device.
+     * Developer accounts are left alone unless a developer does it, as everywhere else. Returns how many people.
+     */
+    public static function endEveryone(Request $request): int
+    {
+        $spared = $request->user()->hasRole('developer')
+            ? collect()
+            : User::whereHas('roles', fn ($q) => $q->where('name', 'developer'))->pluck('id');
+        $people = self::everyone($request)->reject(fn ($p) => $p->you || $spared->contains($p->user->id))->count();
+
+        if (config('session.driver') === 'database') {
+            self::table()
+                ->whereNotNull('user_id')
+                ->where('id', '!=', $request->session()->getId())
+                ->whereNotIn('user_id', $spared)
+                ->delete();
+        }
+        DB::table('users')->whereNotNull('remember_token')->whereNotIn('id', $spared)->update(['remember_token' => null]);
+
+        return $people;
     }
 
     /** Signs out one of the user's other sessions. False when it has ended already (or isn't theirs). */
@@ -77,6 +158,15 @@ class BrowserSessions
                 ->where('id', '!=', $request->session()->getId())
                 ->delete();
         }
+    }
+
+    /** Signs the user out everywhere: their sessions end, and "Keep me signed in" stops working on every device. */
+    public static function endAllOf(User $user): void
+    {
+        if (config('session.driver') === 'database') {
+            self::table()->where('user_id', $user->getAuthIdentifier())->delete();
+        }
+        Auth::getProvider()->updateRememberToken($user, Str::random(60));
     }
 
     /** What the page calls a session: an HMAC of its id. */
@@ -123,6 +213,9 @@ class BrowserSessions
         if ($row->last_activity <= now()->subMinutes((int) config('session.lifetime'))->getTimestamp()) {
             return false;   // expired, not yet swept away
         }
+        if ($user->is_banned) {
+            return false;   // EndBannedSessions signs it out at its next request
+        }
         $data = self::data($row);
         $hash = $data['password_hash_' . Auth::getDefaultDriver()] ?? null;
         $password = $user->getAuthPassword();
@@ -147,9 +240,31 @@ class BrowserSessions
         return DB::connection(config('session.connection'))->table(config('session.table', 'sessions'));
     }
 
+    /** A stored time, in the library's time zone (Carbon 3 would read it as UTC). */
+    private static function time(int $timestamp): Carbon
+    {
+        return Carbon::createFromTimestamp($timestamp, config('app.timezone'));
+    }
+
+    /** This request's session as a row of the table: it is saved after the request, so a new one isn't there yet. */
+    private static function currentRow(Request $request): object
+    {
+        return (object) [
+            'id' => $request->session()->getId(),
+            'user_id' => $request->user()->getAuthIdentifier(),
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'last_activity' => now()->getTimestamp(),
+            'data' => $request->session()->all(),
+        ];
+    }
+
     /** A session's stored data, as Laravel's session store reads it (objects in it are not rebuilt). */
     private static function data(object $row): array
     {
+        if (isset($row->data)) {
+            return $row->data;   // currentRow()
+        }
         $payload = base64_decode($row->payload);
         $data = config('session.serialization', 'php') === 'json'
             ? json_decode($payload, true)

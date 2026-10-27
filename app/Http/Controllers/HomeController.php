@@ -76,6 +76,7 @@ class HomeController extends Controller
             'view.config.template'         => 'admin/utilities',
             'access.ai.sync.monitor'       => 'admin/utilities',
             'manage.theme'                 => 'admin/utilities',
+            'access.sessions'              => 'admin/sessions',
         ];
         // Module access is required as well for pages inside a module.
         $module = [
