@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
+use App\Models\News;
 use App\Providers\RouteServiceProvider;
 
 use Illuminate\Http\Request;
@@ -74,14 +75,17 @@ class HomeController extends Controller
             'manage.material.types'        => 'admin/utilities',
             'view.config.template'         => 'admin/utilities',
             'access.ai.sync.monitor'       => 'admin/utilities',
+            'manage.theme'                 => 'admin/utilities',
+            'access.sessions'              => 'admin/sessions',
         ];
         // Module access is required as well for pages inside a module.
         $module = [
             'create.catalog' => 'access.cataloging', 'view.catalog.list' => 'access.cataloging', 'view.catalog.importlist' => 'access.cataloging',
             'circulation.reservation.view' => 'access.circulation', 'manage.circulation.checkouts' => 'access.circulation',
             'access.circulation.transaction' => 'access.circulation',
-            'access.settings' => 'access.configuration', 'manage.material.types' => 'access.configuration',
-            'view.config.template' => 'access.configuration', 'access.ai.sync.monitor' => 'access.configuration',
+            'access.settings' => 'access.configuration', 'manage.material.types' => 'access.utilities',
+            'view.config.template' => 'access.utilities', 'access.ai.sync.monitor' => 'access.utilities',
+            'manage.theme' => 'access.utilities',
         ];
 
         foreach ($pages as $permission => $url) {
@@ -96,5 +100,14 @@ class HomeController extends Controller
     public function index2()
     {
         return redirect(RouteServiceProvider::HOME);
+    }
+
+    /** NEWS section "Read more": one featured article, rendered into the home page's dialog. */
+    public function news($id)
+    {
+        $news = News::where('id', (int) $id)->where('featured', 'Yes')->first();
+        abort_unless($news, 404);
+
+        return view('opac.partials.news-article', ['news' => $news]);
     }
 }

@@ -9,10 +9,10 @@
         left: 50%;
         transform: translate(-50%, -50%);
         padding: 10px 20px;
-        background-color: #f1f1f1;
-        border: 1px solid #ccc;
+        background-color: var(--ui-surface-2, #f1f1f1);
+        border: 1px solid var(--ui-border, #ccc);
         border-radius: 4px;
-        font-size: 16px;
+        font-size: 1rem;
       }
 
       #checkin-transaction-status {
@@ -78,7 +78,7 @@
                                                         </div>
                                                     </div>
                                                     <div class="col-md-2 text-center">
-                                                        <button type="button" class="btn btn-info mb-1 mb-md-0" style="width:100%;" onclick="searchCheckout()">Search</button>    
+                                                        <button type="button" class="btn btn-primary mb-1 mb-md-0" style="width:100%;" data-call="searchCheckout">Search</button>    
                                                     </div>
                                                 </div>
                                             </div>
@@ -237,7 +237,7 @@
                                                         <input type="hidden" name="transaction_code" id="hidden-checkout-transaction-code" value="{{ isset($reservation) ? $reservation['transaction_code'] : '' }}">
                                                         <div class="row mt-3">
                                                             <div class="col-sm-4 offset-sm-4 text-center">
-                                                                <button type="button" class="btn btn-primary me-2" onclick="checkoutTransaction()" id="check-out-button" {{ isset($reservation) ? '' : 'disabled';}}>
+                                                                <button type="button" class="btn btn-primary me-2" data-call="checkoutTransaction" id="check-out-button" {{ isset($reservation) ? '' : 'disabled';}}>
                                                                     Check-out
                                                                 </button>
                                                                 <a href="{{ url('/admin/check-out-in') }}" class="btn btn-secondary">Clear</a>
@@ -267,7 +267,7 @@
                                             <input type="text" class="form-control text-center mb-2" disabled value="{{ session('transactionCode') ? session('transactionCode') : '0000000' }}" id="transactionCodeInput">
 
                                             <!-- The button used to copy the text -->
-                                            <button class="btn btn-info text-center" onclick="copyToClipBoard()" id="copy-btn">Copy Code</button>
+                                            <button class="btn btn-primary text-center" data-call="copyToClipBoard" id="copy-btn">Copy Code</button>
                                         </div>
                                         </div>
                                     </div>
@@ -292,7 +292,7 @@
                                                             </div>
                                                         </div>
                                                         <div class="col-md-2 text-center">
-                                                            <button type="button" id="search-transaction" class="btn btn-info mb-1 mb-md-0" style="width:100%;">Search</button>    
+                                                            <button type="button" id="search-transaction" class="btn btn-primary mb-1 mb-md-0" style="width:100%;">Search</button>    
                                                         </div>  
                                                     </div>
                                                 </div>
@@ -403,7 +403,7 @@
                                                                                                         </div>
                                                                                                         <div class="modal-footer">
                                                                                                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                                                                                            <button type="button" class="btn btn-primary" onclick="applyAddedTerm()" id="save-added-term" data-bs-toggle="modal">Apply</button>
+                                                                                                            <button type="button" class="btn btn-primary" data-call="applyAddedTerm" id="save-added-term" data-bs-toggle="modal">Apply</button>
                                                                                                         </div>
                                                                                                     </div>
                                                                                                 </div>
@@ -425,12 +425,12 @@
                                                                                 <tbody>
                                                                                     <tr>
                                                                                         <td>Total Hours Overdue</td>
-                                                                                        <td class="text-end" style="font-size:12px;" id="total-hrs-overdue">0</td>
+                                                                                        <td class="text-end" style="font-size:0.75rem;" id="total-hrs-overdue">0</td>
                                                                                         <td></td>
                                                                                     </tr>
                                                                                     <tr>
                                                                                         <td>Overdue Fine Rate / Hour</td>
-                                                                                        <td class="text-end" style="font-size:12px;" id="overdue-fine-rate">0.00</td>
+                                                                                        <td class="text-end" style="font-size:0.75rem;" id="overdue-fine-rate">0.00</td>
                                                                                         <td></td>
                                                                                     </tr>
                                                                                     <tr>
@@ -473,7 +473,7 @@
                                                                 <input type="hidden" name="library_code" id="hidden-library-code">
                                                                 <div class="row mt-3">
                                                                     <div class="col-sm-4 offset-sm-4 text-center">
-                                                                        <button type="button" id="check-in-btn" class="btn btn-primary me-2 mb-2" onclick="checkinTransaction()" disabled="disabled">Check-in</button>
+                                                                        <button type="button" id="check-in-btn" class="btn btn-primary me-2 mb-2" data-call="checkinTransaction" disabled="disabled">Check-in</button>
                                                                         <button type="button" id="add-fine-btn" class="btn btn-inverse-primary me-2 mb-2" data-bs-toggle="modal" data-bs-target="#addFineModal" disabled="disabled">
                                                                             Add fine / waive
                                                                         </button>
@@ -594,7 +594,10 @@
 
 @section('js')
 <script src="{{ asset('js/admin/check-out-in.js') }}"></script>
-<script> 
+<script nonce="{{ cspNonce() }}">
+// This page's buttons (data-call; onclick= is blocked by the Content Security Policy).
+AdminActions.allow(['searchCheckout', 'checkoutTransaction', 'copyToClipBoard', 'applyAddedTerm', 'checkinTransaction']);
+ 
     let findMaterialUrl = '{{ url("/admin/check-out-in/find-material") }}';
     let csrf ='{{ csrf_token() }}';
     let findPatronUrl = '{{ url("/admin/check-out-in/find-patron") }}';
@@ -603,7 +606,7 @@
     let updateCheckout = "{{ url('/admin/check-out/update') }}";
     let storeCheckout = "{{ url('/admin/check-out/store') }}";
 </script> 
-<script>
+<script nonce="{{ cspNonce() }}">
     function refreshPage()
     {
         location.reload();

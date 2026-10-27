@@ -80,37 +80,34 @@
             display: block;
         }
 
-        .btn-info {
-            color: #fff !important;
-        }
-
         /* ---- Redesign (matches create-record) ---- */
         .cr-section-title {
-            font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: #7987a1;
-            font-weight: 700; margin: 0 0 8px; padding-bottom: 5px; border-bottom: 1px solid #eef0f2;
+            font-size: 0.6875rem; text-transform: uppercase; letter-spacing: .5px; color: var(--ui-muted, #7987a1);
+            font-weight: 700; margin: 0 0 8px; padding-bottom: 5px; border-bottom: 1px solid var(--ui-border, #eef0f2);
         }
         .cr-section-title.mt-4 { margin-top: 14px !important; }
-        .cr-label { font-size: 12.5px; font-weight: 600; color: #33415c; margin-bottom: 4px; }
-        .cr-req { color: #c92a4b; }
-        .cr-hint { color: #a3adc2; font-size: 11.5px; margin-top: 4px; display: block; }
+        .cr-label { font-size: 0.78125rem; font-weight: 600; color: var(--ui-text, #33415c); margin-bottom: 4px; }
+        .cr-req { color: var(--ui-danger-ink, #c92a4b); }
+        .cr-hint { color: var(--ui-muted-2, #a3adc2); font-size: 0.71875rem; margin-top: 4px; display: block; }
 
         /* Fixed Fields (LDR / 008) guided panel — compact grid */
-        .ff-group { border: 1px solid #eef0f2; border-radius: 6px; background: #fbfcfd; padding: 8px 10px; margin-bottom: 6px; }
-        .ff-group-title { font-size: 12px; font-weight: 700; color: #22283b; margin-bottom: 7px; }
+        .ff-group { border: 1px solid var(--ui-border, #eef0f2); border-radius: 6px; background: var(--ui-surface, #fbfcfd); padding: 8px 10px; margin-bottom: 6px; }
+        .ff-group-title { font-size: 0.75rem; font-weight: 700; color: var(--ui-text, #22283b); margin-bottom: 7px; }
         .ff-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px 10px; }
         .ff-cell { display: flex; flex-direction: column; }
-        .ff-label { font-size: 10.5px; font-weight: 600; color: #55606b; margin-bottom: 2px; }
-        .ff-group .form-control, .ff-group .form-select { font-size: 12px; padding: 2px 8px; height: 28px; }
+        .ff-label { font-size: 0.65625rem; font-weight: 600; color: var(--ui-text-2, #55606b); margin-bottom: 2px; }
+        .ff-group .form-control, .ff-group .form-select { font-size: 0.75rem; padding: 2px 8px; height: 28px; }
         .ff-auto {
-            font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: #33415c;
-            background: #eef1f6; border-radius: 5px; padding: 4px 8px; letter-spacing: .5px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.75rem; color: var(--ui-text, #33415c);
+            background: var(--ui-surface-2, #eef1f6); border-radius: 5px; padding: 4px 8px; letter-spacing: .5px;
         }
-        .ff-hint { font-size: 10px; color: #a3adc2; margin-top: 2px; }
+        .ff-hint { font-size: 0.625rem; color: var(--ui-muted-2, #a3adc2); margin-top: 2px; }
 
         .cr-actions { display: flex; gap: 8px; flex-wrap: wrap; }
         .cr-footer {
-            position: sticky; bottom: 0; background: #fff; border-top: 1px solid #eef0f2;
+            position: sticky; bottom: 0; background: var(--ui-surface, #fff); border-top: 1px solid var(--ui-border, #eef0f2);
             padding: 14px 0 2px; margin-top: 6px;
+            display: flex; flex-wrap: wrap; gap: 8px;
         }
     </style>
     @include('admin.partials.marc-editor-styles')
@@ -120,7 +117,8 @@
 <div class="page-content">
     <nav class="page-breadcrumb">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ url('/admin/marc-templates') }}">Cataloging</a></li>
+            {{-- Cataloging leads to the Record List (it led to MARC Templates, a Utilities page most cataloguers may not open). --}}
+            <li class="breadcrumb-item">@can('view.catalog.list')<a href="{{ url('/admin/record-list') }}">Cataloging</a>@else Cataloging @endcan</li>
             <li class="breadcrumb-item active" aria-current="page">Edit</li>
         </ol>
     </nav>
@@ -131,10 +129,10 @@
                     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-1">
                         <h6 class="card-title mb-0">Edit Record</h6>
                         <div class="cr-actions">
-                            <button class="btn btn-outline-primary btn-sm" type="button" onclick="showAddFieldModal()">
+                            <button class="btn btn-outline-primary btn-sm" type="button" data-call="showAddFieldModal">
                                 <i data-feather="plus" class="icon-sm me-1"></i>Add Tag
                             </button>
-                            <button class="btn btn-outline-info btn-sm" type="button" onclick="showImportModal('edit')">
+                            <button class="btn btn-outline-primary btn-sm" type="button" data-call="showImportModal" data-args='["edit"]'>
                                 <i data-feather="file-text" class="icon-sm me-1"></i>Parse a Record
                             </button>
                             <a href="{{ route('edit-record', ['id' => $record->id]) }}" class="btn btn-outline-secondary btn-sm">
@@ -142,7 +140,7 @@
                             </a>
                         </div>
                     </div>
-                    <p class="text-muted mb-4" style="font-size: 12.5px;">
+                    <p class="text-muted mb-4" style="font-size: 0.78125rem;">
                         Edit this record&rsquo;s MARC fields. Use <strong>Add Tag</strong> to add another
                         field, or <strong>Parse a Record</strong> to replace the fields from a pasted MARC record.
                     </p>
@@ -151,7 +149,7 @@
                         @csrf
                         <div id="main-el">
                             @error('marcFile')
-                                <div class="alert alert-danger py-2" style="font-size: 13px;">{{ $message }}</div>
+                                <div class="alert alert-danger py-2" style="font-size: 0.8125rem;">{{ $message }}</div>
                             @enderror
 
                             <div class="cr-section-title">Record details</div>
@@ -194,7 +192,7 @@
                             {{-- Guided LDR/008 fixed-field editor. Hidden until a leader/008 exists. --}}
                             <div id="fixed-fields-card" style="display:none;">
                                 <div class="cr-section-title mt-4">Fixed Fields (LDR / 008)</div>
-                                <p class="text-muted mb-2" style="font-size: 12px;">
+                                <p class="text-muted mb-2" style="font-size: 0.75rem;">
                                     Structural positions are set automatically (marked <em>auto</em>). On edit the
                                     record status becomes <strong>c &mdash; corrected/revised</strong>. Verify the coded
                                     positions below &mdash; type of record and bibliographic level follow the material
@@ -211,8 +209,12 @@
                         </div>
 
                         <div class="cr-footer">
+                            {{-- Update Record keeps you in the editor; Update and View Record opens the record's page. --}}
                             <button class="btn btn-primary" type="submit">
                                 <i data-feather="save" class="icon-sm me-1"></i>Update Record
+                            </button>
+                            <button class="btn btn-outline-primary" type="submit" name="after" value="view">
+                                <i data-feather="eye" class="icon-sm me-1"></i>Update and View Record
                             </button>
                         </div>
                     </form>
@@ -233,7 +235,10 @@
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net/jquery.dataTables.js') }}"></script>
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/datatables.net-bs5/dataTables.bootstrap5.js') }}"></script>
 {{-- Config before the scripts that consume it. Edit uses the SAME shared MarcEditor as create. --}}
-<script>
+<script nonce="{{ cspNonce() }}">
+// This page's buttons (data-call; onclick= is blocked by the Content Security Policy).
+AdminActions.allow(['showAddFieldModal', 'showImportModal']);
+
   let getTemplateDetailsUrl = '{{ url("/admin/get-marc-template-details") }}';
   let getMarcDetailsUrl     = '{{ url("/admin/get-marc-tag-details") }}';
   let marcEditorMode        = 'edit';   // -> LDR$05 record status becomes 'c' (corrected/revised)
@@ -243,19 +248,15 @@
 </script>
 <script src="{{ asset('js/admin/marc-record-editor.js') }}"></script>
 <script src="{{ asset('js/admin/import/single-import.js') }}"></script>
-@if(session('success'))
-<script>
-    showSwal('custom-position');
-</script>
-@endif
-<script>
+@include('admin.partials.saved-toast')
+<script nonce="{{ cspNonce() }}">
     // "ADD" in the Add Tag modal -> append that MARC field to the record.
     $(document).on('click', '.add-field-link', function(event) {
         event.preventDefault();
         addTag($(this).data('row-id'));
     });
 </script>
-<script>
+<script nonce="{{ cspNonce() }}">
 $(document).ready(function(){
     $('#marc-table').DataTable({
         processing: true,

@@ -23,8 +23,8 @@ class RegistrationTest extends TestCase
             'name' => 'Test User',
             'email' => 'test@example.com',
             'contactnum' => '09171234567',
-            'password' => 'password',
-            'password_confirmation' => 'password',
+            'password' => self::GOOD_PASSWORD,
+            'password_confirmation' => self::GOOD_PASSWORD,
         ]);
 
         $this->assertAuthenticated();
@@ -40,8 +40,8 @@ class RegistrationTest extends TestCase
             'name' => 'Sneaky User',
             'email' => 'sneaky@example.com',
             'contactnum' => '09171234567',
-            'password' => 'password',
-            'password_confirmation' => 'password',
+            'password' => self::GOOD_PASSWORD,
+            'password_confirmation' => self::GOOD_PASSWORD,
             'usertype' => 'Administrator',
             'is_banned' => 0,
         ]);

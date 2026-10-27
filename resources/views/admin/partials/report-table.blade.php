@@ -1,7 +1,7 @@
 @php $count = is_countable($list) ? count($list) : 0; @endphp
 @isset($preview)
 	<div class="d-flex align-items-center mb-3">
-		<span class="badge bg-primary" style="font-size:13px;">{{ number_format($count) }}</span>
+		<span class="badge bg-primary" style="font-size:0.8125rem;">{{ number_format($count) }}</span>
 		<span class="ms-2 text-muted">record{{ $count == 1 ? '' : 's' }} found</span>
 	</div>
 @endisset
@@ -44,7 +44,7 @@
 		<thead><tr><th>#</th><th>Inquiry</th><th>Material</th><th>Name</th><th>Contact No.</th><th>Email</th><th>Date</th></tr></thead>
 		<tbody>
 			@foreach($list as $i => $r)
-				<tr><td>{{ $i+1 }}</td><td>{{ $r->message }}</td><td>{{ $r->title_statement ? formatTitle1($r->title_statement) : getTitle($r->catalog_id) }}</td><td>{{ $r->fullname }}</td><td>{{ $r->contactnum }}</td><td>{{ $r->email }}</td><td>{{ $r->created_at }}</td></tr>
+				<tr><td>{{ $i+1 }}</td><td>{{ $r->message }}</td><td>{{ $r->catalog_id ? ($r->title_statement ? formatTitle1($r->title_statement) : getTitle($r->catalog_id)) : 'General' }}</td><td>{{ $r->fullname }}{{ $r->user_id ? '' : ' (guest)' }}</td><td>{{ $r->contactnum }}</td><td>{{ $r->email }}</td><td>{{ $r->created_at }}</td></tr>
 			@endforeach
 		</tbody>
 	@elseif($table == 5)

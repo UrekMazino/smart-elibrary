@@ -50,6 +50,7 @@ class NewsController extends Controller
             $file->move(public_path('news_cover'), $coverName);
             $news->news_cover = 'news_cover/'.$coverName;
             makeThumbnail(public_path('news_cover/'.$coverName), public_path('thumb/'.$coverName));
+            makeNewsPrintCopy(public_path('news_cover/'.$coverName));   // the NEWS section's photo
         }
 
         $news->news_title = request()->news_title;
@@ -91,6 +92,7 @@ class NewsController extends Controller
             $file->move(public_path('news_cover'), $coverName);
             $article->news_cover = 'news_cover/'.$coverName;
             makeThumbnail(public_path('news_cover/'.$coverName), public_path('thumb/'.$coverName));
+            makeNewsPrintCopy(public_path('news_cover/'.$coverName));   // the NEWS section's photo
         }
 
         $article->save();

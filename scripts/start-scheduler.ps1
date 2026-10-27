@@ -6,7 +6,7 @@
 # (On Linux, use a cron entry instead: see DEPLOYMENT_CHECKLIST.md.)
 #
 # -Php: path to php.exe when it is not on PATH, e.g.
-#       C:\laragon\bin\php\php-8.3.16-Win32-vs16-x64\php.exe
+#       C:\laragon\bin\php\php-8.5.12-Win32-vs17-x64\php.exe
 param([string]$Php = "php")
 
 $root = Split-Path -Parent $PSScriptRoot   # the project folder (this script lives in scripts\)

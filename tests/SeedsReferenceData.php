@@ -25,10 +25,19 @@ trait SeedsReferenceData
         }
     }
 
-    /** The seeded roles and permissions; migrations already add some of them. */
+    /**
+     * The seeded roles and permissions, as a fresh install has them. Migrations create some permissions first, under
+     * ids the seed files give to other permissions, so inserting over them left grants pointing at the wrong ones
+     * (super admin lost manage.patron.status). The seeder truncates these tables; so does this.
+     */
     protected function seedAccess(): void
     {
-        $this->seedReferenceDataOver('permissions', 'roles', 'role_has_permissions');
+        DB::table('role_has_permissions')->delete();
+        DB::table('model_has_permissions')->delete();
+        DB::table('permissions')->delete();
+        $this->seedReferenceData('permissions');
+        $this->seedReferenceDataOver('roles');
+        $this->seedReferenceData('role_has_permissions');
         app(PermissionRegistrar::class)->forgetCachedPermissions();
     }
 

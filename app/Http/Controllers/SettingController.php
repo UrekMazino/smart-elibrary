@@ -4,12 +4,23 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Validation\Rule;
+use App\Models\Frontpage;
 use App\Models\Setting;
 use App\Models\ViewCatalog;
 use App\Services\AiSearchService;
 
 class SettingController extends Controller
 {
+    /** Each setting the page saves, and its value while the table has no row for it (what the rest of the app reads). */
+    private const DEFAULTS = [
+        'enable_placeholder_covers' => '1',
+        'ai_mode_enabled'           => '0',
+        'ai_answer_provider'        => AiSearchService::DEFAULT_PROVIDER,
+        'seo_discourage_indexing'   => '0',
+        'seo_verification_google'   => '',
+    ];
+
     public function __construct()
     {
         $this->middleware(['auth', 'admin']);
@@ -18,10 +29,33 @@ class SettingController extends Controller
     public function index()
     {
         return view('admin.settings', [
-            'settings' => Setting::pluck('value', 'key'),
-            'ai'       => app(AiSearchService::class),
-            'sitemap'  => $this->sitemapStatus(),
+            'current'     => $this->effective(Setting::pluck('value', 'key')),
+            'sitemap'     => $this->sitemapStatus(),
+            'coverSample' => $this->coverSample(),
         ]);
+    }
+
+    /** The settings in effect: stored values, else their defaults. */
+    private function effective($stored): array
+    {
+        $values = [];
+        foreach (self::DEFAULTS as $key => $default) {
+            $values[$key] = (string) ($stored[$key] ?? $default);
+        }
+        // An unknown stored provider is read as the default (AiSearchService::provider).
+        if (! array_key_exists($values['ai_answer_provider'], AiSearchService::PROVIDERS)) {
+            $values['ai_answer_provider'] = AiSearchService::DEFAULT_PROVIDER;
+        }
+
+        return $values;
+    }
+
+    /** A generated cover to show beside the Covers switch (its thumbnail), or null while there is none. */
+    private function coverSample(): ?string
+    {
+        $name = Frontpage::where('FrontPageName', 'like', 'gen-%')->latest('id')->value('FrontPageName');
+
+        return $name && is_file(public_path('thumb/' . $name)) ? 'thumb/' . $name : null;
     }
 
     /**
@@ -50,7 +84,7 @@ class SettingController extends Controller
         ];
     }
 
-    /** Rebuild sitemap.xml + robots.txt on demand (mirrors the Search index card's re-sync). */
+    /** Rebuild sitemap.xml + robots.txt on demand (Tools → Rebuild sitemap). */
     public function generateSitemap()
     {
         \Illuminate\Support\Facades\Artisan::call('sitemap:generate');
@@ -67,40 +101,79 @@ class SettingController extends Controller
 
     public function update(Request $request)
     {
-        // SEO text settings (empty string clears them).
-        foreach (['seo_verification_google'] as $key) {
-            Setting::updateOrCreate(
-                ['key' => $key],
-                ['value' => trim((string) $request->input($key, ''))]
-            );
+        // Search Console's whole tag pasted instead of its code: keep the code, <meta … content="CODE">.
+        // The tag itself would go into the page as text, and verification would fail without a word.
+        $code = trim((string) $request->input('seo_verification_google', ''));
+        if (preg_match('/content\s*=\s*["\']([^"\']*)["\']/i', $code, $m)) {
+            $code = trim($m[1]);
         }
+        $request->merge(['seo_verification_google' => $code]);
 
-        // Toggles: present in the POST (checkbox) => '1', absent => '0'
-        foreach (['enable_placeholder_covers', 'seo_discourage_indexing'] as $key) {
-            Setting::updateOrCreate(
-                ['key' => $key],
-                ['value' => $request->boolean($key) ? '1' : '0']
-            );
-        }
+        // Checked before anything is stored, so a refused save changes nothing.
+        $request->validate([
+            'seo_verification_google' => ['nullable', 'string', 'max:200', 'regex:/^[A-Za-z0-9_\-+\/=.]+$/'],
+            // "Who writes the answers": only a known provider.
+            'ai_answer_provider'      => ['nullable', Rule::in(array_keys(AiSearchService::PROVIDERS))],
+        ], [
+            'seo_verification_google.regex' => 'The Google verification code can only hold letters, digits and - _ + / = . (no spaces). Paste just the code: the part in quotes after content=.',
+            'seo_verification_google.max'   => 'The Google verification code is too long. Paste just the code: the part in quotes after content=.',
+        ]);
+
+        // Toggles: present in the POST (checkbox) => '1', absent => '0'. Text: an empty string clears it.
+        $values = [
+            'enable_placeholder_covers' => $request->boolean('enable_placeholder_covers') ? '1' : '0',
+            'seo_discourage_indexing'   => $request->boolean('seo_discourage_indexing') ? '1' : '0',
+            'seo_verification_google'   => $code,
+        ];
 
         // AI mode needs its own permission on top of access.configuration, so turning the
         // OPAC's AI on/off is a deliberate grant rather than something every config admin
         // inherits.
         //
-        // Handled separately, NOT in the loop above: the switch isn't rendered for someone
-        // without the permission, so its checkbox is absent from their POST — and the
-        // absent-means-'0' rule would silently switch AI mode off every time they saved
-        // this page for any other reason.
+        // Added only with that permission: the switch isn't rendered for someone without it,
+        // so its checkbox is absent from their POST — and the absent-means-'0' rule would
+        // silently switch AI mode off every time they saved this page for any other reason.
         if ($request->user()->can('manage.ai.mode')) {
-            Setting::updateOrCreate(
-                ['key' => 'ai_mode_enabled'],
-                ['value' => $request->boolean('ai_mode_enabled') ? '1' : '0']
-            );
+            $values['ai_mode_enabled'] = $request->boolean('ai_mode_enabled') ? '1' : '0';
+            // Absent (an older form) leaves the provider as it is.
+            if ($request->filled('ai_answer_provider')) {
+                $values['ai_answer_provider'] = $request->input('ai_answer_provider');
+            }
+        }
+
+        $before = $this->effective(Setting::pluck('value', 'key'));
+        foreach ($values as $key => $value) {
+            Setting::updateOrCreate(['key' => $key], ['value' => $value]);
         }
 
         settingsFlush();   // don't serve this request's stale memoised copy
 
-        return redirect('/admin/settings')->with('success', 'Settings saved.');
+        // The page says what this save changed (nothing, when every value was already in effect).
+        return redirect('/admin/settings')->with('saved', $this->changes($before, $values));
+    }
+
+    /** One sentence for each setting a save changed. */
+    private function changes(array $before, array $after): array
+    {
+        $said = [];
+        foreach ($after as $key => $value) {
+            if ($before[$key] === $value) {
+                continue;
+            }
+            $on = $value === '1';
+            $said[] = match ($key) {
+                'enable_placeholder_covers' => $on ? 'Records without a cover now get one made from their title.'
+                                                   : 'Records without a cover now show “No preview available”.',
+                'ai_mode_enabled'           => $on ? 'AI answers are now on in the OPAC.' : 'AI answers are now off in the OPAC.',
+                'ai_answer_provider'        => 'AI answers are now written by: ' . AiSearchService::PROVIDERS[$value] . '.',
+                'seo_discourage_indexing'   => $on ? 'Search engines are now asked not to list the catalogue.'
+                                                   : 'Search engines may now list the catalogue.',
+                'seo_verification_google'   => $value === '' ? 'The Google verification code was removed.'
+                                                             : 'The Google verification code was saved.',
+            };
+        }
+
+        return $said;
     }
 
     /**
@@ -117,6 +190,8 @@ class SettingController extends Controller
             'ok'       => $health['ok'],
             'status'   => $health['status'],
             'detail'   => $health['detail'],
+            'provider' => $ai->provider(),
+            'gemini'   => $health['gemini'] ?? null,   // {configured, model}: never the key
         ]);
     }
 
@@ -132,7 +207,7 @@ class SettingController extends Controller
      *   - sessions (separate store; clearing them would sign everyone out mid-work),
      *   - bootstrap/cache/{packages,services}.php (package discovery — regenerated by
      *     composer, not by us; deleting them here would be a foot-gun),
-     *   - the Meilisearch index (that's the Re-sync button, a different thing entirely).
+     *   - the Meilisearch index (that's Rebuild search index, a different thing entirely).
      *
      * Forgets the app's own keys (appCacheKeys) instead of Cache::flush(). The cache store
      * also holds the rate limiter's counters, so a flush would reset LOGIN brute-force
@@ -182,7 +257,7 @@ class SettingController extends Controller
      * and report how far it has drifted. Read-only — it changes nothing.
      *
      *   orphaned = indexed, but the row is gone from the DB (hard-delete / re-import /
-     *              migrate:fresh). ONLY a Re-sync clears these.
+     *              migrate:fresh). ONLY a rebuild clears these.
      *   stale    = indexed, but is_published / deleted_at no longer match the DB, so the
      *              OPAC filters act on wrong values (inflated counts, hidden/visible rows).
      *   missing  = in the DB but never indexed, so it can't be found by search.

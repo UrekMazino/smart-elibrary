@@ -38,7 +38,7 @@
 		<meta name="twitter:card" content="summary">
 	@endif
 
-	{{-- schema.org structured data (workstream B). Pushed as raw <script> blocks — @yield would
+	{{-- schema.org structured data (workstream B). Pushed as raw <script nonce="{{ cspNonce() }}"> blocks — @yield would
 	     HTML-escape the JSON. Safe to emit raw: seoJsonLdEncode() uses JSON_HEX_TAG. --}}
 	@stack('json_ld')
 
@@ -129,7 +129,7 @@
 								   padding:15px !important) stack each item's icon above its text. Keep the panel's row layout. */
 								.main-menu .nfy-pop a.nfy-item { display:flex; padding:11px 16px !important; }
 							</style>
-							<script>
+							<script nonce="{{ cspNonce() }}">
 							document.addEventListener('click', function (e) {
 								var pop = document.querySelector('.nfy-pop'); if (!pop) return;
 								if (e.target.closest('.nfy-bell-toggle')) { e.preventDefault(); pop.classList.toggle('open'); }
@@ -153,8 +153,7 @@
 									<form method="POST" id="frmLogout" action="{{ route('logout') }}">
 		                                @csrf
 		                            </form>
-									<li onclick="event.preventDefault();
-                                                getElementById('frmLogout').submit();"><a href="#">Logout</a></li>
+									<li data-logout><a href="#">Logout</a></li>
 								</ul>
 
 							</li>
@@ -336,7 +335,7 @@
 	<script src="{{ asset('opac/DataTables/DataTables-1.12.1/js/dataTables.bootstrap5.min.js') }}"></script>
 
 	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.25"></script>
-	<script>
+	<script nonce="{{ cspNonce() }}">
 		// While a popup is open SweetAlert hides the page's scrollbar and pads <body> by its width.
 		// These pages scroll on <html>, so the scrollbar stays and the padding only shifted the page
 		// 15px to the left (a gap at the right of the header). No padding for any popup.
@@ -348,8 +347,26 @@
 		@endif
 	@endauth
 	<!-- CHATBOT -->
-	{{-- <script src="https://account.snatchbot.me/script.js"></script><script>window.sntchChat.Init(257292)</script>  --}}
+	{{-- <script src="https://account.snatchbot.me/script.js"></script><script nonce="{{ cspNonce() }}">window.sntchChat.Init(257292)</script>  --}}
+	{{-- Ask the library: the chat button at the lower right (General inquiries; guests answered by email). --}}
+	@include('opac.partials.chat-widget')
+	{{-- Staff browsing the OPAC: the warning 2 minutes before a session limit signs them out. --}}
+	@include('partials.session-timeout')
 
+	{{-- Logout and the "back" breadcrumb, as listeners rather than onclick= (the Content Security Policy). --}}
+	<script nonce="{{ cspNonce() }}">
+		document.addEventListener('click', function (e) {
+			if (!e.target.closest('[data-logout]')) return;
+			e.preventDefault();
+			document.getElementById('frmLogout').submit();
+		});
+		// A "back" breadcrumb (e.g. Search Results) returns to the search the visitor came from, if any.
+		document.addEventListener('click', function (e) {
+			if (!e.target.closest('[data-crumb-back]') || document.referrer.indexOf('/results') === -1) return;
+			e.preventDefault();
+			history.back();
+		});
+	</script>
 	@yield('js')
 
 

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Services\BrowserSessions;
 use App;
 use Auth;
 use App\Models\User;
@@ -20,10 +21,10 @@ class OPACController extends Controller
         $this->middleware(['auth','patron']);
     }
 
-    public function profile()
+    public function profile(Request $request)
     {
         $user = User::find(Auth::id());
-        return view('opac.profile', ['user' => $user]);
+        return view('opac.profile', ['user' => $user, 'browserSessions' => BrowserSessions::of($request)]);
     }
 
     /**
@@ -171,7 +172,8 @@ class OPACController extends Controller
 
     public function inquiries()
     {
-        $list = App\Models\View_inquiry::where('user_id',Auth::user()->id)->paginate(5);
+        // Newest first: the chat button adds General inquiries here too, and the latest is the one to check.
+        $list = App\Models\View_inquiry::where('user_id',Auth::user()->id)->orderByDesc('created_at')->paginate(5);
         $flag = true;
         if(count($list) == 0)
         {

@@ -78,7 +78,7 @@ final class CatalogSearchParams
         }
 
         $p->sort = array_key_exists($sort = (string) $r->query('sort', 'relevance'), self::SORTS) ? $sort : 'relevance';
-        $view = (string) ($r->query('view') ?? $r->cookie('sr_view') ?? 'list');
+        $view = (string) ($r->query('view') ?? $r->cookie('__Host-sr_view') ?? $r->cookie('sr_view') ?? 'list');   // HTTPS name first
         $p->view = in_array($view, ['list', 'grid'], true) ? $view : 'list';
         $p->page = max(1, min(2000, (int) $r->query('page', 1)));
 

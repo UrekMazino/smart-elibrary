@@ -12,6 +12,7 @@ class EncryptCookies extends Middleware
      * @var array<int, string>
      */
     protected $except = [
-        'sr_view',   // OPAC search results: list / grid preference, set by the page's script
+        'sr_view',          // OPAC search results: list / grid preference, set by the page's script
+        '__Host-sr_view',   // the same over HTTPS (Secure, prefixed)
     ];
 }

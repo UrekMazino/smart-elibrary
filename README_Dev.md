@@ -1,9 +1,5 @@
-1. Clone the reposatory
-2. run composer update
-3. create a database "elibrarydb"
-4. import the database located at database/sql/elib_new.sql
-5. create an .env file and configure its parameter
-6. run php artisan storage:link
+**Setting it up** on your machine, on staging or on production: [`DEPLOYMENT_CHECKLIST.md`](docs/implemented/DEPLOYMENT_CHECKLIST.md)
+(Part A is local development: `composer install`, `.env`, `php artisan migrate --seed`, `storage:link`, search).
 
 # smart-eLibrary
 
@@ -13,7 +9,7 @@ FPRDI/DOST agri-forestry catalog / OPAC (Laravel), built RAG-ready for the **Pro
 
 **📖 Documentation**
 - **Full-stack rebuild** (this app + Hermes + RAG): [`DEPLOYMENT_RUNBOOK.md`](https://github.com/UrekMazino/hermes-with-rag/blob/main/DEPLOYMENT_RUNBOOK.md) in the `hermes-with-rag` repo — the single ordered entry point.
-- **Deploying this app:** [`DEPLOYMENT_CHECKLIST.md`](docs/implemented/DEPLOYMENT_CHECKLIST.md) — ordered deploy steps, required `.env`, out-of-git state, and the cross-repo change record.
+- **Deploying this app:** [`DEPLOYMENT_CHECKLIST.md`](docs/implemented/DEPLOYMENT_CHECKLIST.md) ([PDF](docs/implemented/DEPLOYMENT_CHECKLIST.pdf)) — local, staging and production, each step by step; `.env` per environment, web server, PHP, scheduler, backups, moving a database forward, troubleshooting.
 - **This repo's docs** ([`docs/`](docs/README.md), sorted into implemented and not implemented):
   - Implemented: [`QA_REFERENCE.md`](docs/implemented/QA_REFERENCE.md) (pages and functions, for testing; [PDF](docs/implemented/QA_REFERENCE.pdf)) · [`LARAVEL_UPGRADE_RUNBOOK.md`](docs/implemented/LARAVEL_UPGRADE_RUNBOOK.md) · [`MEILISEARCH_SETUP.md`](docs/implemented/MEILISEARCH_SETUP.md) · [`RAG_CATALOG_SYNC_PLAN.md`](docs/implemented/RAG_CATALOG_SYNC_PLAN.md) · [`OPAC_SEO_PLAN.md`](docs/implemented/OPAC_SEO_PLAN.md) · [database documentation](docs/implemented/database/)
   - Not implemented: [`API_INTEGRATION_PLAN.md`](docs/not-implemented/API_INTEGRATION_PLAN.md) · [`RAG_INTEGRATION_PLAN.md`](docs/not-implemented/RAG_INTEGRATION_PLAN.md) · [`EVENT_DRIVEN_SIDE_EFFECTS_PLAN.md`](docs/not-implemented/EVENT_DRIVEN_SIDE_EFFECTS_PLAN.md) · [`Z3950_SRU_INTEGRATION_PLAN.md`](docs/not-implemented/Z3950_SRU_INTEGRATION_PLAN.md)
@@ -22,6 +18,7 @@ FPRDI/DOST agri-forestry catalog / OPAC (Laravel), built RAG-ready for the **Pro
 - **On GitHub, every push and pull request:** [`.github/workflows/security.yml`](.github/workflows/security.yml) scans for secrets (gitleaks, full history), vulnerable PHP / npm packages (`composer audit`, `npm audit`) and risky code (Semgrep); [`tests.yml`](.github/workflows/tests.yml) runs PHPUnit against a throwaway MySQL. Dependabot ([`.github/dependabot.yml`](.github/dependabot.yml)) opens update PRs weekly.
 - **On your machine:** run `git config core.hooksPath .githooks` once per clone. Then [`.githooks/pre-commit`](.githooks/pre-commit) blocks commits that add a secret, and [`.githooks/pre-push`](.githooks/pre-push) runs the same checks as the workflows ([`scripts/security-check.sh`](scripts/security-check.sh), ~30 s) and stops a push if any fail. Run them by hand with `composer security` (`composer security -- --no-tests` skips PHPUnit). Needs [gitleaks](https://github.com/gitleaks/gitleaks/releases) and `semgrep` (`pip install semgrep==1.178.0`) on PATH or in `~/.local/bin`; tests need the `elibrarydb_test` database.
 - **Never commit** `.env`, private keys or real password hashes. Seeded accounts get `SEED_USER_PASSWORD` from `.env`.
+- **On the server:** one PHP only (8.5.12 or newer, older versions deleted), `session.upload_progress.enabled = 0`, and the production `php.ini` settings: [DEPLOYMENT_CHECKLIST.md](docs/implemented/DEPLOYMENT_CHECKLIST.md), *D3. PHP settings*.
 
 ---
 
@@ -94,12 +91,24 @@ The Laravel framework is open-sourced software licensed under the [MIT license](
 
 DEVELOPERS NOTE:
 
+## Admin appearance (themes, backgrounds, contrast, text size, motion, font)
+Each staff member's Appearance (profile menu) and the library default (Utilities → Theme) are `App\Services\Appearance`, which also does the contrast maths (WCAG 2.2); the form's live preview asks it through `/admin/appearance/preview`. The admin loads `public/css/admin-theme.css` and `public/css/admin-theme-dark.css`, **generated** copies of NobleUI's `demo1/style.css` (light) and `demo2/style.css` (dark) with their theme colours, neutral colours, pixel font sizes, font and sidebar width as variables: don't edit them by hand; if the template's stylesheets change, run `node scripts/admin-theme.mjs` again. The layout turns one of them on by its `media` attribute (both, by the device's setting, for Follow my device).
+
+In our own admin styles, so they follow the person's choice:
+- the accent: `var(--t-primary)` (and `color-mix()` tints of it) instead of the indigo `#6571ff`; as text, `var(--ui-accent-text, var(--t-primary))`;
+- neutral colours: `var(--ui-ROLE, #the-original)`, with ROLE one of `page`, `surface` (cards, menus), `surface-2` (raised: disabled fields, hover), `border`, `text`, `text-2`, `muted`; status tints: `--ui-{success,danger,warning,info}-ink` (text), `-soft` (background), `-line` (border); our navy `#33509c`: `--ui-navy` (text, borders), `--ui-navy-solid` (behind white text). The roles are only set for a background, high contrast or dark mode, so the fallback is what everyone else sees;
+- font sizes in `rem`; colours used from JavaScript (charts) read from these variables, as `public/js/admin/dashboard.js` does.
+
 ## php.ini
 memory_limit=2048M
 
 max_execution_time=1200
 
 max_input_time=-1
+
+session.upload_progress.enabled=0   (security: see [DEPLOYMENT_CHECKLIST.md](docs/implemented/DEPLOYMENT_CHECKLIST.md), *D3. PHP settings*)
+
+Keep only one PHP installed (8.5.12 or newer); reload Apache in Laragon after editing php.ini.
 
 ## uploading large dump file into db using shell
 mysql -h localhost -u username databasename < dump.sql

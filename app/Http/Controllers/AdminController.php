@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules;
@@ -26,6 +27,7 @@ use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\ViewCatalog;
+use App\Services\BrowserSessions;
 use App\Services\DashboardService;
 
 class AdminController extends Controller
@@ -35,10 +37,10 @@ class AdminController extends Controller
         $this->middleware(['auth','admin']);
     }
 
-    public function profile()
+    public function profile(Request $request)
     {
         $user = Auth::user();
-        return view('admin.profile', ['user' => $user]);
+        return view('admin.profile', ['user' => $user, 'browserSessions' => BrowserSessions::of($request)]);
     }
 
     public function validateEmail(Request $request)
@@ -150,8 +152,8 @@ class AdminController extends Controller
 
     public function inquiry()
     {
-        // Inquiries now only come from registered users (guests are directed to email),
-        // so we surface each patron's ban/block state for the admin controls.
+        // Inquiries from patrons (about a material, or General from the chat button) and General ones
+        // from guests (no account; answered by email). Each patron's ban/block state feeds the controls.
         $list = App\Models\View_inquiry::get();
 
         // Reservation conversations a patron wrote in (the Messages chat on their Transactions page,
@@ -170,19 +172,15 @@ class AdminController extends Controller
                    DB::raw("SUM(m.sender_role = 'patron' AND m.seen_at IS NULL) as unread")]);
 
         $userFlags = App\Models\User::whereIn('id', $list->pluck('user_id')->merge($threads->pluck('user_id'))->filter()->unique()->values())
-                        ->get(['id', 'is_banned', 'is_blocked'])->keyBy('id');
+                        ->get(['id', 'is_banned', 'is_blocked', 'patrontypes_id'])->keyBy('id');
+        // The User type column: the sender's patron type (Student, Professional, ...), or Guest without an account.
+        $patronTypes = DB::table('patrontypes')->pluck('types', 'id');
 
         // Inquiries the current admin hasn't opened since the latest patron message
         // (drives the red "unseen" dot on each Reply button). array_flip -> O(1) lookup.
         $unread = array_flip(App\Services\NotificationService::unreadInquiryIds(Auth::user()));
 
-        return view('admin.inquiry', ['list' => $list, 'threads' => $threads, 'userFlags' => $userFlags, 'unread' => $unread]);
-    }
-
-    public function inquiryjson()
-    {
-        $list = App\Models\View_inquiry::get();
-        return $list;
+        return view('admin.inquiry', ['list' => $list, 'threads' => $threads, 'userFlags' => $userFlags, 'patronTypes' => $patronTypes, 'unread' => $unread]);
     }
 
     // Toggle a patron's ban/block flag (used by Patrons, Inquiry and Reservation pages).
@@ -214,6 +212,13 @@ class AdminController extends Controller
                 'declined_by' => auth()->id(),
             ]);
         });
+
+        // A ban signs the account out everywhere (ASVS 7.4.2): EndBannedSessions refuses its next request from any
+        // device and shows the sign-in page's banned popup, so its sessions are left for that rather than deleted.
+        // A new remember token ends "Keep me signed in" for good, also after the ban is lifted.
+        if ($request->flag === 'banned' && $user->is_banned) {
+            Auth::getProvider()->updateRememberToken($user, Str::random(60));
+        }
 
         return response()->json(['ok' => true, 'flag' => $request->flag, 'value' => (bool) $user->$col, 'declined' => $declined]);
     }
@@ -261,6 +266,17 @@ class AdminController extends Controller
                 'url'   => route('admin.list_permissions'),
                 'text'  => 'The permissions roles are built from, grouped by module, with their display names.',
                 'meta'  => Permission::count() . ' permissions',
+            ];
+        }
+        if (auth()->user()->can('access.sessions')) {
+            $signedIn = BrowserSessions::everyone(request());
+            $cards[] = [
+                'title' => 'Signed in now',
+                'icon'  => 'activity',
+                'url'   => route('admin.sessions'),
+                'text'  => 'Who is signed in right now, and on which browsers. Sign one person out everywhere, or everyone.',
+                'meta'  => $signedIn->where('staff', true)->count() . ' staff · '
+                         . ($patronsIn = $signedIn->where('staff', false)->count()) . ' ' . Str::plural('patron', $patronsIn) . ' signed in',
             ];
         }
 
@@ -436,7 +452,8 @@ class AdminController extends Controller
         $totalRecordswithFilter = $applySearch($applyStatus($base()))->count();
 
         $records = $applySearch($applyStatus($base()))
-            ->select('id', 'username', 'name', 'email', 'contactnum', 'library_code', 'location', 'created_at', 'is_banned', 'is_blocked')
+            // Only what the Patrons table shows (OWASP ASVS 15.3.1).
+            ->select('id', 'name', 'email', 'contactnum', 'library_code', 'location', 'created_at', 'is_banned', 'is_blocked')
             ->orderBy($columnName, $columnSortOrder)
             ->skip($start)
             ->take($rowperpage)
@@ -447,7 +464,6 @@ class AdminController extends Controller
         foreach ($records as $record) {
             $data_arr[] = array(
                 "id"           => $record->id,
-                "username"     => $record->username,
                 "name"         => $record->name,
                 "email"        => $record->email,
                 "contactnum"   => $record->contactnum,
@@ -513,7 +529,7 @@ class AdminController extends Controller
         // Eager-load roles + their permissions: without this each row fires its own
         // queries for getRoleNames()/getPermissionsViaRoles() (N+1).
         $records = $applySearch($base())
-            ->select('id', 'username', 'name', 'email', 'contactnum', 'location', 'created_at')
+            ->select('id', 'name', 'email', 'contactnum', 'location', 'created_at')   // what the table shows (ASVS 15.3.1)
             ->with('roles.permissions')
             ->orderBy($columnName, $columnSortOrder)
             ->skip($start)
@@ -536,7 +552,6 @@ class AdminController extends Controller
 
             $data_arr[] = array(
                 "id"          => $record->id,
-                "username"    => $record->username,
                 "name"        => $record->name,
                 "email"       => $record->email,
                 "contactnum"  => $record->contactnum,

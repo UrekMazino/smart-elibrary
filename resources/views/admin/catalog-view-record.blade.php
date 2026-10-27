@@ -5,36 +5,36 @@
         /* ---- Resources tab ---- */
         .res-panel { display: flex; gap: 16px; align-items: flex-start; }
         .res-thumb {
-            flex: 0 0 96px; width: 96px; min-height: 120px; border: 1px solid #eef0f2; border-radius: 8px;
-            background: #f7f9fc; display: flex; flex-direction: column; align-items: center;
+            flex: 0 0 96px; width: 96px; min-height: 120px; border: 1px solid var(--ui-border, #eef0f2); border-radius: 8px;
+            background: var(--ui-surface-2, #f7f9fc); display: flex; flex-direction: column; align-items: center;
             justify-content: center; padding: 8px; text-align: center;
         }
         /* The <img> ids/classes below are wired to cropper.js — don't rename them. */
         .res-thumb img { max-width: 100%; max-height: 104px; height: auto; border-radius: 3px; }
         .res-thumb-cover img { box-shadow: 0 1px 6px rgba(0,0,0,.18); }
-        .res-none { font-size: 11px; color: #a3adc2; margin-top: 6px; }
+        .res-none { font-size: 0.6875rem; color: var(--ui-muted-2, #a3adc2); margin-top: 6px; }
 
         .res-meta { flex: 1; min-width: 0; }
         .res-meta dt {
-            font-size: 10.5px; text-transform: uppercase; letter-spacing: .4px;
-            color: #a3adc2; font-weight: 700; margin-bottom: 1px;
+            font-size: 0.65625rem; text-transform: uppercase; letter-spacing: .4px;
+            color: var(--ui-muted-2, #a3adc2); font-weight: 700; margin-bottom: 1px;
         }
-        .res-meta dd { font-size: 12.5px; color: #33415c; margin-bottom: 8px; word-break: break-all; }
-        .res-meta dd.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; }
+        .res-meta dd { font-size: 0.78125rem; color: var(--ui-text, #33415c); margin-bottom: 8px; word-break: break-all; }
+        .res-meta dd.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.71875rem; }
 
-        .res-label { font-size: 12px; font-weight: 600; color: #33415c; margin-bottom: 4px; display: block; }
+        .res-label { font-size: 0.75rem; font-weight: 600; color: var(--ui-text, #33415c); margin-bottom: 4px; display: block; }
 
         /* `.badge` prefixed by an id/class beats the template's `.badge { color:#fff }`. */
-        .card-body .res-badge-ok   { background: #e8f6ef; color: #1c7c54; font-weight: 600; font-size: 10.5px; }
-        .card-body .res-badge-none { background: #f4f5f7; color: #8a94a6; font-weight: 600; font-size: 10.5px; }
-        .card-body .res-badge-auto { background: #fff5e0; color: #a06e14; font-weight: 600; font-size: 10.5px; }
+        .card-body .res-badge-ok   { background: var(--ui-success-soft, #e8f6ef); color: var(--ui-success-ink, #1c7c54); font-weight: 600; font-size: 0.65625rem; }
+        .card-body .res-badge-none { background: var(--ui-surface-2, #f4f5f7); color: var(--ui-muted, #8a94a6); font-weight: 600; font-size: 0.65625rem; }
+        .card-body .res-badge-auto { background: var(--ui-warning-soft, #fff5e0); color: var(--ui-warning-ink, #a06e14); font-weight: 600; font-size: 0.65625rem; }
 
         .even-row {
-            background-color: #f2f2f2;
+            background-color: var(--ui-surface-2, #f2f2f2);
         }
 
         .odd-row {
-            background-color: #ffffff; 
+            background-color: var(--ui-surface, #ffffff); 
         }
 
         .delete-icon {
@@ -46,8 +46,8 @@
         }
 
         /* Count beside a tab label (e.g. Reviews 4). */
-        .nav-tabs .tab-count { display: inline-block; min-width: 20px; margin-left: 4px; padding: 1px 6px; border-radius: 10px; background: #eef0f6; color: #5b6478; font-size: 11px; font-weight: 600; text-align: center; }
-        .nav-tabs .nav-link.active .tab-count { background: #eef0ff; color: #4b55d9; }
+        .nav-tabs .tab-count { display: inline-block; min-width: 20px; margin-left: 4px; padding: 1px 6px; border-radius: 10px; background: var(--ui-surface-2, #eef0f6); color: var(--ui-text-2, #5b6478); font-size: 0.6875rem; font-weight: 600; text-align: center; }
+        .nav-tabs .nav-link.active .tab-count { background: color-mix(in srgb, var(--t-primary) 12%, var(--ui-surface, #fff)); color: color-mix(in srgb, var(--t-primary), var(--ui-text, #000) 18%); }
     </style>
     <link rel="stylesheet" href="{{ asset('assets/css/cropper.min.css') }}">
 @endsection
@@ -75,27 +75,27 @@
         <div class="d-flex gap-2">
             {{-- One Action menu, like each row of the Record List and On-Hold List. --}}
             <div class="btn-group btn-group-sm" role="group">
-                <button type="button" class="btn btn-info btn-sm dropdown-toggle" id="recordActionBtn" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
+                <button type="button" class="btn btn-primary btn-sm dropdown-toggle" id="recordActionBtn" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
                 <div class="dropdown-menu dropdown-menu-end" aria-labelledby="recordActionBtn">
                     @can('publish-hold.catalog')
-                        <a class="dropdown-item" href="#" onclick="togglePublishOnhold({{ (int) $record->is_published }}, {{ $record->id }}); return false;">{{ $record->is_published ? 'Add to On-Hold list' : 'Add to Record list' }}</a>
+                        <a class="dropdown-item" href="#" data-call="togglePublishOnhold" data-args="{{ json_encode([(int) $record->is_published, $record->id]) }}">{{ $record->is_published ? 'Add to On-Hold list' : 'Add to Record list' }}</a>
                     @endcan
                     @can('edit.catalog')
-                        <a class="dropdown-item" href="#" onclick="actionFrm({{ $record->id }}, 'edit'); return false;">Edit</a>
+                        <a class="dropdown-item" href="#" data-call="actionFrm" data-args="{{ json_encode([$record->id, 'edit']) }}">Edit</a>
                     @endcan
                     <div class="dropdown-divider"></div>
                     <h6 class="dropdown-header">Export</h6>
                     <a class="dropdown-item" href="{{ route('export-record', ['id' => $record->id, 'format' => 'mrc']) }}">MARC21 binary (.mrc)</a>
                     <a class="dropdown-item" href="{{ route('export-record', ['id' => $record->id, 'format' => 'xml']) }}">MARCXML (.xml)</a>
                     <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="#" title="Queue this record for AI (RAG) re-indexing" onclick="document.getElementById('reindexFrm').submit(); return false;">Re-index for AI</a>
+                    <a class="dropdown-item" href="#" title="Queue this record for AI (RAG) re-indexing" data-call="submitFormById" data-args='["reindexFrm"]'>Re-index for AI</a>
                     @can('delete.catalog')
                         <div class="dropdown-divider"></div>
-                        <a class="dropdown-item text-danger" href="#" onclick="deleteRecord(); return false;">Delete</a>
+                        <a class="dropdown-item text-danger" href="#" data-call="deleteRecord">Delete</a>
                     @endcan
                 </div>
             </div>
-            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="goBack()">
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-call="goBack">
                 <i data-feather="arrow-left" class="icon-sm"></i> Back
             </button>
         </div>
@@ -103,7 +103,7 @@
 
     {{-- Flagged at the batch import and not reviewed yet (CatalogRecordCheck). --}}
     @if(!empty($importIssue))
-        <div class="alert alert-warning py-2 mb-3" style="font-size: 13px;" role="alert">
+        <div class="alert alert-warning py-2 mb-3" style="font-size: 0.8125rem;" role="alert">
             <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
                 <div>
                     <i data-feather="alert-triangle" class="icon-sm me-1"></i>
@@ -130,7 +130,7 @@
     @endif
 
     @if(session('rag_reindexed'))
-        <div class="alert alert-success alert-dismissible py-2 mb-3" style="font-size: 13px;" role="alert">
+        <div class="alert alert-success alert-dismissible py-2 mb-3" style="font-size: 0.8125rem;" role="alert">
             <i data-feather="check-circle" class="icon-sm me-1"></i>
             Queued for AI re-indexing &mdash; it will be picked up on the next indexing run.
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
@@ -143,7 +143,7 @@
                 <div class="card-header">
                     <span class="card-title">Details for:</span><h3> {{ $title }} </h3>
                     @php $ragStatus = \App\Services\RagSync::statusFor($record->id, $record->is_published); @endphp
-                    <span class="badge {{ $ragStatus['class'] }}" style="font-size: 11px;" title="AI (RAG) search index status">
+                    <span class="badge {{ $ragStatus['class'] }}" style="font-size: 0.6875rem;" title="AI (RAG) search index status">
                         <i data-feather="cpu" class="icon-sm" style="width:13px;height:13px;"></i> {{ $ragStatus['label'] }}
                     </span>
                 </div>
@@ -193,7 +193,7 @@
                                 <div class="p-2 col-lg-2 col-md-2 col-sm-12 text-left"><strong>{{ $style }}</strong></div>
                                 <div class="p-2 col-lg-9 col-md-9 col-sm-10 text-left" id="cite-{{ $style }}">{!! $text !!}</div>
                                 <div class="p-2 col-lg-1 col-md-1 col-sm-2 text-end">
-                                    <button type="button" class="btn btn-sm btn-outline-secondary" title="Copy" onclick="copyCitation('cite-{{ $style }}')"><i data-feather="copy" class="icon-sm"></i></button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" title="Copy" data-call="copyCitation" data-args="{{ json_encode(['cite-' . $style]) }}"><i data-feather="copy" class="icon-sm"></i></button>
                                 </div>
                             </div>
                         @empty
@@ -207,7 +207,7 @@
                     <!-- Record Resources Tab -->
                     <div class="tab-pane fade {{ isset($uploadStatus) ? 'show active' : '' }}" id="resources" role="tabpanel" aria-labelledby="resources-tab">
                         @isset($uploadError)
-                            <div class="alert alert-danger py-2" style="font-size: 13px;">{{ $uploadError }}</div>
+                            <div class="alert alert-danger py-2" style="font-size: 0.8125rem;">{{ $uploadError }}</div>
                         @endisset
 
                         @php
@@ -247,7 +247,7 @@
                                                 <span class="badge res-badge-none rounded-pill">Not attached</span>
                                             @endif
                                         </div>
-                                        <p class="text-muted mb-3" style="font-size: 12.5px;">
+                                        <p class="text-muted mb-3" style="font-size: 0.78125rem;">
                                             The PDF patrons read and download. One per record &mdash; uploading again replaces it.
                                         </p>
 
@@ -278,7 +278,7 @@
                                                         <dd class="mb-0">{{ $fullText->created_at ? \Carbon\Carbon::parse($fullText->created_at)->format('d M Y, g:i a') : '—' }}</dd>
                                                     </dl>
                                                 @else
-                                                    <p class="text-muted mb-0" style="font-size: 12.5px;">
+                                                    <p class="text-muted mb-0" style="font-size: 0.78125rem;">
                                                         No full text yet. Choose a PDF below to attach one.
                                                     </p>
                                                 @endif
@@ -296,7 +296,7 @@
                                                     <i data-feather="download" class="icon-sm me-1"></i>Download
                                                 </a>
                                             @elseif($fullText && ! $ftExists)
-                                                <span class="text-danger" style="font-size: 12.5px;">
+                                                <span class="text-danger" style="font-size: 0.78125rem;">
                                                     The record points to a file that isn&rsquo;t on disk &mdash; re-upload it.
                                                 </span>
                                             @endif
@@ -314,7 +314,7 @@
                                             <input type="hidden" value="{{ $title }}" name="title">
                                             <input class="form-control form-control-sm" type="file" id="fulltextUpload" name="fullText" accept="application/pdf,.pdf">
                                             {{-- cropper.js un-hides this once a valid PDF is chosen. --}}
-                                            <button class="btn btn-info btn-sm d-none mt-2" id="fulltext-btn">
+                                            <button class="btn btn-primary btn-sm d-none mt-2" id="fulltext-btn">
                                                 <i data-feather="upload" class="icon-sm me-1"></i>Upload Fulltext
                                             </button>
                                         </form>
@@ -351,14 +351,14 @@
                                                 <span class="badge res-badge-none rounded-pill">Not attached</span>
                                             @endif
                                         </div>
-                                        <p class="text-muted mb-3" style="font-size: 12.5px;">
+                                        <p class="text-muted mb-3" style="font-size: 0.78125rem;">
                                             Shown on the OPAC and in listings.
                                             @if($cvIsAuto)
                                                 This placeholder was generated from the title &mdash; upload a real cover to replace it.
                                             @endif
                                         </p>
                                         @isset($coverNotice)
-                                            <div class="alert alert-success py-2" style="font-size: 12.5px;" role="status">{{ $coverNotice }}</div>
+                                            <div class="alert alert-success py-2" style="font-size: 0.78125rem;" role="status">{{ $coverNotice }}</div>
                                         @endisset
 
                                         <div class="res-panel">
@@ -391,7 +391,7 @@
                                                         <dd class="mb-0">{{ $coverPage->created_at ? \Carbon\Carbon::parse($coverPage->created_at)->format('d M Y, g:i a') : '—' }}</dd>
                                                     </dl>
                                                 @else
-                                                    <p class="text-muted mb-0" style="font-size: 12.5px;">
+                                                    <p class="text-muted mb-0" style="font-size: 0.78125rem;">
                                                         No cover yet. Choose an image below to attach one.
                                                     </p>
                                                 @endif
@@ -402,14 +402,14 @@
                                         <div class="d-flex flex-wrap gap-2 mt-3">
                                             @if($coverPage && $cvExists)
                                                 <button type="button" class="btn btn-primary btn-sm"
-                                                        onclick="viewCoverPhoto()">
+                                                        data-call="viewCoverPhoto">
                                                     <i data-feather="image" class="icon-sm me-1"></i>View Coverphoto
                                                 </button>
                                                 <a href="{{ $cvUrl }}" target="_blank" rel="noopener" class="btn btn-outline-secondary btn-sm">
                                                     <i data-feather="external-link" class="icon-sm me-1"></i>Open in new tab
                                                 </a>
                                             @elseif($coverPage && ! $cvExists)
-                                                <span class="text-danger" style="font-size: 12.5px;">
+                                                <span class="text-danger" style="font-size: 0.78125rem;">
                                                     The record points to an image that isn&rsquo;t on disk &mdash; re-upload it.
                                                 </span>
                                             @endif
@@ -431,10 +431,10 @@
                                             <div class="form-check form-switch mb-0">
                                                 <input class="form-check-input" type="checkbox" role="switch" id="placeholderSwitch"
                                                        @checked($placeholderPref) @disabled(! $placeholdersOn)
-                                                       onchange="document.getElementById('placeholderOn').value = this.checked ? 1 : 0; if (window.appBusy) appBusy.show(); this.form.submit();">
+                                                       data-call-change="togglePlaceholderCover" data-args='["$this"]'>
                                                 <label class="form-check-label" for="placeholderSwitch">Placeholder cover</label>
                                             </div>
-                                            <div class="text-muted" style="font-size: 12px;">
+                                            <div class="text-muted" style="font-size: 0.75rem;">
                                                 @if(! $placeholdersOn)
                                                     Placeholder covers are turned off for all records in Settings.
                                                 @elseif($hasRealCover)
@@ -456,7 +456,7 @@
                                             <input type="hidden" value="{{ $title }}" name="title">
                                             <input class="form-control form-control-sm" type="file" id="coverUpload" name="coverImage" accept="image/jpeg,image/png">
                                             {{-- cropper.js un-hides this once a valid image is chosen. --}}
-                                            <button class="btn btn-info btn-sm d-none mt-2" id="cover-photo-btn">
+                                            <button class="btn btn-primary btn-sm d-none mt-2" id="cover-photo-btn">
                                                 <i data-feather="upload" class="icon-sm me-1"></i>Save Cover Photo
                                             </button>
                                         </form>
@@ -490,7 +490,7 @@
                             <h6 class="modal-title" id="coverPhotoModalLabel">Cover photo</h6>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                           </div>
-                          <div class="modal-body text-center" style="background:#f7f9fc;">
+                          <div class="modal-body text-center" style="background:var(--ui-surface-2, #f7f9fc);">
                             <img id="coverPhotoModalImg" src="" alt="Cover photo"
                                  style="max-width:100%; max-height:70vh; border-radius:4px; box-shadow:0 2px 12px rgba(0,0,0,.18);">
                           </div>
@@ -512,7 +512,7 @@
                     <!-- Physical Copy Tab -->
                     <div class="tab-pane fade {{ isset($copyUpdate) ? 'show active' : '' }}" id="physical-copy" role="tabpanel" aria-labelledby="physical-copy-tab">
                         @if(!empty($copyError))
-                            <div class="alert alert-danger py-2" style="font-size: 13px;" role="alert">{{ $copyError }}</div>
+                            <div class="alert alert-danger py-2" style="font-size: 0.8125rem;" role="alert">{{ $copyError }}</div>
                         @endif
                         <div class="row">
                             <div class="col-md-12 stretch-card">
@@ -524,7 +524,7 @@
                                             </div>
                                             <div class="col-md-1"></div>
                                             <div class="col-md-1 text-center mb-2">
-                                                <button type="button" onclick="searchCopy()" class="btn btn-sm btn-info" id="copy-search-btn">Search</button>
+                                                <button type="button" data-call="searchCopy" class="btn btn-sm btn-primary" id="copy-search-btn">Search</button>
                                             </div>
                                             <div class="col-md-5 text-center mb-2">
                                                 <input type="text" class="form-control" id="copy-search-input">
@@ -533,7 +533,7 @@
                                             <div class="col-md-2 float-right text-center mb-2">
                                                 
                                                 @can('edit.catalog')
-                                                <a href="#" type="button" onclick="showAddCopyModal()" class="btn btn-sm btn-outline-primary">+ Copy/ies</a>
+                                                <a href="#" role="button" data-call="showAddCopyModal" class="btn btn-sm btn-outline-primary">+ Copy/ies</a>
                                                 @endcan
                                             </div>
                                         </div>
@@ -620,6 +620,7 @@
 </form>
 @endsection
 @section('js')
+@include('admin.partials.saved-toast')
 <!-- <script src="{{ asset('js/admin/citation-js/index.js') }}"></script> -->
 <!-- Include @citation-js/core library -->
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/DataTables/DataTables-1.12.1/js/jquery.dataTables.min.js') }}"></script>
@@ -627,9 +628,20 @@
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/DataTables/buttons/js/dataTables.buttons.min.js') }}"></script>
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/DataTables/buttons/js/buttons.bootstrap5.min.js') }}"></script>
 
-<script>
+<script nonce="{{ cspNonce() }}">
 // Return to the list the admin came from (record-list or on-hold-list);
 // fall back to the record list if there's no history to go back to.
+// The buttons on this page (data-call; onclick= is blocked by the Content Security Policy).
+AdminActions.allow(['togglePublishOnhold', 'actionFrm', 'submitFormById', 'deleteRecord', 'goBack', 'copyCitation',
+    'viewCoverPhoto', 'togglePlaceholderCover', 'searchCopy', 'showAddCopyModal', 'showEditCopyModal']);
+
+// The "Placeholder cover" switch saves at once.
+function togglePlaceholderCover(input) {
+    document.getElementById('placeholderOn').value = input.checked ? 1 : 0;
+    if (window.appBusy) appBusy.show();
+    input.form.submit();
+}
+
 function goBack() {
     if (document.referrer && window.history.length > 1) {
         window.history.back();
@@ -703,10 +715,10 @@ $(function () {
 </script>
 <script type="text/javascript" src="{{ asset('assets/js/cropper.js') }}"></script>
 <script type="text/javascript" src="{{ asset('assets/js/cropper.min.js') }}"></script>
-<script> let pdfDefaultThumb = "{{ asset('assets/images/pdf-placeholder.jfif') }}";</script>
-<script> let copyTblUrl = "{{ url('/admin/copy-list-json') }}";</script>
+<script nonce="{{ cspNonce() }}"> let pdfDefaultThumb = "{{ asset('assets/images/pdf-placeholder.jfif') }}";</script>
+<script nonce="{{ cspNonce() }}"> let copyTblUrl = "{{ url('/admin/copy-list-json') }}";</script>
 <script src="{{ asset('js/admin/catalog-view-record.js') }}?v={{ filemtime(public_path('js/admin/catalog-view-record.js')) }}"></script>
-<script>
+<script nonce="{{ cspNonce() }}">
     $(document).ready(function(){
         let searchValue = "";
         let catalogId = $('#catalog-id').val();
@@ -748,7 +760,7 @@ $(function () {
                             { 
                                 "data": function (row, type, val, meta) {
                                     if (!@json(auth()->user()->can('edit.catalog'))) return '<span class="text-muted small">—</span>';   // copies are part of editing the record
-                                    return '<div class="btn-group" role="group"><button id="btnGroupDrop1" type="button" class="btn btn-info dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button><div class="dropdown-menu" aria-labelledby="btnGroupDrop1"><a class="dropdown-item" href="#" onclick="showEditCopyModal('+row.id+')">Edit</a><a class="dropdown-item" href="#" onclick="actionFrm('+row.id+',\'delete\')">Delete</a></div></div>';
+                                    return '<div class="btn-group" role="group"><button id="btnGroupDrop1" type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button><div class="dropdown-menu" aria-labelledby="btnGroupDrop1"><a class="dropdown-item" href="#" '+AdminActions.attrs('showEditCopyModal', [row.id])+'>Edit</a><a class="dropdown-item" href="#" '+AdminActions.attrs('actionFrm', [row.id, 'delete'])+'>Delete</a></div></div>';
                                 }, orderable: false
                             },
                         ]
@@ -809,7 +821,7 @@ $(function () {
                             { 
                                 "data": function (row, type, val, meta) {
                                     if (!@json(auth()->user()->can('edit.catalog'))) return '<span class="text-muted small">—</span>';   // copies are part of editing the record
-                                    return '<div class="btn-group" role="group"><button id="btnGroupDrop1" type="button" class="btn btn-info dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button><div class="dropdown-menu" aria-labelledby="btnGroupDrop1"><a class="dropdown-item" href="#" onclick="showEditCopyModal('+row.id+')">Edit</a><a class="dropdown-item" href="#" onclick="actionFrm('+row.id+',\'delete\')">Delete</a></div></div>';
+                                    return '<div class="btn-group" role="group"><button id="btnGroupDrop1" type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button><div class="dropdown-menu" aria-labelledby="btnGroupDrop1"><a class="dropdown-item" href="#" '+AdminActions.attrs('showEditCopyModal', [row.id])+'>Edit</a><a class="dropdown-item" href="#" '+AdminActions.attrs('actionFrm', [row.id, 'delete'])+'>Delete</a></div></div>';
                                 }, orderable: false
                             },
                         ]
@@ -827,6 +839,13 @@ $(function () {
 
     function actionFrm(id,action)
     {
+        // Opening the edit page changes nothing, so it goes straight there; only Delete asks first.
+        if(action == 'edit') {
+            appBusy.show();
+            window.location.href = "{{ route('edit-record', ['id' => ':id']) }}".replace(':id', id);
+            return;
+        }
+
         Swal.fire({
             title: 'Are you sure?',
             text: "",
@@ -839,11 +858,6 @@ $(function () {
             }).then((result) => {
             if (result.value) {
                 appBusy.show();
-
-                if(action == 'edit') {
-                    let act = "{{ route('edit-record', ['id' => ':id']) }}".replace(':id', id);
-                    window.location.href = act;
-                }
 
                 if(action == 'delete') {
                     let act = "{{ route('delete-copy', ['id' => ':id']) }}".replace(':id', id);

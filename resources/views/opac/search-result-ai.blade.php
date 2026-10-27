@@ -143,7 +143,7 @@
 @endsection
 
 @section('js')
-<script>
+<script nonce="{{ cspNonce() }}">
 (function () {
 	var endpoint  = "{{ url('/search/ai-answer') }}";
 	var query     = @json($query);
@@ -243,7 +243,11 @@
 		             '</div>' +
 		             '<div class="ai-body">' + paragraphs(d.answer, n) + '</div>' +
 		             '<div class="ai-foot">' +
-		               '<span>Generated from the library collection &mdash; always check the sources.</span>' +
+		               '<span>' + (d.answered_by === 'gemini'
+		                   ? 'Written by Google Gemini from the library collection'
+		                   : (d.answered_by === 'local' ? 'Written by the library’s own AI from the collection'
+		                                                : 'Generated from the library collection')) +
+		                 ' &mdash; always check the sources.</span>' +
 		               (d.took_ms != null ? '<span>' + esc(d.took_ms) + ' ms</span>' : '') +
 		             '</div>' +
 		           '</div>';

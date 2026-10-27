@@ -1,7 +1,7 @@
 @extends("admin.layouts.master")
 
 @section('css')
-  <link rel="stylesheet" href="{{ asset('css/admin/dashboard.css') }}?v={{ filemtime(public_path('css/admin/dashboard.css')) }}">
+  <link rel="stylesheet" href="{{ versionedAsset('css/admin/dashboard.css') }}">
 @endsection
 
 @section('content')
@@ -257,7 +257,7 @@
 @endsection
 
 @section('js')
-  <script>
+  <script nonce="{{ cspNonce() }}">
     window.DASHBOARD = {
       activityUrl: @json(url('/admin/dashboard/activity')),
       ranges: @json($ranges),

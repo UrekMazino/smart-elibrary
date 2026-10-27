@@ -20,7 +20,21 @@ use Illuminate\Support\Facades\Http;
 class AiSearchService
 {
     /**
-     * The admin kill switch (Admin > Settings > AI mode). Off by default: AI mode has to
+     * Who writes the answer (Admin > Settings > AI answers > "Who writes the answers"). Search always runs
+     * on the gateway's machine; only the writing step moves. The Gemini key lives in the
+     * gateway's environment (ProjectY .env), never here.
+     */
+    public const PROVIDERS = [
+        'gemini_local' => 'Google Gemini, with the local AI as backup',
+        'gemini'       => 'Google Gemini only',
+        'local'        => 'Local AI only (this server)',
+    ];
+
+    /** Development default (Oct 2026). Without a Gemini key on the gateway it answers locally anyway. */
+    public const DEFAULT_PROVIDER = 'gemini_local';
+
+    /**
+     * The admin kill switch (Admin > Settings > AI answers). Off by default: AI mode has to
      * be turned on deliberately, so a fresh install never exposes it.
      *
      * This is the ONE source of truth for "is AI mode on" — the OPAC toggle, the routes
@@ -29,6 +43,14 @@ class AiSearchService
     public function isEnabled(): bool
     {
         return settingEnabled('ai_mode_enabled', false);
+    }
+
+    /** The chosen "Answer with" provider; an unknown stored value falls back to the default. */
+    public function provider(): string
+    {
+        $value = (string) setting('ai_answer_provider', self::DEFAULT_PROVIDER);
+
+        return array_key_exists($value, self::PROVIDERS) ? $value : self::DEFAULT_PROVIDER;
     }
 
     /** Where the agent gateway lives (§10.3: from .env, never the database). */
@@ -122,7 +144,12 @@ class AiSearchService
             }
 
             return ['ok' => true, 'status' => 'connected',
-                    'detail' => 'Connected — ' . number_format($body['docs'] ?? 0) . ' passages indexed.'];
+                    'detail' => 'Connected — ' . number_format($body['docs'] ?? 0) . ' passages indexed.',
+                    // Whether the gateway has a Gemini key (never the key itself); null from an older gateway.
+                    'gemini' => isset($body['gemini']) ? [
+                        'configured' => (bool) ($body['gemini']['configured'] ?? false),
+                        'model'      => (string) ($body['gemini']['model'] ?? ''),
+                    ] : null];
         });
     }
 
@@ -132,23 +159,34 @@ class AiSearchService
      * Returns the answer with its sources already resolved to catalogue records and its
      * inline [n] citations renumbered to match (see resolveSources()).
      *
-     * @return array{answer:string, sources:array, abstained:bool, usage:array, conversation_id:?string, stub:bool}
+     * `answered_by` is who wrote it ({provider: gemini|local, model}), null when nothing was
+     * written; `fallback` is why Gemini wasn't used when the local AI stood in (for logs, not
+     * for patrons).
+     *
+     * @return array{answer:string, sources:array, abstained:bool, usage:array, conversation_id:?string, stub:bool, answered_by:?array, fallback:?string}
      */
     public function answer(string $query, array $options = []): array
     {
         $started = microtime(true);
 
+        // user_ref stays with the gateway (it is not passed on to Gemini).
         $res = Http::withToken(config('services.hermes.token'))
             ->timeout((int) config('services.hermes.timeout', 60))
             ->post($this->endpoint() . '/agent/answer', [
                 'query'    => $query,
                 'k'        => $options['k'] ?? null,
                 'user_ref' => $options['user_ref'] ?? 'guest',
+                'provider' => $this->provider(),
             ])
             ->throw()
             ->json();
 
         $tookMs = $res['took_ms'] ?? (int) ((microtime(true) - $started) * 1000);
+        $answeredBy = is_array($res['answered_by'] ?? null) ? [
+            'provider' => (string) ($res['answered_by']['provider'] ?? ''),
+            'model'    => (string) ($res['answered_by']['model'] ?? ''),
+        ] : null;
+        $fallback = isset($res['fallback']) ? (string) $res['fallback'] : null;
 
         if (($res['abstained'] ?? false) || empty($res['sources'])) {
             return [
@@ -158,6 +196,8 @@ class AiSearchService
                 'usage'           => ['took_ms' => $tookMs],
                 'conversation_id' => null,
                 'stub'            => false,
+                'answered_by'     => $answeredBy,
+                'fallback'        => $fallback,
             ];
         }
 
@@ -174,6 +214,8 @@ class AiSearchService
                 'usage'           => ['took_ms' => $tookMs],
                 'conversation_id' => null,
                 'stub'            => false,
+                'answered_by'     => $answeredBy,
+                'fallback'        => $fallback,
             ];
         }
 
@@ -184,6 +226,8 @@ class AiSearchService
             'usage'           => ['took_ms' => $tookMs],
             'conversation_id' => null,
             'stub'            => false,
+            'answered_by'     => $answeredBy,
+            'fallback'        => $fallback,
         ];
     }
 

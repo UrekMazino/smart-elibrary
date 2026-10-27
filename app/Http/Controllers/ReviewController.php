@@ -59,8 +59,25 @@ class ReviewController extends Controller
     public function quickStatus($catalog_id)
     {
         $reviewed = App\Models\Rating::where('user_id', Auth::id())->where('catalog_id', $catalog_id)->exists();
+        $skipped  = \DB::table('review_prompt_skips')->where('user_id', Auth::id())->where('catalog_id', $catalog_id)->exists();
 
-        return response()->json(['reviewed' => $reviewed]);
+        return response()->json(['reviewed' => $reviewed, 'skipped' => $skipped]);
+    }
+
+    /**
+     * "Not now" in the quick review popup: don't prompt this patron about the material again, on any
+     * device. Kept on the server, not in the browser (OWASP ASVS 14.3.1): a browser copy outlived
+     * sign-out and showed the next person on a shared computer what the patron had read. The material
+     * stays in the patron's To Review list.
+     */
+    public function quickSkip($catalog_id)
+    {
+        $published = App\Models\ViewCatalog::where('catalog_id', $catalog_id)->where('is_published', 1)->whereNull('deleted_at')->exists();
+        abort_unless($published, 404);
+
+        \DB::table('review_prompt_skips')->insertOrIgnore(['user_id' => Auth::id(), 'catalog_id' => (int) $catalog_id, 'created_at' => now()]);
+
+        return response()->json(['ok' => true]);
     }
 
     /** Save a review from the quick review popup (star rating + optional / templated remarks). */

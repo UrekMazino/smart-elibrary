@@ -15,7 +15,11 @@ return [
     |
     */
 
-    'driver' => 'bcrypt',
+    // Argon2id (OWASP's first choice for passwords). bcrypt, used before, reads only the first 72 bytes of
+    // a password, so a long passphrase was silently cut short (OWASP ASVS 6.2.8). Existing bcrypt hashes
+    // still verify ('verify' => false below) and are replaced with Argon2id at each person's next sign-in
+    // (Laravel's rehash_on_login).
+    'driver' => env('HASH_DRIVER', 'argon2id'),
 
     /*
     |--------------------------------------------------------------------------
@@ -44,9 +48,10 @@ return [
     */
 
     'argon' => [
-        'memory' => 65536,
-        'threads' => 1,
-        'time' => 4,
+        'memory' => (int) env('ARGON_MEMORY', 65536),   // KiB per hash (64 MiB); about 0.2 s per sign-in
+        'threads' => (int) env('ARGON_THREADS', 1),
+        'time' => (int) env('ARGON_TIME', 4),
+        'verify' => false,   // accept the older bcrypt hashes until they are rehashed
     ],
 
 ];

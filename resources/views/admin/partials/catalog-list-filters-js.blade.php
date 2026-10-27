@@ -1,6 +1,6 @@
 {{-- Script for admin.partials.catalog-list-filters. Include it BEFORE the page's DataTable init and
      pass clFilters.params as the table's ajax `data` function. --}}
-<script>
+<script nonce="{{ cspNonce() }}">
 window.clFilters = (function () {
     var PARAMS = ['status', 'type', 'author', 'year', 'resource'];   // status: batch page only
     var $wrap = $('#clFilters');

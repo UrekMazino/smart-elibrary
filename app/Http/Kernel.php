@@ -2,10 +2,22 @@
 
 namespace App\Http;
 
+use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
+use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
+use Illuminate\Routing\Router;
 
 class Kernel extends HttpKernel
 {
+    public function __construct(Application $app, Router $router)
+    {
+        parent::__construct($app, $router);
+
+        // The CSRF check runs before `auth` and the session checks. AuthenticateSession's place in the priority list
+        // would otherwise move `auth` ahead of it. A forged request is refused first and never counts as activity.
+        $this->addToMiddlewarePriorityBefore(AuthenticatesRequests::class, \App\Http\Middleware\VerifyCsrfToken::class);
+    }
+
     /**
      * The application's global HTTP middleware stack.
      *
@@ -33,7 +45,12 @@ class Kernel extends HttpKernel
             \App\Http\Middleware\EncryptCookies::class,
             \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
             \Illuminate\Session\Middleware\StartSession::class,
-            // \Illuminate\Session\Middleware\AuthenticateSession::class,
+            // A password change (own, reset link or admin reset) ends every other session of the account (ASVS 7.4.3).
+            \Illuminate\Session\Middleware\AuthenticateSession::class,
+            // A banned account is signed out everywhere, "Keep me signed in" included (ASVS 7.4.2).
+            \App\Http\Middleware\EndBannedSessions::class,
+            // Idle and absolute limits on a sign-in (ASVS 7.3.1, 7.3.2).
+            \App\Http\Middleware\EnforceSessionLimits::class,
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,

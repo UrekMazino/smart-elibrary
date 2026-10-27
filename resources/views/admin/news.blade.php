@@ -5,8 +5,8 @@
 	<link rel="stylesheet" href="{{ asset('admintemplate/nobleui/template/assets/vendors/DataTables/buttons/css/buttons.bootstrap5.min.css') }}">
 	<style>
 		.admin-page-head { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px; margin-bottom:18px; }
-		.admin-page-head .apt { margin:0; font-size:16px; font-weight:600; }
-		.admin-page-head .aph-desc { margin:2px 0 0; font-size:13px; color:#8a94a6; }
+		.admin-page-head .apt { margin:0; font-size:1rem; font-weight:600; }
+		.admin-page-head .aph-desc { margin:2px 0 0; font-size:0.8125rem; color:var(--ui-muted, #8a94a6); }
 		table td { word-break:break-word; vertical-align:top; white-space:normal !important; }
 	</style>
 @endsection
@@ -62,7 +62,7 @@
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/DataTables/buttons/js/buttons.colVis.min.js') }}"></script>
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/DataTables/buttons/js/buttons.html5.min.js') }}"></script>
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/DataTables/buttons/js/buttons.print.min.js') }}"></script>
-<script>
+<script nonce="{{ cspNonce() }}">
 	const editUrlBase = '{{ url("/admin/news/edit") }}';
 	const deleteUrlBase = '{{ url("/admin/news/delete") }}';
 	const csrfToken = '{{ csrf_token() }}';

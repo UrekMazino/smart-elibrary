@@ -11,7 +11,7 @@
     </td>
     <td class="text-center">
         <div class="btn-group btn-group-sm">
-            <button type="button" class="btn btn-info btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" style="color:#fff;">Action</button>
+            <button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">Action</button>
             <div class="dropdown-menu dropdown-menu-end">
                 <a class="dropdown-item" href="#" data-act="edit">Edit</a>
                 <a class="dropdown-item" href="#" data-act="toggle">{{ $m->is_active ? 'Hide from lists' : 'Show in lists' }}</a>

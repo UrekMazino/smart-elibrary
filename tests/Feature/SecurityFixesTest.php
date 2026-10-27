@@ -148,6 +148,80 @@ class SecurityFixesTest extends TestCase
             ->assertHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
     }
 
+    public function test_https_pages_tell_browsers_to_keep_to_https()
+    {
+        $this->get('https://localhost/home')->assertOk()
+            ->assertHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+
+        // Over plain HTTP the header means nothing to browsers, and isn't sent (local development).
+        $this->get('http://localhost/home')->assertOk()->assertHeaderMissing('Strict-Transport-Security');
+
+        // The way back: browsers are told to forget it.
+        config(['app.hsts_max_age' => 0]);
+        $this->get('https://localhost/home')->assertHeader('Strict-Transport-Security', 'max-age=0');
+    }
+
+    public function test_pages_enforce_a_content_security_policy_whose_nonce_their_scripts_carry()
+    {
+        $response = $this->get('/home')->assertOk()->assertHeaderMissing('Content-Security-Policy-Report-Only');
+
+        $policy = $response->headers->get('Content-Security-Policy');
+        foreach (["default-src 'self'", "object-src 'none'", "base-uri 'none'", "form-action 'self'", "frame-ancestors 'self'"] as $part) {
+            $this->assertStringContainsString($part, $policy);
+        }
+        $this->assertStringNotContainsString("'unsafe-inline' https://cdn", $policy);   // no inline scripts without the nonce
+        $this->assertMatchesRegularExpression("/script-src 'self' 'nonce-([A-Za-z0-9+\\/=]{24})'/", $policy);
+        preg_match("/'nonce-([^']+)'/", $policy, $m);
+        preg_match_all('/<script nonce="([^"]+)"/', $response->getContent(), $tags);
+        $this->assertNotEmpty($tags[1]);
+        $this->assertSame([$m[1]], array_values(array_unique($tags[1])), 'every inline script carries this response\'s nonce');
+
+        // A new nonce for every response.
+        $this->assertNotSame($policy, $this->get('/home')->headers->get('Content-Security-Policy'));
+    }
+
+    public function test_the_emergency_switch_only_reports_and_debug_error_pages_keep_their_scripts()
+    {
+        config(['app.csp_enforce' => false]);
+        $response = $this->get('/home');
+        $this->assertSame("frame-ancestors 'self'; object-src 'none'; base-uri 'none'; form-action 'self'", $response->headers->get('Content-Security-Policy'));
+        $this->assertStringContainsString("script-src 'self' 'nonce-", $response->headers->get('Content-Security-Policy-Report-Only'));
+
+        // Laravel's debug error page (APP_DEBUG, a server error) runs inline scripts of its own.
+        config(['app.csp_enforce' => true, 'app.debug' => true]);
+        \Illuminate\Support\Facades\Route::get('/__csp-test-error', fn () => throw new \RuntimeException('boom'))->middleware('web');
+        $error = $this->get('/__csp-test-error')->assertStatus(500);
+        $this->assertSame("frame-ancestors 'self'; object-src 'none'; base-uri 'none'; form-action 'self'", $error->headers->get('Content-Security-Policy'));
+    }
+
+    public function test_the_policy_is_only_sent_with_pages()
+    {
+        $this->getJson('/search/quick/999999')->assertHeaderMissing('Content-Security-Policy')->assertHeaderMissing('Content-Security-Policy-Report-Only');
+    }
+
+    public function test_the_session_cookie_is_secure_and_host_prefixed_and_there_is_no_xsrf_cookie()
+    {
+        config(['session.driver' => 'cookie']);   // a driver that sends the cookie (the tests' array driver doesn't)
+
+        $cookies = collect($this->get('/home')->assertOk()->headers->getCookies())->keyBy(fn ($c) => $c->getName());
+
+        $this->assertStringStartsWith('__Host-', config('session.cookie'));
+        $session = $cookies->get(config('session.cookie'));
+        $this->assertNotNull($session, 'no session cookie was sent');
+        $this->assertSame([true, true, '/', null, 'lax'],
+            [$session->isSecure(), $session->isHttpOnly(), $session->getPath(), $session->getDomain(), $session->getSameSite()]);
+        $this->assertFalse($cookies->has('XSRF-TOKEN'));
+    }
+
+    public function test_the_search_view_is_read_from_the_https_cookie_name_too()
+    {
+        $view = fn (array $cookies) => \App\Services\CatalogSearchParams::fromRequest(\Illuminate\Http\Request::create('/results', 'GET', [], $cookies))->view;
+
+        $this->assertSame('grid', $view(['__Host-sr_view' => 'grid']));
+        $this->assertSame('grid', $view(['sr_view' => 'grid']));
+        $this->assertSame('list', $view([]));
+    }
+
     public function test_a_news_link_must_be_a_web_address_and_a_cover_is_named_by_what_it_is()
     {
         $news = ['news_title' => 'Seminar', 'news_body' => '<p>Body</p>'];

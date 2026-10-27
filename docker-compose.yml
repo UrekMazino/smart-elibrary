@@ -9,7 +9,7 @@ services:
     container_name: elibrary-meilisearch
     environment:
       MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
-      MEILI_ENV: development
+      MEILI_ENV: ${MEILI_ENV:-development}   # production on a server (.env), development otherwise
     ports:
       - "127.0.0.1:7700:7700"
     volumes:

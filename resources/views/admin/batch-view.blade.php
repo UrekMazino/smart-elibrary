@@ -3,11 +3,11 @@
 @section('css')
     <style>
         .even-row {
-            background-color: #f2f2f2; /* Light gray */
+            background-color: var(--ui-surface-2, #f2f2f2); /* Light gray */
         }
 
         .odd-row {
-            background-color: #ffffff; /* White */
+            background-color: var(--ui-surface, #ffffff); /* White */
         }
     </style>
 @endsection
@@ -60,7 +60,7 @@
                                 </div>
                             </div>
                         </div>
-                        <a href="{{ url()->previous() }}" class="btn btn-info" type="submit">Back</a>
+                        <a href="{{ url()->previous() }}" class="btn btn-primary" type="submit">Back</a>
                         <a href="{{ url('/admin/batch-records/'. $batch->batch_id) }}" class="btn btn-primary">View Records</a>
                         <a href="{{ route('batch-report', ['id' => $batch->batch_id]) }}" class="btn btn-outline-primary">Import report</a>
        
@@ -72,7 +72,7 @@
 @endsection
 
 @section('js')
-<script>
+<script nonce="{{ cspNonce() }}">
 // script here
 </script>
 @endsection
