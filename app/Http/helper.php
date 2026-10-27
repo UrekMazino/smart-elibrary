@@ -1172,8 +1172,26 @@ function getSeries()
 function getLatestNews()
 {
 	return cache()->remember('home_latest_news', 600, function () {
-		return App\Models\News::where('featured', 'Yes')->orderBy('created_at','DESC')->limit(12)->get();
+		// The chosen headline (Admin > News Articles) first, then the latest.
+		return App\Models\News::where('featured', 'Yes')
+			->orderByRaw('id = ? DESC', [(int) setting('news_headline_id')])
+			->orderBy('created_at','DESC')->limit(12)->get();
 	});
+}
+
+/** The NEWS section's chosen headline (setting news_headline_id), while it is still a featured article. */
+function newsHeadline(): ?App\Models\News
+{
+	$id = (int) setting('news_headline_id');
+	return $id ? App\Models\News::where('id', $id)->where('featured', 'Yes')->first() : null;
+}
+
+/** Choose the NEWS section's headline (null: none, so the latest featured article leads) and refresh the home page's news. */
+function setNewsHeadline(?int $id): void
+{
+	App\Models\Setting::updateOrCreate(['key' => 'news_headline_id'], ['value' => $id ? (string) $id : '']);
+	settingsFlush();
+	cache()->forget('home_latest_news');
 }
 
 /** A news cover for the NEWS section: the newspaper-size copy, else the original upload, else null. */
@@ -1182,6 +1200,14 @@ function newsPrintCoverUrl($news): ?string
 	if (!$news->news_cover) return null;
 	$print = 'news_print/'.pathinfo($news->news_cover, PATHINFO_FILENAME).'.webp';
 	return url('/'.(file_exists(public_path($print)) ? $print : $news->news_cover));
+}
+
+/** A small news photo for the NEWS section's story list: the 250 px thumbnail, else the newspaper copy or the original, else null. */
+function newsThumbUrl($news): ?string
+{
+	if (!$news->news_cover) return null;
+	$thumb = 'thumb/'.basename($news->news_cover);
+	return file_exists(public_path($thumb)) ? url('/'.$thumb) : newsPrintCoverUrl($news);
 }
 
 /** The opening of a news article as plain text (a NEWS section page), cut at a word. */

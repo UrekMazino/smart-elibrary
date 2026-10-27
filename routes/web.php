@@ -454,4 +454,5 @@ Route::controller(NewsController::class)->middleware('can:access.news')->group(f
     Route::get('/admin/news/edit/{id}', 'edit');
     Route::put('/admin/news/update/{id}', 'update');
     Route::delete('/admin/news/delete/{id}', 'destroy');
+    Route::post('/admin/news/headline/{id}', 'headline')->whereNumber('id');   // the one article leading the home page's NEWS
 });
