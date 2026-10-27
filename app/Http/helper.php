@@ -1236,7 +1236,7 @@ function homeCacheKeys()
 {
 	return [
 		'home_latest_news',
-		'home_latest_material',
+		'home_recent_uploads',
 		'home_shelves_45',      // keyed by limit; the homepage uses getShelves(45)
 		'home_top_downloaded',
 		'home_top_viewed',
@@ -1265,15 +1265,17 @@ function getLatestNewsList()
 	return $news;
 }
 
-function getLatestMaterial()
+// The newest published materials, as shelf items (cover, link, title; "Added <date>" on hover).
+function getLatestMaterial($limit = 20)
 {
-	return cache()->remember('home_latest_material', 600, function () {
-		return App\Models\ViewCatalog::whereNotNull('created_at')
+	return withSiteUrls(cache()->remember('home_recent_uploads', 600, function () use ($limit) {
+		$rows = App\Models\ViewCatalog::whereNotNull('created_at')
 			->where('view_catalogs.deleted_at', null)
 			->where('is_published', 1)
 			->orderBy('created_at','DESC')
-			->limit(20)->get();
-	});
+			->limit($limit)->get(['catalog_id', 'title_statement', 'created_at']);
+		return rankItemsMap($rows, function ($r) { return 'Added ' . $r->created_at->format('j M Y'); });
+	}));
 }
 
 /**
@@ -1348,6 +1350,45 @@ function getHighestRated($limit = 10)
 }
 
 /**
+ * The highlight shelves at the front of the home page's shelf browser, in this order: the top 10
+ * downloaded, viewed and rated records (each item with its 'rank'), then the newest uploads. A list
+ * with nothing in it is left out. Same shape as getShelves(), plus 'ranked'.
+ */
+function getHighlightShelves(): array
+{
+	$ranked = fn (array $items) => array_map(fn ($item, $k) => $item + ['rank' => $k + 1], $items, array_keys(array_values($items)));
+	$shelves = [
+		['key' => 'top-downloaded', 'label' => 'Most Downloaded', 'ranked' => true,  'items' => $ranked(getMostDownloaded(10))],
+		['key' => 'top-viewed',     'label' => 'Most Viewed',     'ranked' => true,  'items' => $ranked(getMostViewed(10))],
+		['key' => 'top-rated',      'label' => 'Highest Rating',  'ranked' => true,  'items' => $ranked(getHighestRated(10))],
+		['key' => 'recent',         'label' => 'Recent Uploads',  'ranked' => false, 'items' => getLatestMaterial(20)],
+	];
+	return array_values(array_filter($shelves, fn ($shelf) => count($shelf['items'])));
+}
+
+/**
+ * The medals records have earned in the home page's top-10 lists, shown on their covers (material-type
+ * shelves, search results, Quick view, the record page): catalog_id => [ ['rank' => 1, 'list' => 'Most
+ * Downloaded'], ... ], at most one per list. Built once a request from the lists' own caches.
+ */
+function topRankMedals(): array
+{
+	return once(function () {
+		$medals = [];
+		foreach (['Most Downloaded' => getMostDownloaded(10), 'Most Viewed' => getMostViewed(10), 'Highest Rating' => getHighestRated(10)] as $list => $items) {
+			foreach (array_values($items) as $k => $item) $medals[(int) $item['catalog_id']][] = ['rank' => $k + 1, 'list' => $list];
+		}
+		return $medals;
+	});
+}
+
+/** One record's medals (topRankMedals), [] when it ranks in none of the lists. */
+function recordMedals($catalogId): array
+{
+	return topRankMedals()[(int) $catalogId] ?? [];
+}
+
+/**
  * Whether the signed-in patron has saved this record (always false for guests).
  * The homepage covers come from shared caches, so their star is filled in at render
  * time; the patron's saved ids are looked up once per request.
@@ -1382,10 +1423,13 @@ function getShelves($limit = 45)
     foreach ($populated as $p) {
         if (!$p->material_type_id) continue;
 
+        // The newest $limit of the type, shelved by title A-Z the way a reader finds them (numbers in
+        // numeric order, leading quotes and brackets ignored). Few records have a call number yet.
         $rows = App\Models\ViewCatalog::where('material_type_id', $p->material_type_id)
             ->where('is_published', 1)->whereNull('deleted_at')
             ->orderByDesc('created_at')->limit($limit)
-            ->get(['catalog_id', 'title_statement']);
+            ->get(['catalog_id', 'title_statement'])
+            ->sortBy(fn ($r) => ltrim(mb_strtolower((string) $r->title_statement), " \"'“”‘’[(.-"), SORT_NATURAL)->values();
         if ($rows->isEmpty()) continue;
 
         $items = $rows->map(function ($r) {

@@ -9,6 +9,7 @@
             @if($r->material_type)<span class="sr-badge">{{ $r->material_type }}</span>@endif
             @if($read)<span class="sr-badge is-ft">Full text</span>@endif
             @if($available)<span class="sr-badge is-avail">Available to borrow</span>@endif
+            @foreach(recordMedals($r->catalog_id) as $m)<span class="sr-badge is-rank">#{{ $m['rank'] }} {{ $m['list'] }}</span>@endforeach
             @if(is_numeric($rating) && $rating > 0)<span class="rating sr-stars" title="Rated {{ $rating }} of 5"><i data-star="{{ $rating }}"></i></span>@endif
         </div>
     </div>

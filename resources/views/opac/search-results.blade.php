@@ -113,7 +113,7 @@
 .sr-list { list-style: none; margin: 0; padding: 0; border: 1px solid var(--sr-line); border-radius: 12px; background: #fff; }
 .sr-item { display: grid; grid-template-columns: 70px minmax(0, 1fr) auto; gap: 16px; padding: 16px; border-top: 1px solid var(--sr-line); }
 .sr-item:first-child { border-top: 0; }
-.sr-cover { display: block; align-self: start; }
+.sr-cover { position: relative; display: block; align-self: start; }   /* relative: medals sit on its corner */
 .sr-cover img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 3px; box-shadow: 0 1px 4px rgba(0,0,0,.2); background: var(--sr-sunk); }
 .sr-body { min-width: 0; display: grid; gap: 5px; align-content: start; }
 .sr-title { margin: 0; font-size: 16.5px; line-height: 1.35; font-weight: 600; overflow-wrap: anywhere; }
@@ -128,6 +128,7 @@
 .sr-badge { font-size: 11.5px; font-weight: 500; border-radius: 999px; padding: 1px 9px; background: var(--sr-indigo-soft); color: var(--sr-indigo); }
 .sr-badge.is-ft { background: var(--sr-teal-soft); color: var(--sr-teal-ink); }
 .sr-badge.is-avail { background: var(--sr-green-soft); color: var(--sr-green); }
+.sr-badge.is-rank { background: #fff4d1; color: #7a5600; }   /* a rank in the home page's top-10 lists */
 .sr-stars { line-height: 1; }
 .sr-callno { font: 11.5px var(--sr-mono); color: var(--sr-muted); }
 .sr-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 2px; }

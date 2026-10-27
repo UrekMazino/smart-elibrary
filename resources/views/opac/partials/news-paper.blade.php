@@ -30,15 +30,29 @@
 
 	/* The collage behind the paper: scraps of other pages (masthead, headlines, weather, crossword,
 	   classifieds, markets, comics, photos), all drawn in CSS. Decoration only (aria-hidden).
-	   Slightly out of focus, so it stays behind the page yet the scraps can still be made out; it
-	   reaches past the section's edges so the blur doesn't fade at them. */
-	.nc { position: absolute; inset: -12px; z-index: 0; pointer-events: none; filter: blur(5px); }
+	   A pile, not placed scraps: a grid of overlapping scraps filled from the centre out, each tilted
+	   and nudged a little, so it covers the background at any width. On very wide screens (or zoomed
+	   out) the whole pile is drawn larger (--z) rather than with ever more scraps. Slightly out of
+	   focus, so it stays behind the page yet the scraps can still be made out; it reaches past the
+	   section's edges so the blur doesn't fade at them. */
+	.nc { --z: 1; position: absolute; inset: -40px; z-index: 0; overflow: hidden; pointer-events: none; filter: blur(5px); }
 	.nc::after { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 50%, rgba(0,0,0,.12), rgba(0,0,0,.45)); }
-	.nc > div { position: absolute; width: 290px; height: 220px; overflow: hidden; padding: 10px 12px 0; color: #222; background: #f2f0ea;
-		box-shadow: 0 2px 7px rgba(0,0,0,.35); font: 700 26px/1 Georgia, "Times New Roman", serif; text-transform: uppercase; transform: rotate(var(--r, 0deg)); }
+	.nc-in { width: calc(100% / var(--z)); height: calc(100% / var(--z)); transform: scale(var(--z)); transform-origin: 0 0;
+		display: grid; grid-template-columns: repeat(auto-fill, 230px); grid-auto-rows: 172px; justify-content: center; align-content: center; }
+	@media (min-width: 2100px) { .nc { --z: 1.25; } }
+	@media (min-width: 2700px) { .nc { --z: 1.6; } }
+	@media (min-width: 3400px) { .nc { --z: 2; } }
+	@media (min-width: 4300px) { .nc { --z: 2.5; } }
+	@media (min-width: 5400px) { .nc { --z: 3; } }
+	.nc-in > div { width: 290px; height: 220px; margin: -24px -30px; overflow: hidden; padding: 10px 12px 0; color: #222; background: #f2f0ea;
+		box-shadow: 0 2px 7px rgba(0,0,0,.35); font: 700 26px/1 Georgia, "Times New Roman", serif; text-transform: uppercase; rotate: -1deg; }
+	.nc-in > div:nth-child(7n+1) { rotate: -4deg; }  .nc-in > div:nth-child(7n+2) { rotate: 3deg; }  .nc-in > div:nth-child(7n+3) { rotate: -2deg; }
+	.nc-in > div:nth-child(7n+4) { rotate: 5deg; }   .nc-in > div:nth-child(7n+5) { rotate: -6deg; } .nc-in > div:nth-child(7n+6) { rotate: 2deg; }
+	.nc-in > div:nth-child(5n+2) { translate: 14px 10px; }  .nc-in > div:nth-child(5n+4) { translate: -12px -9px; }
+	.nc-in > div:nth-child(3n) { background: #e9e5d8; }
+	.nc-in > div:nth-child(4n+1) { background: #f6f5f1; }
 	.nc .s { font-size: 15px; letter-spacing: .12em; }
-	.nc > div:nth-child(3n) { background: #e9e5d8; }
-	.nc > div:nth-child(4n+1) { background: #f6f5f1; }
+	.nc .xl { font-size: 44px; }
 	.nc .torn { box-shadow: none; clip-path: polygon(0 3%, 6% 0, 13% 2.5%, 21% .5%, 30% 3%, 38% 1%, 47% 3.5%, 55% .5%, 64% 2.5%, 72% 0, 81% 3%, 90% 1%, 100% 3%,
 		100% 97%, 93% 100%, 85% 97.5%, 76% 99.5%, 67% 97%, 58% 99%, 49% 96.5%, 40% 99.5%, 31% 97%, 22% 99%, 13% 96.5%, 5% 99.5%, 0 97%); }
 	.nc i { display: block; height: var(--h, 220px); margin-top: 8px; background: repeating-linear-gradient(#8f8d88 0 2px, transparent 2px 6px); }
@@ -46,8 +60,9 @@
 		repeating-linear-gradient(#8f8d88 0 2px, transparent 2px 6px) 100% 0 / 47% 100% no-repeat; }
 	.nc .m { font: 400 54px/1 "UnifrakturMaguntia", "Old English Text MT", Georgia, serif; text-transform: none; text-align: center; }
 	.nc .k { display: block; margin-top: 5px; padding: 3px 0; border-block: 1px solid #222; font: 9px/1.2 Georgia, serif; letter-spacing: .2em; text-align: center; }
+	.nc i.pic:first-child { margin-top: 0; }
 	.nc i.pic { height: 118px; background: radial-gradient(circle, rgba(0,0,0,.5) 32%, transparent 36%) 0 0 / 5px 5px, linear-gradient(160deg, #d4d2cc, #77746d 55%, #34322e); }
-	.nc i.cw { width: 150px; height: 150px; border: 1px solid #222;
+	.nc i.cw { float: left; width: 150px; height: 150px; margin-right: 10px; border: 1px solid #222;
 		background: linear-gradient(#222 0 0) 15px 0 / 15px 15px no-repeat, linear-gradient(#222 0 0) 75px 30px / 15px 15px no-repeat,
 			linear-gradient(#222 0 0) 120px 15px / 15px 15px no-repeat, linear-gradient(#222 0 0) 45px 75px / 15px 15px no-repeat,
 			linear-gradient(#222 0 0) 105px 90px / 15px 15px no-repeat, linear-gradient(#222 0 0) 15px 120px / 15px 15px no-repeat,
@@ -172,32 +187,25 @@
 	}
 </style>
 <section id="sec-news" aria-labelledby="np-masthead">
-	<div class="nc" aria-hidden="true">
-		<div style="top:-6%;left:-3%;--r:-3deg"><div class="m">NEWS</div><span class="k">Vol. XII &middot; No. 48 &middot; Morning edition</span><i class="c2"></i></div>
-		<div class="s" style="top:18%;left:-1%;width:200px;--r:5deg">Crossword<i class="cw"></i></div>
-		<div class="torn" style="top:42%;left:-3%;--r:-2deg">Harvest report<i class="c2"></i></div>
-		<div class="s" style="top:66%;left:-2%;--r:3deg">Classifieds<i class="cls"></i></div>
-		<div style="top:88%;left:-3%;--r:-5deg"><i class="pic" style="margin:0"></i><i></i></div>
-		<div class="s" style="top:4%;left:10%;width:270px;--r:-6deg">Letters<i></i></div>
-		<div style="top:30%;left:11%;width:270px;--r:4deg"><i class="pic" style="margin:0"></i><i></i></div>
-		<div class="s torn" style="top:54%;left:10%;width:270px;--r:-4deg">Markets<i class="tbl"></i></div>
-		<div class="s" style="top:78%;left:11%;width:270px;--r:3deg">Comics<i class="cmx"></i><i></i></div>
-		<div class="s" style="top:-4%;right:-3%;--r:4deg">Weather<i class="sun"></i><i></i></div>
-		<div class="torn" style="top:20%;right:-3%;--r:-4deg">Science<i class="c2"></i></div>
-		<div class="s" style="top:44%;right:-2%;--r:2deg">Comics<i class="cmx"></i><i></i></div>
-		<div style="top:68%;right:-3%;--r:-3deg">Sports<i class="c2"></i></div>
-		<div class="s" style="top:90%;right:-2%;--r:5deg">Opinion<i></i></div>
-		<div class="torn" style="top:6%;right:10%;width:270px;--r:6deg">Books<i class="c2"></i></div>
-		<div class="s" style="top:32%;right:12%;width:200px;--r:-5deg">Crossword<i class="cw"></i></div>
-		<div class="s" style="top:56%;right:10%;width:270px;--r:3deg">Markets<i class="tbl"></i></div>
-		<div style="top:80%;right:11%;width:270px;--r:-4deg"><i class="pic" style="margin:0"></i><i></i></div>
-		<div style="top:-150px;left:26%;--r:-2deg;font-size:44px">Extra!<i class="c2"></i></div>
-		<div class="torn" style="top:-160px;left:43%;--r:3deg">Editorial<i class="c2"></i></div>
-		<div style="top:-150px;left:60%;--r:-4deg"><i class="pic" style="margin:0"></i><i></i></div>
-		<div style="bottom:-150px;left:24%;--r:4deg"><i class="pic" style="margin:0"></i><i></i></div>
-		<div style="bottom:-160px;left:42%;--r:-3deg">Local news<i class="c2"></i></div>
-		<div class="torn" style="bottom:-150px;left:59%;--r:2deg">Farm &amp; field<i class="c2"></i></div>
-	</div>
+	{{-- The kinds of scrap, dealt over enough cells to fill the pile in a fixed shuffled order (the same on every visit),
+	     so no column of the grid repeats the same scrap the way a regular order would. --}}
+	@php
+		$__scraps = [
+			['', '<div class="m">NEWS</div><span class="k">Vol. XII &middot; No. 48 &middot; Morning edition</span><i class="c2"></i>'],
+			['s', 'Crossword<i class="cw"></i><i></i>'], ['torn', 'Harvest report<i class="c2"></i>'], ['s', 'Classifieds<i class="cls"></i>'],
+			['', '<i class="pic"></i><i></i>'], ['s', 'Weather<i class="sun"></i><i></i>'], ['s torn', 'Markets<i class="tbl"></i>'],
+			['s', 'Comics<i class="cmx"></i><i></i>'], ['', 'Sports<i class="c2"></i>'], ['torn', 'Science<i class="c2"></i>'],
+			['s', 'Letters<i></i>'], ['', 'Local news<i class="c2"></i>'], ['torn', 'Books<i class="c2"></i>'],
+			['xl', 'Extra!<i class="c2"></i>'], ['s', 'Opinion<i></i>'], ['', 'Farm &amp; field<i class="c2"></i>'],
+		];
+		$__deal = (new Random\Randomizer(new Random\Engine\Mt19937(2026)))->shuffleArray(range(0, 71));
+	@endphp
+	<div class="nc" aria-hidden="true"><div class="nc-in">
+		@for($__i = 0; $__i < 72; $__i++)
+			@php [$__c, $__html] = $__scraps[$__deal[$__i] % 16]; @endphp
+			<div{!! $__c ? ' class="' . $__c . '"' : '' !!}>{!! $__html !!}</div>
+		@endfor
+	</div></div>
 	<div class="np-sheet">
 		@php
 			$lead = $items->first();

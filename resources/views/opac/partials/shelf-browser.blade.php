@@ -1,4 +1,10 @@
-@php $__shelves = getShelves(45); @endphp
+{{-- The highlight shelves (Most Downloaded, Most Viewed, Highest Rating, Recent Uploads) come first, so they are the
+     shelves in view when the page opens; then a shelf per material type (its newest 45, by title A-Z). A record's
+     ranks in the three top-10 lists show as medals on its cover there. --}}
+@php
+	$__highlights = getHighlightShelves();
+	$__shelves = array_merge($__highlights, getShelves(45));
+@endphp
 @if(count($__shelves))
 <style>
 	/* ---- eLibrary teal color scheme: multi-column shelf explorer ---- */
@@ -52,6 +58,15 @@
 		box-shadow:0 3px 4px rgba(0,0,0,.45), 0 15px 18px -9px rgba(0,0,0,.8); }
 	.col-book:hover { transform:translateY(-4px); z-index:2; }
 	.col-book.no-link { cursor:default; }
+	/* Highlight shelves: the rank on each book of a top-10 shelf, and its count / rating / date on hover. */
+	.col-rank { position:absolute; top:-12px; left:-9px; z-index:3; min-width:28px; height:28px; padding:0 7px; border-radius:14px; pointer-events:none;
+		background:linear-gradient(#a8661c, #6b3a08); color:#fff; border:2px solid #ffd5a7; box-shadow:0 2px 6px rgba(0,0,0,.55);
+		font:700 14px/24px Georgia,"Palatino Linotype",serif; text-align:center; }
+	.col-detail { position:absolute; left:0; right:0; bottom:0; z-index:2; padding:18px 5px 6px; border-radius:0 0 2px 2px; pointer-events:none;
+		background:linear-gradient(transparent, rgba(30,15,3,.9)); color:#fff; font-size:11.5px; font-weight:700; line-height:1.25; text-align:center;
+		opacity:0; transition:opacity .2s ease; }
+	.col-book:hover .col-detail, .col-book:focus-within .col-detail { opacity:1; }
+	@media (hover: none) { .col-detail { opacity:1; } }
 
 	/* Minimalist paging arrows: thin flat outline circle that fills teal on hover. */
 	.shelf-page { flex:0 0 auto; width:38px; height:38px; border-radius:50%;
@@ -86,18 +101,35 @@
 				<div class="shelf-col" data-idx="{{ $i }}">
 					<div class="shelf-col-head">{{ $shelf['label'] }}</div>
 					<div class="shelf-col-body">
-						@php $__rows = array_chunk($shelf['items'], (int) ceil(max(1, count($shelf['items'])) / 3)); @endphp
+						@php
+							// Three rows (fewer for a short shelf), read left to right and then down, as a ranking is read;
+							// a cover left over goes on an upper row (10 -> 4, 3, 3).
+							$__n = count($shelf['items']); $__r = min(3, max(1, $__n)); $__rows = []; $__at = 0;
+							for ($__k = 0; $__k < $__r; $__k++) {
+								$__len = intdiv($__n, $__r) + ($__k < $__n % $__r ? 1 : 0);
+								$__rows[] = array_slice($shelf['items'], $__at, $__len);
+								$__at += $__len;
+							}
+						@endphp
 						@foreach($__rows as $rowItems)
 							<div class="col-scroll-wrap">
 								<button type="button" class="row-arrow prev" aria-label="Scroll left" tabindex="-1" hidden>&#8249;</button>
 								<div class="col-scroll">
 									<div class="col-row">
 										@foreach($rowItems as $it)
+											@php
+												$__won = isset($shelf['ranked']) ? [] : recordMedals($it['catalog_id'] ?? 0);   // medals: type shelves only
+												$__lines = array_map(fn ($m) => '#' . $m['rank'] . ' ' . $m['list'], $__won);
+												$__tip = $it['title'] . (!empty($it['detail']) ? ' — ' . $it['detail'] : '') . ($__lines ? ' — ' . implode(', ', $__lines) : '');
+											@endphp
 											<div class="col-book{{ empty($it['url']) ? ' no-link' : '' }}">
+												@if(!empty($shelf['ranked']))<span class="col-rank" aria-hidden="true">{{ $it['rank'] }}</span>@endif
+												@include('opac.partials.rank-medals', ['medals' => $__won, 'decorative' => true])   {{-- named by the hover text --}}
 												{{-- A book without a record page is a plain picture, not a dead link. --}}
-												@if(!empty($it['url']))<a class="col-link" href="{{ $it['url'] }}" title="{{ $it['title'] }}">@else<span class="col-link" title="{{ $it['title'] }}">@endif
+												@if(!empty($it['url']))<a class="col-link" href="{{ $it['url'] }}" title="{{ $__tip }}">@else<span class="col-link" title="{{ $__tip }}">@endif
 													<img loading="lazy" src="{{ $it['thumb'] }}" alt="{{ $it['title'] }}">
 												@if(!empty($it['url']))</a>@else</span>@endif
+												@if(!empty($it['detail']))<span class="col-detail">{{ $it['detail'] }}</span>@elseif($__lines)<span class="col-detail">{!! implode('<br>', array_map('e', $__lines)) !!}</span>@endif
 												@if(!empty($it['catalog_id']))
 													@include('opac.partials.save-star', ['id' => $it['catalog_id'], 'title' => $it['title']])
 												@endif

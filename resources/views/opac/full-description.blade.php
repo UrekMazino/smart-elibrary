@@ -67,6 +67,10 @@
 		<style>
 			.fd-cover { margin: 0; }
 			.fd-cover img { box-shadow: 0 2px 10px rgba(0,0,0,.25); border-radius: 3px; max-width: 320px; width: 100%; }
+			/* The record's ranks in the home page's top-10 lists: medals on the cover, and in words under it. */
+			.fd-cover-art { position: relative; display: inline-block; max-width: 100%; }
+			.fd-ranks { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+			.fd-ranks li { font-size: 12.5px; font-weight: 600; border-radius: 999px; padding: 2px 10px; background: #fff4d1; color: #7a5600; }
 			/* General info reorganized layout */
 			#section_1 .box_general_3 { padding-top: 22px; }
             #section_1 { padding-bottom: 0px; }
@@ -168,6 +172,7 @@
 				.fd-details .fd-section:first-child { margin-top: 0; }
 				#sidebar .fd-cover { text-align: center !important; margin: 0 0 12px !important; }
 				#sidebar .fd-cover img { max-width: 210px; }
+				.fd-ranks { justify-content: center; }
 				#sidebar .booking .title { margin: -18px -16px 14px -16px; }
 				#sidebar .booking .title h3 { font-size: 15px; }
 				.fd-review-box #review_summary { margin: -18px -16px 14px -16px; }
@@ -340,9 +345,15 @@
 				<!-- /col -->
 				<aside class="col-xl-3 col-lg-4 order-1" id="sidebar">
 					<div class="fd-side-top">
+					@php $fdMedals = recordMedals($result->catalog_id); @endphp
 					<figure class="fd-cover" style="margin-bottom: 10px; text-align: left;">
-						{!! getFrontpageResult($result->catalog_id) !!}
+						<span class="fd-cover-art">{!! getFrontpageResult($result->catalog_id) !!}@include('opac.partials.rank-medals', ['medals' => $fdMedals, 'size' => 'large', 'decorative' => true])</span>
 					</figure>
+					@if($fdMedals)
+						<ul class="fd-ranks" aria-label="Ranked in the library's top 10">
+							@foreach($fdMedals as $m)<li>#{{ $m['rank'] }} in {{ $m['list'] }}</li>@endforeach
+						</ul>
+					@endif
 					@if(checkStocks($result->catalog_id))
 					<div class="box_general_3 booking">
 							<div class="title text-center" style="background-color: #00857a;">
