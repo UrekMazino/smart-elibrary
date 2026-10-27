@@ -539,15 +539,19 @@ function getThumbnailResult($catalog_id)
  */
 function getThumbnailLink($catalog_id)
 {
+	return url('/')."/".getThumbnailPath($catalog_id);
+}
+
+/** The cover thumbnail's path in public/ ("thumb/x.jpg"): the same for every host, so it can be cached. */
+function getThumbnailPath($catalog_id)
+{
 	$loc = coverBase($catalog_id);
 	if ($loc) {
 		$thumb = 'thumb/'.basename($loc);
-		$url = file_exists(public_path($thumb)) ? $thumb : $loc;
-	} else {
-		$url = 'frontpages/no-preview.jpg';
+		return file_exists(public_path($thumb)) ? $thumb : $loc;
 	}
 
-	return url('/')."/".$url;
+	return 'frontpages/no-preview.jpg';
 }
 
 function getFrontpageLink($catalog_id)
@@ -1248,7 +1252,8 @@ function getLatestMaterial()
 
 /**
  * Shape aggregate rows (each with catalog_id + title_statement) into homepage ranked-carousel
- * items: cover thumbnail, link, title, and a hover "detail" string built by $detailFn.
+ * items: cover thumbnail, link, title, and a hover "detail" string built by $detailFn. The cover
+ * and link are paths, for the cache; withSiteUrls() makes them addresses.
  */
 function rankItemsMap($rows, callable $detailFn)
 {
@@ -1256,17 +1261,28 @@ function rankItemsMap($rows, callable $detailFn)
 		return [
 			'catalog_id' => $r->catalog_id,
 			'title'      => $r->title_statement,
-			'thumb'      => getThumbnailLink($r->catalog_id),
-			'url'        => recordUrl($r),
+			'thumb'      => getThumbnailPath($r->catalog_id),
+			'url'        => recordPath($r),
 			'detail'     => $detailFn($r),
 		];
 	})->all();
 }
 
+/**
+ * Cached homepage items keep paths ('thumb', 'url'), made into this request's addresses here. An
+ * address names the host it was made on: covers cached from a visit on 127.0.0.1 were refused on
+ * localhost (the Content Security Policy loads images from the page's own host only), and in
+ * production one cached over http:// would be on https://.
+ */
+function withSiteUrls(array $items): array
+{
+	return array_map(fn ($item) => ['thumb' => url('/') . '/' . $item['thumb'], 'url' => url('/') . '/' . $item['url']] + $item, $items);
+}
+
 // Top-N most downloaded published materials (with total download count).
 function getMostDownloaded($limit = 10)
 {
-	return cache()->remember('home_top_downloaded', 600, function () use ($limit) {
+	return withSiteUrls(cache()->remember('home_top_downloaded', 600, function () use ($limit) {
 		$rows = DB::table('downloads as d')
 			->join('view_catalogs as v', 'v.catalog_id', '=', 'd.catalog_id')
 			->where('v.is_published', 1)->whereNull('v.deleted_at')
@@ -1274,13 +1290,13 @@ function getMostDownloaded($limit = 10)
 			->groupBy('d.catalog_id', 'v.title_statement')
 			->orderByDesc('total')->limit($limit)->get();
 		return rankItemsMap($rows, function ($r) { return number_format($r->total) . ' download' . ($r->total == 1 ? '' : 's'); });
-	});
+	}));
 }
 
 // Top-N most viewed published materials (with total view count).
 function getMostViewed($limit = 10)
 {
-	return cache()->remember('home_top_viewed', 600, function () use ($limit) {
+	return withSiteUrls(cache()->remember('home_top_viewed', 600, function () use ($limit) {
 		$rows = DB::table('views as vw')
 			->join('view_catalogs as v', 'v.catalog_id', '=', 'vw.catalog_id')
 			->where('v.is_published', 1)->whereNull('v.deleted_at')
@@ -1288,13 +1304,13 @@ function getMostViewed($limit = 10)
 			->groupBy('vw.catalog_id', 'v.title_statement')
 			->orderByDesc('total')->limit($limit)->get();
 		return rankItemsMap($rows, function ($r) { return number_format($r->total) . ' view' . ($r->total == 1 ? '' : 's'); });
-	});
+	}));
 }
 
 // Top-N highest average rating (published), tie-broken by number of votes.
 function getHighestRated($limit = 10)
 {
-	return cache()->remember('home_top_rated', 600, function () use ($limit) {
+	return withSiteUrls(cache()->remember('home_top_rated', 600, function () use ($limit) {
 		$rows = DB::table('ratings as r')
 			->join('view_catalogs as v', 'v.catalog_id', '=', 'r.catalog_id')
 			->where('v.is_published', 1)->whereNull('v.deleted_at')
@@ -1302,7 +1318,7 @@ function getHighestRated($limit = 10)
 			->groupBy('r.catalog_id', 'v.title_statement')
 			->orderByDesc('rating')->orderByDesc('votes')->limit($limit)->get();
 		return rankItemsMap($rows, function ($r) { return '★ ' . number_format($r->rating, 1) . ' · ' . $r->votes . ' rating' . ($r->votes == 1 ? '' : 's'); });
-	});
+	}));
 }
 
 /**
@@ -1322,11 +1338,12 @@ function isSavedRecord($catalogId): bool
  * Thumbnails only. Each shelf:
  *   ['key' => ..., 'label' => ..., 'items' => [ ['catalog_id','thumb','url','title'], ... ]].
  *
- * Every shelf is catalog-driven, so each item links to its record.
+ * Every shelf is catalog-driven, so each item links to its record. The cache keeps paths; the
+ * addresses are this request's (withSiteUrls).
  */
 function getShelves($limit = 45)
 {
-    return cache()->remember('home_shelves_' . $limit, 600, function () use ($limit) {
+    $shelves = cache()->remember('home_shelves_' . $limit, 600, function () use ($limit) {
     $shelves = [];
 
     // Only material types that have published records (most-populated first), so no empty shelves.
@@ -1348,8 +1365,8 @@ function getShelves($limit = 45)
         $items = $rows->map(function ($r) {
             return [
                 'catalog_id' => $r->catalog_id,
-                'thumb' => getThumbnailLink($r->catalog_id),
-                'url'   => recordUrl($r),
+                'thumb' => getThumbnailPath($r->catalog_id),
+                'url'   => recordPath($r),
                 'title' => $r->title_statement,
             ];
         })->all();
@@ -1368,6 +1385,8 @@ function getShelves($limit = 45)
 
     return $shelves;
     });
+
+    return array_map(fn ($shelf) => ['items' => withSiteUrls($shelf['items'])] + $shelf, $shelves);
 }
 
 
@@ -1808,7 +1827,13 @@ function seoRecordSegment($record, $title = null): string
 /** Absolute canonical URL for a record page. */
 function recordUrl($record, $title = null): string
 {
-	return url('/full-description/' . seoRecordSegment($record, $title));
+	return url('/' . recordPath($record, $title));
+}
+
+/** recordUrl() without the host ("full-description/…"), for values that are cached. */
+function recordPath($record, $title = null): string
+{
+	return 'full-description/' . seoRecordSegment($record, $title);
 }
 
 /**
