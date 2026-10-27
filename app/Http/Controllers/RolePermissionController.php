@@ -6,6 +6,7 @@ use App;
 use Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 
@@ -31,6 +32,29 @@ class RolePermissionController extends Controller
         'Accounts & Patrons' => 'access.accounts',
         'Configuration'      => 'access.configuration',
         'Utilities'          => 'access.utilities',
+    ];
+
+    /**
+     * Permissions listed under a module that work without its access permission, because other modules' pages use
+     * them too (their routes need only themselves), and why. The matrix never locks these.
+     */
+    private const WORKS_ALONE = [
+        'manage.patron.status' => 'Inquiries and Transactions use it too, so it works without Accounts & Patrons',
+    ];
+
+    /** How each module shows in the matrix: the sidebar's icon for it, and where its pages are. */
+    private const MODULE_LOOK = [
+        'Dashboard'          => ['grid', 'The dashboard and the notification bell'],
+        'Cataloging'         => ['book', 'Create New Record, Batch Import, Record List, On-Hold'],
+        'Circulation'        => ['repeat', 'Transactions, Check-Out/Check-In, History'],
+        'Accounts & Patrons' => ['users', 'Accounts → Patrons'],
+        'Security'           => ['shield', 'Accounts → Signed in now'],
+        'Configuration'      => ['settings', 'Administration → Settings'],
+        'Utilities'          => ['tool', 'Administration → Utilities: Material Types, MARC Templates, AI Sync Monitor, Theme'],
+        'Inquiry'            => ['message-square', 'Inquiries'],
+        'Inventory'          => ['package', 'Physical Count'],
+        'News'               => ['rss', 'News Article'],
+        'Reports'            => ['bar-chart-2', 'Reports'],
     ];
 
     public function __construct()
@@ -91,28 +115,41 @@ class RolePermissionController extends Controller
             $userCounts[$r->id] = $r->users()->count();
         }
 
-        // permission name => the module access permission it needs (or null)
-        $requires = [];
+        // The matrix, module by module. A module's switch is its access permission, and what's inside only works
+        // while it's on; a module of one permission is just that switch; Dashboard's two stand on their own.
+        $sections = [];
         foreach ($modules as $module => $perms) {
-            foreach ($perms as $p) {
-                $access = self::MODULE_ACCESS[$module] ?? null;
-                $requires[$p->name] = ($access && $access !== $p->name) ? $access : null;
-            }
+            $gate = collect($perms)->firstWhere('name', self::MODULE_ACCESS[$module] ?? null)
+                ?? (count($perms) === 1 ? $perms[0] : null);
+            [$icon, $where] = self::MODULE_LOOK[$module] ?? ['more-horizontal', ''];
+            $sections[] = [
+                'name'  => $module,
+                'slug'  => Str::slug($module),
+                'icon'  => $icon,
+                'where' => $where,
+                'gate'  => $gate,
+                'perms' => array_values(array_filter($perms, fn ($p) => $p !== $gate)),
+            ];
         }
-        $permIdsByName = Permission::pluck('id', 'name');
         $unused = self::UNUSED_PERMISSIONS;
+        $worksAlone = self::WORKS_ALONE;
         $systemRoles = self::SYSTEM_ROLES;
         $myRoleIds = auth()->user()->roles->pluck('id')->all();
 
-        return view('admin.roles', compact('roles', 'modules', 'rolePerms', 'userCounts', 'requires', 'permIdsByName', 'unused', 'systemRoles', 'myRoleIds'));
+        return view('admin.roles', compact('roles', 'sections', 'rolePerms', 'userCounts', 'unused', 'worksAlone', 'systemRoles', 'myRoleIds'));
     }
 
-    /** Grant or revoke a single (role, permission) pair — powers the access matrix. */
+    /**
+     * Grant or revoke a single (role, permission) pair — powers the access matrix. With `granted` it sets that state
+     * (the matrix's two-step actions, e.g. turn the module on, then allow a permission inside, so a page left open
+     * can't flip a cell someone else changed); without it, it flips what is stored.
+     */
     public function toggleRolePermission(Request $request)
     {
         $data = $request->validate([
             'role_id' => 'required|integer',
             'permission_id' => 'required|integer',
+            'granted' => 'sometimes|boolean',
         ]);
 
         $role = Role::find($data['role_id']);
@@ -122,13 +159,10 @@ class RolePermissionController extends Controller
 
         // Decide from the stored grant (the ticked cell), never from an implied/derived check,
         // so the checkbox always flips exactly what it shows.
-        if ($role->permissions()->whereKey($permission->getKey())->exists()) {
-            $role->revokePermissionTo($permission);
-            $granted = false;
-        } else {
-            $role->givePermissionTo($permission);
-            $granted = true;
-        }
+        $had = $role->permissions()->whereKey($permission->getKey())->exists();
+        $granted = array_key_exists('granted', $data) ? (bool) $data['granted'] : ! $had;
+        if ($granted && ! $had) $role->givePermissionTo($permission);
+        if (! $granted && $had) $role->revokePermissionTo($permission);
 
         return response()->json([
             'granted'   => $granted,

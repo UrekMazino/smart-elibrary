@@ -74,7 +74,8 @@ or Developer, with one or more roles).
   in `database/seeders/data/role_has_permissions.json`.
 - A module's pages also need the module's access permission: Cataloging, Circulation, Accounts &
   Patrons, Configuration (Settings, with `access.settings`) and Utilities (`access.utilities`, then each
-  utility's own permission). The Roles page fades a permission whose role lacks its module's access.
+  utility's own permission). The Roles page gives each module a switch per role and locks what's inside
+  while it's off; Ban / Block Patrons is the exception (Inquiries and Transactions use it, so it needs only itself).
 
 | Role | Permissions (of 38) |
 |---|---|
