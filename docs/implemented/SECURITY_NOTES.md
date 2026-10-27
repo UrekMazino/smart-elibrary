@@ -72,12 +72,15 @@ or Developer, with one or more roles).
   of the record editor. `tests/Feature/RouteSecurityTest.php` fails when a new route breaks this.
 - Permissions belong to roles. The matrix lives in Administration → Accounts → Roles, and its seed copy
   in `database/seeders/data/role_has_permissions.json`.
+- A module's pages also need the module's access permission: Cataloging, Circulation, Accounts &
+  Patrons, Configuration (Settings, with `access.settings`) and Utilities (`access.utilities`, then each
+  utility's own permission). The Roles page fades a permission whose role lacks its module's access.
 
-| Role | Permissions (of 37) |
+| Role | Permissions (of 38) |
 |---|---|
 | `developer` | Everything, including permissions added later (`Gate::before`) |
-| `super_admin` | All 37 |
-| `system_admin` | 32: all except AI mode, material types, patron ban/block, editing import batches and Signed in now |
+| `super_admin` | All 38 |
+| `system_admin` | 33: all except AI mode, material types, patron ban/block, editing import batches and Signed in now |
 | `cataloging_admin` | 10: cataloguing, records, imports, MARC templates |
 | `circulation_admin` | 7: reservations, check-out/in, patron ban/block |
 | `faculty` | 6: create, edit and delete records |

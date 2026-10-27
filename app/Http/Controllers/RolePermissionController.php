@@ -30,6 +30,7 @@ class RolePermissionController extends Controller
         'Circulation'        => 'access.circulation',
         'Accounts & Patrons' => 'access.accounts',
         'Configuration'      => 'access.configuration',
+        'Utilities'          => 'access.utilities',
     ];
 
     public function __construct()
@@ -49,8 +50,9 @@ class RolePermissionController extends Controller
             'create.catalog.import' => 'Cataloging', 'edit.catalog.import' => 'Cataloging', 'delete.catalog.import' => 'Cataloging', 'publish-hold.catalog' => 'Cataloging',
             'access.circulation' => 'Circulation', 'access.circulation.transaction' => 'Circulation', 'circulation.reservation.view' => 'Circulation', 'manage.circulation.reservation' => 'Circulation', 'manage.circulation.checkouts' => 'Circulation',
             'access.accounts' => 'Accounts & Patrons', 'create.patron' => 'Accounts & Patrons', 'edit.patron' => 'Accounts & Patrons', 'delete.patron' => 'Accounts & Patrons', 'manage.patron.status' => 'Accounts & Patrons',
-            'access.configuration' => 'Configuration', 'view.config.template' => 'Configuration', 'create.config.template' => 'Configuration', 'edit.config.template' => 'Configuration', 'delete.config.template' => 'Configuration', 'manage.ai.mode' => 'Configuration', 'manage.material.types' => 'Configuration',
-            'access.settings' => 'Configuration', 'access.ai.sync.monitor' => 'Configuration',
+            'access.configuration' => 'Configuration', 'access.settings' => 'Configuration', 'manage.ai.mode' => 'Configuration',
+            'access.utilities' => 'Utilities', 'view.config.template' => 'Utilities', 'create.config.template' => 'Utilities', 'edit.config.template' => 'Utilities', 'delete.config.template' => 'Utilities',
+            'manage.material.types' => 'Utilities', 'access.ai.sync.monitor' => 'Utilities', 'manage.theme' => 'Utilities',
             'access.inquiry' => 'Inquiry', 'access.inventory' => 'Inventory', 'access.news' => 'News', 'access.reports' => 'Reports',
             'access.sessions' => 'Security',
         ];
@@ -60,10 +62,15 @@ class RolePermissionController extends Controller
     /** All permissions grouped by module, in a sensible display order. */
     private function groupedPermissions(): array
     {
-        $order = ['Dashboard','Cataloging','Circulation','Accounts & Patrons','Security','Configuration','Inquiry','Inventory','News','Reports','Other'];
+        $order = ['Dashboard','Cataloging','Circulation','Accounts & Patrons','Security','Configuration','Utilities','Inquiry','Inventory','News','Reports','Other'];
         $grouped = [];
         foreach (Permission::orderBy('display_name')->get() as $p) {
             $grouped[$this->moduleOf($p->name)][] = $p;
+        }
+        // A module's access permission leads its group: nothing under it works without it.
+        foreach ($grouped as $m => $ps) {
+            $access = self::MODULE_ACCESS[$m] ?? null;
+            usort($grouped[$m], fn ($a, $b) => ($b->name === $access) <=> ($a->name === $access));
         }
         $ordered = [];
         foreach ($order as $m) { if (isset($grouped[$m])) $ordered[$m] = $grouped[$m]; }

@@ -105,8 +105,8 @@ Route::controller(InventoryController::class)->middleware('can:access.inventory'
 
 //MARC TEMPLATES AND TAG LOOKUPS
 Route::controller(ConfigurationController::class)->group(function () {
-    // Template management lives under Administration → Utilities (Configuration module).
-    Route::middleware('can:access.configuration')->group(function () {
+    // Template management lives under Administration → Utilities (Utilities module).
+    Route::middleware('can:access.utilities')->group(function () {
         Route::get('/admin/marc-templates', 'marcTemplates')->name('marc-templates-index')->middleware('can:view.config.template');
         Route::get('/admin/marc-templates/json', 'marcTemplatesJson')->name('marc-templates-json')->middleware('can:view.config.template');
         Route::get('/admin/marc-templates/create', 'createMarcTemplate')->name('create-marc-template')->middleware('can:create.config.template');
@@ -123,9 +123,9 @@ Route::controller(ConfigurationController::class)->group(function () {
 });
 
 // Administration → Utilities → AI Sync Monitor — audit trail of catalog changes + AI-index sync state. The
-// Configuration module plus its own permission (Roles matrix); its per-row re-sync has its own
+// Utilities module plus its own permission (Roles matrix); its per-row re-sync has its own
 // route here, so the page needs no Cataloging access.
-Route::controller(CatalogingController::class)->middleware(['can:access.configuration', 'can:access.ai.sync.monitor'])->group(function () {
+Route::controller(CatalogingController::class)->middleware(['can:access.utilities', 'can:access.ai.sync.monitor'])->group(function () {
     Route::get('/admin/ai-sync-monitor', 'aiSyncMonitor')->name('ai-sync-monitor');
     Route::get('/admin/ai-sync-monitor/json', 'aiSyncMonitorJson')->name('ai-sync-monitor-json');
     Route::post('/admin/ai-sync-monitor/run', 'runSyncNow')->name('ai-sync-monitor-run');
@@ -339,15 +339,15 @@ Route::controller(AppearanceController::class)->group(function () {
     Route::post('/admin/appearance', 'update');
     Route::post('/admin/appearance/reset', 'reset');
     Route::get('/admin/appearance/preview', 'preview')->middleware('throttle:120,1');   // read-only: the form's live preview
-    Route::middleware(['can:access.configuration', 'can:manage.theme'])->group(function () {
+    Route::middleware(['can:access.utilities', 'can:manage.theme'])->group(function () {
         Route::get('/admin/utilities/theme', 'editDefault')->name('utilities.theme');
         Route::post('/admin/utilities/theme', 'updateDefault');
     });
 });
 
-//UTILITIES (Administration → Utilities). The hub needs the Administration module; each
-// utility has its own permission.
-Route::controller(MaterialTypeController::class)->middleware('can:access.configuration')->group(function () {
+//UTILITIES (Administration → Utilities). The hub needs the Utilities module (access.utilities);
+// each utility has its own permission.
+Route::controller(MaterialTypeController::class)->middleware('can:access.utilities')->group(function () {
     Route::get('/admin/utilities', 'utilities')->name('utilities');
     Route::middleware('can:manage.material.types')->group(function () {
         Route::get('/admin/utilities/material-types', 'index')->name('utilities.material-types');

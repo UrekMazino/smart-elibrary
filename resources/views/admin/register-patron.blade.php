@@ -23,6 +23,9 @@
         color: var(--ui-text, #22283b); background: var(--ui-surface, #fff); text-align: center;
       }
       .qr-wrap svg, .qr-wrap img { max-width: 170px; height: auto; }
+      /* The QR comes as a fixed-size block (DNS2D): centred, on white so it still scans on a dark background. */
+      .qr-wrap { padding: 8px 0; }
+      .qr-wrap > div { margin: 0 auto; background: #fff; box-shadow: 0 0 0 8px #fff; }
 
       #popup-message {
         display: none; position: fixed; top: 50%; left: 50%;

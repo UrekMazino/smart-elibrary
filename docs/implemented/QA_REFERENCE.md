@@ -98,10 +98,10 @@ Every page here needs a staff account with `access.cataloging`, plus the permiss
 | Delete a batch | on the batch list | `delete.catalog.import` | Asks for confirmation; removes the import's records |
 | Local MARC tags | a record with 942, 952 or 999 (Koha exports have them), by Batch Import or **Import MARC file** in Create New Record | `create.catalog.import` / `create.catalog` | Local tags are named by their number: "942" on the admin Full Record tab and as the editor heading, subfields by code ("942$c"). Every one is kept (not only the first), the import does not fail, and **Update Record** keeps them. **Add Tag** (Create New Record, Edit, MARC Templates) offers 900–999, each with subfields $0–$9 and $a–$z. The OPAC hides 9XX tags |
 | Import report | `/admin/batch-report/{id}` | `view.catalog.importlist` | Skipped records and imported-but-flagged records, each with its problems (no title, no author, possible duplicate…). **Download skipped records** gives a `.mrc` of the skipped ones |
-| MARC Templates | Utilities card; `/admin/marc-templates` | `access.configuration` + `view.config.template` | List and search templates |
+| MARC Templates | Utilities card; `/admin/marc-templates` | `access.utilities` + `view.config.template` | List and search templates |
 | Create / edit template | `/admin/marc-templates/create`, `/admin/marc-templates/edit` | `create.config.template`, `edit.config.template` | Add MARC tags and subfields; the template appears in Create New Record |
 | Delete template | on the template list | `delete.config.template` | Asks for confirmation |
-| Material Types | `/admin/utilities/material-types` | `access.configuration` + `manage.material.types` | Add, rename, hide or show, merge into another type, delete. A type still in use cannot be deleted (the message says to merge it); MARC record types can only be hidden |
+| Material Types | `/admin/utilities/material-types` | `access.utilities` + `manage.material.types` | Add, rename, hide or show, merge into another type, delete. A type still in use cannot be deleted (the message says to merge it); MARC record types can only be hidden |
 
 ## Admin: circulation and inventory
 
@@ -167,9 +167,9 @@ The rest of the admin, in sidebar order. Staff land on the Dashboard after signi
 | Catalogue search | Tools card on Settings | same | **Check search** compares the search index with the catalogue in words ("up to date", or how many records need fixing); **Rebuild search index** asks first, then re-creates the index (at most 5 a minute) |
 | Sitemap for search engines | Tools card on Settings | same | **Rebuild sitemap** regenerates `/sitemap.xml` and updates the line and the Now in effect tile in place; warns when it lists another address (at most 5 a minute) |
 | Cached pages | Tools card on Settings | same | **Refresh cached pages**: home page shelves and counts refresh; patrons and staff stay signed in (at most 10 a minute) |
-| Utilities | `/admin/utilities` | `access.configuration` | Cards for the tools the role may use: Material Types, MARC Templates, AI Sync Monitor, Theme. The sidebar's Utilities stays highlighted on those pages, and their breadcrumb leads back here. "No utilities for your role yet" otherwise |
-| Theme | Utilities card; `/admin/utilities/theme` | `access.configuration` + `manage.theme` | The same choices as Appearance, as the library default for every staff member without their own; **Back to original** restores the template's look. Staff who chose their own keep it. With nothing chosen, every page looks exactly as before |
-| AI Sync Monitor | Utilities card; `/admin/ai-sync-monitor` | `access.configuration` + `access.ai.sync.monitor` | Pending, Failed and Synced counts; filter by change type and status; long titles wrap, and phones show each change as a card. **Re-sync** queues one record; **Run sync now** processes the queue (needs the AI service running) |
+| Utilities | `/admin/utilities` | `access.utilities` (Roles: "Utilities Module Access") | Cards for the tools the role may use: Material Types, MARC Templates, AI Sync Monitor, Theme. The sidebar's Utilities stays highlighted on those pages, and their breadcrumb leads back here. "No utilities for your role yet" otherwise |
+| Theme | Utilities card; `/admin/utilities/theme` | `access.utilities` + `manage.theme` | The same choices as Appearance, as the library default for every staff member without their own; **Back to original** restores the template's look. Staff who chose their own keep it. With nothing chosen, every page looks exactly as before |
+| AI Sync Monitor | Utilities card; `/admin/ai-sync-monitor` | `access.utilities` + `access.ai.sync.monitor` | Pending, Failed and Synced counts; filter by change type and status; long titles wrap, and phones show each change as a card. **Re-sync** queues one record; **Run sync now** processes the queue (needs the AI service running) |
 
 ## Must not work: security checks
 

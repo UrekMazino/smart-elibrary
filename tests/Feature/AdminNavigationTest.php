@@ -119,10 +119,29 @@ class AdminNavigationTest extends TestCase
             $this->assertSame(200, $this->actingAs($user)->get($landing)->getStatusCode(), "$role lands on $landing");
         }
 
-        // A role with only the Configuration module and one utility: not Settings, which it may not open.
-        Role::create(['name' => 'templates_only', 'guard_name' => 'web'])->givePermissionTo(['access.configuration', 'view.config.template']);
+        // A role with only the Utilities module and one utility: not Settings, which it may not open.
+        Role::create(['name' => 'templates_only', 'guard_name' => 'web'])->givePermissionTo(['access.utilities', 'view.config.template']);
         $user = $this->staff('templates_only');
         $this->assertSame(url('admin/utilities'), HomeController::adminLandingUrl($user));
         $this->actingAs($user)->get('/admin/utilities')->assertOk();
+    }
+
+    public function test_utilities_take_their_own_module_permission_not_the_settings_one()
+    {
+        // A utility without "Utilities Module Access": no Utilities link, and its pages stay shut.
+        Role::create(['name' => 'templates_no_module', 'guard_name' => 'web'])->givePermissionTo('view.config.template');
+        $user = $this->staff('templates_no_module');
+        $this->assertNotContains('/admin/utilities', $this->sidebar($user));
+        $this->actingAs($user)->get('/admin/utilities')->assertForbidden();
+        $this->actingAs($user)->get('/admin/marc-templates')->assertForbidden();
+
+        // With it, both open; Settings still needs access.configuration and its own permission.
+        Role::findByName('templates_no_module')->givePermissionTo('access.utilities');
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+        $user = $user->fresh();
+        $this->assertContains('/admin/utilities', $this->sidebar($user));
+        $this->actingAs($user)->get('/admin/utilities')->assertOk();
+        $this->actingAs($user)->get('/admin/marc-templates')->assertOk();
+        $this->actingAs($user)->get('/admin/settings')->assertForbidden();
     }
 }

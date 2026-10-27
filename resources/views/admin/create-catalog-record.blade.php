@@ -129,7 +129,8 @@
 <div class="page-content">
     <nav class="page-breadcrumb">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ url('/admin/marc-templates') }}">Cataloging</a></li>
+            {{-- Cataloging leads to the Record List (it led to MARC Templates, a Utilities page most cataloguers may not open). --}}
+            <li class="breadcrumb-item">@can('view.catalog.list')<a href="{{ url('/admin/record-list') }}">Cataloging</a>@else Cataloging @endcan</li>
             <li class="breadcrumb-item active" aria-current="page">Create</li>
         </ol>
     </nav>

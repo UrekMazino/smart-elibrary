@@ -83,9 +83,9 @@ class HomeController extends Controller
             'create.catalog' => 'access.cataloging', 'view.catalog.list' => 'access.cataloging', 'view.catalog.importlist' => 'access.cataloging',
             'circulation.reservation.view' => 'access.circulation', 'manage.circulation.checkouts' => 'access.circulation',
             'access.circulation.transaction' => 'access.circulation',
-            'access.settings' => 'access.configuration', 'manage.material.types' => 'access.configuration',
-            'view.config.template' => 'access.configuration', 'access.ai.sync.monitor' => 'access.configuration',
-            'manage.theme' => 'access.configuration',
+            'access.settings' => 'access.configuration', 'manage.material.types' => 'access.utilities',
+            'view.config.template' => 'access.utilities', 'access.ai.sync.monitor' => 'access.utilities',
+            'manage.theme' => 'access.utilities',
         ];
 
         foreach ($pages as $permission => $url) {

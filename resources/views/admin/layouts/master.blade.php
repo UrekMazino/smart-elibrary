@@ -234,7 +234,7 @@ License: For each use you must have a valid license purchased only from above li
             $me = auth()->user();
             $navAccounts  = $me->canAny(['access.accounts', 'access.sessions']) || $me->hasAnyRole(['super_admin', 'developer']);
             $navSettings  = $me->can('access.configuration') && $me->can('access.settings');
-            $navUtilities = $me->can('access.configuration') && $me->canAny(['manage.material.types', 'view.config.template', 'access.ai.sync.monitor', 'manage.theme']);
+            $navUtilities = $me->can('access.utilities') && $me->canAny(['manage.material.types', 'view.config.template', 'access.ai.sync.monitor', 'manage.theme']);
           @endphp
           @if($navAccounts || $navSettings || $navUtilities)
             <li class="nav-item nav-category">Administration</li>

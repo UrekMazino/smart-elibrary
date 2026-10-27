@@ -78,6 +78,7 @@
 
 @section('js')
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/tinymce/tinymce.min.js') }}"></script>
+@include('admin.partials.editor-look-js')
 <script nonce="{{ cspNonce() }}">
 // This page's buttons (data-call; onclick= is blocked by the Content Security Policy).
 AdminActions.allow(['saveArticle', 'previewImage']);
@@ -86,15 +87,14 @@ AdminActions.allow(['saveArticle', 'previewImage']);
 		'use strict';
 		if (window.feather) feather.replace();
 		if ($("#tinymceExample").length) {
-			tinymce.init({
+			tinymce.init(Object.assign({
 				selector: '#tinymceExample',
 				height: 420,
 				menubar: false,
 				plugins: 'advlist autolink lists link image charmap preview anchor pagebreak searchreplace wordcount visualblocks visualchars code fullscreen',   // one string: in an array it was read as one plugin name, so none loaded
 				toolbar: 'undo redo | styles | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image | code fullscreen',
-				image_advtab: true,
-				content_css: []
-			});
+				image_advtab: true
+			}, editorLook()));   // the toolbar and the text follow the staff member's appearance (dark backgrounds too)
 		}
 	});
 
