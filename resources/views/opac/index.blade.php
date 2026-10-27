@@ -192,7 +192,7 @@
 							</button>
 							@auth
 								<a class="home-tool" href="{{ url('/results') }}?saved=1">
-									<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z"/></svg>
+									<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" d="M4.5 1.75h7a.75.75 0 0 1 .75.75v11.75L8 11.3l-4.25 2.95V2.5a.75.75 0 0 1 .75-.75z"/></svg>
 									Saved <span class="n" id="home-saved-n">{{ \App\Models\SavedRecord::where('user_id', auth()->id())->count() }}</span>
 								</a>
 							@endauth
@@ -243,7 +243,7 @@
 						{{-- Guests: what a free account adds, with the way in. Signed-in patrons see their Saved pill instead. --}}
 						@guest
 						<p class="home-join">
-							<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z"/></svg>
+							<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" d="M4.5 1.75h7a.75.75 0 0 1 .75.75v11.75L8 11.3l-4.25 2.95V2.5a.75.75 0 0 1 .75-.75z"/></svg>
 							{{ settingEnabled('ai_mode_enabled', false) ? 'Save materials, reserve copies and ask the AI librarian' : 'Save materials and reserve copies' }} with a free account.
 							<span class="home-join-cta"><a href="{{ route('register') }}">Register</a> or <a href="{{ route('login') }}">log in</a></span>
 						</p>
@@ -275,21 +275,22 @@
 
 		<div id="sec-shelves">@include('opac.partials.shelf-browser')</div>
 		<style>
-			/* Save star (opac.partials.save-star): upper-right corner of a book on the shelves. An unsaved one
-			   shows on hover or keyboard focus (always on touch screens); a saved one (yellow) stays shown. */
-			.save-star { position:absolute; top:6px; right:6px; z-index:4; width:28px; height:28px; padding:0; border:0; border-radius:50%;
-				display:flex; align-items:center; justify-content:center; line-height:0; cursor:pointer;
-				background:rgba(255,255,255,.94); box-shadow:0 1px 4px rgba(0,0,0,.35);
-				opacity:0; transform:scale(.85); transition:opacity .16s ease, transform .16s ease; }
-			.save-star svg { width:16px; height:16px; fill:none; stroke:#4b5563; stroke-width:1.4; stroke-linejoin:round; transition:fill .16s ease, stroke .16s ease; }
-			.save-star:hover svg { stroke:#111827; }
-			.save-star.is-saved svg { fill:#ffc107; stroke:#d69e00; }
+			/* Save bookmark (opac.partials.save-star): a ribbon hanging from the top edge of a book on the shelves,
+			   edged in white (sides and notch; the top goes into the book) so it shows on any cover. An unsaved one
+			   drops in on hover or keyboard focus (always shown on touch screens); a saved one (filled teal) stays. */
+			.save-star { position:absolute; top:-3px; right:12px; z-index:4; width:24px; height:36px; padding:0; border:0; background:none;
+				line-height:0; cursor:pointer; opacity:0; transform:translateY(-6px); transition:opacity .16s ease, transform .16s ease; }
+			.save-star svg { width:100%; height:100%; overflow:visible; filter:drop-shadow(0 2px 2px rgba(0,0,0,.45)); }
+			.save-star .bm-fill { fill:rgba(17,24,39,.55); transition:fill .16s ease; }
+			.save-star .bm-edge { fill:none; stroke:#fff; stroke-width:2; stroke-linejoin:round; stroke-linecap:round; }
+			.save-star:hover .bm-fill { fill:rgba(0,133,122,.8); }
+			.save-star.is-saved .bm-fill { fill:#00857a; }
 			.col-book:hover .save-star, .save-star:focus-visible, .save-star.is-saved { opacity:1; transform:none; }
-			.save-star:focus-visible { outline:2px solid #0a5f56; outline-offset:2px; }
-			.save-star.pop svg { animation:save-pop .32s ease; }
-			@keyframes save-pop { 50% { transform:scale(1.35); } }
+			.save-star:focus-visible { outline:2px solid #fff; outline-offset:2px; }
+			.save-star.pop svg { animation:save-tug .38s ease; }   /* saved / removed: a little tug on the ribbon */
+			@keyframes save-tug { 40% { transform:translateY(5px); } 70% { transform:translateY(-2px); } }
 			@media (hover:none) { .save-star { opacity:1; transform:none; } }
-			@media (prefers-reduced-motion:reduce) { .save-star, .save-star svg { transition:none; } .save-star.pop svg { animation:none; } }
+			@media (prefers-reduced-motion:reduce) { .save-star, .save-star .bm-fill { transition:none; } .save-star.pop svg { animation:none; } }
 		</style>
 		@include('opac.partials.news-paper', ['items' => getLatestNews()])
 			<!-- /app_section -->

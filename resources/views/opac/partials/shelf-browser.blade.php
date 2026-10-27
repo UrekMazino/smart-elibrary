@@ -58,10 +58,27 @@
 		box-shadow:0 3px 4px rgba(0,0,0,.45), 0 15px 18px -9px rgba(0,0,0,.8); }
 	.col-book:hover { transform:translateY(-4px); z-index:2; }
 	.col-book.no-link { cursor:default; }
-	/* Highlight shelves: the rank on each book of a top-10 shelf, and its count / rating / date on hover. */
-	.col-rank { position:absolute; top:-12px; left:-9px; z-index:3; min-width:28px; height:28px; padding:0 7px; border-radius:14px; pointer-events:none;
-		background:linear-gradient(#a8661c, #6b3a08); color:#fff; border:2px solid #ffd5a7; box-shadow:0 2px 6px rgba(0,0,0,.55);
-		font:700 14px/24px Georgia,"Palatino Linotype",serif; text-align:center; }
+	/* Highlight shelves: each top-10 book wears its rank on a small foil crest at its upper-left corner (gold, silver
+	   and bronze for 1-3, a crown on #1; gold numerals on ebony for 4-10), and shows its count / rating / date on hover.
+	   The crest is a metallic rim (::before) round a face (::after), both cut to a shield; the number sits on top. */
+	.col-rank { position:absolute; top:-12px; left:-11px; z-index:3; width:30px; height:36px; display:grid; place-items:center; padding-bottom:7px;
+		pointer-events:none; font:700 15px/1 Georgia,"Palatino Linotype",serif; font-variant-numeric:lining-nums; letter-spacing:-.02em;
+		filter:drop-shadow(0 3px 3px rgba(0,0,0,.55)); }
+	.col-rank::before, .col-rank::after { content:""; position:absolute; z-index:-1;
+		clip-path:polygon(0 0, 100% 0, 100% 60%, 86% 78%, 50% 100%, 14% 78%, 0 60%); }
+	.col-rank::before { inset:0; background:var(--rk-rim); }
+	.col-rank::after { inset:2px; background:var(--rk-face); }
+	.col-rank b { position:relative; }
+	.col-rank.r1 { --rk-rim:linear-gradient(135deg,#7a5a0c,#f9e08b 30%,#b8860b 55%,#fff1b3 75%,#8a6510);
+		--rk-face:linear-gradient(160deg,#fff6c8,#f1c94a 35%,#c9971c 62%,#f7dd84 85%,#b07d12); color:#4a3305; text-shadow:0 1px 0 rgba(255,255,255,.55); }
+	.col-rank.r2 { --rk-rim:linear-gradient(135deg,#5c636c,#f5f7fa 30%,#9aa3ad 55%,#fff 75%,#6b737c);
+		--rk-face:linear-gradient(160deg,#fff,#d9dee4 35%,#a7b0ba 62%,#eef1f4 85%,#8c96a1); color:#2f3640; text-shadow:0 1px 0 rgba(255,255,255,.7); }
+	.col-rank.r3 { --rk-rim:linear-gradient(135deg,#5a2f0e,#f2b98a 30%,#a8622a 55%,#ffd2ad 75%,#6e3a12);
+		--rk-face:linear-gradient(160deg,#ffe2c7,#e0995c 35%,#b0682d 62%,#f0b37f 85%,#8a4c1d); color:#3d1d06; text-shadow:0 1px 0 rgba(255,230,205,.6); }
+	.col-rank.rn { --rk-rim:linear-gradient(135deg,#7a5a0c,#f9e08b 35%,#b8860b 60%,#8a6510); --rk-face:linear-gradient(160deg,#3d2c1d,#1b120b 60%,#2c1f15); }
+	.col-rank.rn b { background:linear-gradient(180deg,#fff3c4,#e8b93f 55%,#b8860b); -webkit-background-clip:text; background-clip:text; color:transparent; }
+	.col-rank .rk-crown { position:absolute; top:-9px; left:50%; width:18px; height:10px; translate:-50% 0;
+		background:linear-gradient(180deg,#fff1b3,#e2b23c 60%,#a8780f); clip-path:polygon(0 100%, 0 25%, 25% 62%, 50% 0, 75% 62%, 100% 25%, 100% 100%); }
 	.col-detail { position:absolute; left:0; right:0; bottom:0; z-index:2; padding:18px 5px 6px; border-radius:0 0 2px 2px; pointer-events:none;
 		background:linear-gradient(transparent, rgba(30,15,3,.9)); color:#fff; font-size:11.5px; font-weight:700; line-height:1.25; text-align:center;
 		opacity:0; transition:opacity .2s ease; }
@@ -123,7 +140,7 @@
 												$__tip = $it['title'] . (!empty($it['detail']) ? ' — ' . $it['detail'] : '') . ($__lines ? ' — ' . implode(', ', $__lines) : '');
 											@endphp
 											<div class="col-book{{ empty($it['url']) ? ' no-link' : '' }}">
-												@if(!empty($shelf['ranked']))<span class="col-rank" aria-hidden="true">{{ $it['rank'] }}</span>@endif
+												@if(!empty($shelf['ranked']))<span class="col-rank {{ ['r1', 'r2', 'r3'][$it['rank'] - 1] ?? 'rn' }}" aria-hidden="true">@if($it['rank'] === 1)<i class="rk-crown"></i>@endif<b>{{ $it['rank'] }}</b></span>@endif
 												@include('opac.partials.rank-medals', ['medals' => $__won, 'decorative' => true])   {{-- named by the hover text --}}
 												{{-- A book without a record page is a plain picture, not a dead link. --}}
 												@if(!empty($it['url']))<a class="col-link" href="{{ $it['url'] }}" title="{{ $__tip }}">@else<span class="col-link" title="{{ $__tip }}">@endif

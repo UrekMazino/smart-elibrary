@@ -91,7 +91,7 @@
                 @if($advToggle)</button>@else</a>@endif
                 @auth
                     <a class="sr-tool {{ $savedOn ? 'is-on' : '' }}" href="{{ $savedOn ? url('/results') : url('/results') . '?saved=1' }}" id="sr-saved-link">
-                        <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z"/></svg>
+                        <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" d="M4.5 1.75h7a.75.75 0 0 1 .75.75v11.75L8 11.3l-4.25 2.95V2.5a.75.75 0 0 1 .75-.75z"/></svg>
                         Saved <span class="sr-pill" id="sr-saved-n">{{ $savedN }}</span>
                     </a>
                 @endauth

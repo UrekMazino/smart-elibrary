@@ -43,7 +43,7 @@ class HomeShelvesTest extends TestCase
         $this->get('/home')->assertOk()
             ->assertSeeInOrder([self::HEAD . 'Most Downloaded', self::HEAD . 'Most Viewed', self::HEAD . 'Highest Rating',
                 self::HEAD . 'Recent Uploads', self::HEAD . 'Books'], false)
-            ->assertSee('class="col-rank"', false)
+            ->assertSee('class="col-rank r1" aria-hidden="true"><i class="rk-crown"></i><b>1</b>', false)   // the #1 crest wears a crown
             ->assertSee('1 download')
             ->assertSee('★ 5.0 · 1 rating')
             ->assertDontSee('id="sec-misc"', false)
@@ -69,8 +69,8 @@ class HomeShelvesTest extends TestCase
 
         $page = $this->get('/home')->assertOk()
             // A ranking reads left to right, then down: 1 2 / 3 4 / 5, so in the page 1..5 in order.
-            ->assertSeeInOrder([self::HEAD . 'Most Viewed', 'aria-hidden="true">1<', 'aria-hidden="true">2<', 'aria-hidden="true">3<',
-                'aria-hidden="true">4<', 'aria-hidden="true">5<', self::HEAD . 'Recent Uploads'], false)
+            ->assertSeeInOrder([self::HEAD . 'Most Viewed', 'col-rank r1', '<b>1</b>', 'col-rank r2', '<b>2</b>', 'col-rank r3', '<b>3</b>',
+                'col-rank rn', '<b>4</b>', 'col-rank rn', '<b>5</b>', self::HEAD . 'Recent Uploads'], false)
             // The type shelf: by title A-Z (case doesn't matter), and alpha's medals: gold for #1, silver for #2.
             ->assertSeeInOrder([self::HEAD . 'Books', 'class="medal m-gold" title="#1 Most Downloaded">1<',
                 'class="medal m-silver" title="#2 Most Viewed">2<', 'alt="alpha"',

@@ -120,9 +120,9 @@
 			.fd-actions a.fd-btn { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; text-decoration: none;
 				font-size: 12px; font-weight: 600; line-height: 1.1; }
 			.fd-save-ico { width: 22px; height: 22px; fill: none; stroke: #029978; stroke-width: 1.25; stroke-linejoin: round; }
-			.fd-btn.is-saved { background: #fff8e6 !important; border-color: #e0a100 !important; color: #8a6200 !important; }
-			.fd-btn.is-saved .fd-save-ico { fill: #f5b301; stroke: #e0a100; }
-			.fd-btn.is-saved:hover { background: #fff2cc !important; }
+			.fd-btn.is-saved { background: #e6f5f2 !important; border-color: #029978 !important; color: #00695f !important; }
+			.fd-btn.is-saved .fd-save-ico { fill: #029978; stroke: #029978; }
+			.fd-btn.is-saved:hover { background: #d3eee9 !important; }
 			.fd-btn.fd-save[aria-busy="true"] { opacity: .6; pointer-events: none; }
 			/* Read overlay (PDF.js) */
 			.ol-reader { position: fixed; inset: 0; z-index: 20000; background: rgba(18,20,24,.94); display: none; flex-direction: column; }
@@ -247,12 +247,12 @@
 									@php $fdSaved = isSavedRecord($result->catalog_id); @endphp
 									<button type="button" class="btn_1 fd-btn fd-save{{ $fdSaved ? ' is-saved' : '' }}" data-fd-save="{{ $result->catalog_id }}"
 										aria-pressed="{{ $fdSaved ? 'true' : 'false' }}" title="{{ $fdSaved ? 'Saved — click to remove from your list' : 'Save to your list' }}" data-fd="save">
-										<svg class="fd-save-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z"/></svg>
+										<svg class="fd-save-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 1.75h7a.75.75 0 0 1 .75.75v11.75L8 11.3l-4.25 2.95V2.5a.75.75 0 0 1 .75-.75z"/></svg>
 										<span class="fd-save-label">{{ $fdSaved ? 'Saved' : 'Save' }}</span>
 									</button>
 								@else
 									<a class="btn_1 fd-btn fd-save" href="{{ route('login') }}" title="Log in to save records" data-fd="guest-save">
-										<svg class="fd-save-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z"/></svg>
+										<svg class="fd-save-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 1.75h7a.75.75 0 0 1 .75.75v11.75L8 11.3l-4.25 2.95V2.5a.75.75 0 0 1 .75-.75z"/></svg>
 										<span class="fd-save-label">Save</span>
 									</a>
 								@endauth
