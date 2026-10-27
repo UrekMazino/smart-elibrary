@@ -216,3 +216,6 @@ used, and stored, where a feature needs them, on these terms:
 | Sessions (`sessions` table) | IP address and browser of each session (Laravel's database sessions) | until the session ends; staff pages never show the address |
 
 The `views` table still holds no address or browser string (`PrivacyTest`).
+
+What the statistics count and how: `RANKING_INTEGRITY.md`; what is still planned (storing a hashed address for a
+staff report, a purge job): `../not-implemented/RANKING_INTEGRITY_PLAN.md` step 2.6.
