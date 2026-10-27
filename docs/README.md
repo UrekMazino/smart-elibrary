@@ -7,7 +7,7 @@ Move a document across when that changes.
 
 | Document | What it is | Still open |
 |---|---|---|
-| [DEPLOYMENT_CHECKLIST.md](implemented/DEPLOYMENT_CHECKLIST.md) | How to deploy this app, required `.env`, change record | The production deployment itself (none yet) |
+| [DEPLOYMENT_CHECKLIST.md](implemented/DEPLOYMENT_CHECKLIST.md) | Installing and updating the app on a developer's PC, on staging and on production, step by step; `.env` per environment, web server, PHP, scheduler, backups, moving a database forward, troubleshooting. Also as a PDF: [DEPLOYMENT_CHECKLIST.pdf](implemented/DEPLOYMENT_CHECKLIST.pdf) | The staging and production deployments themselves (none yet) |
 | [LARAVEL_UPGRADE_RUNBOOK.md](implemented/LARAVEL_UPGRADE_RUNBOOK.md) | Laravel 8 → 13 upgrade, hop by hop | — (the app runs Laravel 13) |
 | [MEILISEARCH_SETUP.md](implemented/MEILISEARCH_SETUP.md) | Running and syncing the OPAC search index | — |
 | [OPAC_SEO_PLAN.md](implemented/OPAC_SEO_PLAN.md) | Page metadata, JSON-LD, sitemap, record URL slugs (all four workstreams) | §4 pre-launch steps: real domain, HTTPS, Search Console |
