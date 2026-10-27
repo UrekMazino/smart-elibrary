@@ -71,8 +71,8 @@ After changing them: `php artisan scout:sync-index-settings`.
 - **Automatic:** New Record, Edit Record, Batch Import, publish / hold, Material Type rename or
   merge, and adding or removing a cover or PDF (`Frontpage` / `Multimedia` model events).
 - **Not automatic:** view counts. "Most viewed" catches up when that record is re-indexed, or on a
-  full re-index (Admin › Settings › Re-index search, or `scout:import`).
-- Admin › Settings › Scan search index compares the index with the database.
+  full re-index (Admin › Settings › Tools › **Rebuild search index**, or `scout:import`).
+- Admin › Settings › Tools › **Check search** compares the index with the database.
 
 ## When Meilisearch is down
 

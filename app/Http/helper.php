@@ -1219,7 +1219,7 @@ function homeCacheKeys()
 }
 
 /**
- * Every cache key this app owns — what the Settings "Clear cache" button drops.
+ * Every cache key this app owns — what Settings → "Refresh cached pages" drops.
  * ADD NEW KEYS HERE when you add a cache, or the button silently won't clear it.
  *
  * Enumerated rather than Cache::flush() on purpose: the cache store also holds the

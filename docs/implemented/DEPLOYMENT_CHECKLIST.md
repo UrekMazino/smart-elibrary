@@ -172,7 +172,7 @@ uv pip install --python .venv\Scripts\python.exe -r requirements.txt
 powershell -ExecutionPolicy Bypass -File .\register-projecty-tasks.ps1
 ```
 
-**Who writes AI answers** (Admin → Settings → AI mode → **Answer with**). The default is *Google Gemini,
+**Who writes AI answers** (Admin → Settings → AI answers → **Who writes the answers**). The default is *Google Gemini,
 with the local AI as backup*, chosen for local development in Oct 2026. Before production, decide:
 - **Local AI only:** nothing leaves the server.
 - **A Gemini option:** the question and its retrieved passages go to Google, so this needs approval
@@ -297,7 +297,8 @@ asks you to place a code it generated on the site — only someone with access c
    <meta name="google-site-verification" content="ZxY9_aBc123dEfGhIjK4LmNoPqRsTuVwXyZ0" />
    ```
 4. Copy **only the value inside `content="…"`** — not the whole tag.
-5. Paste it into **Admin → Settings → Google Search Console verification code**, then Save. It is
+5. Paste it into **Admin → Settings → Search engines → Google Search Console verification code**, then
+   **Save changes** (a whole tag pasted by mistake keeps only its code). It is
    rendered into every public page's `<head>` (`opac/layout/master.blade.php`; blank = tag omitted).
 6. Back in Search Console, click **Verify**.
 7. Then **Sitemaps → submit** `https://<domain>/sitemap.xml`.

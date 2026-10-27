@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\Http;
 class AiSearchService
 {
     /**
-     * Who writes the answer (Admin > Settings > AI mode > "Answer with"). Search always runs
+     * Who writes the answer (Admin > Settings > AI answers > "Who writes the answers"). Search always runs
      * on the gateway's machine; only the writing step moves. The Gemini key lives in the
      * gateway's environment (ProjectY .env), never here.
      */
@@ -34,7 +34,7 @@ class AiSearchService
     public const DEFAULT_PROVIDER = 'gemini_local';
 
     /**
-     * The admin kill switch (Admin > Settings > AI mode). Off by default: AI mode has to
+     * The admin kill switch (Admin > Settings > AI answers). Off by default: AI mode has to
      * be turned on deliberately, so a fresh install never exposes it.
      *
      * This is the ONE source of truth for "is AI mode on" — the OPAC toggle, the routes

@@ -52,7 +52,7 @@ separately (`app/Http/Middleware/ThrottleRequests.php`):
 | Search: find an author, Quick view | 60 each |
 | AI answer | 10 |
 | Admin: bulk record actions and exports | 30 (export downloads 60) |
-| Admin Settings: clear cache 10, AI status 20, index check 10, re-index 5, sitemap 5 | as listed |
+| Admin Settings: refresh cached pages 10, AI status 20, check search 10, rebuild search index 5, rebuild sitemap 5 | as listed |
 | Admin Appearance preview | 120 |
 | Staff session warning: time left; "Stay signed in" | 60 each |
 | Sign out one of your sessions, or all the others (takes the password) | 10 |
