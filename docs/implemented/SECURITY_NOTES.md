@@ -189,3 +189,30 @@ or Developer, with one or more roles).
   180 minutes) must stay above the longest idle limit, or the sign-in page cannot say why a patron was
   signed out. Tests: `SessionLimitsTest`, `BrowserSessionsTest`, `BanEndsSessionsTest`, `SignedInNowTest`
   (`tests/Feature`).
+
+## 6. Visitor addresses (Data Privacy Act, RA 10173)
+
+Changed 2026-10-28. Until then the rule (R15, 2026-10-16) was: no visitor IP addresses at all, because
+nothing used them and the Act's proportionality principle (s. 11) says not to keep what is not needed.
+Now the library's statistics need to tell a reader apart from a reload or a script, so addresses may be
+used, and stored, where a feature needs them, on these terms:
+
+- **A purpose first.** Each use is written down in the table below before it ships: what is used, why and
+  for how long. Only that purpose: never to profile readers, never shared outside the agency.
+- **Lawful basis:** the agency's functions and its legitimate interest in protecting its systems and the
+  honesty of its statistics (s. 12 (e), (f)).
+- **As little as works.** A keyed hash (HMAC with the app key) instead of the address wherever comparing
+  is enough; the address itself only where a person has to read it (an abuse investigation).
+- **Retention.** The shortest that serves the purpose; anything kept in the database at most 90 days,
+  then deleted.
+- **Notice.** The OPAC's Privacy notice (footer link) says what is used and why; update it with this table.
+- **Access.** Only the staff who need that report; never on public pages or in exports.
+- Questions, or a use beyond these terms: the agency's Data Protection Officer.
+
+| Where | What | Kept |
+|---|---|---|
+| Counting views (`saveView()`) | the account, or for a guest a keyed hash of IP address + browser (`visitorHash()`): a reload or a script counts once per material a day, and at most 120 views an hour count | the cache only, until the day ends; never in the database |
+| Rate limits (`throttle`) | the account, or a guest's IP address | the cache, for the limit's window |
+| Sessions (`sessions` table) | IP address and browser of each session (Laravel's database sessions) | until the session ends; staff pages never show the address |
+
+The `views` table still holds no address or browser string (`PrivacyTest`).

@@ -252,7 +252,7 @@
 			<!-- Footer bottom -->
 			<div class="row">
 				<div class="col-12 text-center">
-					<div id="copy">© 2023 DOST-PCAARRD eLibrary</div>
+					<div id="copy">© 2023 DOST-PCAARRD eLibrary · <a href="#" data-bs-toggle="modal" data-bs-target="#modalPrivacy">Privacy</a></div>
 				</div>
 			</div>
 		</div>
@@ -287,9 +287,15 @@
 	        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 	      </div>
 	      <div class="modal-body">
-	        <p>
-				{{-- Content Here --}}
-			</p>
+			{{-- Keep in step with docs/implemented/SECURITY_NOTES.md §6. The agency's full notice (what accounts hold,
+			     retention, the Data Protection Officer's contact, data subject rights) is still to be written with its DPO. --}}
+			<h6>Your visit and the library's statistics</h6>
+			<p>When you open a material, the eLibrary uses your network (IP) address and browser to recognise a repeat
+				visit, so a reader is counted once a day in the list of most viewed materials and automated traffic is
+				slowed down. They are kept only in coded form and only until the end of the day; they are not added to
+				your account or shared outside the agency.</p>
+			<p>Downloads and ratings are counted once per account.</p>
+			<p class="mb-0">Questions about your personal data: <a href="mailto:{{ config('app.admin_email') }}">{{ config('app.admin_email') }}</a>.</p>
 	      </div>
 	    </div>
 	  </div>

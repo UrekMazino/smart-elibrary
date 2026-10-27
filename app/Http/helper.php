@@ -209,9 +209,11 @@ function isCrawler($agent = null): bool
 }
 
 /**
- * Record a view of a material. Crawler hits are deliberately NOT recorded — see isCrawler().
- * The visitor's IP address and browser string are not stored: nothing used them, and the Data
- * Privacy Act's proportionality principle (RA 10173, s. 11) says not to keep what is not needed.
+ * Record a view of a material: once per viewer per material a day, so reloading the page (or a script
+ * doing it) adds nothing, and at most 120 counted views an hour from one viewer (a bot walking the
+ * catalogue). Crawlers and staff are not counted — see isCrawler().
+ * A viewer is the signed-in account, else visitorHash(): the guest's IP address and browser, hashed,
+ * held only in the cache until the day ends — never stored in `views` (SECURITY_NOTES.md §6).
  */
 function saveView($id)
 {
@@ -219,6 +221,15 @@ function saveView($id)
 	if (isCrawler() || (Auth::check() && Auth::user()->isStaff())) {
 		return;
 	}
+
+	$viewer = Auth::check() ? 'u' . Auth::id() : 'g' . visitorHash();
+	if (Illuminate\Support\Facades\RateLimiter::tooManyAttempts('views:' . $viewer, 120)) {
+		return;
+	}
+	if (! cache()->add('viewed:' . (int) $id . ':' . $viewer, 1, now()->endOfDay())) {
+		return;   // already counted today
+	}
+	Illuminate\Support\Facades\RateLimiter::hit('views:' . $viewer, 3600);
 
 	$view = new App\Models\View;
 
@@ -238,18 +249,41 @@ function saveView($id)
 }
 
 
+/** A guest visitor, pseudonymised: their IP address and browser, hashed with the app key (SECURITY_NOTES.md §6). */
+function visitorHash(): string
+{
+	return substr(hash_hmac('sha256', request()->ip() . '|' . request()->userAgent(), (string) config('app.key')), 0, 32);
+}
+
+/**
+ * SQL counting views as viewer-days: a signed-in reader once a day per material, even in rows saved
+ * before saveView() counted that way (they held every reload); a guest's rows as they are.
+ */
+function viewerDaysSql(string $table = 'views'): string
+{
+	return "COUNT(DISTINCT CASE WHEN $table.user_id IS NULL THEN CONCAT('g', $table.id) ELSE CONCAT($table.user_id, '@', DATE($table.created_at)) END)";
+}
+
+/** Whether this account has read or downloaded the material: only its readers may rate it. */
+function hasReadOrDownloaded($userId, $catalogId): bool
+{
+	return App\Models\Download::where('user_id', $userId)->where('catalog_id', $catalogId)->exists()
+		|| DB::table('reads')->where('user_id', $userId)->where('catalog_id', $catalogId)->exists();
+}
+
+// The record page's counts: views as viewer-days, downloads as the readers who downloaded it.
 function countNum($type,$id)
 {
 	switch($type)
 	{
 		case "view":
-			return App\Models\View::where('catalog_id',$id)->count();
+			return (int) App\Models\View::where('catalog_id',$id)->selectRaw(viewerDaysSql() . ' as n')->value('n');
 		break;
 		case "review":
 			return App\Models\Rating::where('catalog_id',$id)->count();
 		break;
 		case "download":
-			return App\Models\Download::where('catalog_id',$id)->count();
+			return App\Models\Download::where('catalog_id',$id)->distinct()->count('user_id');
 		break;
 	}
 }
@@ -1307,44 +1341,50 @@ function withSiteUrls(array $items): array
 	return array_map(fn ($item) => ['thumb' => url('/') . '/' . $item['thumb'], 'url' => url('/') . '/' . $item['url']] + $item, $items);
 }
 
-// Top-N most downloaded published materials (with total download count).
+// Top-N most downloaded published materials, by the readers who downloaded them (one reader
+// downloading a file again doesn't count again).
 function getMostDownloaded($limit = 10)
 {
 	return withSiteUrls(cache()->remember('home_top_downloaded', 600, function () use ($limit) {
 		$rows = DB::table('downloads as d')
 			->join('view_catalogs as v', 'v.catalog_id', '=', 'd.catalog_id')
 			->where('v.is_published', 1)->whereNull('v.deleted_at')
-			->select('d.catalog_id', DB::raw('COUNT(*) as total'), 'v.title_statement')
+			->select('d.catalog_id', DB::raw('COUNT(DISTINCT d.user_id) as total'), 'v.title_statement')
 			->groupBy('d.catalog_id', 'v.title_statement')
 			->orderByDesc('total')->limit($limit)->get();
-		return rankItemsMap($rows, function ($r) { return number_format($r->total) . ' download' . ($r->total == 1 ? '' : 's'); });
+		return rankItemsMap($rows, function ($r) { return number_format($r->total) . ' reader' . ($r->total == 1 ? '' : 's') . ' downloaded'; });
 	}));
 }
 
-// Top-N most viewed published materials (with total view count).
+// Top-N most viewed published materials, in viewer-days (viewerDaysSql: a reload doesn't count again).
 function getMostViewed($limit = 10)
 {
 	return withSiteUrls(cache()->remember('home_top_viewed', 600, function () use ($limit) {
 		$rows = DB::table('views as vw')
 			->join('view_catalogs as v', 'v.catalog_id', '=', 'vw.catalog_id')
 			->where('v.is_published', 1)->whereNull('v.deleted_at')
-			->select('vw.catalog_id', DB::raw('COUNT(*) as total'), 'v.title_statement')
+			->select('vw.catalog_id', DB::raw(viewerDaysSql('vw') . ' as total'), 'v.title_statement')
 			->groupBy('vw.catalog_id', 'v.title_statement')
 			->orderByDesc('total')->limit($limit)->get();
 		return rankItemsMap($rows, function ($r) { return number_format($r->total) . ' view' . ($r->total == 1 ? '' : 's'); });
 	}));
 }
 
-// Top-N highest average rating (published), tie-broken by number of votes.
+// Top-N highest rated published materials, by a weighted average so a single 5-star vote can't top the
+// list: each record's average is pulled toward the library's average until it has some votes (the
+// formula IMDb's charts use, m = 3): score = v/(v+m)·R + m/(v+m)·C. The shelf still shows the plain average.
 function getHighestRated($limit = 10)
 {
 	return withSiteUrls(cache()->remember('home_top_rated', 600, function () use ($limit) {
-		$rows = DB::table('ratings as r')
-			->join('view_catalogs as v', 'v.catalog_id', '=', 'r.catalog_id')
-			->where('v.is_published', 1)->whereNull('v.deleted_at')
-			->select('r.catalog_id', DB::raw('ROUND(AVG(r.rating),1) as rating'), DB::raw('COUNT(*) as votes'), 'v.title_statement')
+		$published = fn () => DB::table('ratings as r')->join('view_catalogs as v', 'v.catalog_id', '=', 'r.catalog_id')
+			->where('v.is_published', 1)->whereNull('v.deleted_at');
+		$m = 3;
+		$c = (float) ($published()->avg('r.rating') ?? 0);
+		$rows = $published()
+			->select('r.catalog_id', 'v.title_statement')
+			->selectRaw('ROUND(AVG(r.rating),1) as rating, COUNT(*) as votes, COUNT(*) / (COUNT(*) + ?) * AVG(r.rating) + ? / (COUNT(*) + ?) * ? as score', [$m, $m, $m, $c])
 			->groupBy('r.catalog_id', 'v.title_statement')
-			->orderByDesc('rating')->orderByDesc('votes')->limit($limit)->get();
+			->orderByDesc('score')->orderByDesc('votes')->limit($limit)->get();
 		return rankItemsMap($rows, function ($r) { return '★ ' . number_format($r->rating, 1) . ' · ' . $r->votes . ' rating' . ($r->votes == 1 ? '' : 's'); });
 	}));
 }

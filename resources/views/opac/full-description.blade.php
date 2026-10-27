@@ -198,6 +198,12 @@
 					<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 				</div>
 			@endif
+			@if(session('error'))
+				<div class="alert alert-warning alert-dismissible fade show" role="alert">
+					{{ session('error') }}
+					<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+				</div>
+			@endif
 			<div class="row fd-layout">
 				<div class="col-xl-9 col-lg-8 order-2 fd-main">
 					<nav id="secondary_nav" style="background-color: #00857a;">
@@ -463,6 +469,10 @@
 						@if(Auth::check() && Auth::user()->isStaff())
 						{{-- Staff browsing the OPAC: reviews come from patrons. --}}
 						<button type="button" class="btn_1 full-width text-center fd-staff-off" disabled title="Reviews are written by patrons. You are signed in as staff.">Submit review</button>
+						@elseif(Auth::check() && ! hasReadOrDownloaded(Auth::id(), $result->catalog_id))
+						{{-- Only its readers rate a material (ReviewController). --}}
+						<button type="button" class="btn_1 full-width text-center fd-staff-off" disabled title="Read or download this material first, then you can rate it.">Submit review</button>
+						<p class="text-muted text-center mt-2 mb-0" style="font-size: 12.5px;">Read or download it first, then you can rate it.</p>
 						@else
 						<a href="#" class="btn_1 full-width text-center" data-fd="submit-review">Submit review</a>
 						@endif

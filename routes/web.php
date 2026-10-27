@@ -312,7 +312,7 @@ Route::controller(OPACController::class)->prefix('patron')->group(function () {
 
 
 Route::controller(DownloadController::class)->group(function () {
-    Route::post('/download', 'index');
+    Route::post('/download', 'index')->middleware('throttle:30,1');   // per account: a script can't pull files in bulk
 });
 
 //SETTINGS

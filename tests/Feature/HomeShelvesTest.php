@@ -44,7 +44,7 @@ class HomeShelvesTest extends TestCase
             ->assertSeeInOrder([self::HEAD . 'Most Downloaded', self::HEAD . 'Most Viewed', self::HEAD . 'Highest Rating',
                 self::HEAD . 'Recent Uploads', self::HEAD . 'Books'], false)
             ->assertSee('class="col-rank r1" aria-hidden="true"><i class="rk-crown"></i><b>1</b>', false)   // the #1 crest wears a crown
-            ->assertSee('1 download')
+            ->assertSee('1 reader downloaded')
             ->assertSee('★ 5.0 · 1 rating')
             ->assertDontSee('id="sec-misc"', false)
             ->assertDontSee('data-label="Highlights"', false);
