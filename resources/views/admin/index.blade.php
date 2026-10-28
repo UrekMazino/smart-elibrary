@@ -44,7 +44,7 @@
   {{-- ============ Needs attention (not affected by the date range) ============ --}}
   <section class="dsh-section" aria-labelledby="dsh-attn-h">
     <h2 class="dsh-h2" id="dsh-attn-h">Needs attention</h2>
-    <div class="dsh-attn">
+    <div class="dsh-attn" style="--dsh-attn-cols: {{ count($attention) }}">
       @foreach($attention as $a)
         @php $tag = $a['url'] ? 'a' : 'div'; $clear = $a['count'] === 0; @endphp
         <{{ $tag }} class="dsh-card dsh-attn-tile {{ $clear ? 'is-clear' : 'tone-' . $a['tone'] }}" @if($a['url']) href="{{ $a['url'] }}" @endif>

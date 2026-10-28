@@ -78,7 +78,7 @@ class RolePermissionController extends Controller
             'access.utilities' => 'Utilities', 'view.config.template' => 'Utilities', 'create.config.template' => 'Utilities', 'edit.config.template' => 'Utilities', 'delete.config.template' => 'Utilities',
             'manage.material.types' => 'Utilities', 'access.ai.sync.monitor' => 'Utilities', 'manage.theme' => 'Utilities',
             'access.inquiry' => 'Inquiry', 'access.inventory' => 'Inventory', 'access.news' => 'News', 'access.reports' => 'Reports',
-            'access.sessions' => 'Security',
+            'access.sessions' => 'Security', 'access.statistics.watch' => 'Security',
         ];
         return $map[$name] ?? 'Other';
     }

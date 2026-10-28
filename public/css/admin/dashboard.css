@@ -59,7 +59,7 @@
 .dsh-foot svg { width: 14px; height: 14px; color: var(--dsh-muted); }
 
 /* ---------- Needs attention ---------- */
-.dsh-attn { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.dsh-attn { display: grid; grid-template-columns: repeat(var(--dsh-attn-cols, 4), minmax(0, 1fr)); gap: 14px; }   /* one column per tile (4, or 5 with Statistics watch) */
 .dsh-attn-tile { display: flex; align-items: center; gap: 14px; padding: 16px 18px; color: inherit; text-decoration: none; transition: box-shadow .15s, transform .15s, border-color .15s; }
 a.dsh-attn-tile:hover { color: inherit; border-color: var(--ui-border, #dfe3eb); box-shadow: 0 8px 22px rgba(20, 30, 60, .08); transform: translateY(-1px); }
 .dsh-ic { flex: 0 0 auto; display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 12px; }

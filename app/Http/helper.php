@@ -1358,13 +1358,15 @@ function rankingWindowLabel(string $window = 'recent'): string
 
 /**
  * The rows that count in a ranking: those of the window ('recent': the last rankingDays() days; 'all') whose
- * account isn't banned. A guest's view (no account) counts; lifting the ban brings the account's rows back.
+ * account isn't banned or taken out of the rankings (Statistics watch, ranking_exclusions). A guest's view (no
+ * account) counts; lifting the ban, or putting the account back, brings its rows back.
  */
 function rankingRows($query, string $table, string $window)
 {
 	return $query
 		->when($window !== 'all', fn ($q) => $q->where("$table.created_at", '>=', now()->subDays(rankingDays())))
-		->whereNotExists(fn ($q) => $q->from('users as banned')->whereColumn('banned.id', "$table.user_id")->where('banned.is_banned', 1));
+		->whereNotExists(fn ($q) => $q->from('users as banned')->whereColumn('banned.id', "$table.user_id")->where('banned.is_banned', 1))
+		->whereNotExists(fn ($q) => $q->from('ranking_exclusions as rx')->whereColumn('rx.user_id', "$table.user_id")->whereNull('rx.lifted_at'));
 }
 
 // Top-N most downloaded published materials, by the readers who downloaded them (one reader

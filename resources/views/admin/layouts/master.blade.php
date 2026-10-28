@@ -227,12 +227,12 @@ License: For each use you must have a valid license purchased only from above li
           </li> --}}
 
           {{-- Administration: each link has the same checks as its route, and the heading shows only above a link.
-               Accounts (AdminController::accounts): Administrators, Patrons, Roles, Permissions, Signed in now. Utilities
+               Accounts (AdminController::accounts): Administrators, Patrons, Roles, Permissions, Signed in now, Statistics watch. Utilities
                (MaterialTypeController::utilities): Material Types, MARC Templates, AI Sync Monitor, Theme. Each stays
                highlighted on its cards' pages. --}}
           @php
             $me = auth()->user();
-            $navAccounts  = $me->canAny(['access.accounts', 'access.sessions']) || $me->hasAnyRole(['super_admin', 'developer']);
+            $navAccounts  = $me->canAny(['access.accounts', 'access.sessions', 'access.statistics.watch']) || $me->hasAnyRole(['super_admin', 'developer']);
             $navSettings  = $me->can('access.configuration') && $me->can('access.settings');
             $navUtilities = $me->can('access.utilities') && $me->canAny(['manage.material.types', 'view.config.template', 'access.ai.sync.monitor', 'manage.theme']);
           @endphp
@@ -241,7 +241,7 @@ License: For each use you must have a valid license purchased only from above li
           @endif
 
           @if($navAccounts)
-            <li class="nav-item {{ request()->is('admin/accounts', 'admin/patron*', 'admin/register*', 'superadmin/*', 'admin/roles*', 'admin/permissions*', 'admin/sessions') ? 'active' : '' }}">
+            <li class="nav-item {{ request()->is('admin/accounts', 'admin/patron*', 'admin/register*', 'superadmin/*', 'admin/roles*', 'admin/permissions*', 'admin/sessions', 'admin/statistics-watch') ? 'active' : '' }}">
               <a href="{{ route('accounts') }}" class="nav-link">
                 <i class="link-icon" data-feather="users"></i>
                 <span class="link-title">Accounts</span>

@@ -77,6 +77,7 @@ class HomeController extends Controller
             'access.ai.sync.monitor'       => 'admin/utilities',
             'manage.theme'                 => 'admin/utilities',
             'access.sessions'              => 'admin/sessions',
+            'access.statistics.watch'      => 'admin/statistics-watch',
         ];
         // Module access is required as well for pages inside a module.
         $module = [

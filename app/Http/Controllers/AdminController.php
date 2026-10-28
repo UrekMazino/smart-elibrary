@@ -29,6 +29,7 @@ use App\Models\User;
 use App\Models\ViewCatalog;
 use App\Services\BrowserSessions;
 use App\Services\DashboardService;
+use App\Services\StatisticsWatch;
 
 class AdminController extends Controller
 {
@@ -280,6 +281,16 @@ class AdminController extends Controller
                 'text'  => 'Who is signed in right now, and on which browsers. Sign one person out everywhere, or everyone.',
                 'meta'  => $signedIn->where('staff', true)->count() . ' staff · '
                          . ($patronsIn = $signedIn->where('staff', false)->count()) . ' ' . Str::plural('patron', $patronsIn) . ' signed in',
+            ];
+        }
+        if (auth()->user()->can('access.statistics.watch')) {
+            $toCheck = StatisticsWatch::toCheck(today());
+            $cards[] = [
+                'title' => 'Statistics watch',
+                'icon'  => 'eye',
+                'url'   => route('admin.statistics-watch'),
+                'text'  => 'Unusual views, downloads, ratings and sign-ups. Take an account out of the top-10 lists, or put it back.',
+                'meta'  => $toCheck ? $toCheck . ' ' . Str::plural('thing', $toCheck) . ' to look at today' : 'Nothing unusual today',
             ];
         }
 

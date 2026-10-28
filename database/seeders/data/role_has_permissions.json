@@ -534,5 +534,13 @@
     {
         "permission_id": 43,
         "role_id": 19
+    },
+    {
+        "permission_id": 44,
+        "role_id": 12
+    },
+    {
+        "permission_id": 44,
+        "role_id": 19
     }
 ]

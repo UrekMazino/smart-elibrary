@@ -74,6 +74,7 @@ separately (`app/Http/Middleware/ThrottleRequests.php`):
 | Staff session warning: time left; "Stay signed in" | 60 each |
 | Sign out one of your sessions, or all the others (takes the password) | 10 |
 | Signed in now: sign one person or everyone out (takes the password) | 10 |
+| Statistics watch: take accounts out of the rankings; put one back | 30 each |
 
 Not limited by the app: the public search results, search suggestions and record pages. In production
 the web server or a proxy in front of it should cap requests per IP address.
@@ -94,11 +95,11 @@ or Developer, with one or more roles).
   utility's own permission). The Roles page gives each module a switch per role and locks what's inside
   while it's off; Ban / Block Patrons is the exception (Inquiries and Transactions use it, so it needs only itself).
 
-| Role | Permissions (of 38) |
+| Role | Permissions (of 39) |
 |---|---|
 | `developer` | Everything, including permissions added later (`Gate::before`) |
-| `super_admin` | All 38 |
-| `system_admin` | 33: all except AI mode, material types, patron ban/block, editing import batches and Signed in now |
+| `super_admin` | All 39 |
+| `system_admin` | 33: all except AI mode, material types, patron ban/block, editing import batches, Signed in now and Statistics watch |
 | `cataloging_admin` | 10: cataloguing, records, imports, MARC templates |
 | `circulation_admin` | 7: reservations, check-out/in, patron ban/block |
 | `faculty` | 6: create, edit and delete records |
@@ -239,5 +240,7 @@ used, and stored, where a feature needs them, on these terms:
 
 The `views` table still holds no address or browser string (`PrivacyTest`).
 
-What the statistics count and how: `RANKING_INTEGRITY.md`; what is still planned (storing a hashed address for a
-staff report, a purge job): `../not-implemented/RANKING_INTEGRITY_PLAN.md` step 2.6.
+What the statistics count and how: `RANKING_INTEGRITY.md`; what is still planned (storing a hashed address for the
+statistics watch, and the address itself for developer and super admin only, decided 28 October 2026; a purge
+job): `../not-implemented/RANKING_INTEGRITY_PLAN.md` step 2.6. The statistics watch today shows accounts (name,
+address, when made, the day's activity) to the staff who have its permission, and no visitor address.

@@ -340,5 +340,14 @@
         "description": "Open Administration \u2192 Utilities; each utility also needs its own permission",
         "created_at": "2026-10-27 15:00:00",
         "updated_at": "2026-10-27 15:00:00"
+    },
+    {
+        "id": 44,
+        "name": "access.statistics.watch",
+        "guard_name": "web",
+        "display_name": "Statistics watch",
+        "description": "Open Administration \u2192 Accounts \u2192 Statistics watch: see unusual views, downloads, ratings and sign-ups, and take an account out of the top-10 lists or put it back",
+        "created_at": "2026-10-28 20:00:00",
+        "updated_at": "2026-10-28 20:00:00"
     }
 ]
