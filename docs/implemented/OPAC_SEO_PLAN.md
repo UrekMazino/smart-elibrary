@@ -83,7 +83,7 @@ dip). Do this work *before* the public launch.
 
 | Area | Finding | File |
 |---|---|---|
-| **Page `<title>`** | ❌ **Static and identical on every page** — `<title>DOST-PCAARRD eLibrary</title>`, no `@yield('title')` | `resources/views/opac/layout/master.blade.php:11` |
+| **Page `<title>`** | ❌ **Static and identical on every page** — `<title>DOST-FNRI eLibrary</title>`, no `@yield('title')` | `resources/views/opac/layout/master.blade.php:11` |
 | **Meta description** | ❌ **Static on every page** — `"Find ANNR materials online"` (also a typo: AANR) | `…/master.blade.php:7` |
 | **Canonical tag** | ❌ none | — |
 | **Open Graph / Twitter** | ❌ none (link previews show nothing) | — |
@@ -109,7 +109,7 @@ Make `master.blade.php` accept per-page values and give the record page real one
 - Add `@yield('title')` / `@yield('meta_description')` / canonical / OG / Twitter to the OPAC layout,
   with the current static strings as **fallbacks** so other pages keep working.
 - Record page (`opac/full-description.blade.php`) supplies:
-  - **title:** `{title_statement} — DOST-PCAARRD eLibrary` (trim MARC/ISBD trailing punctuation, cap ~60 chars)
+  - **title:** `{title_statement} — DOST-FNRI eLibrary` (trim MARC/ISBD trailing punctuation, cap ~60 chars)
   - **description:** `summary` (or `general_note`) truncated to ~155 chars, HTML-stripped
   - **canonical:** the absolute record URL (one canonical form — see §3)
   - **og:image:** `getFrontpageLink($catalog_id)` (cover art already exists per record)

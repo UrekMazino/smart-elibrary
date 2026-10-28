@@ -335,13 +335,11 @@ class AdminController extends Controller
         $list  = collect();
 
         switch ((int) request()->typeReport) {
-            case 1: // Acquisition (catalog records by material / source / keyword)
+            case 1: // Acquisition (catalog records by material / keyword)
                 $table = 1;
                 $material = !(request()->selectMaterial === ['0'] || empty(request()->selectMaterial));
-                $source   = !(request()->selectSource === ['0'] || empty(request()->selectSource));
                 $q = request()->keyword ? App\Models\ViewCatalog::search(request()->keyword) : App\Models\ViewCatalog::query();
                 if ($material) $q->whereIn('material_type_id', request()->selectMaterial);
-                if ($source)   $q->whereIn('consortia', request()->selectSource);
                 $list = $q->get();
                 break;
 

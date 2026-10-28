@@ -407,7 +407,7 @@
                                                     <br>
                                                     <select class="form-control" name="visit_location" required>
                                                         <option value="0" disabled selected>---Select Location---</option>
-                                                        <option value="PCAARRD - Los Banos">PCAARRD - Los Banos</option>
+                                                        <option value="FNRI - Bicutan">FNRI - Bicutan</option>
                                                         <option value="STII - Bicutan">STII - Bicutan</option>
                                                     </select>
                                                 </div>
@@ -552,7 +552,12 @@
 <script nonce="{{ cspNonce() }}" type="text/javascript">
 var inquiryIsGuest = {{ Auth::check() ? 'false' : 'true' }};
 var inquiryIsBlocked = {{ Auth::check() && Auth::user()->is_blocked ? 'true' : 'false' }};
-var libraryEmail = 'info@fprdi.dost.gov.ph';
+var libraryEmail = @json(config('app.admin_email'));   // null until ADMIN_EMAIL is set
+// "the library at <its address>", or just "the library" while there is none.
+function libraryAt(html) {
+	if (!libraryEmail) return 'the library';
+	return 'the library at ' + (html ? '<a href="mailto:' + libraryEmail + '"><strong>' + libraryEmail + '</strong></a>' : libraryEmail);
+}
 
 // The page's buttons (data-fd), wired here rather than with onclick= (Content Security Policy).
 document.addEventListener('click', function (e) {
@@ -581,11 +586,11 @@ function inquire(holdingsid)
 			Swal.fire({
 				icon: 'warning',
 				title: 'Account blocked',
-				html: 'Your account is <strong>blocked</strong> from sending inquiries.<br>Please contact the library at <a href="mailto:' + libraryEmail + '"><strong>' + libraryEmail + '</strong></a>.',
+				html: 'Your account is <strong>blocked</strong> from sending inquiries.<br>Please contact ' + libraryAt(true) + '.',
 				confirmButtonColor: '#00857a'
 			});
 		} else {
-			alert('Your account is blocked from sending inquiries. Please contact the library at ' + libraryEmail + '.');
+			alert('Your account is blocked from sending inquiries. Please contact ' + libraryAt(false) + '.');
 		}
 		return;
 	}
@@ -596,18 +601,19 @@ function inquire(holdingsid)
 			Swal.fire({
 				icon: 'info',
 				title: '<a href="{{ url('login') }}"><strong>Login</strong></a> required',
-				html: 'Submitting an inquiry here is available to <strong>registered users</strong> only.<br><br>' +
-				      'Please <a href="{{ url('register') }}"><strong>register</strong></a> or send your inquiry to the library\'s official email:<br>' +
-				      '<a href="mailto:' + libraryEmail + '"><strong>' + libraryEmail + '</strong></a>',
-				showCancelButton: true,
-				confirmButtonText: 'Email the library',
+				html: 'Submitting an inquiry here is available to <strong>registered users</strong> only.<br><br>' + (libraryEmail
+				      ? 'Please <a href="{{ url('register') }}"><strong>register</strong></a> or send your inquiry to the library\'s official email:<br>' +
+				        '<a href="mailto:' + libraryEmail + '"><strong>' + libraryEmail + '</strong></a>'
+				      : 'Please <a href="{{ url('register') }}"><strong>register</strong></a> or <a href="{{ url('login') }}"><strong>log in</strong></a> to send one.'),
+				showCancelButton: !!libraryEmail,
+				confirmButtonText: libraryEmail ? 'Email the library' : 'Close',
 				cancelButtonText: 'Close',
 				confirmButtonColor: '#00857a'
 			}).then(function (res) {
-				if (res.isConfirmed) { window.location.href = 'mailto:' + libraryEmail + '?subject=' + encodeURIComponent('Library Inquiry'); }
+				if (res.isConfirmed && libraryEmail) { window.location.href = 'mailto:' + libraryEmail + '?subject=' + encodeURIComponent('Library Inquiry'); }
 			});
 		} else {
-			alert('Inquiries here are for registered users. Please send your inquiry to the library at ' + libraryEmail + '.');
+			alert('Inquiries here are for registered users. ' + (libraryEmail ? 'Please send your inquiry to the library at ' + libraryEmail + '.' : 'Please register or log in to send one.'));
 		}
 		return;
 	}

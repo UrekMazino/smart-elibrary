@@ -60,7 +60,7 @@ class BatchImportReportTest extends TestCase
     private function import(): int
     {
         $file = implode('', [
-            $this->marc(['001' => 'C1', '020' => ['a' => '9789710000001'], '100' => ['a' => 'Cruz, Juan.'], '245' => ['a' => 'Complete record'], '260' => ['b' => 'PCAARRD,', 'c' => '2001.']]),
+            $this->marc(['001' => 'C1', '020' => ['a' => '9789710000001'], '100' => ['a' => 'Cruz, Juan.'], '245' => ['a' => 'Complete record'], '260' => ['b' => 'FNRI,', 'c' => '2001.']]),
             $this->marc(['001' => 'C2', '008' => '120101s2012', '245' => ['a' => 'No author or publisher'], '260' => ['c' => '1999']]),
             $this->marc(['001' => 'C3', '245' => ['a' => 'Only a title']]),
             $this->marc(['001' => 'C4', '100' => ['a' => 'Santos, Ana.'], '260' => ['c' => '2010']]),
@@ -100,7 +100,7 @@ class BatchImportReportTest extends TestCase
     public function test_the_marc_tables_are_asked_each_question_once_per_import()
     {
         $record = fn ($i) => $this->marc(['001' => "M$i", '020' => ['a' => "97897100$i"], '100' => ['a' => 'Cruz, Juan.'],
-            '245' => ['a' => "Title $i"], '260' => ['b' => 'PCAARRD,', 'c' => '2001.']]);
+            '245' => ['a' => "Title $i"], '260' => ['b' => 'FNRI,', 'c' => '2001.']]);
         $asked = 0;
         DB::listen(function ($query) use (&$asked) {
             if (str_contains($query->sql, 'from `marctag')) $asked++;
@@ -181,7 +181,7 @@ class BatchImportReportTest extends TestCase
         // Add the publisher; the author is still missing.
         foreach ($fields as &$field) {
             if ($field['marctag']['code'] === '260') {
-                $field['subfield'][] = ['sub-index' => 2, 'id' => 0, 'code' => '260$b', 'description' => 'Publisher', 'value' => 'PCAARRD'];
+                $field['subfield'][] = ['sub-index' => 2, 'id' => 0, 'code' => '260$b', 'description' => 'Publisher', 'value' => 'FNRI'];
             }
         }
         unset($field);

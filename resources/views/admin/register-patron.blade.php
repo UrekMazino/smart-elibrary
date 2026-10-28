@@ -94,8 +94,8 @@
                                 <strong>Email delivery is currently switched off</strong>, so the generated
                                 password is not sent to the patron. To give them a working password, open
                                 <a href="{{ url('/admin/patron') }}">Patrons</a> &rarr; <strong>Action</strong>
-                                &rarr; <strong>Reset Password</strong>, which sets the known default
-                                (<code>pcaarrdelibrary</code>), and ask them to change it after signing in.
+                                &rarr; <strong>Reset Password</strong>, which shows a new random password once,
+                                and ask them to change it after signing in.
                             </div>
                         </div>
 

@@ -11,7 +11,7 @@
 **eLibrary (this repo)** — Laravel 13 app on Laragon/Apache. Catalog records (MARC + aggregated
 `view_catalogs`), per-record **full-text PDFs** (`storage/app/private/pdf`, private since Oct 2026), cover photos + thumbnails,
 APA/MLA/Chicago **citations** (`buildCitations()`), and an OPAC with **Meilisearch** instant
-(keyword) search. Domain: Philippine agriculture/forestry research (FPRDI/DOST).
+(keyword) search. Domain: Philippine food and nutrition research (DOST-FNRI).
 
 **Project Y RAG** — fully-local AI stack on the same machine (Windows 11, RTX 4080 Super):
 - **llama.cpp** serving **Qwen3-30B** (OpenAI-compatible, `127.0.0.1:8080`, behind an nginx

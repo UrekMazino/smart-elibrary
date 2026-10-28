@@ -1190,16 +1190,6 @@ function getUser($id,$col)
 	return $user->$col;
 }
 
-function getConsortia($nopcaarrd = null)
-{
-	if($nopcaarrd == 'all')
-		$list = App\Models\Consortia::orderBy('id','DESC')->get();
-	else
-		$list = App\Models\Consortia::where('id','!=',16)->get();
-
-	return $list;
-}
-
 function getImprint()
 {
 	$list = App\Models\Imprint::get();
@@ -1739,7 +1729,7 @@ function seoTrimIsbd($text): string
  * A clean page title from a MARC 245 title statement.
  *
  * Casing is deliberately NOT changed: titles in this catalogue are often ALL CAPS, but title-casing
- * would mangle acronyms (DOST, PCAARRD) and botanical authorities ("Jatropha curcas L.") — wrong
+ * would mangle acronyms (DOST, FNRI) and botanical authorities ("Jatropha curcas L.") — wrong
  * data is worse than shouty data.
  */
 function seoTitle($title, int $max = 65): string
@@ -1753,7 +1743,7 @@ function seoTitle($title, int $max = 65): string
  * Record title for <title>. The site name is appended only when there is room for it: Google shows
  * roughly 60 characters, and for a long MARC title the words matter more than the branding.
  */
-function seoPageTitle($title, string $site = 'DOST-PCAARRD eLibrary'): string
+function seoPageTitle($title, string $site = 'DOST-FNRI eLibrary'): string
 {
     $t = seoTitle($title, 65);
     if ($t === '') {
@@ -1910,7 +1900,7 @@ function seoSiteJsonLd(): string
         [
             '@context'        => 'https://schema.org',
             '@type'           => 'WebSite',
-            'name'            => 'DOST-PCAARRD eLibrary',
+            'name'            => 'DOST-FNRI eLibrary',
             'url'             => $home,
             'potentialAction' => [
                 '@type'       => 'SearchAction',
@@ -1921,7 +1911,7 @@ function seoSiteJsonLd(): string
         [
             '@context' => 'https://schema.org',
             '@type'    => 'Organization',
-            'name'     => 'DOST-PCAARRD eLibrary',
+            'name'     => 'DOST-FNRI eLibrary',
             'url'      => $home,
             'logo'     => asset('assets/images/elibrary-02.png'),
         ],

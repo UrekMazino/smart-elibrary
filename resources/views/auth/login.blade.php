@@ -70,30 +70,33 @@
 @if (session('account_banned'))
 <script nonce="{{ cspNonce() }}" type="text/javascript">
 // Banned accounts cannot log in (AuthenticatedSessionController::store). Remind the patron of
-// the account's status, and that the ban is lifted only after they email the system admin.
+// the account's status, and that the ban is lifted only after they email the system admin
+// (ADMIN_EMAIL; until it is set, "contact the library").
 (function () {
 	var adminEmail = @json(config('app.admin_email'));
 	var accountEmail = @json(old('email', ''));
-	var mailto = 'mailto:' + adminEmail +
+	var mailto = adminEmail ? 'mailto:' + adminEmail +
 		'?subject=' + encodeURIComponent('Request to lift account ban') +
-		'&body=' + encodeURIComponent('Hello,\n\nI would like to request that the ban on my eLibrary account be lifted.\n\nAccount email: ' + accountEmail + '\n\nThank you.');
+		'&body=' + encodeURIComponent('Hello,\n\nI would like to request that the ban on my eLibrary account be lifted.\n\nAccount email: ' + accountEmail + '\n\nThank you.') : null;
 
 	if (window.Swal) {
 		Swal.fire({
 			icon: 'error',
 			title: 'Account banned',
 			html: 'Your account has been <strong>banned</strong> by the library administrator, so you cannot log in.<br><br>' +
-			      'If you want the ban lifted, please email the system administrator first at:<br>' +
-			      '<a href="' + mailto + '"><strong>' + adminEmail + '</strong></a>',
-			showCancelButton: true,
-			confirmButtonText: 'Email the administrator',
+			      (mailto ? 'If you want the ban lifted, please email the system administrator first at:<br>' +
+			                '<a href="' + mailto + '"><strong>' + adminEmail + '</strong></a>'
+			              : 'If you want the ban lifted, please contact the library.'),
+			showCancelButton: !!mailto,
+			confirmButtonText: mailto ? 'Email the administrator' : 'Close',
 			cancelButtonText: 'Close',
 			confirmButtonColor: '#00857a'
 		}).then(function (res) {
-			if (res.isConfirmed) { window.location.href = mailto; }
+			if (res.isConfirmed && mailto) { window.location.href = mailto; }
 		});
 	} else {
-		alert('Your account has been banned, so you cannot log in. If you want the ban lifted, please email the system administrator first at ' + adminEmail + '.');
+		alert('Your account has been banned, so you cannot log in. If you want the ban lifted, please '
+			+ (adminEmail ? 'email the system administrator first at ' + adminEmail : 'contact the library') + '.');
 	}
 })();
 </script>

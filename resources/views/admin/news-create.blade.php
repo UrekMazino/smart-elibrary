@@ -42,7 +42,7 @@
 						</div>
 						<div class="mb-3">
 							<label for="news_url" class="form-label">Redirect URL <span class="text-muted">(optional)</span></label>
-							<input type="text" class="form-control" id="news_url" name="news_url" placeholder="e.g. https://fprdi.dost.gov.ph/">
+							<input type="text" class="form-control" id="news_url" name="news_url" placeholder="e.g. https://www.fnri.dost.gov.ph/">
 							<small class="text-muted">Where clicking the article sends the reader. Leave blank to use the article body.</small>
 						</div>
 						<div>

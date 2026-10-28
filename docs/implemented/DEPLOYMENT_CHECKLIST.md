@@ -315,7 +315,7 @@ Production is Part B with the differences below. Deploy every release to staging
 | Search engines | asked to stay away (Settings switch on) | welcome (switch **off**), sitemap, Google Search Console |
 | Mail | test SMTP account | the library's SMTP account and sender address |
 | Accounts | sample and test accounts | named staff accounts only; no sample accounts |
-| `ADMIN_EMAIL` | any | the library's address (the built-in default belongs to another institute) |
+| `ADMIN_EMAIL` | any | the library's address: the OPAC footer, Privacy notice, chat, inquiry and banned popups (no default: they say "the library" until it is set) |
 | "I'm human" check | Cloudflare's test keys | the agency's own Turnstile widget for the domain ([D10](#d10-google-sign-in-and-the-im-human-check)) |
 | "Continue with Google" | the local-and-staging OAuth client; only its test users can sign in | the production OAuth client; the app published, so anyone can |
 | Backups | optional | daily, and a restore tested ([D7](#d7-backups-and-restore)) |

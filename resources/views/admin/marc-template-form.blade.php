@@ -88,7 +88,7 @@
                             <div class="col-md-6 mb-3">
                                 <label for="name" class="cr-label">Name <span class="cr-req">*</span></label>
                                 <input id="name" class="form-control @error('name') is-invalid @enderror" name="name" type="text"
-                                       value="{{ old('name', $template->name ?? '') }}" placeholder="e.g. BOOKS_LC_PCAARRD" maxlength="255" required>
+                                       value="{{ old('name', $template->name ?? '') }}" placeholder="e.g. BOOKS_LC_FNRI" maxlength="255" required>
                                 @error('name')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror

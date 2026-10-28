@@ -5,7 +5,7 @@
      Engine: App\Services\CatalogSearch (Meilisearch). The working area is
      opac/partials/search-results-main, which the script below swaps in place on every change. --}}
 
-@section('meta_title', 'Search results — DOST-PCAARRD eLibrary')
+@section('meta_title', 'Search results — DOST-FNRI eLibrary')
 @section('robots', 'noindex, follow')
 
 {{-- Breadcrumb: in the site header on desktop, a slim strip under it on smaller screens. --}}

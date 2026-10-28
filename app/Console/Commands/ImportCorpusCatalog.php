@@ -41,8 +41,8 @@ class ImportCorpusCatalog extends Command
     protected $description = 'Import the Project Y corpus (metadata.jsonl) as catalog records';
 
     /**
-     * Real ids from marctags_loc / marctag_subfields_loc. The tags mirror what FPRDI's
-     * own .mrc records carry (041 language, 100 authors, 245 title, 260 imprint,
+     * Real ids from marctags_loc / marctag_subfields_loc. The tags mirror what the
+     * library's own .mrc records carry (041 language, 100 authors, 245 title, 260 imprint,
      * 300 extent, 520 abstract, 650 subjects).
      */
     private const TAG_LDR = 2501;
@@ -263,7 +263,7 @@ class ImportCorpusCatalog extends Command
      * MARC field_data in the shape the record editor reads/writes (see
      * CatalogingController::storeRecord, which parses these tag/subfield codes).
      *
-     * Tags follow FPRDI's existing .mrc records: 041 language, 100 authors, 245 title +
+     * Tags follow the library's existing .mrc records: 041 language, 100 authors, 245 title +
      * statement of responsibility, 260 imprint, 300 extent, 500 note, 520 abstract,
      * 650 subjects. Only fields the document actually stated are written — an absent
      * tag is honest, an empty one is noise.
