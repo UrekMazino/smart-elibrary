@@ -46,11 +46,10 @@
                                 <input type="password" class="form-control" placeholder="Your password" name="password" id="password"
                                        autocomplete="current-password" @if ($errors->any()) aria-describedby="login-errors" @endif>
                             </div>
-                            {{-- Patrons only: LoginRequest ignores it for staff, who keep their limits. --}}
+                            {{-- 30 days on this device, staff and patrons (App\Services\SessionLimits). --}}
                             <div class="form-check mb-3">
-                                <input class="form-check-input" type="checkbox" name="remember" value="1" id="remember" aria-describedby="remember-hint">
-                                <label class="form-check-label" for="remember">Keep me signed in on this device ({{ \App\Services\SessionLimits::duration(config('auth.guards.web.remember')) }})</label>
-                                <small class="form-text text-muted d-block mt-0" id="remember-hint">Not on a shared computer. Staff accounts can’t stay signed in.</small>
+                                <input class="form-check-input" type="checkbox" name="remember" value="1" id="remember">
+                                <label class="form-check-label" for="remember">Keep me signed in</label>
                             </div>
                             <a href="#0"><small>Forgot password?</small></a>
                             <div class="form-group text-center add_top_20">

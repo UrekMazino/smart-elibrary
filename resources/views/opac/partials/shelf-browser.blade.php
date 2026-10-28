@@ -89,13 +89,20 @@
 
 	/* Top-10 window: the switch shows the last 90 days or all time on the top-10 shelves (clones too); each such
 	   shelf names its window under its title. A list empty in the last 90 days says so and offers all time. */
-	.rank-window { display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; margin:-6px 0 22px; }
-	.rank-window-label { font-family:Georgia,"Palatino Linotype",serif; font-size:15px; letter-spacing:.5px; color:#49290f; }
-	.rank-window-opts { display:inline-flex; padding:2px; border:1.5px solid #a06e14; border-radius:999px; background:rgba(255,255,255,.5); }
-	.rank-window-opts button { border:0; border-radius:999px; padding:5px 15px; background:transparent; color:#49290f;
-		font-size:13.5px; font-weight:600; line-height:1.3; cursor:pointer; transition:background .16s ease, color .16s ease; }
-	.rank-window-opts button:hover { background:rgba(160,110,20,.16); }
-	.rank-window-opts button[aria-pressed="true"] { background:#a06e14; color:#fff; }
+	.rank-window { display:flex; align-items:center; justify-content:center; gap:12px; flex-wrap:wrap; margin:-10px 0 20px;
+		font:11px/1.4 Georgia,"Palatino Linotype",serif; letter-spacing:.16em; text-transform:uppercase; }
+	.rank-window-label { display:inline-flex; align-items:center; gap:12px; color:#7a5a2e; }
+	.rank-window-label::after { content:""; width:22px; height:1px; background:#c9a86a; }
+	.rank-window-opts { display:inline-flex; align-items:center; }
+	.rank-window-opts button { position:relative; margin:0; padding:6px 0; border:0; background:none; color:#7a5a2e;
+		font:inherit; letter-spacing:inherit; text-transform:inherit; cursor:pointer; transition:color .16s ease; }
+	.rank-window-opts button + button { margin-left:22px; }
+	.rank-window-opts button + button::before { content:"\00B7"; position:absolute; left:-13px; color:#b08a4a; pointer-events:none; }
+	.rank-window-opts button::after { content:""; position:absolute; left:0; right:.16em; bottom:3px; height:1px; background:#a06e14;
+		transform:scaleX(0); transition:transform .2s ease; }
+	.rank-window-opts button:hover { color:#49290f; }
+	.rank-window-opts button[aria-pressed="true"] { color:#7f410a; }
+	.rank-window-opts button[aria-pressed="true"]::after { transform:scaleX(1); }
 	.rank-window button:focus-visible, .shelf-empty-btn:focus-visible { outline:2px solid #7f410a; outline-offset:2px; }
 	.shelf-col-when { display:block; margin-top:2px; font:600 11.5px/1.2 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
 		letter-spacing:.3px; color:#f0cf9c; }
@@ -133,7 +140,7 @@
 	</div>
 	@if($__ranked)
 		<div class="rank-window" role="group" aria-label="Top 10 lists">
-			<span class="rank-window-label">Top 10:</span>
+			<span class="rank-window-label">Top 10</span>
 			<span class="rank-window-opts">
 				<button type="button" data-rank-window="recent" aria-pressed="true">{{ ucfirst(rankingWindowLabel()) }}</button>
 				<button type="button" data-rank-window="all" aria-pressed="false">All time</button>

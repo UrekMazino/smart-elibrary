@@ -150,19 +150,17 @@ or Developer, with one or more roles).
 |---|---|---|
 | Staff | 30 minutes | 8 hours |
 | Patron | 2 hours | 12 hours |
-| Patron who ticked "Keep me signed in" | No limit, on that device | 30 days |
+| Anyone who ticked "Keep me signed in" (staff or patron) | No limit, on that device | 30 days |
 
 - **Activity** is any request to the site: opening a page, saving, searching. The staff warning asking
   how much time is left does not count.
 - **Staff warning.** 2 minutes before a limit, a dialog counts down. Before the idle limit, "Stay signed
   in" (or Esc) starts the 30 minutes again. Before the 8-hour limit it can only warn: save your work.
   It checks with the server first, so working in another tab keeps it away. Staff browsing the OPAC get
-  it too.
+  it too; not on a device kept signed in, which has no idle limit.
 - **After a sign-out** the sign-in page says why, and signing in again returns to the page.
-- **"Keep me signed in on this device (30 days)"** on the sign-in page is for patrons. A staff account
-  that ticks it is not remembered, and a remember cookie made while an account was a patron's stops
-  working once it is a staff account. The page says not to use it on a shared computer. The cookie is
-  `__Host-remember_web`: Secure, HttpOnly, 30 days. Signing out on any device ends it on every device
+- **"Keep me signed in"** on the sign-in page, for staff and patrons (staff since 28 October 2026): 30
+  days on that device, with no idle limit. The cookie is `__Host-remember_web`: Secure, HttpOnly, 30 days. Signing out on any device ends it on every device
   (Laravel keeps one remember token per account).
 - **Password change.** Every other session of the account ends at its next request, and "Keep me signed
   in" stops working on every device. This covers a change in the profile, a reset link and a librarian's
@@ -172,7 +170,10 @@ or Developer, with one or more roles).
 - **Compared with NIST SP 800-63B (2017).** Staff limits are within AAL2: sign in again every 12 hours,
   and after 30 minutes without activity. Patron accounts hold only the patron's own loans, inquiries,
   reservations and reviews, so they follow AAL1: sign in again at least every 30 days, the length of
-  "Keep me signed in".
+  "Keep me signed in". A staff member who ticks "Keep me signed in" is at AAL1's length on that device,
+  and whoever uses that device has their staff access for up to 30 days: tick it only on your own
+  computer, locked when you leave it. Signing out there, or "Sign out all other sessions" on the
+  profile, ends it.
 - **Where you're signed in** (the profile page, staff and patrons): every browser signed in to the
   account, with when it was last active and its IP address; "Sign out" for each, and "Sign out all other
   sessions". Both ask for the current password first (ASVS 7.5.2). Signing out one session deletes it. If
@@ -182,7 +183,7 @@ or Developer, with one or more roles).
   the other sessions. An account made with Google has no password: instead of typing one it needs a Google
   sign-in in the last 15 minutes, or "Confirm with Google" (Google again, for the same Google account);
   "Sign out all other sessions" then deletes the other sessions and gives the account a new remember token. A device kept signed in by its cookie is listed only while it has a session; the
-  patron page says so. The page never shows a session id, only an HMAC of it.
+  profile page says so, and always offers "Sign out all other sessions". The page never shows a session id, only an HMAC of it.
 - **Kept in the database** (`SESSION_DRIVER=database`, table `sessions`): for every visitor, signed in or
   not, the IP address, the browser (user agent), the last activity and the session's data. A row goes
   when its session ends (sign-out, a limit) or `SESSION_LIFETIME` after its last request. Switching from

@@ -51,14 +51,15 @@ class BrowserSessionsTest extends TestCase
             ->assertDontSee('Firefox')->assertDontSee('Edge on Windows')->assertDontSee('Safari on iPhone');
     }
 
-    public function test_staff_see_the_list_and_sign_out_all_only_when_there_are_other_sessions()
+    public function test_staff_see_the_list_and_sign_out_all_also_for_devices_kept_signed_in()
     {
         $staff = User::factory()->create(['usertype' => 'Administrator']);
 
+        // Staff may tick "Keep me signed in" too: such a device may not be listed, so the button is always there.
         $this->actingAs($staff)->here()->get('/admin/profile')->assertOk()
-            ->assertSee('Where you’re signed in')->assertDontSee('Sign out all other sessions');
+            ->assertSee('Where you’re signed in')->assertSee('Sign out all other sessions')->assertSee('can sign back in without being listed');
         $this->elsewhere($staff, agent: self::EDGE);
-        $this->here()->get('/admin/profile')->assertSee('Edge on Windows')->assertSee('Sign out all other sessions');
+        $this->here()->get('/admin/profile')->assertSee('Edge on Windows');
     }
 
     public function test_signing_out_another_session_takes_the_password()

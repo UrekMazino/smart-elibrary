@@ -1,6 +1,6 @@
 # DOST-FNRI eLibrary — QA Reference: Pages and Functions
 
-As of 28 October 2026 (sign-in, sign-up, the top-10 lists and the profile password rows).
+As of 28 October 2026 (sign-in with "Keep me signed in", sign-up, the top-10 lists and the profile password rows).
 
 Every page and action of the eLibrary, with its address, who may use it and what to check. Addresses are relative to the site being tested (for example the staging server); `{id}` stands for a record or item number.
 
@@ -34,7 +34,7 @@ These pages are open to everyone. Only published records ever appear; a held, de
 | --- | --- | --- | --- |
 | Landing | `/` | Anyone | Goes straight to `/home` |
 | Home | `/home` | Anyone | Search box; Browse the Shelves: the top-10 lists (Most Downloaded, Most Viewed, Highest Rating), Recent Uploads, then a shelf per material type; Related News. A signed-in patron who has not done the satisfaction survey sees its popup |
-| Top 10: Last 90 days · All time | switch above the shelves | Anyone | Opens on the last 90 days; All time changes all three top-10 shelves, each naming its window under its title. A list with nothing in the last 90 days says so, with "See all time". The medals on covers elsewhere follow the last 90 days. A banned patron's views, downloads and ratings stop counting at once |
+| Top 10 — Last 90 days · All time | switch above the shelves | Anyone | Opens on the last 90 days; All time changes all three top-10 shelves, each naming its window under its title. A list with nothing in the last 90 days says so, with "See all time". The medals on covers elsewhere follow the last 90 days. A banned patron's views, downloads and ratings stop counting at once |
 | Search results | `/results?query=…` | Anyone | Keyword search; filters (material type, author, year, full text available) with counts; sort; grid and list views; paging; suggestions while typing |
 | Quick view (on results) | button on each result | Anyone | Opens the record's main details over the list without leaving it |
 | Cite (on results) | button on each result | Anyone | Shows APA, MLA and Chicago; each Copy button copies its citation |
@@ -49,7 +49,7 @@ These pages are open to everyone. Only published records ever appear; a held, de
 | Schedule Reservation | box on the record page | Patron | Only when a copy is available. Date and time pickers, then a Confirm popup, then "Thank You!". Refused with a red message: weekends, past dates, times outside 8:00 AM to 5:00 PM. Staff see it greyed out |
 | Submit review | button on the record page | Patron | Opens the review page: 1 to 5 stars (required), remarks up to 1,000 characters. One review per patron per record. Staff see it greyed out |
 | Quick review popup | after a download, or a minute of reading | Patron | Asks for stars and remarks; saving reloads the page with the review shown |
-| Sign in | `/login`, or the popup on any page | Guest | Patrons land on `/home`, staff on the admin. 5 wrong passwords lock sign-in for a short time |
+| Sign in | `/login`, or the popup on any page | Guest | Patrons land on `/home`, staff on the admin. 5 wrong passwords lock sign-in for a short time. **Keep me signed in** (staff and patrons): signed in on that device for 30 days, with no idle limit; staff get no time-out warning there |
 | Continue with Google | button on `/login` and `/register`, when set up | Guest | A new Google address becomes a patron with no password; an existing patron's address signs in to that account. Refused, back on Sign in with a message: staff addresses, removed accounts; a banned patron gets the banned popup. Cancel on Google's page: "Google sign-in was cancelled." At most 10 a minute. Cases: `DEPLOYMENT_CHECKLIST.md` D10 |
 | Register | `/register` | Guest | Name, email, contact number, password (12+ characters, typed twice), and the "I'm human" check above the button (with Cloudflare's test keys it says "For testing only"; the failing test keys refuse). The email must not already be registered. At most 10 a minute |
 | Forgot password | `/forgot-password`, then the emailed link `/reset-password/{token}` | Guest | Sends a reset link; the link sets a new password. At most 5 a minute |

@@ -57,9 +57,9 @@ return [
     | Minutes after which a signed-in user is signed out: "idle" minutes
     | without a request, or "absolute" minutes after signing in, however
     | active (OWASP ASVS 7.3.1, 7.3.2). Staff see a warning "warning"
-    | minutes before. A patron who ticks "Keep me signed in" stays signed in
+    | minutes before. Anyone who ticks "Keep me signed in" stays signed in
     | on that device for auth.guards.web.remember minutes instead, with no
-    | idle limit. App\Services\SessionLimits; the written policy is in
+    | idle limit (and staff get no warning). App\Services\SessionLimits; the written policy is in
     | docs/implemented/SECURITY_NOTES.md section 5.
     |
     */

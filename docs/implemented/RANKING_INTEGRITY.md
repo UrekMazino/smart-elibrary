@@ -23,7 +23,7 @@ section 3 for what that hash is and where it lives).
 
 All three lists:
 - **Rank the last 90 days** (`rankingDays()`), so old activity, or old gaming, drops out by itself. Above the
-  shelves, *Top 10: Last 90 days · All time* switches all three to all time and back; each top-10 shelf names
+  shelves, *Top 10 — Last 90 days · All time* switches all three to all time and back; each top-10 shelf names
   its window under its title. The page opens on the last 90 days. A list with nothing in the last 90 days
   says so ("No ratings in the last 90 days.") and offers *See all time*. Highest Rating's library average
   (`C`, below) is that of the same window.

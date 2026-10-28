@@ -2,10 +2,12 @@
   Staff: a warning 2 minutes before the session limits sign them out (App\Services\SessionLimits). Before the idle
   limit it offers "Stay signed in"; before the 8-hour limit it can only say so. The page asks the server before
   warning (another tab may have kept the session going) and when the time is up: the server then signs out, and
-  the sign-in page says why. Included by the admin and the OPAC layouts.
+  the sign-in page says why. Included by the admin and the OPAC layouts. Not on a device kept signed in ("Keep me
+  signed in"): there is no idle limit, and the other is 30 days away.
 --}}
 @php($timeoutUser = auth()->user())
-@if ($timeoutUser && $timeoutUser->isStaff() && \App\Services\SessionLimits::started(request()->session()))
+@if ($timeoutUser && $timeoutUser->isStaff() && \App\Services\SessionLimits::started(request()->session())
+     && ! \App\Services\SessionLimits::remembered(request()->session()))
 @php($timeoutLeft = \App\Services\SessionLimits::secondsLeft($timeoutUser, request()->session()))
 <dialog id="session-timeout" class="session-timeout" aria-labelledby="session-timeout-title" aria-describedby="session-timeout-text"
         data-idle="{{ $timeoutLeft['idle'] }}" data-absolute="{{ $timeoutLeft['absolute'] }}" data-warn="{{ config('session.limits.warning') * 60 }}"

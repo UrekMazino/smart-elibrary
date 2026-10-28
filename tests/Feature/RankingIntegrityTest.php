@@ -149,7 +149,7 @@ class RankingIntegrityTest extends TestCase
 
         // Both lists are on the home page, the last 90 days shown first; a list with nothing in them says so.
         $this->get('/home')->assertOk()
-            ->assertSeeInOrder(['Top 10:', 'aria-pressed="true">Last 90 days', 'aria-pressed="false">All time'], false)
+            ->assertSeeInOrder(['Top 10</span>', 'aria-pressed="true">Last 90 days', 'aria-pressed="false">All time'], false)
             ->assertSeeInOrder(['data-window-only="recent"', 'Downloaded last week', 'data-window-only="all"', 'Downloaded long ago', '3 readers downloaded'], false)
             ->assertSee('No ratings in the last 90 days.');
     }
