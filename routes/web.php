@@ -24,6 +24,8 @@ use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\RolePermissionController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\SignedInNowController;
+use App\Http\Controllers\StatisticsWatchController;
+use App\Http\Controllers\RankingsController;
 
 
 /*
@@ -312,7 +314,7 @@ Route::controller(OPACController::class)->prefix('patron')->group(function () {
 
 
 Route::controller(DownloadController::class)->group(function () {
-    Route::post('/download', 'index');
+    Route::post('/download', 'index')->middleware('throttle:30,1');   // per account: a script can't pull files in bulk
 });
 
 //SETTINGS
@@ -343,6 +345,12 @@ Route::controller(AppearanceController::class)->group(function () {
         Route::get('/admin/utilities/theme', 'editDefault')->name('utilities.theme');
         Route::post('/admin/utilities/theme', 'updateDefault');
     });
+});
+
+// Administration → Utilities → Rankings: the top-10 lists with the numbers behind them; refresh them on the home page.
+Route::controller(RankingsController::class)->middleware(['auth', 'admin', 'can:access.utilities', 'can:access.rankings'])->group(function () {
+    Route::get('/admin/utilities/rankings', 'index')->name('utilities.rankings');
+    Route::post('/admin/utilities/rankings/refresh', 'refresh')->middleware('throttle:10,1')->name('utilities.rankings.refresh');
 });
 
 //UTILITIES (Administration → Utilities). The hub needs the Utilities module (access.utilities);
@@ -399,8 +407,8 @@ Route::controller(AdminController::class)->group(function () {
 
     // Administration → Accounts hub. Its Roles and Administrators pages are for super_admin and developer whatever
     // their permissions say, so the hub is too: unticking access.accounts cannot hide the way back to Roles.
-    // Signed in now (access.sessions) is one of its cards.
-    Route::get('/admin/accounts', 'accounts')->name('accounts')->middleware('role_or_permission:super_admin|developer|access.accounts|access.sessions');
+    // Signed in now (access.sessions) and Statistics watch (access.statistics.watch) are among its cards.
+    Route::get('/admin/accounts', 'accounts')->name('accounts')->middleware('role_or_permission:super_admin|developer|access.accounts|access.sessions|access.statistics.watch');
     Route::get('/admin/patron', 'patron')->name('patrons')->middleware('can:access.accounts');
     Route::post('/admin/user/toggle-flag', 'toggleUserFlag')->middleware('can:manage.patron.status');
 
@@ -424,6 +432,13 @@ Route::controller(AdminController::class)->group(function () {
 Route::controller(SignedInNowController::class)->middleware(['auth', 'admin', 'can:access.sessions'])->group(function () {
     Route::get('/admin/sessions', 'index')->name('admin.sessions');
     Route::delete('/admin/sessions', 'signOut')->middleware('throttle:10,1')->name('admin.sessions.sign-out');
+});
+
+// Administration → Accounts → Statistics watch: a day's unusual activity; take patrons out of the top-10 lists, or put one back.
+Route::controller(StatisticsWatchController::class)->middleware(['auth', 'admin', 'can:access.statistics.watch'])->group(function () {
+    Route::get('/admin/statistics-watch', 'index')->name('admin.statistics-watch');
+    Route::post('/admin/statistics-watch/exclusions', 'exclude')->middleware('throttle:30,1')->name('admin.statistics-watch.exclude');
+    Route::delete('/admin/statistics-watch/exclusions', 'putBack')->middleware('throttle:30,1')->name('admin.statistics-watch.put-back');
 });
 
 //BORROWED (Circulation → Transactions)
@@ -454,4 +469,5 @@ Route::controller(NewsController::class)->middleware('can:access.news')->group(f
     Route::get('/admin/news/edit/{id}', 'edit');
     Route::put('/admin/news/update/{id}', 'update');
     Route::delete('/admin/news/delete/{id}', 'destroy');
+    Route::post('/admin/news/headline/{id}', 'headline')->whereNumber('id');   // the one article leading the home page's NEWS
 });

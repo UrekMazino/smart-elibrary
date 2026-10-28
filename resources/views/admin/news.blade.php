@@ -8,6 +8,9 @@
 		.admin-page-head .apt { margin:0; font-size:1rem; font-weight:600; }
 		.admin-page-head .aph-desc { margin:2px 0 0; font-size:0.8125rem; color:var(--ui-muted, #8a94a6); }
 		table td { word-break:break-word; vertical-align:top; white-space:normal !important; }
+		.news-headline-now { display:flex; align-items:center; gap:6px; margin:-6px 0 14px; font-size:0.8125rem; color:var(--ui-muted, #8a94a6); }
+		.news-headline-now strong { color:var(--bs-body-color, inherit); }
+		.btn-headline { white-space:nowrap; }
 	</style>
 @endsection
 
@@ -27,18 +30,24 @@
 					<div class="admin-page-head">
 						<div>
 							<h6 class="apt">News Articles</h6>
-							<p class="aph-desc">Announcements and articles shown on the library home page. Feature an article to pin it to the front.</p>
+							<p class="aph-desc">Featured articles are shown in the NEWS section of the library home page. Pick one as the headline to lead it; otherwise the latest featured article leads.</p>
 						</div>
 						<a href="{{ url('/admin/news/add') }}" class="btn btn-primary">
 							<i data-feather="file-plus" class="icon-sm me-1"></i> Add News Article
 						</a>
 					</div>
+					<p class="news-headline-now">
+						<i data-feather="star" class="icon-sm"></i>
+						<span>Headline on the home page:</span>
+						<strong id="headlineNow">{{ $headline ? $headline->news_title : 'Automatic (the latest featured article)' }}</strong>
+					</p>
 
 					<div class="table-responsive">
 						<table id="tbl" class="table table-hover align-middle">
 							<thead>
 								<tr>
 									<th style="width:34%">Title</th>
+									<th>Headline</th>
 									<th>Featured</th>
 									<th>Created By</th>
 									<th>Created At</th>
@@ -66,15 +75,25 @@
 	const editUrlBase = '{{ url("/admin/news/edit") }}';
 	const deleteUrlBase = '{{ url("/admin/news/delete") }}';
 	const csrfToken = '{{ csrf_token() }}';
+	const headlineUrlBase = '{{ url("/admin/news/headline") }}';
 
 	$(document).ready(function () {
-		$('#tbl').DataTable({
+		const table = $('#tbl').DataTable({
 			processing: true,
 			serverSide: true,
-			order: [[3, 'desc']],
+			order: [[4, 'desc']],
 			ajax: '{{ url("/admin/news/json") }}',
 			columns: [
-				{ data: 'news_title' },
+				{ data: 'news_title', render: $.fn.dataTable.render.text() },
+				// One headline at a time: it leads the home page's NEWS. Only featured articles can be it.
+				{ data: 'is_headline', orderable: false, searchable: false, render: function (d, type, row) {
+					if (String(row.featured).toLowerCase() !== 'yes') {
+						return '<span class="text-muted small" title="Only featured articles are shown on the home page">—</span>';
+					}
+					return d
+						? `<button type="button" class="btn btn-sm btn-warning btn-headline" data-headline="${row.id}" aria-pressed="true" title="Leads the NEWS section. Click to go back to the latest featured article.">&#9733; Headline</button>`
+						: `<button type="button" class="btn btn-sm btn-outline-secondary btn-headline" data-headline="${row.id}" aria-pressed="false">Make headline</button>`;
+				} },
 				{ data: 'featured', orderable: false, render: function (d) {
 					return (String(d).toLowerCase() === 'yes')
 						? '<span class="badge bg-success">Featured</span>'
@@ -102,6 +121,21 @@
 				} }
 			],
 			drawCallback: function () { if (window.feather) feather.replace(); }
+		});
+
+		// Make headline / clear it. A refused session or permission is reported by the layout's ajaxError.
+		$('#tbl').on('click', '[data-headline]', function () {
+			const btn = this;
+			btn.disabled = true;
+			$.ajax({ url: headlineUrlBase + '/' + btn.dataset.headline, method: 'POST', dataType: 'json', headers: { 'X-CSRF-TOKEN': csrfToken } })
+				.done(function (r) {
+					document.getElementById('headlineNow').textContent = r.headline ? r.headline.news_title : 'Automatic (the latest featured article)';
+					table.ajax.reload(null, false);
+				})
+				.fail(function (xhr) {
+					if (xhr.status === 422 && window.Swal) Swal.fire({ icon: 'info', title: 'Not featured', text: xhr.responseJSON.message });
+				})
+				.always(function () { btn.disabled = false; });
 		});
 	});
 </script>

@@ -32,6 +32,11 @@ img-src 'self' data: blob:; connect-src 'self'; frame-src 'self'; media-src 'sel
 object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'
 ```
 
+One page adds an origin: the sign-up page, while the "I'm human" check is on (`TURNSTILE_SITE_KEY` and
+`TURNSTILE_SECRET_KEY` set), adds `https://challenges.cloudflare.com` to `script-src` and `frame-src` for
+Cloudflare Turnstile's script and frame. Its controller sets the request attribute `csp.turnstile`; no other
+page gets it. "Continue with Google" needs nothing: it is a link, and Google's pages are their own.
+
 ## What blocked enforcing (now done)
 
 Inline event handlers (`onclick="…"`) and `href="javascript:…"` links: a nonce can't cover them. Browsers

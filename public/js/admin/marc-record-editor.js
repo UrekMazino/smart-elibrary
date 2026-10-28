@@ -104,7 +104,7 @@ var MarcEditor = (function () {
         { code: '008$39', label: 'Cataloging source', type: 'select', options: CAT_SRC }
     ];
 
-    // A material's Type-of-record + bibliographic level. Defaults suit the PCAARRD corpus
+    // A material's Type-of-record + bibliographic level. Defaults suit the library's corpus
     // (mostly textual monographs); serials get bib level 's'.
     function marcTypeFor(materialName) {
         var n = String(materialName || '').toLowerCase();

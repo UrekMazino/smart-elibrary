@@ -30,6 +30,11 @@
         <!-- Keep test records out of the real Meilisearch index. -->
         <env name="SCOUT_DRIVER" value="null" force="true"/>
         <env name="PASSWORD_BREACH_CHECK" value="false" force="true"/>
+        <!-- The "I'm human" check and Google sign-in are off unless a test turns them on (with Cloudflare / Google faked). -->
+        <env name="TURNSTILE_SITE_KEY" value="" force="true"/>
+        <env name="TURNSTILE_SECRET_KEY" value="" force="true"/>
+        <env name="GOOGLE_CLIENT_ID" value="" force="true"/>
+        <env name="GOOGLE_CLIENT_SECRET" value="" force="true"/>
         <env name="SESSION_SECURE_COOKIE" value="true" force="true"/>
         <server name="MAIL_MAILER" value="array"/>
         <server name="QUEUE_CONNECTION" value="sync"/>

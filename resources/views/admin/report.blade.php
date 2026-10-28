@@ -72,21 +72,12 @@
 							<label class="form-label">Keyword / Phrase</label>
 							<input type="text" class="form-control" name="keyword" placeholder="Enter keyword/phrase (optional)">
 						</div>
-						<div class="col-md-4">
+						<div class="col-md-8">
 							<label class="form-label">Material Type</label>
 							<select class="js-example-basic-multiple form-select" id="selectMaterial" name="selectMaterial[]" multiple="multiple" data-width="100%">
 								<option value="0" selected>All</option>
 								@foreach(getMaterials() AS $list)
 									<option value="{{ $list->id }}">{{ $list->name }}</option>
-								@endforeach
-							</select>
-						</div>
-						<div class="col-md-4">
-							<label class="form-label">Source</label>
-							<select class="js-example-basic-multiple form-select" id="selectSource" name="selectSource[]" multiple="multiple" data-width="100%">
-								<option value="0" selected>All</option>
-								@foreach(getConsortia('all') AS $list)
-									<option value="{{ $list->name }}">{{ $list->name }}</option>
 								@endforeach
 							</select>
 						</div>

@@ -7,7 +7,7 @@
     $lcUser    = Auth::user();
     $lcGuest   = ! $lcUser;
     $lcBlocked = $lcUser && $lcUser->is_blocked;
-    $lcEmail   = 'info@fprdi.dost.gov.ph';
+    $lcEmail   = config('app.admin_email');
     $lcLogo    = is_file(public_path('opac/img/fnri-logo.png')) ? asset('opac/img/fnri-logo.png') : null;
     $lcIcon    = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-5 4v-4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm3 6.5a1.5 1.5 0 1 0 0 .01zm5 0a1.5 1.5 0 1 0 0 .01zm5 0a1.5 1.5 0 1 0 0 .01z"/></svg>';
 @endphp
@@ -107,7 +107,7 @@
             <div class="lc-bubble">Hi{{ $lcUser ? ', ' . \Illuminate\Support\Str::before($lcUser->name, ' ') : '' }}! Ask us anything about the library, its collection or its services.</div>
 
             @if($lcBlocked)
-                <p class="lc-alert" role="alert">Your account is blocked from sending inquiries. Please email the library at <a href="mailto:{{ $lcEmail }}">{{ $lcEmail }}</a>.</p>
+                <p class="lc-alert" role="alert">Your account is blocked from sending inquiries. Please @if($lcEmail)email the library at <a href="mailto:{{ $lcEmail }}">{{ $lcEmail }}</a>@else contact the library @endif.</p>
             @else
                 @if($lcGuest)
                     <p class="lc-note">Have an account? <a href="{{ route('login') }}">Log in</a> to read our reply here, or <a href="{{ route('register') }}">register</a>. You can also leave your details below and we'll reply by email.</p>

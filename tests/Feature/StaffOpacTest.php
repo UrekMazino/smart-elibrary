@@ -122,7 +122,8 @@ class StaffOpacTest extends TestCase
 
         $this->assertSame([0, 0], [DB::table('inquiries')->count(), DB::table('circulations')->count()]);
 
-        // Patrons keep both.
+        // Patrons keep both (reviewing once they have read the material: only its readers rate it).
+        DB::table('reads')->insert(['catalog_id' => $this->catalogId, 'user_id' => $this->patron->id, 'created_at' => now()]);
         $this->recordPage($this->patron)->assertSee('data-fd="inquire" data-id="' . $this->catalogId . '"', false)->assertDontSee('<fieldset disabled>', false)
             ->assertSee('data-fd="submit-review"', false);
     }

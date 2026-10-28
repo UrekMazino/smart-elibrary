@@ -39,7 +39,7 @@ return [
         'web' => [
             'driver' => 'session',   // Laravel's, with a prefixed remember cookie: App\Auth\SessionGuard
             'provider' => 'users',
-            'remember' => 30 * 24 * 60,   // "Keep me signed in" (patrons only): 30 days, in minutes
+            'remember' => 30 * 24 * 60,   // "Keep me signed in" (staff and patrons): 30 days, in minutes
         ],
     ],
 

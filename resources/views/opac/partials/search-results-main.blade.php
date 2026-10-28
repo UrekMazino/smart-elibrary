@@ -248,10 +248,12 @@
                         $avail  = checkStocks($h['catalog_id']);
                         $saved  = in_array($h['catalog_id'], $savedIds, true);
                         $year   = $h['pub_year'] ? trim($h['pub_year'], '[]. ') : null;
+                        $medals = recordMedals($h['catalog_id']);   // its ranks in the home page's top-10 lists
                     @endphp
                     <li class="sr-item">
                         <a class="sr-cover" href="{{ $url }}" tabindex="-1" aria-hidden="true">
                             <img src="{{ getThumbnailLink($h['catalog_id']) }}" alt="" loading="lazy">
+                            @include('opac.partials.rank-medals', ['medals' => $medals, 'size' => 'small', 'decorative' => true])
                         </a>
                         <div class="sr-body">
                             <h3 class="sr-title"><a href="{{ $url }}">{!! searchHighlight($h['title_hl']) !!}</a></h3>
@@ -272,6 +274,7 @@
                                 @if($h['type'])<span class="sr-badge">{{ $h['type'] }}</span>@endif
                                 @if($read)<span class="sr-badge is-ft">Full text</span>@endif
                                 @if($avail)<span class="sr-badge is-avail">Available to borrow</span>@endif
+                                @foreach($medals as $m)<span class="sr-badge is-rank" title="Top 10 of the {{ $m['when'] }}">#{{ $m['rank'] }} {{ $m['list'] }}</span>@endforeach
                                 @if(is_numeric($rating) && $rating > 0)<span class="rating sr-stars" title="Rated {{ $rating }} of 5"><i data-star="{{ $rating }}"></i></span>@endif
                                 @if($h['call'] && !$isGrid)<span class="sr-callno">{!! searchHighlight($h['call_hl']) !!}</span>@endif
                             </div>

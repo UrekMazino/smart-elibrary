@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\BrowserSessionController;
 use App\Http\Controllers\Auth\ConfirmablePasswordController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
+use App\Http\Controllers\Auth\GoogleSignInController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
@@ -23,6 +24,11 @@ Route::middleware('guest')->group(function () {
                 ->name('login');
 
     Route::post('login', [AuthenticatedSessionController::class, 'store']);
+
+    // "Continue with Google" (patrons; GoogleSignInController). 404 while GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET is unset.
+    Route::get('auth/google', [GoogleSignInController::class, 'redirect'])
+                ->middleware('throttle:10,1')
+                ->name('google.redirect');
 
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
                 ->name('password.request');
@@ -72,4 +78,14 @@ Route::middleware('auth')->group(function () {
     Route::delete('sessions', [BrowserSessionController::class, 'destroy'])
                 ->middleware('throttle:10,1')
                 ->name('sessions.end');
+
+    // An account without a password proves who it is with Google where others type their password.
+    Route::get('auth/google/confirm', [GoogleSignInController::class, 'confirm'])
+                ->middleware('throttle:10,1')
+                ->name('google.confirm');
 });
+
+// Where Google sends both a sign-in and a "Confirm with Google" back, so it is neither guest-only nor signed-in-only.
+Route::get('auth/google/callback', [GoogleSignInController::class, 'callback'])
+            ->middleware('throttle:10,1')
+            ->name('google.callback');

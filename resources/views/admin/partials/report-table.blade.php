@@ -12,10 +12,10 @@
 <div class="table-responsive">
 <table class="table table-striped table-hover mb-0" id="tbl">
 	@if($table == 1)
-		<thead><tr><th>#</th><th>Title</th><th>Authors</th><th>Material Type</th><th>Call No.</th><th>General Notes</th><th>Source</th></tr></thead>
+		<thead><tr><th>#</th><th>Title</th><th>Authors</th><th>Material Type</th><th>Call No.</th><th>General Notes</th></tr></thead>
 		<tbody>
 			@foreach($list as $i => $r)
-				<tr><td>{{ $i+1 }}</td><td>{{ formatTitle1($r->title_statement) }}</td><td>{{ $r->joint_authors }}</td><td>{{ $r->material }}</td><td>{{ $r->call_number }}</td><td>{{ $r->general_note }}</td><td>{{ $r->consortia }}</td></tr>
+				<tr><td>{{ $i+1 }}</td><td>{{ formatTitle1($r->title_statement) }}</td><td>{{ $r->joint_authors }}</td><td>{{ $r->material }}</td><td>{{ $r->call_number }}</td><td>{{ $r->general_note }}</td></tr>
 			@endforeach
 		</tbody>
 	@elseif($table == 2)

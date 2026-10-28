@@ -35,6 +35,11 @@ class ReviewController extends Controller
           return redirect(recordUrl($record))->with('success', 'You have already reviewed this material. Thank you!');
       }
 
+      // Only its readers rate a material: a patron who has read or downloaded it (no rating without reading).
+      if (! hasReadOrDownloaded(Auth::id(), $record->catalog_id)) {
+          return redirect(recordUrl($record))->with('error', 'Read or download this material first, then you can rate it.');
+      }
+
       //SAVE REVIEW
        $review = new App\Models\Rating;
        $review->catalog_id = request()->catalog_id;
@@ -95,6 +100,11 @@ class ReviewController extends Controller
         // One review per patron per material (the To Review list drops it once rated).
         if (App\Models\Rating::where('user_id', Auth::id())->where('catalog_id', $data['catalog_id'])->exists()) {
             return response()->json(['ok' => false, 'message' => 'You have already reviewed this material.'], 409);
+        }
+
+        // Only its readers rate a material (the popup only offers itself after a read or a download anyway).
+        if (! hasReadOrDownloaded(Auth::id(), $data['catalog_id'])) {
+            return response()->json(['ok' => false, 'message' => 'Read or download this material first, then you can rate it.'], 403);
         }
 
         $review = new App\Models\Rating;

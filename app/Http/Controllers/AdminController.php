@@ -29,6 +29,7 @@ use App\Models\User;
 use App\Models\ViewCatalog;
 use App\Services\BrowserSessions;
 use App\Services\DashboardService;
+use App\Services\StatisticsWatch;
 
 class AdminController extends Controller
 {
@@ -219,6 +220,9 @@ class AdminController extends Controller
         if ($request->flag === 'banned' && $user->is_banned) {
             Auth::getProvider()->updateRememberToken($user, Str::random(60));
         }
+        // A banned account's views, downloads and ratings leave the top-10 lists (rankingRows), and come back when
+        // the ban is lifted: now, not when the lists' 10-minute cache runs out.
+        if ($request->flag === 'banned') clearHomeCache();
 
         return response()->json(['ok' => true, 'flag' => $request->flag, 'value' => (bool) $user->$col, 'declined' => $declined]);
     }
@@ -279,6 +283,16 @@ class AdminController extends Controller
                          . ($patronsIn = $signedIn->where('staff', false)->count()) . ' ' . Str::plural('patron', $patronsIn) . ' signed in',
             ];
         }
+        if (auth()->user()->can('access.statistics.watch')) {
+            $toCheck = StatisticsWatch::toCheck(today());
+            $cards[] = [
+                'title' => 'Statistics watch',
+                'icon'  => 'eye',
+                'url'   => route('admin.statistics-watch'),
+                'text'  => 'Unusual views, downloads, ratings and sign-ups. Take an account out of the top-10 lists, or put it back.',
+                'meta'  => $toCheck ? $toCheck . ' ' . Str::plural('thing', $toCheck) . ' to look at today' : 'Nothing unusual today',
+            ];
+        }
 
         return view('admin.hub', [
             'title' => 'Accounts',
@@ -321,13 +335,11 @@ class AdminController extends Controller
         $list  = collect();
 
         switch ((int) request()->typeReport) {
-            case 1: // Acquisition (catalog records by material / source / keyword)
+            case 1: // Acquisition (catalog records by material / keyword)
                 $table = 1;
                 $material = !(request()->selectMaterial === ['0'] || empty(request()->selectMaterial));
-                $source   = !(request()->selectSource === ['0'] || empty(request()->selectSource));
                 $q = request()->keyword ? App\Models\ViewCatalog::search(request()->keyword) : App\Models\ViewCatalog::query();
                 if ($material) $q->whereIn('material_type_id', request()->selectMaterial);
-                if ($source)   $q->whereIn('consortia', request()->selectSource);
                 $list = $q->get();
                 break;
 

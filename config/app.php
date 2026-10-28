@@ -91,13 +91,14 @@ return [
     | System Administrator Email
     |--------------------------------------------------------------------------
     |
-    | Where patrons are told to write to the system admin, e.g. the popup a
-    | banned patron sees on the login page asking them to email to have the
-    | ban lifted. Defaults to the library's official email.
+    | The library's official email: the OPAC footer, the Privacy notice, the
+    | chat, the record page's inquiry popups, and the popup a banned patron
+    | sees on the login page. No default: until ADMIN_EMAIL is set, those
+    | say "the library" without an address.
     |
     */
 
-    'admin_email' => env('ADMIN_EMAIL', 'info@fprdi.dost.gov.ph'),
+    'admin_email' => env('ADMIN_EMAIL') ?: null,
 
     /*
     |--------------------------------------------------------------------------

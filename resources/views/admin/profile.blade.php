@@ -168,7 +168,7 @@
                             <div class="col-md-6 mb-3">
                                 <label for="affiliation" class="form-label">Affiliation / Agency</label>
                                 <input type="text" name="affiliation" id="affiliation" class="form-control"
-                                       placeholder="e.g. DOST-PCAARRD" value="{{ old('affiliation', $user->affiliation) }}">
+                                       placeholder="e.g. DOST-FNRI" value="{{ old('affiliation', $user->affiliation) }}">
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="region_id" class="form-label">Region</label>

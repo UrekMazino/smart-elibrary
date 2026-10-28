@@ -11,7 +11,7 @@ use Tests\TestCase;
 /**
  * Sessions (docs/implemented/SECURITY_NOTES.md section 5): a password change ends the account's other sessions
  * (OWASP ASVS 7.4.3); idle and absolute limits, staff 30 minutes and 8 hours, patrons 2 hours and 12 hours
- * (7.3.1, 7.3.2); "Keep me signed in" for patrons only; the staff warning's time check and "Stay signed in".
+ * (7.3.1, 7.3.2); "Keep me signed in", staff and patrons; the staff warning's time check and "Stay signed in".
  */
 class SessionLimitsTest extends TestCase
 {
@@ -167,22 +167,19 @@ class SessionLimitsTest extends TestCase
         $this->assertAuthenticatedAs($patron);
     }
 
-    public function test_staff_cannot_stay_signed_in()
+    public function test_keep_me_signed_in_works_for_staff_too_without_the_warning()
     {
-        $this->signIn($this->staff(), remember: true)->assertCookieMissing(self::REMEMBER_COOKIE);
-    }
+        $staff = $this->staff();
+        $response = $this->signIn($staff, remember: true);
+        $this->assertSame(now()->addDays(30)->getTimestamp(), $response->getCookie(self::REMEMBER_COOKIE, false)->getExpiresTime());
 
-    public function test_a_cookie_made_while_the_account_was_a_patrons_does_not_sign_in_staff()
-    {
-        $user = User::factory()->create();
-        $cookie = $this->signIn($user, remember: true)->getCookie(self::REMEMBER_COOKIE)->getValue();
-        $user->forceFill(['usertype' => 'Administrator'])->save();   // made staff since
-        $token = $user->fresh()->remember_token;
+        $this->travel(10)->hours();   // past both staff limits: on this device they don't apply
+        $this->get('/admin/profile')->assertOk()->assertDontSee('id="session-timeout"', false);
+        $this->assertAuthenticatedAs($staff);
 
-        $this->sessionEnded();
-        $this->withCookie(self::REMEMBER_COOKIE, $cookie)->get('/admin/profile')->assertRedirect(route('login'));
-        $this->assertGuest();
-        $this->assertNotSame($token, $user->fresh()->remember_token);   // so that cookie works nowhere
+        $this->sessionEnded();   // the cookie signs them back in
+        $this->withCookie(self::REMEMBER_COOKIE, $response->getCookie(self::REMEMBER_COOKIE)->getValue())->get('/admin/profile')->assertOk();
+        $this->assertAuthenticatedAs($staff);
     }
 
     public function test_the_staff_warning_asks_the_time_left_without_it_counting_as_activity()
@@ -214,7 +211,7 @@ class SessionLimitsTest extends TestCase
     public function test_the_sign_in_page_offers_keep_me_signed_in()
     {
         $this->get('/login')->assertOk()
-            ->assertSee('Keep me signed in on this device (30 days)')
+            ->assertSee('Keep me signed in</label>', false)->assertDontSee('Staff accounts')
             ->assertSee('name="remember"', false);
     }
 }

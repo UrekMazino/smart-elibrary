@@ -3,7 +3,6 @@
   first, then the account's other sessions, each with "Sign out", and "Sign out all other sessions". Both open the
   password dialog (partials.browser-sessions-modal). $sessions: BrowserSessions::of().
 --}}
-@php($sessionsStaff = auth()->user()->isStaff())
 <style>
   .bsess-intro { font-size: .8125rem; color: var(--ui-muted, #6b7280); margin: 0 0 10px; }
   .bsess-list { list-style: none; margin: 0; padding: 0; border: 1px solid var(--ui-border, #eef0f2); border-radius: 8px; }
@@ -43,12 +42,8 @@
     @endforeach
   </ul>
   <div class="bsess-foot">
-    {{-- Patrons may have a device kept signed in by its cookie and not listed: they always get the button. --}}
-    @if (! $sessionsStaff || $sessions->contains('current', false))
-      <button type="button" class="btn btn-sm btn-outline-danger" data-end-session="others">Sign out all other sessions</button>
-    @endif
-    @unless ($sessionsStaff)
-      <span class="bsess-hint">A device where you ticked “Keep me signed in” can sign back in without being listed here. “Sign out all other sessions” signs it out too.</span>
-    @endunless
+    {{-- A device kept signed in by its cookie may not be listed: the button is always there. --}}
+    <button type="button" class="btn btn-sm btn-outline-danger" data-end-session="others">Sign out all other sessions</button>
+    <span class="bsess-hint">A device where you ticked “Keep me signed in” can sign back in without being listed here. “Sign out all other sessions” signs it out too.</span>
   </div>
 </div>

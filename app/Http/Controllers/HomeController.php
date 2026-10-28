@@ -76,7 +76,9 @@ class HomeController extends Controller
             'view.config.template'         => 'admin/utilities',
             'access.ai.sync.monitor'       => 'admin/utilities',
             'manage.theme'                 => 'admin/utilities',
+            'access.rankings'              => 'admin/utilities/rankings',
             'access.sessions'              => 'admin/sessions',
+            'access.statistics.watch'      => 'admin/statistics-watch',
         ];
         // Module access is required as well for pages inside a module.
         $module = [
@@ -85,7 +87,7 @@ class HomeController extends Controller
             'access.circulation.transaction' => 'access.circulation',
             'access.settings' => 'access.configuration', 'manage.material.types' => 'access.utilities',
             'view.config.template' => 'access.utilities', 'access.ai.sync.monitor' => 'access.utilities',
-            'manage.theme' => 'access.utilities',
+            'manage.theme' => 'access.utilities', 'access.rankings' => 'access.utilities',
         ];
 
         foreach ($pages as $permission => $url) {

@@ -135,7 +135,7 @@ These apply to #6, #7, #8, #12, #13, #14 and #15:
 
 ### 11. "Find it elsewhere"
 - **What:** when the library doesn't hold something, search partner catalogues: other DOST libraries,
-  and the eLibrary instances at FPRDI and others.
+  and the eLibrary instances at other DOST agencies.
 - **Follows:** [Z3950_SRU_INTEGRATION_PLAN.md](Z3950_SRU_INTEGRATION_PLAN.md) and
   [API_INTEGRATION_PLAN.md](API_INTEGRATION_PLAN.md).
 
@@ -181,8 +181,7 @@ These apply to #6, #7, #8, #12, #13, #14 and #15:
   only the confident matches.
 
 ### 17. DOST research commons
-- **What:** one search, AI answers included, across every DOST agency library running this platform
-  (FNRI, FPRDI, …).
+- **What:** one search, AI answers included, across every DOST agency library running this platform.
 - **Needs:** #11, an agreement between agencies, a shared or federated index, and a decision about
   where the LLM runs (see ProjectY `SERVER_SPEC.md`). It's the largest idea here, and as much policy as
   code.

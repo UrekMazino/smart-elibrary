@@ -64,6 +64,13 @@ class DashboardService
                 'url' => $gate->allows('view.catalog.list') ? url('/admin/on-hold-list') : null,
             ],
         ];
+        // Only for staff who may open the statistics watch: what was unusual today (StatisticsWatch::toCheck).
+        if ($gate->allows('access.statistics.watch')) {
+            $attention[] = [
+                'icon' => 'eye', 'tone' => 'warning', 'label' => 'Statistics watch', 'hint' => 'Unusual activity today',
+                'count' => StatisticsWatch::toCheck(today()), 'url' => route('admin.statistics-watch'),
+            ];
+        }
 
         // --- Collection
         $titles    = DB::table('catalogs')->whereNull('deleted_at')->count();
