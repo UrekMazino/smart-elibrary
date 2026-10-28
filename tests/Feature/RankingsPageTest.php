@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Services\Rankings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Spatie\Permission\Models\Role;
 use Tests\SeedsReferenceData;
 use Tests\TestCase;
 
@@ -107,5 +108,63 @@ class RankingsPageTest extends TestCase
         $this->from('/admin/utilities/rankings')->post('/admin/utilities/rankings/refresh')
             ->assertRedirect('/admin/utilities/rankings')->assertSessionHas('success', 'The home page now shows the lists as they are below.');
         $this->assertFalse(cache()->has('home_top_downloaded_recent'));
+    }
+
+    /** A record downloaded by one reader, viewed by one guest and rated 5 by its reader. */
+    private function ranked(string $title): int
+    {
+        $id = $this->record($title);
+        $patron = User::factory()->create(['usertype' => 'Patron']);
+        DB::table('downloads')->insert(['catalog_id' => $id, 'user_id' => $patron->id, 'created_at' => now()]);
+        DB::table('views')->insert(['catalog_id' => $id, 'user_id' => null, 'is_guest' => 'YES', 'created_at' => now()]);
+        DB::table('ratings')->insert(['catalog_id' => $id, 'user_id' => $patron->id, 'rating' => 5, 'created_at' => now()]);
+        return $id;
+    }
+
+    public function test_a_title_offers_the_record_in_records_or_its_page_in_the_opac()
+    {
+        $id = $this->ranked('Rubber production');
+        $opac = url(recordPath(DB::table('view_catalogs')->where('catalog_id', $id)->first()));
+
+        $this->actingAs($this->staff('developer'))->get('/admin/utilities/rankings')->assertOk()
+            ->assertSee('href="' . route('show-record', $id) . '"', false)->assertSee('View in Records')
+            ->assertSee('href="' . $opac . '" target="_blank" rel="noopener"', false)->assertSee('View in OPAC');
+
+        // Without the Cataloging module there is no Records to open: the title goes to the OPAC.
+        $viewer = tap(User::factory()->create(['usertype' => 'Administrator']))
+            ->assignRole(Role::findOrCreate('rankings_only')->givePermissionTo(['access.utilities', 'access.rankings']));
+        $this->actingAs($viewer)->get('/admin/utilities/rankings')->assertOk()
+            ->assertDontSee('View in Records')->assertSee('href="' . $opac . '" target="_blank" rel="noopener" title="View in OPAC"', false);
+    }
+
+    public function test_the_dashboards_top_materials_are_the_rankings_lists_and_link_there()
+    {
+        $id = $this->ranked('Rubber production');
+        $staff = $this->staff('developer');
+
+        $top = $this->actingAs($staff)->getJson('/admin/dashboard/activity?range=7d')->assertOk()->json('top');
+        $this->assertSame(['key' => 'recent', 'label' => 'last 90 days'], $top['window']);
+        foreach (['viewed', 'downloaded', 'rated'] as $list) {
+            $row = Rankings::$list('recent', 1)->first();
+            $this->assertSame((int) $row->catalog_id, $top[$list][0]['id']);
+            $this->assertEquals($list === 'rated' ? round((float) $row->score, 2) : (int) $row->total, $top[$list][0]['count']);
+        }
+        $this->assertSame('all', $this->getJson('/admin/dashboard/activity?range=all')->json('top.window.key'));
+
+        $this->get('/admin/dashboard')->assertOk()->assertSee('href="' . route('utilities.rankings') . '"', false)->assertSee('All rankings');
+    }
+
+    public function test_the_record_pages_reviews_tab_shows_where_it_stands()
+    {
+        $id = $this->ranked('Rubber production');
+        $staff = $this->staff('developer');
+
+        $this->actingAs($staff)->get("/admin/view-record/$id")->assertOk()
+            ->assertSeeInOrder(['id="rr-h">Rankings', 'Last 90 days', 'All time', 'Most Downloaded', '#1', 'Top 10 · medal', '1 reader · 1 file',
+                'Most Viewed', '#1', '1 viewer-day · 1 by guest', 'Highest Rating', '#1', 'from 1 rating'], false);
+
+        // Unpublished: not ranked.
+        DB::table('view_catalogs')->where('catalog_id', $id)->update(['is_published' => 0]);
+        $this->get("/admin/view-record/$id")->assertOk()->assertSee('Not ranked: only published materials are ranked.');
     }
 }

@@ -506,6 +506,7 @@
 
                     <!-- Reviews Tab -->
                     <div class="tab-pane fade" id="reviews" role="tabpanel" aria-labelledby="reviews-tab">
+                        @include('admin.partials.record-rankings', ['rankings' => $rankings, 'published' => $published])
                         @include('admin.partials.record-reviews', ['reviews' => $reviews])
                     </div>
 

@@ -248,10 +248,14 @@ class CatalogingController extends Controller
             ->orderByDesc('r.created_at')->orderByDesc('r.id')
             ->get(['r.id', 'r.rating', 'r.remarks', 'r.created_at', 'u.name', 'u.email', 'u.is_banned', 'u.is_blocked']);
 
+        // The Reviews tab's Rankings: where it stands in the home page's top-10 lists (published materials only).
+        $published = $viewCatalog && $viewCatalog->is_published && ! $viewCatalog->deleted_at;
+        $rankings = $published ? \App\Services\Rankings::standings((int) $catalogId) : [];
+
         // Flagged at import and not reviewed yet: shown above the record.
         $importIssue = CatalogImportIssue::where('catalog_id', $catalogId)->where('outcome', 'imported')->whereNull('reviewed_at')->first();
 
-        return view('admin.catalog-view-record', ['record' => $record, 'fullText' => $fullText, 'coverPage' => $coverPage, 'title' => $title, 'totalCopies' => $totalCopies, 'citations' => $citations, 'reviews' => $reviews, 'importIssue' => $importIssue] + $flags);
+        return view('admin.catalog-view-record', ['record' => $record, 'fullText' => $fullText, 'coverPage' => $coverPage, 'title' => $title, 'totalCopies' => $totalCopies, 'citations' => $citations, 'reviews' => $reviews, 'rankings' => $rankings, 'published' => $published, 'importIssue' => $importIssue] + $flags);
     }
 
     /**

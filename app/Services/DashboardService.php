@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\User;
+use App\Services\Rankings;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -147,6 +148,7 @@ class DashboardService
                 'newRecord'  => $gate->allows('create.catalog') ? url('/admin/create-record') : null,
                 'newPatron'  => $gate->allows('access.accounts') && $gate->allows('create.patron') ? url('/admin/register') : null,
                 'reports'    => $gate->allows('access.reports') ? url('/admin/report') : null,
+                'rankings'   => $gate->allows('access.utilities') && $gate->allows('access.rankings') ? route('utilities.rankings') : null,
             ],
         ];
     }
@@ -159,7 +161,29 @@ class DashboardService
     {
         $key = 'dash_activity:' . md5($range . '|' . $from . '|' . $to . '|' . Carbon::today()->toDateString());
 
-        return cache()->remember($key, 120, fn () => self::computeActivity($range, $from, $to));
+        $activity = cache()->remember($key, 120, fn () => self::computeActivity($range, $from, $to));
+
+        // Top materials is Utilities → Rankings' lists, from the same queries and worked out now (not from the
+        // 2-minute copy above), so the two always agree. Rankings has two windows: all time for "All time",
+        // else the home page's last rankingDays() days.
+        $activity['top'] = self::rankingsTop($range === 'all' ? 'all' : 'recent');
+
+        return $activity;
+    }
+
+    /** The first five of each top-10 list (App\Services\Rankings) for the Top materials panel, with the window. */
+    private static function rankingsTop(string $window, int $limit = 5): array
+    {
+        $item = fn ($r, $count, string $detail) => self::splitTitle($r->title_statement) + ['id' => (int) $r->catalog_id, 'count' => $count, 'detail' => $detail];
+        $plural = fn (int $n, string $word) => number_format($n) . ' ' . ($n === 1 ? $word : $word . 's');
+
+        return [
+            'window'     => ['key' => $window, 'label' => rankingWindowLabel($window)],
+            'viewed'     => Rankings::viewed($window, $limit)->map(fn ($r) => $item($r, (int) $r->total, number_format((int) $r->guests) . ' by ' . ((int) $r->guests === 1 ? 'guest' : 'guests')))->all(),
+            'downloaded' => Rankings::downloaded($window, $limit)->map(fn ($r) => $item($r, (int) $r->total, $plural((int) $r->files, 'file')))->all(),
+            'rated'      => Rankings::rated($window, $limit)->map(fn ($r) => $item($r, round((float) $r->score, 2),
+                '★ ' . number_format((float) $r->rating, 1) . ' · ' . $plural((int) $r->votes, 'rating')))->all(),
+        ];
     }
 
     private static function computeActivity(string $range, ?string $from, ?string $to): array
@@ -209,11 +233,6 @@ class DashboardService
             'prevLabels' => $prev ? self::labels($prev[0], $prev[1], $bucket) : null,
             'kpis'       => $kpis,
             'guestShare' => $kpis['views']['value'] ? round($guestViews / $kpis['views']['value'] * 100) : null,
-            'top'        => [
-                'views'     => self::top('views', $start, $end),
-                'downloads' => self::top('downloads', $start, $end),
-                'reads'     => self::top('reads', $start, $end),
-            ],
         ];
     }
 
@@ -291,21 +310,6 @@ class DashboardService
         $n = count(self::bucketKeys($start, $end, $bucket));
 
         return $n . ' ' . ($n === 1 ? $bucket : $bucket . 's');
-    }
-
-    /** The five most-viewed / downloaded / read titles in the range. */
-    private static function top(string $table, Carbon $start, Carbon $end, int $limit = 5): array
-    {
-        return DB::table($table . ' as t')
-            ->join('view_catalogs as v', 'v.catalog_id', '=', 't.catalog_id')
-            ->whereBetween('t.created_at', [$start, $end])
-            ->whereNull('v.deleted_at')
-            ->groupBy('t.catalog_id', 'v.title_statement')
-            ->orderByDesc('n')
-            ->limit($limit)
-            ->get(['t.catalog_id', 'v.title_statement', DB::raw('COUNT(*) as n')])
-            ->map(fn ($r) => self::splitTitle($r->title_statement) + ['id' => (int) $r->catalog_id, 'count' => (int) $r->n])
-            ->all();
     }
 
     /** ['title' => title proper, 'by' => statement of responsibility] from a 245 title statement. */
