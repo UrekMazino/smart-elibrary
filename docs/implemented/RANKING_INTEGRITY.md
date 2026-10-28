@@ -5,7 +5,7 @@ and the counts on a record page can't be pushed up by reloading a page, a script
 or one hand-picked rating.
 
 **Status:** built and enforced on `FNRI-Week-4` since 28 October 2026 (commit `6a3c4c3`); the 90-day window,
-leaving banned accounts out and the statistics watch (section 4), the same day. What is still to come:
+leaving banned accounts out and the statistics watch with its guests (section 4), the same day. What is still to come:
 [`../not-implemented/RANKING_INTEGRITY_PLAN.md`](../not-implemented/RANKING_INTEGRITY_PLAN.md).
 
 ---
@@ -41,10 +41,13 @@ Called by `HoldingController` when a record page opens and when its full text is
 
 1. Crawlers (`isCrawler()`) and staff: not counted.
 2. The viewer: `'u' . user id`, or for a guest `'g' . visitorHash()`.
-3. Over 120 counted views in the last hour for that viewer (`RateLimiter`, key `views:{viewer}`): not counted.
+3. Over `viewCapPerHour()` (120) counted views in the last hour for that viewer (`RateLimiter`, key
+   `views:{viewer}`): not counted.
 4. `cache()->add('viewed:{catalog_id}:{viewer}', 1, now()->endOfDay())`: only the first view of the day
    gets in. The day ends at midnight in the app's timezone (`Asia/Manila`).
-5. A row in `views` (`catalog_id`, `user_id` or `is_guest = 'YES'`); no address, no browser string.
+5. A row in `views` (`catalog_id`, `user_id`, or `is_guest = 'YES'` with the guest's `visitor_hash`); no
+   address, no browser string. For a guest, once a day, the address behind the hash in `visitor_addresses`
+   (section 3).
 
 Counting them (`viewerDaysSql()`): a signed-in reader counts once a day per material, **including rows saved
 before 28 October**, when every reload was a row; a guest's rows count as they are (old guest rows can't be
@@ -62,7 +65,7 @@ Every download still saves a row (statistics, the To Review list). `getMostDownl
   record page with "Read or download this material first, then you can rate it." and `quickStore()` answers
   403. The record page greys out *Submit review* with the same words. The quick-review popup only offers
   itself after a read or download anyway.
-- **Highest Rating** (`getHighestRated()`) orders by a weighted average, the formula IMDb's charts use:
+- **Highest Rating** (`Rankings::rated()`, behind `getHighestRated()`) orders by a weighted average, the formula IMDb's charts use:
 
   `score = v / (v + m) × R + m / (v + m) × C`
 
@@ -72,6 +75,13 @@ Every download still saves a row (statistics, the To Review list). `getMostDownl
   the plain average and the number of ratings ("★ 5.0 · 1 rating").
 
 ### Where the counts show
+- **The queries** are `App\Services\Rankings` (`downloaded()`, `viewed()`, `rated()`); the home page and
+  Administration → Utilities → Rankings both read them, so they agree. On a tie the older record comes first.
+- **Utilities → Rankings** (`/admin/utilities/rankings`; `access.utilities` + `access.rankings`: super admin,
+  system admin, developer; `RankingsController`): for the last 90 days or all time, the three lists' ranks 1–10
+  and the next five, each with the numbers behind it (readers and files, views signed in and by guests, the
+  score with its average and votes, and C), totals for the window, how many accounts are left out, and
+  "Refresh the home page" (`clearHomeCache()`, 10 a minute). Worked out on every visit.
 - The three top-10 shelves on the home page, and the medals they award (shelves, search results, Quick view,
   record page): `getMostDownloaded()`, `getMostViewed()`, `getHighestRated()`, each taking a window
   (`'recent'`, the default, or `'all'`) and each cached 10 minutes per window (`home_top_downloaded_recent`,
@@ -89,9 +99,13 @@ The rule is `SECURITY_NOTES.md` section 6 (it replaced R15's "no visitor IP addr
 What this feature uses, on those terms:
 
 - **Guest viewers:** `visitorHash()` = the first 32 hex characters of HMAC-SHA256 of `IP address | browser`,
-  keyed with `APP_KEY`. It lives only in the cache (`viewed:…`, `views:…`) until the day ends or the hour
-  passes; it is never written to the database. The `views` table has no address or browser columns
-  (`PrivacyTest`, `RankingIntegrityTest`).
+  keyed with `APP_KEY`. It is in the cache (`viewed:…`, `views:…`) until the day ends or the hour passes, and
+  since 28 October 2026 on the guest's `views` rows (`visitor_hash`) so the statistics watch can tell guests
+  apart. The IP address behind each hash is in `visitor_addresses` (written once a day per guest), shown on
+  the watch to developer and super admin only. Both go after 90 days: `visitors:forget`, nightly at 03:15,
+  deletes addresses first seen more than 90 days ago and removes the hash from views older than 90 days (the
+  views still count). The `views` table has no address or browser columns (`PrivacyTest`,
+  `RankingIntegrityTest`).
 - **Notice:** the OPAC's Privacy notice (footer link → `#modalPrivacy` in `opac/layout/master.blade.php`)
   says what the statistics use and why. The rest of the agency's notice is to be written with its Data
   Protection Officer (see the plan).
@@ -121,11 +135,18 @@ account can still sign in and use the library (to stop it altogether, ban it). N
 password: both can be undone. 30 a minute each.
 
 **Where it shows:** a card on Administration → Accounts ("N things to look at today"), and for staff who
-may open it, a "Statistics watch" tile in the dashboard's Needs attention: the day's spikes, plus the
-unusual accounts and bursts with someone not yet dealt with (`StatisticsWatch::toCheck()`).
+may open it, a "Statistics watch" tile in the dashboard's Needs attention: the day's spikes and unusual
+guests, plus the unusual accounts and bursts with someone not yet dealt with (`StatisticsWatch::toCheck()`).
 
-**Not yet:** guests (a guest at the hourly view cap, who made a spike). That needs the guest's hash stored,
-and the address for developer and super admin only: the plan's step 2.6.
+**Guests** (from 28 October 2026, by their hash; section 3):
+- **Unusual guests:** guests who viewed 100 materials or more in the day, known by a code (the hash's first 8
+  characters), between which times, and "At the cap" if they reached the 120 counted views of an hour.
+- **A spike's guests:** for a views spike, "The guests' addresses": how many of its guests came from each
+  address. Many guests at one address is one browser, or a script, changing its browser string.
+- **Addresses** show to developer and super admin accounts only (`StatisticsWatch::canSeeAddresses()`, by
+  role, whatever else has the watch); for anyone else they are not even loaded.
+- A guest can't be taken out of the rankings. An address that keeps at it can be blocked at the web server or
+  the firewall. Views saved before 28 October have no hash: they count as guests, with no code or address.
 
 ## 5. Deployment and operations
 
@@ -138,22 +159,28 @@ and the address for developer and super admin only: the plan's step 2.6.
 - **Clearing the cache** (`php artisan cache:clear`) forgets the day's keys: a viewer who comes back that
   day counts once more. Harmless.
 - **Changing `APP_KEY`** changes every guest's hash; the same as clearing the cache.
-- Nothing to backfill: the rankings read the existing tables. One migration, for the statistics watch:
-  `ranking_exclusions` and the `access.statistics.watch` permission (`2026_10_28_200000_statistics_watch`).
+- Nothing to backfill: the rankings read the existing tables. Two migrations, for the statistics watch:
+  `ranking_exclusions` and the `access.statistics.watch` permission (`2026_10_28_200000_statistics_watch`);
+  `views.visitor_hash` and `visitor_addresses` (`2026_10_28_300000_statistics_watch_guests`). Views saved
+  before them have no hash.
+- **The scheduler must run** (`DEPLOYMENT_CHECKLIST.md` D4): `visitors:forget` is what keeps guests' addresses
+  and hashes to 90 days.
 
 ## 6. Tuning
 
 | What | Where | Now |
 |---|---|---|
-| Counted views per viewer an hour | `saveView()`, `RateLimiter::tooManyAttempts(…, 120)` and `hit(…, 3600)` | 120 |
 | How long a view blocks the next | `saveView()`, `now()->endOfDay()` | until midnight |
-| Votes needed before a record's own average weighs as much as the library's | `getHighestRated()`, `$m` | 3 |
+| Votes needed before a record's own average weighs as much as the library's | `Rankings::VOTES_WEIGHT` | 3 |
 | The lists' default window (and the medals') | `rankingDays()` in `app/Http/helper.php` | 90 days |
 | Downloads a minute per account | `routes/web.php`, `throttle:30,1` on `POST /download` | 30 |
 | Statistics watch: the usual day | `StatisticsWatch::BASELINE_DAYS` | the 30 days before |
 | A material's spike | `StatisticsWatch::SPIKE_TIMES`, `SPIKE_AT_LEAST` | 5× its usual day, and at least 10 |
 | An unusual account, in a day | `StatisticsWatch::ACCOUNT_VIEWS`, `ACCOUNT_DOWNLOADS`, `ACCOUNT_RATINGS` | 100 materials viewed, 20 downloads, 10 ratings |
 | A sign-up burst, in an hour | `StatisticsWatch::BURST_AT_LEAST`, `BURST_TIMES` | 10 sign-ups, and 5× the usual hour |
+| An unusual guest, in a day | `StatisticsWatch::GUEST_VIEWS` | 100 materials viewed |
+| Counted views an hour from one viewer (also "At the cap") | `viewCapPerHour()` in `app/Http/helper.php` | 120 |
+| How long guests' addresses and hashes are kept | `ForgetVisitors::DAYS` | 90 days |
 
 After a change, `clearHomeCache()` (or wait 10 minutes) to see it in the shelves.
 
@@ -177,7 +204,15 @@ far above its usual day is a spike, one at its usual level or with too few is no
 clears a downloads spike; accounts over a threshold are flagged, those just under are not; an hour of 12 sign-ups
 is a burst, with its accounts; taking accounts out takes their downloads out of Most Downloaded at once (staff
 skipped), and putting one back brings it back, with who and when kept; the dashboard and Accounts say what to
-look at until it is dealt with; another day can be watched, not a day to come.
+look at until it is dealt with; unusual guests are listed (at the cap, or just under and not), with their address
+for developer and super admin only, also under a spike; `visitors:forget` deletes addresses and hashes past 90 days
+and is scheduled; another day can be watched, not a day to come. `RankingIntegrityTest` checks a guest's view keeps
+the hash and the address once a day, never the browser.
+
+`tests/Feature/RankingsPageTest.php`: super admin, system admin and developer have Utilities → Rankings, other
+staff don't; each list shows its numbers, the next ones down after the top 10, and the window's totals; all time
+adds an old favourite; the home page's lists are the page's first ten; the accounts left out are counted, and
+"Refresh the home page" empties the home page's copy.
 
 Also following these rules: `HomeShelvesTest` ("1 reader downloaded"), `SecurityFixesTest` and
 `StaffOpacTest` (the patron reads or downloads before rating).
@@ -191,7 +226,7 @@ Also following these rules: `HomeShelvesTest` ("1 reader downloaded"), `Security
 - **Many addresses.** A guest switching IP address or browser string is a new viewer each time; the hourly cap
   is per viewer.
 - **Old guest views** saved before 28 October still count one each.
-- **Guests on the statistics watch.** It shows spikes and accounts, and takes accounts out of the rankings, but
-  can't name a guest: a spike made by guests stays, with nothing to take out.
+- **Guests can't be taken out.** The statistics watch shows unusual guests and where a spike's guests came from,
+  but takes only accounts out of the rankings: a spike made by guests stays (2.4 would stop most of it).
 
 Each of these has a step in [`RANKING_INTEGRITY_PLAN.md`](../not-implemented/RANKING_INTEGRITY_PLAN.md).

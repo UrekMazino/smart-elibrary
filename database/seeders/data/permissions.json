@@ -349,5 +349,14 @@
         "description": "Open Administration \u2192 Accounts \u2192 Statistics watch: see unusual views, downloads, ratings and sign-ups, and take an account out of the top-10 lists or put it back",
         "created_at": "2026-10-28 20:00:00",
         "updated_at": "2026-10-28 20:00:00"
+    },
+    {
+        "id": 45,
+        "name": "access.rankings",
+        "guard_name": "web",
+        "display_name": "Rankings",
+        "description": "Open Administration \u2192 Utilities \u2192 Rankings: the top-10 lists with the numbers behind them, and refresh them on the home page",
+        "created_at": "2026-10-28 22:00:00",
+        "updated_at": "2026-10-28 22:00:00"
     }
 ]

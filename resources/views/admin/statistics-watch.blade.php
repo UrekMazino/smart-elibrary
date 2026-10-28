@@ -1,6 +1,7 @@
 @extends("admin.layouts.master")
 {{-- Administration → Accounts → Statistics watch (StatisticsWatchController, App\Services\StatisticsWatch): a day's
-     unusual activity compared with the 30 days before it; taking patrons out of the top-10 lists, and putting them back. --}}
+     unusual activity compared with the 30 days before it; taking patrons out of the top-10 lists, and putting them back.
+     $addresses: the viewer may see guests' IP addresses (developer and super admin). --}}
 @use('App\Services\StatisticsWatch', 'Watch')
 @php
     $isToday = $day->isToday();
@@ -39,6 +40,7 @@
       .sw-who ul { list-style: none; margin: 6px 0 0; padding: 0; }
       .sw-who li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 3px 0; }
       .sw-burst + .sw-burst { margin-top: 18px; }
+      .sw-ip { font-family: var(--bs-font-monospace, monospace); font-size: 0.78125rem; }
       .sw-burst-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
       .sw-burst-head strong { color: var(--ui-text, #22283b); }
     </style>
@@ -89,6 +91,7 @@
             <div class="sw-tiles">
                 <a class="sw-tile" href="#sw-spikes"><strong>{{ $spikes->count() }}</strong><span>{{ Str::plural('Material', $spikes->count()) }} with a spike</span></a>
                 <a class="sw-tile" href="#sw-accounts"><strong>{{ $accounts->count() }}</strong><span>Unusual {{ Str::plural('account', $accounts->count()) }}</span></a>
+                <a class="sw-tile" href="#sw-guests"><strong>{{ $guests->count() }}</strong><span>Unusual {{ Str::plural('guest', $guests->count()) }}</span></a>
                 <a class="sw-tile" href="#sw-signups"><strong>{{ $signUps->bursts->count() }}</strong><span>Sign-up {{ Str::plural('burst', $signUps->bursts->count()) }} · {{ $signUps->total }} {{ Str::plural('sign-up', $signUps->total) }} in all</span></a>
                 <a class="sw-tile" href="#sw-out"><strong>{{ $excluded->count() }}</strong><span>Out of the rankings now</span></a>
             </div>
@@ -123,6 +126,16 @@
                                     <td>
                                         @if ($s->what === 'views')
                                             {{ $s->accounts }} {{ Str::plural('account', $s->accounts) }} · {{ $s->guests }} {{ Str::plural('guest', $s->guests) }}
+                                            @if ($s->addresses->isNotEmpty())
+                                                <details class="sw-who">
+                                                    <summary>The guests’ addresses ({{ $s->addresses->count() }})</summary>
+                                                    <ul>
+                                                        @foreach ($s->addresses as $ip => $n)
+                                                            <li><span class="sw-ip">{{ $ip }}</span><span class="u-sub">{{ $n }} {{ Str::plural('guest', $n) }}</span></li>
+                                                        @endforeach
+                                                    </ul>
+                                                </details>
+                                            @endif
                                         @else
                                             {{ $s->accounts }} {{ Str::plural('account', $s->accounts) }} · {{ $s->files }} {{ Str::plural('file', $s->files) }}
                                         @endif
@@ -176,6 +189,40 @@
                                     <td class="num"><span @class(['sw-over' => $p->ratings >= Watch::ACCOUNT_RATINGS])>{{ number_format($p->ratings) }}</span></td>
                                     <td>@if ($p->status)<span @class(['badge sw-pill', 'is-warn' => $p->status !== 'out'])>{{ $statusLabel[$p->status] }}</span>@else — @endif</td>
                                     <td class="text-center">@include('admin.partials.statistics-watch-action', ['p' => $p])</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
+        </div>
+    </div>
+
+    {{-- Unusual guests --}}
+    <div class="card mb-3" id="sw-guests">
+        <div class="card-body">
+            <h6 class="card-title mb-2">Unusual guests</h6>
+            <p class="sw-note">Visitors not signed in who viewed {{ Watch::GUEST_VIEWS }} materials or more in the day. A guest is one browser
+                at one address, known here by a code. “At the cap”: it reached {{ viewCapPerHour() }} counted views in an hour, after which its
+                views stopped counting for that hour. {{ $addresses ? 'Addresses' : 'Their addresses' }} show to developer and super admin accounts
+                only, and are deleted 90 days after the guest was first seen. A guest can’t be taken out of the rankings; an address that
+                keeps at it can be blocked at the web server or the firewall.</p>
+            @if ($guests->isEmpty())
+                <p class="sw-empty">No guest did anything unusual.</p>
+            @else
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0 sw-table">
+                        <thead>
+                            <tr><th>Guest</th><th class="num">Viewed</th><th>Between</th>@if ($addresses)<th>Address</th>@endif</tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($guests as $g)
+                                <tr>
+                                    <td><span class="u-name sw-ip">Guest {{ $g->code }}</span>
+                                        @if ($g->capped)<span class="badge sw-pill is-warn">At the cap</span>@endif</td>
+                                    <td class="num"><span class="sw-over">{{ number_format($g->views) }}</span> <span class="u-sub">materials</span></td>
+                                    <td class="text-nowrap">{{ $g->first->format('g:i A') }}–{{ $g->last->format('g:i A') }}</td>
+                                    @if ($addresses)<td class="sw-ip">{{ $g->address ?? 'deleted' }}</td>@endif
                                 </tr>
                             @endforeach
                         </tbody>

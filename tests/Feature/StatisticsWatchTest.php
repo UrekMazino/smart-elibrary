@@ -203,6 +203,61 @@ class StatisticsWatchTest extends TestCase
         $this->actingAs($this->staff('system_admin'))->get('/admin/dashboard')->assertOk()->assertDontSee('Statistics watch');
     }
 
+    /** $count views by the guest with this hash, from $at a minute apart, over the records given in turn. */
+    private function guestHashViews(string $hash, int $count, Carbon $at, array $records): void
+    {
+        DB::table('views')->insert(array_map(fn ($i) => ['catalog_id' => $records[$i % count($records)], 'is_guest' => 'YES',
+            'visitor_hash' => $hash, 'created_at' => $at->copy()->addMinutes(intdiv($i * 30, $count))], range(0, $count - 1)));
+    }
+
+    public function test_unusual_guests_are_listed_and_their_addresses_show_to_developer_and_super_admin_only()
+    {
+        $records = [$this->record('Coconut sugar'), $this->record('Rice tea')];
+        $bot = str_repeat('ab12', 8);
+        $this->guestHashViews($bot, viewCapPerHour(), today()->setTime(14, 0), $records);   // the cap, within the hour
+        $this->guestHashViews(str_repeat('cd34', 8), StatisticsWatch::GUEST_VIEWS - 1, today()->setTime(9, 0), $records);   // just under
+        DB::table('visitor_addresses')->insert(['visitor_hash' => $bot, 'ip_address' => '203.0.113.7', 'first_seen_at' => now(), 'last_seen_at' => now()]);
+
+        $guests = StatisticsWatch::guests(today(), addresses: true);
+        $this->assertEquals([['ab12ab12', 120, true, '203.0.113.7']], $guests->map(fn ($g) => [$g->code, $g->views, $g->capped, $g->address])->all());
+        $this->assertNull(StatisticsWatch::guests(today())->first()->address);   // not even loaded without the right role
+        $this->assertSame(3, StatisticsWatch::toCheck(today()));   // the guest, and the two materials it made spike
+
+        foreach (['super_admin', 'developer'] as $role) {
+            $this->actingAs($this->staff($role))->get('/admin/statistics-watch')->assertOk()
+                ->assertSeeInOrder(['Unusual guests', 'Guest ab12ab12', 'At the cap', '120', '2:00 PM', '203.0.113.7', 'Sign-ups'])
+                ->assertSeeInOrder(['Materials with a spike', 'The guests’ addresses (1)', '203.0.113.7', '60 guests', 'Unusual accounts'])
+                ->assertDontSee('Guest cd34cd34');
+        }
+
+        // Another role given the watch sees the guests, not where they are.
+        $watcher = $this->staff('system_admin');
+        $watcher->givePermissionTo('access.statistics.watch');
+        $this->actingAs($watcher)->get('/admin/statistics-watch')->assertOk()
+            ->assertSee('Guest ab12ab12')->assertDontSee('203.0.113.7')->assertDontSee('The guests’ addresses');
+    }
+
+    public function test_guests_addresses_and_hashes_are_deleted_after_90_days()
+    {
+        $record = $this->record('Coconut sugar');
+        $old = now()->subDays(91);
+        DB::table('visitor_addresses')->insert([
+            ['visitor_hash' => str_repeat('a', 32), 'ip_address' => '203.0.113.1', 'first_seen_at' => $old, 'last_seen_at' => now()->subDay()],
+            ['visitor_hash' => str_repeat('b', 32), 'ip_address' => '203.0.113.2', 'first_seen_at' => now()->subDays(89), 'last_seen_at' => now()],
+        ]);
+        DB::table('views')->insert([
+            ['catalog_id' => $record, 'is_guest' => 'YES', 'visitor_hash' => str_repeat('a', 32), 'created_at' => $old],
+            ['catalog_id' => $record, 'is_guest' => 'YES', 'visitor_hash' => str_repeat('a', 32), 'created_at' => now()->subDay()],
+        ]);
+
+        $this->artisan('visitors:forget')->expectsOutput('Deleted 1 guest address and 1 hash older than 90 days.')->assertSuccessful();
+        $this->assertSame(['203.0.113.2'], DB::table('visitor_addresses')->pluck('ip_address')->all());
+        $this->assertSame([null, str_repeat('a', 32)], DB::table('views')->orderBy('created_at')->pluck('visitor_hash')->all());
+        $this->assertSame(2, DB::table('views')->count());   // the views still count
+
+        $this->artisan('schedule:list')->expectsOutputToContain('visitors:forget')->assertSuccessful();   // nightly
+    }
+
     public function test_another_day_can_be_watched_but_not_one_to_come()
     {
         $this->assertSame('2026-10-25', StatisticsWatch::day('2026-10-25')->toDateString());

@@ -76,7 +76,7 @@ class RolePermissionController extends Controller
             'access.accounts' => 'Accounts & Patrons', 'create.patron' => 'Accounts & Patrons', 'edit.patron' => 'Accounts & Patrons', 'delete.patron' => 'Accounts & Patrons', 'manage.patron.status' => 'Accounts & Patrons',
             'access.configuration' => 'Configuration', 'access.settings' => 'Configuration', 'manage.ai.mode' => 'Configuration',
             'access.utilities' => 'Utilities', 'view.config.template' => 'Utilities', 'create.config.template' => 'Utilities', 'edit.config.template' => 'Utilities', 'delete.config.template' => 'Utilities',
-            'manage.material.types' => 'Utilities', 'access.ai.sync.monitor' => 'Utilities', 'manage.theme' => 'Utilities',
+            'manage.material.types' => 'Utilities', 'access.ai.sync.monitor' => 'Utilities', 'manage.theme' => 'Utilities', 'access.rankings' => 'Utilities',
             'access.inquiry' => 'Inquiry', 'access.inventory' => 'Inventory', 'access.news' => 'News', 'access.reports' => 'Reports',
             'access.sessions' => 'Security', 'access.statistics.watch' => 'Security',
         ];

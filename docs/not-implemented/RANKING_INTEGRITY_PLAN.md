@@ -1,11 +1,10 @@
 # Fair rankings — what is still to build
 
-**Status:** planning; steps 2.1, 2.2 and 2.7 built on 28 October 2026, 2.3 replaced by them (section 3), and
-the first version of 2.6, the statistics watch, built the same day.
+**Status:** planning; steps 2.1, 2.2, 2.6 and 2.7 built on 28 October 2026, and 2.3 replaced by them (section 3).
 What is built (views per viewer-day, downloads per reader, the weighted Highest Rating, ratings from readers
 only, the download limit, the 90-day window, banned accounts left out, the statistics watch) is in
 [`../implemented/RANKING_INTEGRITY.md`](../implemented/RANKING_INTEGRITY.md).
-**Last updated:** 2026-10-28 (decisions; 2.1, 2.2, 2.7 and the first version of 2.6 built).
+**Last updated:** 2026-10-28 (decisions; 2.1, 2.2, 2.6 and 2.7 built).
 
 ---
 
@@ -19,12 +18,12 @@ Close the gaps that remain after 28 October 2026, so the top-10 lists and their 
 | Throwaway accounts can download and rate | 2.3 | Replaced by 2.7 and Google sign-in |
 | A guest switching address or browser is a new viewer; bots that load pages count | 2.4 | To do |
 | The search page's "Most viewed" sort still counts every old reload | 2.5 | To do |
-| Nobody sees sudden jumps or sign-up bursts; there is no way to cancel an account's counts | 2.6 | First version built 2026-10-28; guests to do |
+| Nobody sees sudden jumps or sign-up bursts; there is no way to cancel an account's counts | 2.6 | Built 2026-10-28 (guests can't be taken out) |
 | Fake sign-ups in bulk | 2.7 | Built 2026-10-28 |
 | Old duplicate view rows still in the table | 2.8 | Optional |
 | The Privacy notice covers only the statistics and sign-in | 2.9 | Waiting for the DPO |
 
-Next: 2.4, then 2.5, then the guests on the statistics watch (2.6). The rest when needed.
+Next: 2.4, then 2.5. The rest when needed.
 
 ## 2. Steps
 
@@ -60,7 +59,7 @@ unused; `User` doesn't implement `MustVerifyEmail`.
   reconcile refresh it (`ReconcileSearchIndex`, which already refreshes recently viewed records).
 - **Effort:** small to medium; a full re-import once (`scout:import`, see `MEILISEARCH_SETUP.md`).
 
-### 2.6 A statistics watch for staff — first version built
+### 2.6 A statistics watch for staff — built
 - **Why:** to see manipulation that gets past the rules, and undo it.
 - **Built 28 October 2026** (Administration → Accounts → Statistics watch, permission `access.statistics.watch`;
   `RANKING_INTEGRITY.md` section 4): for a day, against the 30 days before it,
@@ -70,18 +69,12 @@ unused; `User` doesn't implement `MustVerifyEmail`.
     usual hour), with their accounts;
   - taking accounts out of the rankings, one or a whole burst, reversibly, with who did it, when and why
     (`ranking_exclusions`); the dashboard's "Needs attention" counts what is still to look at.
-- **Still to do: guests.** Guests hitting the hourly view cap, and a spike made by guests, need the guest
-  stored:
-  - a `visitor_hash` column (the keyed hash, not the address) on `views` for guests;
-  - the address itself only if investigations need it, in its own table, deleted after at most 90 days by a
-    scheduled job;
-  - shown only on this page, and only to **developer and super admin** accounts (by role, whatever the
-    permission says; decided 28 October 2026);
-  - first, the row in `SECURITY_NOTES.md` section 6's table, and the Privacy notice updated to match.
-- **Depends on:** a migration on `views`. Rehearse it on a restored copy of the database before the live run,
-  as for the database-documentation migrations (`DEPLOYMENT_CHECKLIST.md`).
-- **Effort:** medium. **Test:** a guest at the cap is listed with its hash; only developer and super admin see
-  an address; the purge job deletes rows past 90 days.
+- **Guests, built the same day:** `views.visitor_hash` (the keyed hash) on guests' views, and the address behind
+  it in `visitor_addresses`, both deleted after 90 days by the nightly `visitors:forget`; unusual guests (100
+  materials in a day, "At the cap"), and a views spike's guests by address. Addresses for **developer and super
+  admin** only, by role. `SECURITY_NOTES.md` section 6 and the Privacy notice say so.
+- **Not built:** taking a guest out of the rankings. A guest's exclusion would key on its hash, which goes after
+  90 days, so its old views would count again in "All time"; 2.4 stops most of what it would catch.
 
 ### 2.7 A challenge on sign-up — built
 Built 28 October 2026, at once rather than "if fake accounts appear", in place of 2.3: Cloudflare Turnstile on
@@ -114,7 +107,7 @@ Taken 28 October 2026:
 - **Google Cloud project:** made and kept by the developer, preferably under an agency Google account so it
   outlives any one person's; one OAuth client for local and staging, one for production
   (`DEPLOYMENT_CHECKLIST.md`).
-- **Statistics watch (2.6):** sign-up bursts added to it; built first without guests. The guests' addresses,
-  when stored, are for **developer and super admin** only, kept at most 90 days.
+- **Statistics watch (2.6):** sign-up bursts added to it. Guests' addresses are for **developer and super
+  admin** only, kept at most 90 days.
 
 Still open: nothing.

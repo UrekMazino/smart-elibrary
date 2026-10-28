@@ -292,8 +292,10 @@
 			<h6>Your visit and the library's statistics</h6>
 			<p>When you open a material, the eLibrary uses your network (IP) address and browser to recognise a repeat
 				visit, so a reader is counted once a day in the list of most viewed materials and automated traffic is
-				slowed down. They are kept only in coded form and only until the end of the day; they are not added to
-				your account or shared outside the agency.</p>
+				slowed down. If you are not signed in, your views are kept with a code made from them (not the address
+				or the browser themselves), and your address is kept separately so the library's system administrators
+				can look into misuse of the statistics. Both are deleted after 90 days. They are not added to any account
+				or shared outside the agency.</p>
 			<p>Downloads and ratings are counted once per account.</p>
 			@if (\App\Rules\HumanCheck::enabled() || \App\Services\GoogleSignIn::enabled())
 				<h6>Signing up and signing in</h6>

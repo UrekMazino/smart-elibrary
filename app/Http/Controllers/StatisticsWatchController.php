@@ -10,18 +10,21 @@ use Illuminate\Support\Str;
 /**
  * Administration → Accounts → Statistics watch (access.statistics.watch; App\Services\StatisticsWatch): a day's
  * unusual activity, and taking patrons out of the top-10 lists ("users": one id, or a burst's) or putting one back.
- * Both can be undone, so neither asks for the password.
+ * Both can be undone, so neither asks for the password. Guests' IP addresses show to developer and super admin only.
  */
 class StatisticsWatchController extends Controller
 {
     public function index(Request $request)
     {
         $day = StatisticsWatch::day($request->query('day'));
+        $addresses = StatisticsWatch::canSeeAddresses($request->user());
 
         return view('admin.statistics-watch', [
             'day' => $day,
-            'spikes' => StatisticsWatch::spikes($day),
+            'addresses' => $addresses,
+            'spikes' => StatisticsWatch::spikes($day, $addresses),
             'accounts' => StatisticsWatch::accounts($day),
+            'guests' => StatisticsWatch::guests($day, $addresses),
             'signUps' => StatisticsWatch::signUps($day),
             'excluded' => StatisticsWatch::excluded(),
         ]);

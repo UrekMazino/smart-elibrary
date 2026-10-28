@@ -46,9 +46,9 @@ class RolesMatrixTest extends TestCase
         $this->assertSame(0, $locked('cataloging'));
         $this->assertSame('6 of 9', $count('cataloging'));
 
-        // Utilities is off for it: all 7 inside are locked, and its seeded "Create MARC template" waits.
+        // Utilities is off for it: all 8 inside are locked, and its seeded "Create MARC template" waits.
         $this->assertSame('false', $switch('utilities')->getAttribute('aria-checked'));
-        $this->assertSame(7, $locked('utilities'));
+        $this->assertSame(8, $locked('utilities'));
         $this->assertSame('1 waiting', $count('utilities'));
 
         // Ban / Block Patrons works without Accounts & Patrons (Inquiries and Transactions use it): for Circulation,

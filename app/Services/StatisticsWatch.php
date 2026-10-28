@@ -12,9 +12,11 @@ use Illuminate\Support\Facades\DB;
  * unusual on a day, compared with the 30 days before it, for staff to look at and decide.
  *  - spikes(): materials with far more viewers or readers that day than on their usual day. They count what the
  *    top-10 lists count (rankingRows()), so taking out the accounts behind a spike clears it; a spike made by
- *    guests stays.
+ *    guests stays, and shows from how many addresses it came.
  *  - accounts(): patrons who viewed, downloaded or rated far more in the day than a reader does.
+ *  - guests(): guests (views.visitor_hash) who viewed far more materials in the day than a reader does.
  *  - signUps(): the day's sign-ups, and the hours with far more than usual (bursts), with their accounts.
+ * Guests' IP addresses (visitor_addresses) are loaded only for developer and super admin ($addresses: canSeeAddresses()).
  * exclude() and putBack() take patrons' views, downloads and ratings out of the top-10 lists and back
  * (ranking_exclusions, with who did it and when). The thresholds are the constants below
  * (docs/implemented/RANKING_INTEGRITY.md section 6).
@@ -33,9 +35,18 @@ class StatisticsWatch
     public const ACCOUNT_DOWNLOADS = 20;
     public const ACCOUNT_RATINGS = 10;
 
+    /** A guest is flagged at this many materials viewed in a day (a guest's row is one material a day). */
+    public const GUEST_VIEWS = 100;
+
     /** An hour is a sign-up burst at BURST_AT_LEAST sign-ups and BURST_TIMES times the usual hour. */
     public const BURST_AT_LEAST = 10;
     public const BURST_TIMES = 5;
+
+    /** Guests' IP addresses are for developer and super admin accounts only, whoever else has the watch (decided 2026-10-28). */
+    public static function canSeeAddresses(?User $user): bool
+    {
+        return (bool) $user?->hasAnyRole(['developer', 'super_admin']);
+    }
 
     /** The day to watch, from ?day=Y-m-d: today when it is missing, not a date, or still to come. */
     public static function day(mixed $value): Carbon
@@ -56,9 +67,10 @@ class StatisticsWatch
     /**
      * Materials with a spike in views (viewer-days, as Most Viewed counts them) or downloads (readers), most unusual
      * first: catalog_id, title, link, what ('views' or 'downloads'), count, usual (a day, over BASELINE_DAYS),
-     * times (null: none before), accounts, guests, files, people (the accounts behind it, as people()).
+     * times (null: none before), accounts, guests, files, people (the accounts behind it, as people()), and for views
+     * with $addresses: addresses (ip_address => guests, busiest first; guests from before hashes were kept have none).
      */
-    public static function spikes(Carbon $day): Collection
+    public static function spikes(Carbon $day, bool $addresses = false): Collection
     {
         [$from, $to, $since] = self::range($day);
         $counted = fn (string $table) => rankingRows(DB::table("$table as t"), 't', 'all');
@@ -93,13 +105,46 @@ class StatisticsWatch
 
         $titles = DB::table('view_catalogs')->whereIn('catalog_id', $spikes->pluck('catalog_id'))->pluck('title_statement', 'catalog_id');
 
-        return $spikes->each(function ($s) use ($titles, $counted, $from, $to, $day) {
+        return $spikes->each(function ($s) use ($titles, $counted, $from, $to, $day, $addresses) {
             $title = seoTrimIsbd(html_entity_decode((string) ($titles[$s->catalog_id] ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
             $s->title = preg_split('#\s+/\s+#u', $title, 2)[0] ?: 'Removed material';
             $s->link = isset($titles[$s->catalog_id]) ? url(recordPath(['catalog_id' => $s->catalog_id, 'title_statement' => $titles[$s->catalog_id]])) : null;
             $s->people = self::people($counted($s->what)->where('t.catalog_id', $s->catalog_id)->whereBetween('t.created_at', [$from, $to])
                 ->whereNotNull('t.user_id')->distinct()->limit(500)->pluck('t.user_id'), $day);
+            $s->addresses = $addresses && $s->what === 'views' && $s->guests
+                ? $counted('views')->join('visitor_addresses as va', 'va.visitor_hash', '=', 't.visitor_hash')
+                    ->where('t.catalog_id', $s->catalog_id)->whereBetween('t.created_at', [$from, $to])
+                    ->groupBy('va.ip_address')->orderByDesc('n')->limit(20)->selectRaw('va.ip_address, COUNT(*) as n')->pluck('n', 'ip_address')
+                : collect();
         });
+    }
+
+    /**
+     * Guests (by their hash) who viewed GUEST_VIEWS materials or more in the day, busiest first: hash, code (its
+     * first 8 characters, to tell them apart on the page), views, first and last (that day), capped (reached
+     * viewCapPerHour() in an hour), and with $addresses, address (null once deleted after 90 days).
+     */
+    public static function guests(Carbon $day, bool $addresses = false): Collection
+    {
+        [$from, $to] = self::range($day);
+        $guests = DB::table('views')->whereBetween('created_at', [$from, $to])->whereNotNull('visitor_hash')
+            ->groupBy('visitor_hash')->having('n', '>=', self::GUEST_VIEWS)
+            ->selectRaw('visitor_hash, COUNT(*) as n, MIN(created_at) as first, MAX(created_at) as last')
+            ->orderByDesc('n')->get();
+        if ($guests->isEmpty()) {
+            return collect();
+        }
+        $hours = DB::table('views')->whereBetween('created_at', [$from, $to])->whereIn('visitor_hash', $guests->pluck('visitor_hash'))
+            ->get(['visitor_hash', 'created_at'])->groupBy('visitor_hash')
+            ->map(fn ($rows) => $rows->countBy(fn ($r) => Carbon::parse($r->created_at)->hour)->max());
+        $ips = $addresses ? DB::table('visitor_addresses')->whereIn('visitor_hash', $guests->pluck('visitor_hash'))->pluck('ip_address', 'visitor_hash') : collect();
+
+        return $guests->map(fn ($g) => (object) [
+            'hash' => $g->visitor_hash, 'code' => substr($g->visitor_hash, 0, 8), 'views' => (int) $g->n,
+            'first' => Carbon::parse($g->first), 'last' => Carbon::parse($g->last),
+            'capped' => ($hours[$g->visitor_hash] ?? 0) >= viewCapPerHour(),
+            'address' => $ips[$g->visitor_hash] ?? null,
+        ]);
     }
 
     /**
@@ -173,10 +218,11 @@ class StatisticsWatch
             ->each(fn ($row) => $row->since = Carbon::parse($row->since));
     }
 
-    /** Things to look at on the day: spikes, and unusual accounts and bursts with someone not yet dealt with. */
+    /** Things to look at on the day: spikes, unusual guests, and unusual accounts and bursts with someone not yet dealt with. */
     public static function toCheck(Carbon $day): int
     {
         return self::spikes($day)->count()
+            + self::guests($day)->count()
             + self::accounts($day)->whereNull('status')->count()
             + self::signUps($day)->bursts->filter(fn ($b) => $b->people->whereNull('status')->isNotEmpty())->count();
     }

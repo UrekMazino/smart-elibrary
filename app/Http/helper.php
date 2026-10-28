@@ -210,10 +210,11 @@ function isCrawler($agent = null): bool
 
 /**
  * Record a view of a material: once per viewer per material a day, so reloading the page (or a script
- * doing it) adds nothing, and at most 120 counted views an hour from one viewer (a bot walking the
- * catalogue). Crawlers and staff are not counted — see isCrawler().
- * A viewer is the signed-in account, else visitorHash(): the guest's IP address and browser, hashed,
- * held only in the cache until the day ends — never stored in `views` (SECURITY_NOTES.md §6).
+ * doing it) adds nothing, and at most viewCapPerHour() counted views an hour from one viewer (a bot walking
+ * the catalogue). Crawlers and staff are not counted — see isCrawler().
+ * A viewer is the signed-in account, else visitorHash(): the guest's IP address and browser, hashed. A guest's
+ * row keeps the hash, and visitor_addresses the address behind it, for the statistics watch; both are deleted
+ * 90 days on (visitors:forget). `views` never holds the address or the browser (SECURITY_NOTES.md §6).
  */
 function saveView($id)
 {
@@ -222,8 +223,9 @@ function saveView($id)
 		return;
 	}
 
-	$viewer = Auth::check() ? 'u' . Auth::id() : 'g' . visitorHash();
-	if (Illuminate\Support\Facades\RateLimiter::tooManyAttempts('views:' . $viewer, 120)) {
+	$guest = Auth::check() ? null : visitorHash();
+	$viewer = $guest === null ? 'u' . Auth::id() : 'g' . $guest;
+	if (Illuminate\Support\Facades\RateLimiter::tooManyAttempts('views:' . $viewer, viewCapPerHour())) {
 		return;
 	}
 	if (! cache()->add('viewed:' . (int) $id . ':' . $viewer, 1, now()->endOfDay())) {
@@ -243,9 +245,23 @@ function saveView($id)
     {
 	    $view->catalog_id = $id;
 	    $view->is_guest = 'YES';
+	    $view->visitor_hash = $guest;
+	    // The address behind the hash, for developer and super admin on the statistics watch: once a day per guest.
+	    if (cache()->add('visitor_seen:' . $guest, 1, now()->endOfDay())) {
+	    	DB::table('visitor_addresses')->upsert(
+	    		[['visitor_hash' => $guest, 'ip_address' => (string) request()->ip(), 'first_seen_at' => now(), 'last_seen_at' => now()]],
+	    		['visitor_hash'], ['last_seen_at']
+	    	);
+	    }
 	}
 
 	$view->save();
+}
+
+/** Counted views an hour from one viewer, account or guest (saveView()); the statistics watch marks guests who reach it. */
+function viewCapPerHour(): int
+{
+	return 120;
 }
 
 
@@ -1369,53 +1385,34 @@ function rankingRows($query, string $table, string $window)
 		->whereNotExists(fn ($q) => $q->from('ranking_exclusions as rx')->whereColumn('rx.user_id', "$table.user_id")->whereNull('rx.lifted_at'));
 }
 
-// Top-N most downloaded published materials, by the readers who downloaded them (one reader
-// downloading a file again doesn't count again). $window: 'recent' (rankingDays) or 'all' (rankingRows).
+// The home page's top-N lists, as shelf items, cached 10 minutes per window: the queries are App\Services\Rankings
+// (also behind Utilities → Rankings). $window: 'recent' (rankingDays) or 'all' (rankingRows).
+
+// Most downloaded published materials, by the readers who downloaded them (downloading again doesn't count again).
 function getMostDownloaded($limit = 10, string $window = 'recent')
 {
 	return withSiteUrls(cache()->remember('home_top_downloaded_' . $window, 600, function () use ($limit, $window) {
-		$rows = rankingRows(DB::table('downloads as d'), 'd', $window)
-			->join('view_catalogs as v', 'v.catalog_id', '=', 'd.catalog_id')
-			->where('v.is_published', 1)->whereNull('v.deleted_at')
-			->select('d.catalog_id', DB::raw('COUNT(DISTINCT d.user_id) as total'), 'v.title_statement')
-			->groupBy('d.catalog_id', 'v.title_statement')
-			->orderByDesc('total')->limit($limit)->get();
-		return rankItemsMap($rows, function ($r) { return number_format($r->total) . ' reader' . ($r->total == 1 ? '' : 's') . ' downloaded'; });
+		return rankItemsMap(App\Services\Rankings::downloaded($window, $limit),
+			fn ($r) => number_format($r->total) . ' reader' . ($r->total == 1 ? '' : 's') . ' downloaded');
 	}));
 }
 
-// Top-N most viewed published materials, in viewer-days (viewerDaysSql: a reload doesn't count again).
+// Most viewed published materials, in viewer-days (viewerDaysSql: a reload doesn't count again).
 function getMostViewed($limit = 10, string $window = 'recent')
 {
 	return withSiteUrls(cache()->remember('home_top_viewed_' . $window, 600, function () use ($limit, $window) {
-		$rows = rankingRows(DB::table('views as vw'), 'vw', $window)
-			->join('view_catalogs as v', 'v.catalog_id', '=', 'vw.catalog_id')
-			->where('v.is_published', 1)->whereNull('v.deleted_at')
-			->select('vw.catalog_id', DB::raw(viewerDaysSql('vw') . ' as total'), 'v.title_statement')
-			->groupBy('vw.catalog_id', 'v.title_statement')
-			->orderByDesc('total')->limit($limit)->get();
-		return rankItemsMap($rows, function ($r) { return number_format($r->total) . ' view' . ($r->total == 1 ? '' : 's'); });
+		return rankItemsMap(App\Services\Rankings::viewed($window, $limit),
+			fn ($r) => number_format($r->total) . ' view' . ($r->total == 1 ? '' : 's'));
 	}));
 }
 
-// Top-N highest rated published materials, by a weighted average so a single 5-star vote can't top the
-// list: each record's average is pulled toward the library's average until it has some votes (the
-// formula IMDb's charts use, m = 3): score = v/(v+m)·R + m/(v+m)·C. The shelf still shows the plain average.
-// The library's average C is that of the same window.
+// Highest rated published materials, by a weighted average so a single 5-star vote can't top the list
+// (Rankings::rated). The shelf still shows the plain average.
 function getHighestRated($limit = 10, string $window = 'recent')
 {
 	return withSiteUrls(cache()->remember('home_top_rated_' . $window, 600, function () use ($limit, $window) {
-		$published = fn () => rankingRows(DB::table('ratings as r'), 'r', $window)
-			->join('view_catalogs as v', 'v.catalog_id', '=', 'r.catalog_id')
-			->where('v.is_published', 1)->whereNull('v.deleted_at');
-		$m = 3;
-		$c = (float) ($published()->avg('r.rating') ?? 0);
-		$rows = $published()
-			->select('r.catalog_id', 'v.title_statement')
-			->selectRaw('ROUND(AVG(r.rating),1) as rating, COUNT(*) as votes, COUNT(*) / (COUNT(*) + ?) * AVG(r.rating) + ? / (COUNT(*) + ?) * ? as score', [$m, $m, $m, $c])
-			->groupBy('r.catalog_id', 'v.title_statement')
-			->orderByDesc('score')->orderByDesc('votes')->limit($limit)->get();
-		return rankItemsMap($rows, function ($r) { return '★ ' . number_format($r->rating, 1) . ' · ' . $r->votes . ' rating' . ($r->votes == 1 ? '' : 's'); });
+		return rankItemsMap(App\Services\Rankings::rated($window, $limit),
+			fn ($r) => '★ ' . number_format($r->rating, 1) . ' · ' . $r->votes . ' rating' . ($r->votes == 1 ? '' : 's'));
 	}));
 }
 

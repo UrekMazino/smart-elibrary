@@ -25,6 +25,7 @@ use App\Http\Controllers\RolePermissionController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\SignedInNowController;
 use App\Http\Controllers\StatisticsWatchController;
+use App\Http\Controllers\RankingsController;
 
 
 /*
@@ -344,6 +345,12 @@ Route::controller(AppearanceController::class)->group(function () {
         Route::get('/admin/utilities/theme', 'editDefault')->name('utilities.theme');
         Route::post('/admin/utilities/theme', 'updateDefault');
     });
+});
+
+// Administration → Utilities → Rankings: the top-10 lists with the numbers behind them; refresh them on the home page.
+Route::controller(RankingsController::class)->middleware(['auth', 'admin', 'can:access.utilities', 'can:access.rankings'])->group(function () {
+    Route::get('/admin/utilities/rankings', 'index')->name('utilities.rankings');
+    Route::post('/admin/utilities/rankings/refresh', 'refresh')->middleware('throttle:10,1')->name('utilities.rankings.refresh');
 });
 
 //UTILITIES (Administration → Utilities). The hub needs the Utilities module (access.utilities);

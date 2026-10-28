@@ -60,7 +60,7 @@ class RankingIntegrityTest extends TestCase
         $this->assertSame(2, DB::table('views')->where('catalog_id', $id)->count());
     }
 
-    public function test_guests_are_told_apart_by_address_and_browser_without_storing_either()
+    public function test_guests_are_told_apart_by_address_and_browser_and_views_store_neither()
     {
         $id = $this->record('Rubber production');
         $visit = fn (string $ip, string $agent) => $this->withServerVariables(['REMOTE_ADDR' => $ip])
@@ -72,8 +72,15 @@ class RankingIntegrityTest extends TestCase
         $visit('203.0.113.5', 'Mozilla/5.0 B');    // another browser at the same address
         $this->assertSame(3, DB::table('views')->where('catalog_id', $id)->count());
 
+        // A guest's row keeps the keyed hash, never the address or the browser; the address behind each hash is in
+        // visitor_addresses (for the statistics watch, deleted after 90 days), once a day.
         $row = (array) DB::table('views')->first();
-        $this->assertSame(['id', 'is_guest', 'user_id', 'catalog_id', 'created_at', 'updated_at'], array_keys($row));
+        $this->assertSame(['id', 'is_guest', 'user_id', 'visitor_hash', 'catalog_id', 'created_at', 'updated_at'], array_keys($row));
+        $this->assertSame(3, DB::table('views')->distinct()->count('visitor_hash'));
+        $this->assertSame(32, strlen($row['visitor_hash']));
+        $this->assertSame(['203.0.113.5', '203.0.113.5', '203.0.113.9'], DB::table('visitor_addresses')->orderBy('ip_address')->pluck('ip_address')->all());
+        $this->assertEqualsCanonicalizing(DB::table('views')->distinct()->pluck('visitor_hash')->all(), DB::table('visitor_addresses')->pluck('visitor_hash')->all());
+        $this->assertStringNotContainsString('Mozilla', json_encode(DB::table('views')->get()) . json_encode(DB::table('visitor_addresses')->get()));
     }
 
     public function test_most_viewed_counts_old_reloads_once_a_day()

@@ -524,8 +524,9 @@ Keep **one** PHP installed (8.5.12 or newer). Check:
 
 ## D4. Scheduler
 
-It runs `sitemap:generate` at 03:30 and `search:reconcile` at 03:45 (`app/Console/Kernel.php`).
-Without it the sitemap goes stale and the nightly search check never runs.
+It runs `visitors:forget` at 03:15, `sitemap:generate` at 03:30 and `search:reconcile` at 03:45
+(`app/Console/Kernel.php`). Without it guests' IP addresses are kept past the 90 days the privacy notice
+promises, the sitemap goes stale and the nightly search check never runs.
 
 - **Linux:** in the web server user's crontab (`sudo crontab -u www-data -e`):
   ```
@@ -533,7 +534,7 @@ Without it the sitemap goes stale and the nightly search check never runs.
   ```
 - **Windows:** once, `powershell -ExecutionPolicy Bypass -File scripts\register-scheduler-task.ps1`
   (add `-Php "<path to php.exe>"` if PHP is not on PATH). It registers the `eLibrary-scheduler` task.
-- **Check:** `php artisan schedule:list` shows both jobs.
+- **Check:** `php artisan schedule:list` shows the three jobs.
 
 ## D5. Moving an existing database forward
 

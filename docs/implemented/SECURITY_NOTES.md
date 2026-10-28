@@ -75,6 +75,7 @@ separately (`app/Http/Middleware/ThrottleRequests.php`):
 | Sign out one of your sessions, or all the others (takes the password) | 10 |
 | Signed in now: sign one person or everyone out (takes the password) | 10 |
 | Statistics watch: take accounts out of the rankings; put one back | 30 each |
+| Rankings: refresh the home page | 10 |
 
 Not limited by the app: the public search results, search suggestions and record pages. In production
 the web server or a proxy in front of it should cap requests per IP address.
@@ -95,11 +96,11 @@ or Developer, with one or more roles).
   utility's own permission). The Roles page gives each module a switch per role and locks what's inside
   while it's off; Ban / Block Patrons is the exception (Inquiries and Transactions use it, so it needs only itself).
 
-| Role | Permissions (of 39) |
+| Role | Permissions (of 40) |
 |---|---|
 | `developer` | Everything, including permissions added later (`Gate::before`) |
-| `super_admin` | All 39 |
-| `system_admin` | 33: all except AI mode, material types, patron ban/block, editing import batches, Signed in now and Statistics watch |
+| `super_admin` | All 40 |
+| `system_admin` | 34: all except AI mode, material types, patron ban/block, editing import batches, Signed in now and Statistics watch |
 | `cataloging_admin` | 10: cataloguing, records, imports, MARC templates |
 | `circulation_admin` | 7: reservations, check-out/in, patron ban/block |
 | `faculty` | 6: create, edit and delete records |
@@ -232,15 +233,15 @@ used, and stored, where a feature needs them, on these terms:
 
 | Where | What | Kept |
 |---|---|---|
-| Counting views (`saveView()`) | the account, or for a guest a keyed hash of IP address + browser (`visitorHash()`): a reload or a script counts once per material a day, and at most 120 views an hour count | the cache only, until the day ends; never in the database |
+| Counting views (`saveView()`) | the account, or for a guest a keyed hash of IP address + browser (`visitorHash()`): a reload or a script counts once per material a day, and at most 120 views an hour count | in the cache until the day ends; on the guest's `views` rows (`visitor_hash`, from 28 October 2026) for 90 days, then removed (`visitors:forget`, nightly) |
+| Statistics watch: guests (Administration → Accounts → Statistics watch) | the IP address behind each guest's hash (`visitor_addresses`), written once a day per guest: to see that unusual views came from one address (a script, a bot) | 90 days from when the guest was first seen, then deleted (`visitors:forget`); shown only to developer and super admin accounts, whoever else has the watch; never in exports |
 | Rate limits (`throttle`) | the account, or a guest's IP address | the cache, for the limit's window |
 | Sessions (`sessions` table) | IP address and browser of each session (Laravel's database sessions) | until the session ends; staff pages never show the address |
 | "I'm human" check on sign-up (Cloudflare Turnstile) | the visitor's browser talks to Cloudflare directly; the server sends Cloudflare only the token, not the address | nothing kept by the eLibrary |
 | "Continue with Google" | from Google: name, email address, whether Google confirmed it, the Google account's id | the id and the account's name and address, as long as the account |
 
-The `views` table still holds no address or browser string (`PrivacyTest`).
+The `views` table holds no address or browser string, only a guest's keyed hash (`PrivacyTest`, `RankingIntegrityTest`).
 
-What the statistics count and how: `RANKING_INTEGRITY.md`; what is still planned (storing a hashed address for the
-statistics watch, and the address itself for developer and super admin only, decided 28 October 2026; a purge
-job): `../not-implemented/RANKING_INTEGRITY_PLAN.md` step 2.6. The statistics watch today shows accounts (name,
-address, when made, the day's activity) to the staff who have its permission, and no visitor address.
+What the statistics count and how: `RANKING_INTEGRITY.md`. The statistics watch shows accounts (name, email
+address, when made, the day's activity) and guests (a code: the hash's first 8 characters) to the staff who have
+its permission, and guests' IP addresses to developer and super admin only (decided 28 October 2026).

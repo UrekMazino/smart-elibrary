@@ -228,13 +228,13 @@ License: For each use you must have a valid license purchased only from above li
 
           {{-- Administration: each link has the same checks as its route, and the heading shows only above a link.
                Accounts (AdminController::accounts): Administrators, Patrons, Roles, Permissions, Signed in now, Statistics watch. Utilities
-               (MaterialTypeController::utilities): Material Types, MARC Templates, AI Sync Monitor, Theme. Each stays
+               (MaterialTypeController::utilities): Material Types, MARC Templates, AI Sync Monitor, Theme, Rankings. Each stays
                highlighted on its cards' pages. --}}
           @php
             $me = auth()->user();
             $navAccounts  = $me->canAny(['access.accounts', 'access.sessions', 'access.statistics.watch']) || $me->hasAnyRole(['super_admin', 'developer']);
             $navSettings  = $me->can('access.configuration') && $me->can('access.settings');
-            $navUtilities = $me->can('access.utilities') && $me->canAny(['manage.material.types', 'view.config.template', 'access.ai.sync.monitor', 'manage.theme']);
+            $navUtilities = $me->can('access.utilities') && $me->canAny(['manage.material.types', 'view.config.template', 'access.ai.sync.monitor', 'manage.theme', 'access.rankings']);
           @endphp
           @if($navAccounts || $navSettings || $navUtilities)
             <li class="nav-item nav-category">Administration</li>
