@@ -1272,9 +1272,9 @@ function homeCacheKeys()
 		'home_latest_news',
 		'home_recent_uploads',
 		'home_shelves_45',      // keyed by limit; the homepage uses getShelves(45)
-		'home_top_downloaded',
-		'home_top_viewed',
-		'home_top_rated',
+		'home_top_downloaded_recent', 'home_top_downloaded_all',   // keyed by window (rankingRows)
+		'home_top_viewed_recent',     'home_top_viewed_all',
+		'home_top_rated_recent',      'home_top_rated_all',
 	];
 }
 
@@ -1341,12 +1341,38 @@ function withSiteUrls(array $items): array
 	return array_map(fn ($item) => ['thumb' => url('/') . '/' . $item['thumb'], 'url' => url('/') . '/' . $item['url']] + $item, $items);
 }
 
-// Top-N most downloaded published materials, by the readers who downloaded them (one reader
-// downloading a file again doesn't count again).
-function getMostDownloaded($limit = 10)
+/**
+ * The top-10 lists rank the last rankingDays() days by default, so old activity (or old gaming) drops out by itself;
+ * the home page can switch them to all time. The medals on covers follow the default window.
+ */
+function rankingDays(): int
 {
-	return withSiteUrls(cache()->remember('home_top_downloaded', 600, function () use ($limit) {
-		$rows = DB::table('downloads as d')
+	return 90;
+}
+
+/** How a ranking window reads: 'recent' is "last 90 days", 'all' is "all time". */
+function rankingWindowLabel(string $window = 'recent'): string
+{
+	return $window === 'all' ? 'all time' : 'last ' . rankingDays() . ' days';
+}
+
+/**
+ * The rows that count in a ranking: those of the window ('recent': the last rankingDays() days; 'all') whose
+ * account isn't banned. A guest's view (no account) counts; lifting the ban brings the account's rows back.
+ */
+function rankingRows($query, string $table, string $window)
+{
+	return $query
+		->when($window !== 'all', fn ($q) => $q->where("$table.created_at", '>=', now()->subDays(rankingDays())))
+		->whereNotExists(fn ($q) => $q->from('users as banned')->whereColumn('banned.id', "$table.user_id")->where('banned.is_banned', 1));
+}
+
+// Top-N most downloaded published materials, by the readers who downloaded them (one reader
+// downloading a file again doesn't count again). $window: 'recent' (rankingDays) or 'all' (rankingRows).
+function getMostDownloaded($limit = 10, string $window = 'recent')
+{
+	return withSiteUrls(cache()->remember('home_top_downloaded_' . $window, 600, function () use ($limit, $window) {
+		$rows = rankingRows(DB::table('downloads as d'), 'd', $window)
 			->join('view_catalogs as v', 'v.catalog_id', '=', 'd.catalog_id')
 			->where('v.is_published', 1)->whereNull('v.deleted_at')
 			->select('d.catalog_id', DB::raw('COUNT(DISTINCT d.user_id) as total'), 'v.title_statement')
@@ -1357,10 +1383,10 @@ function getMostDownloaded($limit = 10)
 }
 
 // Top-N most viewed published materials, in viewer-days (viewerDaysSql: a reload doesn't count again).
-function getMostViewed($limit = 10)
+function getMostViewed($limit = 10, string $window = 'recent')
 {
-	return withSiteUrls(cache()->remember('home_top_viewed', 600, function () use ($limit) {
-		$rows = DB::table('views as vw')
+	return withSiteUrls(cache()->remember('home_top_viewed_' . $window, 600, function () use ($limit, $window) {
+		$rows = rankingRows(DB::table('views as vw'), 'vw', $window)
 			->join('view_catalogs as v', 'v.catalog_id', '=', 'vw.catalog_id')
 			->where('v.is_published', 1)->whereNull('v.deleted_at')
 			->select('vw.catalog_id', DB::raw(viewerDaysSql('vw') . ' as total'), 'v.title_statement')
@@ -1373,10 +1399,12 @@ function getMostViewed($limit = 10)
 // Top-N highest rated published materials, by a weighted average so a single 5-star vote can't top the
 // list: each record's average is pulled toward the library's average until it has some votes (the
 // formula IMDb's charts use, m = 3): score = v/(v+m)·R + m/(v+m)·C. The shelf still shows the plain average.
-function getHighestRated($limit = 10)
+// The library's average C is that of the same window.
+function getHighestRated($limit = 10, string $window = 'recent')
 {
-	return withSiteUrls(cache()->remember('home_top_rated', 600, function () use ($limit) {
-		$published = fn () => DB::table('ratings as r')->join('view_catalogs as v', 'v.catalog_id', '=', 'r.catalog_id')
+	return withSiteUrls(cache()->remember('home_top_rated_' . $window, 600, function () use ($limit, $window) {
+		$published = fn () => rankingRows(DB::table('ratings as r'), 'r', $window)
+			->join('view_catalogs as v', 'v.catalog_id', '=', 'r.catalog_id')
 			->where('v.is_published', 1)->whereNull('v.deleted_at');
 		$m = 3;
 		$c = (float) ($published()->avg('r.rating') ?? 0);
@@ -1391,32 +1419,38 @@ function getHighestRated($limit = 10)
 
 /**
  * The highlight shelves at the front of the home page's shelf browser, in this order: the top 10
- * downloaded, viewed and rated records (each item with its 'rank'), then the newest uploads. A list
- * with nothing in it is left out. Same shape as getShelves(), plus 'ranked'.
+ * downloaded, viewed and rated records, then the newest uploads. A top-10 shelf holds two lists, each
+ * item with its 'rank': 'items' for the last rankingDays() days and 'allTime'; 'none' says why the
+ * first is empty. A shelf with nothing in it is left out. Same shape as getShelves(), plus 'ranked'.
  */
 function getHighlightShelves(): array
 {
 	$ranked = fn (array $items) => array_map(fn ($item, $k) => $item + ['rank' => $k + 1], $items, array_keys(array_values($items)));
+	$top = fn (string $key, string $label, callable $list, string $none) => ['key' => $key, 'label' => $label, 'ranked' => true,
+		'items' => $ranked($list(10)), 'allTime' => $ranked($list(10, 'all')), 'none' => $none];
+	$recent = rankingWindowLabel();
 	$shelves = [
-		['key' => 'top-downloaded', 'label' => 'Most Downloaded', 'ranked' => true,  'items' => $ranked(getMostDownloaded(10))],
-		['key' => 'top-viewed',     'label' => 'Most Viewed',     'ranked' => true,  'items' => $ranked(getMostViewed(10))],
-		['key' => 'top-rated',      'label' => 'Highest Rating',  'ranked' => true,  'items' => $ranked(getHighestRated(10))],
-		['key' => 'recent',         'label' => 'Recent Uploads',  'ranked' => false, 'items' => getLatestMaterial(20)],
+		$top('top-downloaded', 'Most Downloaded', 'getMostDownloaded', "No downloads in the $recent."),
+		$top('top-viewed',     'Most Viewed',     'getMostViewed',     "No views in the $recent."),
+		$top('top-rated',      'Highest Rating',  'getHighestRated',   "No ratings in the $recent."),
+		['key' => 'recent', 'label' => 'Recent Uploads', 'ranked' => false, 'items' => getLatestMaterial(20)],
 	];
-	return array_values(array_filter($shelves, fn ($shelf) => count($shelf['items'])));
+	return array_values(array_filter($shelves, fn ($shelf) => count($shelf['items']) || count($shelf['allTime'] ?? [])));
 }
 
 /**
  * The medals records have earned in the home page's top-10 lists, shown on their covers (material-type
  * shelves, search results, Quick view, the record page): catalog_id => [ ['rank' => 1, 'list' => 'Most
- * Downloaded'], ... ], at most one per list. Built once a request from the lists' own caches.
+ * Downloaded', 'when' => 'last 90 days'], ... ], at most one per list. They follow the lists' default window
+ * (rankingDays), not all time. Built once a request from the lists' own caches.
  */
 function topRankMedals(): array
 {
 	return once(function () {
 		$medals = [];
+		$when = rankingWindowLabel();
 		foreach (['Most Downloaded' => getMostDownloaded(10), 'Most Viewed' => getMostViewed(10), 'Highest Rating' => getHighestRated(10)] as $list => $items) {
-			foreach (array_values($items) as $k => $item) $medals[(int) $item['catalog_id']][] = ['rank' => $k + 1, 'list' => $list];
+			foreach (array_values($items) as $k => $item) $medals[(int) $item['catalog_id']][] = ['rank' => $k + 1, 'list' => $list, 'when' => $when];
 		}
 		return $medals;
 	});

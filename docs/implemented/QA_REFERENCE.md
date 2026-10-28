@@ -1,6 +1,6 @@
 # DOST-FNRI eLibrary — QA Reference: Pages and Functions
 
-As of 22 October 2026.
+As of 28 October 2026 (sign-in, sign-up, the top-10 lists and the profile password rows).
 
 Every page and action of the eLibrary, with its address, who may use it and what to check. Addresses are relative to the site being tested (for example the staging server); `{id}` stands for a record or item number.
 
@@ -33,7 +33,8 @@ These pages are open to everyone. Only published records ever appear; a held, de
 | Page | Address | Who | What to check |
 | --- | --- | --- | --- |
 | Landing | `/` | Anyone | Goes straight to `/home` |
-| Home | `/home` | Anyone | Search box; Browse the Shelves (records by material type, with covers); Recent Uploads; Highlights; Most Downloaded; Related News. A signed-in patron who has not done the satisfaction survey sees its popup |
+| Home | `/home` | Anyone | Search box; Browse the Shelves: the top-10 lists (Most Downloaded, Most Viewed, Highest Rating), Recent Uploads, then a shelf per material type; Related News. A signed-in patron who has not done the satisfaction survey sees its popup |
+| Top 10: Last 90 days · All time | switch above the shelves | Anyone | Opens on the last 90 days; All time changes all three top-10 shelves, each naming its window under its title. A list with nothing in the last 90 days says so, with "See all time". The medals on covers elsewhere follow the last 90 days. A banned patron's views, downloads and ratings stop counting at once |
 | Search results | `/results?query=…` | Anyone | Keyword search; filters (material type, author, year, full text available) with counts; sort; grid and list views; paging; suggestions while typing |
 | Quick view (on results) | button on each result | Anyone | Opens the record's main details over the list without leaving it |
 | Cite (on results) | button on each result | Anyone | Shows APA, MLA and Chicago; each Copy button copies its citation |
@@ -49,7 +50,8 @@ These pages are open to everyone. Only published records ever appear; a held, de
 | Submit review | button on the record page | Patron | Opens the review page: 1 to 5 stars (required), remarks up to 1,000 characters. One review per patron per record. Staff see it greyed out |
 | Quick review popup | after a download, or a minute of reading | Patron | Asks for stars and remarks; saving reloads the page with the review shown |
 | Sign in | `/login`, or the popup on any page | Guest | Patrons land on `/home`, staff on the admin. 5 wrong passwords lock sign-in for a short time |
-| Register | `/register` | Guest | Name, email, contact number, password (8+ characters, typed twice). The email must not already be registered. At most 10 a minute |
+| Continue with Google | button on `/login` and `/register`, when set up | Guest | A new Google address becomes a patron with no password; an existing patron's address signs in to that account. Refused, back on Sign in with a message: staff addresses, removed accounts; a banned patron gets the banned popup. Cancel on Google's page: "Google sign-in was cancelled." At most 10 a minute. Cases: `DEPLOYMENT_CHECKLIST.md` D10 |
+| Register | `/register` | Guest | Name, email, contact number, password (12+ characters, typed twice), and the "I'm human" check above the button (with Cloudflare's test keys it says "For testing only"; the failing test keys refuse). The email must not already be registered. At most 10 a minute |
 | Forgot password | `/forgot-password`, then the emailed link `/reset-password/{token}` | Guest | Sends a reset link; the link sets a new password. At most 5 a minute |
 | Verify email | `/verify-email` | Signed in | Resend the verification link (at most 6 a minute) |
 | Satisfaction survey | `/csf/system-review` | Signed in | Seven ratings and three comments; a second try says it is already done |
@@ -63,7 +65,8 @@ A signed-in patron reaches these from the **Welcome, {name}** menu at the top ri
 | Page | Address | Who | What to check |
 | --- | --- | --- | --- |
 | Profile | `/patron/profile` | Patron | Edit name, email (must be unused), contact number, birthdate (before today), affiliation, sex, patron type (required), region, address. Library code shown as a QR code |
-| Change password | on the Profile page | Patron | Needs the current password; new password 8+ characters, typed twice. At most 10 tries a minute |
+| Change password | on the Profile page | Patron | Needs the current password; new password 12+ characters, typed twice. At most 10 tries a minute |
+| Set a Password | on the Profile page, for an account made with Google | Patron | Within 15 minutes of a Google sign-in: new password, typed twice. Later: "Confirm with Google" first. Afterwards the email and password sign in too. "Where you're signed in" → Sign out works the same way, without a password |
 | Saved | **Saved** button in the search bar | Patron | Shows how many records are saved; opens `/results?saved=1`, the saved records with the usual filters. The star on a record adds or removes it |
 | Transactions | `/patron/transactions` | Patron | Each reservation with its code, title, visit date and time, and status (For Approval, Approved, Open = checked out, Declined, Closed = returned). **Messages** opens a chat with the library about that reservation. When staff approve, decline, check out or check in one, the menu's Reservations badge counts it and the bell says so (approved: "ready for pickup"; others: "reservation updated") until the patron opens this page, where the card shows **Updated** once. The patron's own new request doesn't count |
 | Reservation chat | Messages button on a reservation | Patron | Send a message; the library's replies appear; opening it clears the badge. Only the patron's own reservations open. A blocked account cannot send |

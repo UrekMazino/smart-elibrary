@@ -1,9 +1,11 @@
 {{-- The highlight shelves (Most Downloaded, Most Viewed, Highest Rating, Recent Uploads) come first, so they are the
      shelves in view when the page opens; then a shelf per material type (its newest 45, by title A-Z). A record's
-     ranks in the three top-10 lists show as medals on its cover there. --}}
+     ranks in the three top-10 lists show as medals on its cover there. The top-10 shelves hold the last 90 days
+     and all time; the switch under the heading picks which shows (the last 90 days first, as the medals do). --}}
 @php
 	$__highlights = getHighlightShelves();
 	$__shelves = array_merge($__highlights, getShelves(45));
+	$__ranked = collect($__highlights)->contains('ranked', true);
 @endphp
 @if(count($__shelves))
 <style>
@@ -85,6 +87,24 @@
 	.col-book:hover .col-detail, .col-book:focus-within .col-detail { opacity:1; }
 	@media (hover: none) { .col-detail { opacity:1; } }
 
+	/* Top-10 window: the switch shows the last 90 days or all time on the top-10 shelves (clones too); each such
+	   shelf names its window under its title. A list empty in the last 90 days says so and offers all time. */
+	.rank-window { display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; margin:-6px 0 22px; }
+	.rank-window-label { font-family:Georgia,"Palatino Linotype",serif; font-size:15px; letter-spacing:.5px; color:#49290f; }
+	.rank-window-opts { display:inline-flex; padding:2px; border:1.5px solid #a06e14; border-radius:999px; background:rgba(255,255,255,.5); }
+	.rank-window-opts button { border:0; border-radius:999px; padding:5px 15px; background:transparent; color:#49290f;
+		font-size:13.5px; font-weight:600; line-height:1.3; cursor:pointer; transition:background .16s ease, color .16s ease; }
+	.rank-window-opts button:hover { background:rgba(160,110,20,.16); }
+	.rank-window-opts button[aria-pressed="true"] { background:#a06e14; color:#fff; }
+	.rank-window button:focus-visible, .shelf-empty-btn:focus-visible { outline:2px solid #7f410a; outline-offset:2px; }
+	.shelf-col-when { display:block; margin-top:2px; font:600 11.5px/1.2 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+		letter-spacing:.3px; color:#f0cf9c; }
+	.shelf-browser:not(.is-all-time) [data-window-only="all"], .shelf-browser.is-all-time [data-window-only="recent"] { display:none; }
+	.shelf-empty { margin:0; padding:52px 18px; text-align:center; color:#eafaf7; font-size:14px; line-height:1.5; }
+	.shelf-empty-btn { display:inline-block; margin-top:10px; padding:4px 15px; border:1.5px solid #e2b23c; border-radius:999px;
+		background:transparent; color:#ffe7b0; font-weight:600; cursor:pointer; }
+	.shelf-empty-btn:hover { background:#a06e14; border-color:#a06e14; color:#fff; }
+
 	/* Minimalist paging arrows: thin flat outline circle that fills teal on hover. */
 	.shelf-page { flex:0 0 auto; width:38px; height:38px; border-radius:50%;
 		border: 1.5px solid #a06e14; background:transparent; cursor:pointer; color: #49290f; font-size:18px; line-height:1;
@@ -111,20 +131,34 @@
 		</div>
 		<button type="button" class="shelf-page next" aria-label="Next shelves">&#8250;</button>
 	</div>
+	@if($__ranked)
+		<div class="rank-window" role="group" aria-label="Top 10 lists">
+			<span class="rank-window-label">Top 10:</span>
+			<span class="rank-window-opts">
+				<button type="button" data-rank-window="recent" aria-pressed="true">{{ ucfirst(rankingWindowLabel()) }}</button>
+				<button type="button" data-rank-window="all" aria-pressed="false">All time</button>
+			</span>
+		</div>
+	@endif
 	<div class="shelf-explorer">
 		<div class="shelf-viewport">
 		<div class="shelf-cols">
 			@foreach($__shelves as $i => $shelf)
 				<div class="shelf-col" data-idx="{{ $i }}">
-					<div class="shelf-col-head">{{ $shelf['label'] }}</div>
-					<div class="shelf-col-body">
+					<div class="shelf-col-head">{{ $shelf['label'] }}@if(!empty($shelf['ranked']))<small class="shelf-col-when"><span data-window-only="recent">{{ ucfirst(rankingWindowLabel()) }}</span><span data-window-only="all">All time</span></small>@endif</div>
+					@foreach(!empty($shelf['ranked']) ? ['recent' => $shelf['items'], 'all' => $shelf['allTime']] : ['' => $shelf['items']] as $__window => $__items)
+					<div class="shelf-col-body"@if($__window) data-window-only="{{ $__window }}"@endif>
+						@if(!count($__items))
+							{{-- Only the last 90 days can be empty: a shelf with nothing in all time is left out. --}}
+							<p class="shelf-empty">{{ $shelf['none'] }}<br><button type="button" class="shelf-empty-btn" data-rank-window="all">See all time</button></p>
+						@endif
 						@php
 							// Three rows (fewer for a short shelf), read left to right and then down, as a ranking is read;
 							// a cover left over goes on an upper row (10 -> 4, 3, 3).
-							$__n = count($shelf['items']); $__r = min(3, max(1, $__n)); $__rows = []; $__at = 0;
+							$__n = count($__items); $__r = min(3, $__n); $__rows = []; $__at = 0;
 							for ($__k = 0; $__k < $__r; $__k++) {
 								$__len = intdiv($__n, $__r) + ($__k < $__n % $__r ? 1 : 0);
-								$__rows[] = array_slice($shelf['items'], $__at, $__len);
+								$__rows[] = array_slice($__items, $__at, $__len);
 								$__at += $__len;
 							}
 						@endphp
@@ -158,6 +192,7 @@
 							</div>
 						@endforeach
 					</div>
+					@endforeach
 				</div>
 			@endforeach
 		</div>
@@ -217,6 +252,21 @@
 		wrap._updRow = updRow;
 	});
 	function updRows() { rowUpds.forEach(function (fn) { fn(); }); }
+
+	// Top-10 window: the switch, or an empty list's "See all time", shows the last 90 days or all time on the top-10
+	// shelves. The rows just shown are measured for their arrows (hidden, they measured nothing). "See all time"
+	// disappears as it is used, so the keyboard focus goes to the switch.
+	root.addEventListener('click', function (e) {
+		var btn = e.target.closest('[data-rank-window]');
+		if (!btn) return;
+		var all = btn.getAttribute('data-rank-window') === 'all';
+		root.classList.toggle('is-all-time', all);
+		[].slice.call(root.querySelectorAll('.rank-window [data-rank-window]')).forEach(function (b) {
+			b.setAttribute('aria-pressed', String((b.getAttribute('data-rank-window') === 'all') === all));
+		});
+		if (btn.classList.contains('shelf-empty-btn')) root.querySelector('.rank-window [data-rank-window="all"]').focus({ preventScroll: true });
+		updRows();
+	});
 
 	// The covers are lazy-loaded and have no fixed size, so a row only overflows (and needs its
 	// arrows) once its images arrive — after the first check ran. Re-check as they load / as the

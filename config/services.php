@@ -49,4 +49,33 @@ return [
         'timeout' => (int) env('HERMES_GATEWAY_TIMEOUT', 60),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | "I'm human" check on sign-up (Cloudflare Turnstile)
+    |--------------------------------------------------------------------------
+    | App\Rules\HumanCheck. Off while either key is empty. Local and staging
+    | use Cloudflare's test keys; production the agency's own, made in the
+    | Cloudflare dashboard (Turnstile → Add widget) for the site's hostname.
+    */
+    /*
+    |--------------------------------------------------------------------------
+    | "Continue with Google" for patrons (Laravel Socialite)
+    |--------------------------------------------------------------------------
+    | App\Http\Controllers\Auth\GoogleSignInController. Off while the id or
+    | the secret is empty. An OAuth client of the agency's Google Cloud project
+    | (DEPLOYMENT_CHECKLIST.md): one for local and staging, one for production.
+    | The redirect URI must be listed on the client exactly; by default it is
+    | this site's /auth/google/callback.
+    */
+    'google' => [
+        'client_id'     => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect'      => env('GOOGLE_REDIRECT_URI') ?: '/auth/google/callback',
+    ],
+
+    'turnstile' => [
+        'site_key'   => env('TURNSTILE_SITE_KEY'),
+        'secret_key' => env('TURNSTILE_SECRET_KEY'),
+    ],
+
 ];

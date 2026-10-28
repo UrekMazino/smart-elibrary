@@ -40,6 +40,8 @@
 	.pw-hint { display: block; font-size: 11.5px; color: #a3adc2; margin-top: 4px; }
 	.pw-hint.ok { color: #00a496; }
 	.pw-hint.bad { color: #c0392b; }
+	.pw-note { font-size: 13.5px; color: #55606b; margin-bottom: 10px; }
+	.pw-google { display: inline-block; text-decoration: none; }
 	.pw-error { display: block; font-size: 11.5px; color: #c0392b; margin-top: 4px; }
 </style>
 @endsection
@@ -163,7 +165,7 @@
 					</form>
 
 					<div class="pf-actions">
-						<button type="button" class="pf-btn pf-btn-pass" data-pf="password">Change Password</button>
+						<button type="button" class="pf-btn pf-btn-pass" data-pf="password">{{ Auth::user()->hasPassword() ? 'Change Password' : 'Set a Password' }}</button>
 						<button type="button" class="pf-btn pf-btn-save" data-pf="save">Save Changes</button>
 					</div>
 				</div>

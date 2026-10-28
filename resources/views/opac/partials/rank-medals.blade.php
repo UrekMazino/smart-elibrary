@@ -25,7 +25,7 @@
 	.rank-medals.is-large .medal::before { top:-10px; width:15px; height:13px; }
 </style>
 @endonce
-@php $__words = array_map(fn ($m) => '#' . $m['rank'] . ' ' . $m['list'], $medals); @endphp
+@php $__words = array_map(fn ($m) => '#' . $m['rank'] . ' ' . $m['list'] . ', ' . $m['when'], $medals); @endphp
 <span class="rank-medals{{ !empty($size) ? ' is-' . $size : '' }}{{ !empty($decorative) ? ' is-decorative' : '' }}"
 	@if(!empty($decorative)) aria-hidden="true" @else role="img" aria-label="{{ implode(', ', $__words) }}" @endif>@foreach($medals as $__i => $m)<span class="medal {{ ['m-gold', 'm-silver', 'm-bronze'][$m['rank'] - 1] ?? 'm-plain' }}" title="{{ $__words[$__i] }}">{{ $m['rank'] }}</span>@endforeach</span>
 @endif

@@ -7,11 +7,13 @@ use App\Models\ViewCatalog;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
 /**
  * The top-10 lists count people, not requests: a reload or a script adds nothing, a reader who downloads a
- * file again counts once, one 5-star vote can't top Highest Rating, and only a material's readers rate it.
+ * file again counts once, one 5-star vote can't top Highest Rating, and only a material's readers rate it. They rank
+ * the last 90 days (the home page can switch to all time; the medals stay on 90 days), and leave banned accounts out.
  */
 class RankingIntegrityTest extends TestCase
 {
@@ -128,6 +130,52 @@ class RankingIntegrityTest extends TestCase
         DB::table('reads')->insert(['catalog_id' => $id, 'user_id' => $patron->id, 'created_at' => now()]);
         $this->actingAs($patron)->postJson('/review/quick', ['catalog_id' => $id, 'rating' => 5])->assertOk();
         $this->assertSame(1, DB::table('ratings')->count());
+    }
+
+    public function test_the_lists_rank_the_last_90_days_and_the_home_page_can_switch_to_all_time()
+    {
+        $recent = $this->record('Downloaded last week');
+        $old = $this->record('Downloaded long ago');
+        $download = fn (int $id, int $daysAgo) => DB::table('downloads')->insert(['catalog_id' => $id, 'user_id' => $this->patron()->id, 'created_at' => now()->subDays($daysAgo)]);
+        $download($recent, 7);
+        foreach ([100, 120, 400] as $daysAgo) $download($old, $daysAgo);
+        DB::table('ratings')->insert(['catalog_id' => $old, 'user_id' => $this->patron()->id, 'rating' => 5, 'created_at' => now()->subDays(200)]);
+        $ids = fn (array $items) => array_map(fn ($i) => (int) $i['catalog_id'], $items);
+
+        $this->assertSame([$recent], $ids(getMostDownloaded(10)));
+        $this->assertSame([$old, $recent], $ids(getMostDownloaded(10, 'all')));
+        $this->assertSame([], recordMedals($old));   // the medals follow the last 90 days
+        $this->assertSame([['rank' => 1, 'list' => 'Most Downloaded', 'when' => 'last 90 days']], recordMedals($recent));
+
+        // Both lists are on the home page, the last 90 days shown first; a list with nothing in them says so.
+        $this->get('/home')->assertOk()
+            ->assertSeeInOrder(['Top 10:', 'aria-pressed="true">Last 90 days', 'aria-pressed="false">All time'], false)
+            ->assertSeeInOrder(['data-window-only="recent"', 'Downloaded last week', 'data-window-only="all"', 'Downloaded long ago', '3 readers downloaded'], false)
+            ->assertSee('No ratings in the last 90 days.');
+    }
+
+    public function test_a_ban_takes_the_account_out_of_the_lists_until_it_is_lifted()
+    {
+        $id = $this->record('Downloaded and rated by one');
+        $patron = $this->patron();
+        DB::table('downloads')->insert(['catalog_id' => $id, 'user_id' => $patron->id, 'created_at' => now()]);
+        DB::table('ratings')->insert(['catalog_id' => $id, 'user_id' => $patron->id, 'rating' => 5, 'created_at' => now()]);
+        DB::table('views')->insert([['catalog_id' => $id, 'user_id' => $patron->id, 'is_guest' => 'NO', 'created_at' => now()],
+                                    ['catalog_id' => $id, 'user_id' => null, 'is_guest' => 'YES', 'created_at' => now()]]);
+        $this->assertCount(3, recordMedals($id));
+
+        Permission::findOrCreate('manage.patron.status', 'web');
+        $staff = tap(User::factory()->create(['usertype' => 'Administrator']))->givePermissionTo('manage.patron.status');
+        $toggle = fn () => $this->actingAs($staff)->postJson('/admin/user/toggle-flag', ['user_id' => $patron->id, 'flag' => 'banned'])->assertOk();
+
+        $toggle();   // banned: the lists change now, not when their cache runs out; the guest's view still counts
+        $this->assertSame([], getMostDownloaded(10, 'all'));
+        $this->assertSame([], getHighestRated(10, 'all'));
+        $this->assertSame('1 view', getMostViewed(10)[0]['detail']);
+
+        $toggle();   // lifted: the account's rows count again
+        $this->assertSame('1 reader downloaded', getMostDownloaded(10)[0]['detail']);
+        $this->assertSame('2 views', getMostViewed(10)[0]['detail']);
     }
 
     public function test_downloads_are_rate_limited()

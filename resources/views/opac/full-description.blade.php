@@ -71,6 +71,7 @@
 			.fd-cover-art { position: relative; display: inline-block; max-width: 100%; }
 			.fd-ranks { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
 			.fd-ranks li { font-size: 12.5px; font-weight: 600; border-radius: 999px; padding: 2px 10px; background: #fff4d1; color: #7a5600; }
+			.fd-ranks li.fd-ranks-when { font-weight: 400; background: none; padding-left: 2px; color: #6b5a33; }
 			/* General info reorganized layout */
 			#section_1 .box_general_3 { padding-top: 22px; }
             #section_1 { padding-bottom: 0px; }
@@ -356,8 +357,9 @@
 						<span class="fd-cover-art">{!! getFrontpageResult($result->catalog_id) !!}@include('opac.partials.rank-medals', ['medals' => $fdMedals, 'size' => 'large', 'decorative' => true])</span>
 					</figure>
 					@if($fdMedals)
-						<ul class="fd-ranks" aria-label="Ranked in the library's top 10">
+						<ul class="fd-ranks" aria-label="Ranked in the library's top 10 of the {{ rankingWindowLabel() }}">
 							@foreach($fdMedals as $m)<li>#{{ $m['rank'] }} in {{ $m['list'] }}</li>@endforeach
+							<li class="fd-ranks-when" aria-hidden="true">{{ ucfirst(rankingWindowLabel()) }}</li>
 						</ul>
 					@endif
 					@if(checkStocks($result->catalog_id))

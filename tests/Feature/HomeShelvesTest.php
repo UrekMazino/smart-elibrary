@@ -72,8 +72,8 @@ class HomeShelvesTest extends TestCase
             ->assertSeeInOrder([self::HEAD . 'Most Viewed', 'col-rank r1', '<b>1</b>', 'col-rank r2', '<b>2</b>', 'col-rank r3', '<b>3</b>',
                 'col-rank rn', '<b>4</b>', 'col-rank rn', '<b>5</b>', self::HEAD . 'Recent Uploads'], false)
             // The type shelf: by title A-Z (case doesn't matter), and alpha's medals: gold for #1, silver for #2.
-            ->assertSeeInOrder([self::HEAD . 'Books', 'class="medal m-gold" title="#1 Most Downloaded">1<',
-                'class="medal m-silver" title="#2 Most Viewed">2<', 'alt="alpha"',
+            ->assertSeeInOrder([self::HEAD . 'Books', 'class="medal m-gold" title="#1 Most Downloaded, last 90 days">1<',
+                'class="medal m-silver" title="#2 Most Viewed, last 90 days">2<', 'alt="alpha"',
                 '#1 Most Downloaded<br>#2 Most Viewed', 'alt="Bravo"', 'alt="Charlie"', 'alt="Delta"', 'alt="echo"'], false)
             ->getContent();
 
@@ -91,8 +91,8 @@ class HomeShelvesTest extends TestCase
 
         $record = '/' . recordPath(\App\Models\ViewCatalog::where('catalog_id', $beta)->first());
         $this->get($record)->assertOk()
-            ->assertSeeInOrder(['class="medal m-gold" title="#1 Most Downloaded">1<', 'class="medal m-gold" title="#1 Highest Rating">1<'], false)
-            ->assertSeeInOrder(['<li>#1 in Most Downloaded</li>', '<li>#1 in Highest Rating</li>'], false);
+            ->assertSeeInOrder(['class="medal m-gold" title="#1 Most Downloaded, last 90 days">1<', 'class="medal m-gold" title="#1 Highest Rating, last 90 days">1<'], false)
+            ->assertSeeInOrder(['<li>#1 in Most Downloaded</li>', '<li>#1 in Highest Rating</li>', 'Last 90 days</li>'], false);
         $this->get("/search/quick/$beta")->assertOk()->assertSee('#1 Most Downloaded')->assertSee('#1 Highest Rating');
 
         // A record in none of the lists: no medals, and no medal styles on its page.

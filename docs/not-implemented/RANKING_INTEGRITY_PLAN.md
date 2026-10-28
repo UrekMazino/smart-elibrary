@@ -1,58 +1,45 @@
 # Fair rankings — what is still to build
 
-**Status:** planning only. What is built (views per viewer-day, downloads per reader, the weighted Highest
-Rating, ratings from readers only, the download limit) is in
+**Status:** planning; steps 2.1, 2.2 and 2.7 built on 28 October 2026, and 2.3 replaced by them (section 3).
+What is built (views per viewer-day, downloads per reader, the weighted Highest Rating, ratings from readers
+only, the download limit, the 90-day window, banned accounts left out) is in
 [`../implemented/RANKING_INTEGRITY.md`](../implemented/RANKING_INTEGRITY.md).
-**Last updated:** 2026-10-28.
+**Last updated:** 2026-10-28 (decisions, and 2.1, 2.2, 2.7 built).
 
 ---
 
 ## 1. Goal
 Close the gaps that remain after 28 October 2026, so the top-10 lists and their medals reflect real readers:
 
-| Gap | Step |
-|---|---|
-| A banned account's past views, downloads and ratings still count | 2.1 |
-| Old activity keeps a record on top forever | 2.2 |
-| Throwaway accounts can download and rate | 2.3 |
-| A guest switching address or browser is a new viewer; bots that load pages count | 2.4 |
-| The search page's "Most viewed" sort still counts every old reload | 2.5 |
-| Nobody sees sudden jumps; there is no way to cancel an account's counts | 2.6 |
-| Fake sign-ups in bulk (only if it starts happening) | 2.7 |
-| Old duplicate view rows still in the table | 2.8 |
-| The Privacy notice covers only the statistics | 2.9 |
+| Gap | Step | Status |
+|---|---|---|
+| A banned account's past views, downloads and ratings still count | 2.1 | Built 2026-10-28 |
+| Old activity keeps a record on top forever | 2.2 | Built 2026-10-28 |
+| Throwaway accounts can download and rate | 2.3 | Replaced by 2.7 and Google sign-in |
+| A guest switching address or browser is a new viewer; bots that load pages count | 2.4 | To do |
+| The search page's "Most viewed" sort still counts every old reload | 2.5 | To do |
+| Nobody sees sudden jumps; there is no way to cancel an account's counts | 2.6 | To do |
+| Fake sign-ups in bulk | 2.7 | Built 2026-10-28 |
+| Old duplicate view rows still in the table | 2.8 | Optional |
+| The Privacy notice covers only the statistics and sign-in | 2.9 | Waiting for the DPO |
 
-Order: 2.1 and 2.2 first (queries only, an hour each), then 2.3 and 2.4. The rest when needed.
+Next: 2.4, then 2.5. The rest when needed.
 
 ## 2. Steps
 
-### 2.1 A ban takes the account out of the rankings
-- **Why:** banning stops new downloads and sign-ins, but the account's earlier rows still count.
-- **How:** in `getMostDownloaded()`, `getMostViewed()` and `getHighestRated()`, leave out rows whose
-  `user_id` belongs to a banned user (`users.is_banned = 1`): a `whereNotIn('user_id', …)` or a left join.
-  Guest rows (no `user_id`) are unaffected. Lifting the ban brings the rows back; nothing is deleted.
-- **Effort:** small; no migration. **Test:** ban a patron with the only download of a record: the record
-  leaves Most Downloaded; lift the ban: it comes back.
+### 2.1 A ban takes the account out of the rankings — built
+Built 28 October 2026: `rankingRows()` leaves out rows of banned accounts, and setting or lifting a ban empties
+the lists' cache. See `RANKING_INTEGRITY.md`.
 
-### 2.2 A time window for the rankings
-- **Why:** a record that was gamed (or popular) years ago stays on top; recent reading is more useful.
-- **How:** `->where('created_at', '>=', now()->subDays(90))` on the three ranking queries (ratings: keep all
-  time, or 365 days, since ratings are few). The record page's counts stay all time. Name it once (a
-  constant) so the shelves and the medals use the same window.
-- **Decide:** 90 days for views and downloads? All time or a year for ratings?
-- **Effort:** small; no migration. **Test:** a download 100 days old doesn't count; one 10 days old does.
+### 2.2 A time window for the rankings — built
+Built 28 October 2026: the lists rank the last 90 days (`rankingDays()`), ratings too; the home page switches
+them to all time and back; the medals follow the last 90 days. See `RANKING_INTEGRITY.md`.
 
-### 2.3 Verified email before downloads and ratings
-- **Why:** sign-up needs no proof of a working address, so one person can open many accounts.
-- **How:** `User implements MustVerifyEmail` (the interface is imported but not implemented); the `verified`
-  middleware on `POST /download`, `POST /review/submit`, `POST /review/quick` (and reading the full text).
-  Laravel sends the link; the verify routes already exist (`routes/auth.php`, signed, throttled).
-- **Existing accounts:** mark them verified once (`email_verified_at = created_at`) so nobody is locked out,
-  or ask them to verify at their next sign-in. A one-line migration or command either way.
-- **Depends on:** outgoing mail working in production (see the SwiftMailer notes: the old `getSwiftMailer()`
-  calls break mail flows); a clear "check your email" page in the OPAC's look.
-- **Effort:** medium. **Test:** an unverified patron can't download or rate and is told why; a verified one
-  can; a staff account is unaffected.
+### 2.3 Verified email before downloads and ratings — replaced
+Decided 28 October 2026 not to build it: outgoing mail is off, and patrons would wait on messages. In its place
+sign-up has an "I'm human" check (2.7), and patrons may continue with Google, which confirms the address
+(`SECURITY_NOTES.md` section 2). Existing accounts need nothing. The verify routes (`routes/auth.php`) stay
+unused; `User` doesn't implement `MustVerifyEmail`.
 
 ### 2.4 Count a guest's view only when someone is reading
 - **Why:** the guest hash tells visitors apart, but a script that changes its address or browser string is a
@@ -89,12 +76,10 @@ Order: 2.1 and 2.2 first (queries only, an hour each), then 2.3 and 2.4. The res
 - **Effort:** large. **Test:** a spike is listed; excluding an account removes its rows from the three lists
   and the medals; undoing brings them back; the purge job deletes rows past 90 days.
 
-### 2.7 A challenge on sign-up, if fake accounts appear
-- **When:** only if 2.3 isn't enough (sign-up is already limited to 10 a minute per address).
-- **How:** Cloudflare Turnstile or hCaptcha on the registration form, checked on the server. Both are
-  lighter on privacy than Google reCAPTCHA. The Content Security Policy needs their script and frame
-  origins (`SecurityHeaders`); the Privacy notice must name the provider.
-- **Effort:** medium.
+### 2.7 A challenge on sign-up — built
+Built 28 October 2026, at once rather than "if fake accounts appear", in place of 2.3: Cloudflare Turnstile on
+the sign-up form, checked on the server (`App\Rules\HumanCheck`); the sign-up page alone lets Cloudflare into
+its Content Security Policy; the Privacy notice names Cloudflare. Keys: `DEPLOYMENT_CHECKLIST.md`.
 
 ### 2.8 Clear out old duplicate views (optional)
 - **Why:** the rankings and the record page already count old reloads once a day (`viewerDaysSql()`), but the
@@ -112,8 +97,16 @@ Order: 2.1 and 2.2 first (queries only, an hour each), then 2.3 and 2.4. The res
   in step.
 - **Effort:** small for the code; the text is the DPO's.
 
-## 3. Decisions needed
+## 3. Decisions
 
-- The ranking window (2.2): 90 days for views and downloads; all time or a year for ratings?
-- Existing accounts and verification (2.3): mark them verified, or ask them to verify at next sign-in?
+Taken 28 October 2026:
+- **Window (2.2):** the last 90 days for all three lists, ratings included, shown first; all time one click
+  away on the home page. The medals follow the last 90 days.
+- **Email verification (2.3):** not built. An "I'm human" check on sign-up (Cloudflare Turnstile) instead, and
+  "Continue with Google" for patrons only; staff keep their passwords. Existing accounts: nothing to do.
+- **Google Cloud project:** made and kept by the developer, preferably under an agency Google account so it
+  outlives any one person's; one OAuth client for local and staging, one for production
+  (`DEPLOYMENT_CHECKLIST.md`).
+
+Still open:
 - Whether staff should see guest address hashes at all (2.6), and for how long (at most 90 days).

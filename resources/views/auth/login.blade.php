@@ -23,6 +23,10 @@
                         @if (session('status'))
                             <div class="alert alert-success" role="status">{{ session('status') }}</div>
                         @endif
+                        {{-- "Google sign-in was cancelled." (GoogleSignInController) --}}
+                        @if (session('notice'))
+                            <div class="alert alert-info" role="status">{{ session('notice') }}</div>
+                        @endif
                         {{-- Wrong email or password, too many tries (LoginRequest), a banned account. --}}
                         @if ($errors->any())
                             <div class="alert alert-danger" role="alert" id="login-errors">
@@ -31,6 +35,7 @@
                                 @endforeach
                             </div>
                         @endif
+                        @include('auth.partials.google-button', ['hint' => 'For patrons. Staff sign in with their email and password.', 'or' => 'or sign in with your email'])
                         <form method="POST" action="{{ route('login') }}">
                         @csrf
                             <div class="form-group">

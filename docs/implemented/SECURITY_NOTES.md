@@ -2,7 +2,7 @@
 
 The rules the eLibrary enforces, written down as OWASP ASVS 5.0 asks: input rules (2.1.1), sign-in and
 rate limits (6.1.1), who may do what (8.1.1), how fast vulnerable packages are patched (15.1.1), and how
-long a sign-in lasts (7.1.1, 7.5.2). Checked against the code on 2026-10-27 (branch `FNRI-Week-4`). When a rule
+long a sign-in lasts (7.1.1, 7.5.2). Checked against the code on 2026-10-28 (branch `FNRI-Week-4`). When a rule
 in the code changes, change it here in the same commit.
 
 ## 1. Input rules (ASVS 2.1.1)
@@ -31,7 +31,23 @@ Every rule below is checked on the server; a check in the browser only saves peo
 
 - **Sign-in:** 5 failed attempts for one email address from one IP address lock that pair out for 60
   seconds (`LoginRequest`). Banned accounts cannot sign in.
-- **Passwords:** see section 1. Changing a password needs the current one.
+- **Passwords:** see section 1. Changing a password needs the current one. An account made with "Continue
+  with Google" has none until its owner sets one, which needs a Google sign-in in the last 15 minutes or
+  "Confirm with Google" instead (`App\Services\GoogleSignIn`); signing in with a password fails for it.
+- **Sign-up: an "I'm human" check** (Cloudflare Turnstile, `App\Rules\HumanCheck`), in place of email
+  verification. Cloudflare confirms the form's token on the server (siteverify) before the account is made;
+  a token works once, within 5 minutes, for the form it was made for. If Cloudflare can't be reached the
+  sign-up is refused, not let through. Off while `TURNSTILE_SITE_KEY` or `TURNSTILE_SECRET_KEY` is unset.
+- **"Continue with Google"** (patrons; `GoogleSignInController`, Laravel Socialite; ASVS V10, the eLibrary
+  as OAuth client): the code flow with `state` and PKCE (S256), scopes `openid email profile`; Google's
+  tokens are not kept, only the account's Google id (`users.google_id`). A new Google account becomes a
+  patron; an existing account with the same address is linked, if Google says the address is confirmed
+  (`email_verified`), and keeps its password. Refused: staff accounts (they keep their password and its
+  limits), banned accounts (the banned popup, as with a password), removed accounts, an address Google
+  hasn't confirmed, and an address whose account is linked to another Google account. No "Keep me signed
+  in". Off (no button, routes 404) while `GOOGLE_CLIENT_ID` or `GOOGLE_CLIENT_SECRET` is unset.
+  Known limit: an account someone else opened with your address before you first continue with Google
+  keeps the password they chose; a later change could reset it at linking.
 - **Forms people could flood:** the chat button has a hidden field that spam bots fill in; such posts
   are accepted and thrown away.
 
@@ -41,6 +57,7 @@ separately (`app/Http/Middleware/ThrottleRequests.php`):
 | Action | Limit |
 |---|---|
 | Register | 10 |
+| Continue with Google: going to Google; coming back; "Confirm with Google" | 10 each |
 | Request a password reset link; reset a password | 5 each |
 | Resend the verification email; verify an email address | 6 each |
 | Change your password (patron or staff) | 10 |
@@ -162,7 +179,9 @@ or Developer, with one or more roles).
   "Keep me signed in" was ticked on that device, the account also gets a new remember token, which ends
   "Keep me signed in" on the other devices too (each stays signed in until its session ends). "Sign out
   all other sessions" is Laravel's `logoutOtherDevices` (a new hash of the same password), and deletes
-  the other sessions. A device kept signed in by its cookie is listed only while it has a session; the
+  the other sessions. An account made with Google has no password: instead of typing one it needs a Google
+  sign-in in the last 15 minutes, or "Confirm with Google" (Google again, for the same Google account);
+  "Sign out all other sessions" then deletes the other sessions and gives the account a new remember token. A device kept signed in by its cookie is listed only while it has a session; the
   patron page says so. The page never shows a session id, only an HMAC of it.
 - **Kept in the database** (`SESSION_DRIVER=database`, table `sessions`): for every visitor, signed in or
   not, the IP address, the browser (user agent), the last activity and the session's data. A row goes
@@ -214,6 +233,8 @@ used, and stored, where a feature needs them, on these terms:
 | Counting views (`saveView()`) | the account, or for a guest a keyed hash of IP address + browser (`visitorHash()`): a reload or a script counts once per material a day, and at most 120 views an hour count | the cache only, until the day ends; never in the database |
 | Rate limits (`throttle`) | the account, or a guest's IP address | the cache, for the limit's window |
 | Sessions (`sessions` table) | IP address and browser of each session (Laravel's database sessions) | until the session ends; staff pages never show the address |
+| "I'm human" check on sign-up (Cloudflare Turnstile) | the visitor's browser talks to Cloudflare directly; the server sends Cloudflare only the token, not the address | nothing kept by the eLibrary |
+| "Continue with Google" | from Google: name, email address, whether Google confirmed it, the Google account's id | the id and the account's name and address, as long as the account |
 
 The `views` table still holds no address or browser string (`PrivacyTest`).
 

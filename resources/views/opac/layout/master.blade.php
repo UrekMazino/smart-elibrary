@@ -295,6 +295,19 @@
 				slowed down. They are kept only in coded form and only until the end of the day; they are not added to
 				your account or shared outside the agency.</p>
 			<p>Downloads and ratings are counted once per account.</p>
+			@if (\App\Rules\HumanCheck::enabled() || \App\Services\GoogleSignIn::enabled())
+				<h6>Signing up and signing in</h6>
+				@if (\App\Rules\HumanCheck::enabled())
+					<p>The sign-up form checks that a person, not a program, is signing up, with Cloudflare Turnstile: your
+						browser connects to Cloudflare for the check, under Cloudflare's privacy policy. The eLibrary keeps
+						nothing from it.</p>
+				@endif
+				@if (\App\Services\GoogleSignIn::enabled())
+					<p>If you choose “Continue with Google”, Google tells the eLibrary your name and email address, and that
+						Google has confirmed the address. The eLibrary keeps your Google account's ID to recognise you next
+						time. It gets no access to your Google account, contacts or files.</p>
+				@endif
+			@endif
 			<p class="mb-0">Questions about your personal data: <a href="mailto:{{ config('app.admin_email') }}">{{ config('app.admin_email') }}</a>.</p>
 	      </div>
 	    </div>

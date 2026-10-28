@@ -4,8 +4,9 @@ Goal: the home page's top-10 lists (Most Downloaded, Most Viewed, Highest Rating
 and the counts on a record page can't be pushed up by reloading a page, a script, downloading a file again
 or one hand-picked rating.
 
-**Status:** built and enforced on `FNRI-Week-4` since 28 October 2026 (commit `6a3c4c3`). What is still to
-come: [`../not-implemented/RANKING_INTEGRITY_PLAN.md`](../not-implemented/RANKING_INTEGRITY_PLAN.md).
+**Status:** built and enforced on `FNRI-Week-4` since 28 October 2026 (commit `6a3c4c3`); the 90-day window and
+leaving banned accounts out, the same day. What is still to come:
+[`../not-implemented/RANKING_INTEGRITY_PLAN.md`](../not-implemented/RANKING_INTEGRITY_PLAN.md).
 
 ---
 
@@ -19,6 +20,18 @@ come: [`../not-implemented/RANKING_INTEGRITY_PLAN.md`](../not-implemented/RANKIN
 
 A *viewer* is the signed-in account, or for a guest a keyed hash of their IP address and browser (see
 section 3 for what that hash is and where it lives).
+
+All three lists:
+- **Rank the last 90 days** (`rankingDays()`), so old activity, or old gaming, drops out by itself. Above the
+  shelves, *Top 10: Last 90 days · All time* switches all three to all time and back; each top-10 shelf names
+  its window under its title. The page opens on the last 90 days. A list with nothing in the last 90 days
+  says so ("No ratings in the last 90 days.") and offers *See all time*. Highest Rating's library average
+  (`C`, below) is that of the same window.
+- **Medals follow the last 90 days**, wherever they show; their tooltips and the record page say so.
+- **Leave banned accounts out** (`rankingRows()`): a banned account's views, downloads and ratings stop
+  counting as soon as the ban is set, and count again when it is lifted. Nothing is deleted. A guest's view
+  (no account) counts as before.
+- The record page's "Views" and "Downloads" stay all time.
 
 ## 2. How each count works
 
@@ -59,8 +72,10 @@ Every download still saves a row (statistics, the To Review list). `getMostDownl
 
 ### Where the counts show
 - The three top-10 shelves on the home page, and the medals they award (shelves, search results, Quick view,
-  record page): `getMostDownloaded()`, `getMostViewed()`, `getHighestRated()`, each cached 10 minutes
-  (`home_top_downloaded`, `home_top_viewed`, `home_top_rated`; `clearHomeCache()` empties them).
+  record page): `getMostDownloaded()`, `getMostViewed()`, `getHighestRated()`, each taking a window
+  (`'recent'`, the default, or `'all'`) and each cached 10 minutes per window (`home_top_downloaded_recent`,
+  `home_top_downloaded_all` and so on; `clearHomeCache()` empties them). The rows that count: `rankingRows()`.
+  Setting or lifting a ban empties them at once (`AdminController::toggleUserFlag`).
 - The record page's "Views" and "Downloads": `countNum()`.
 - **Not changed:** the search page's "Most viewed" sort reads the view count stored in the search index
   (`ViewCatalog::toSearchableArray()`, plain row count). New rows are already one a day, so only old
@@ -99,6 +114,7 @@ What this feature uses, on those terms:
 | Counted views per viewer an hour | `saveView()`, `RateLimiter::tooManyAttempts(…, 120)` and `hit(…, 3600)` | 120 |
 | How long a view blocks the next | `saveView()`, `now()->endOfDay()` | until midnight |
 | Votes needed before a record's own average weighs as much as the library's | `getHighestRated()`, `$m` | 3 |
+| The lists' default window (and the medals') | `rankingDays()` in `app/Http/helper.php` | 90 days |
 | Downloads a minute per account | `routes/web.php`, `throttle:30,1` on `POST /download` | 30 |
 
 After a change, `clearHomeCache()` (or wait 10 minutes) to see it in the shelves.
@@ -112,6 +128,10 @@ After a change, `clearHomeCache()` (or wait 10 minutes) to see it in the shelves
 - Most Downloaded counts readers, not files;
 - one 5-star vote does not top Highest Rating (and the shelf shows the plain average);
 - only a material's readers can rate it (submit and quick review), and the record page says why;
+- the lists rank the last 90 days, the home page switches to all time, the medals stay on 90 days, and a list
+  empty in the last 90 days says so;
+- a ban takes the account out of the lists at once, and lifting it brings the account back (a guest's view
+  still counts);
 - `POST /download` carries `throttle:30,1`.
 
 Also following these rules: `HomeShelvesTest` ("1 reader downloaded"), `SecurityFixesTest` and
@@ -119,7 +139,10 @@ Also following these rules: `HomeShelvesTest` ("1 reader downloaded"), `Security
 
 ## 7. What it does not stop yet
 
-- **Many accounts.** Sign-up has no email verification, so someone can make accounts to download and rate.
+- **Many accounts by hand.** Sign-up has an "I'm human" check (Cloudflare Turnstile), which stops scripts
+  making accounts in bulk, and "Continue with Google" accounts come with an address Google has confirmed. A
+  person can still make a few accounts by hand with different addresses; the one-per-account rules and the
+  planned statistics watch are what limit them. Email verification was decided against (28 October 2026).
 - **Many addresses.** A guest switching IP address or browser string is a new viewer each time; the hourly cap
   is per viewer.
 - **Old guest views** saved before 28 October still count one each.

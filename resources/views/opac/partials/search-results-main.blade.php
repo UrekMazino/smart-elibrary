@@ -274,7 +274,7 @@
                                 @if($h['type'])<span class="sr-badge">{{ $h['type'] }}</span>@endif
                                 @if($read)<span class="sr-badge is-ft">Full text</span>@endif
                                 @if($avail)<span class="sr-badge is-avail">Available to borrow</span>@endif
-                                @foreach($medals as $m)<span class="sr-badge is-rank">#{{ $m['rank'] }} {{ $m['list'] }}</span>@endforeach
+                                @foreach($medals as $m)<span class="sr-badge is-rank" title="Top 10 of the {{ $m['when'] }}">#{{ $m['rank'] }} {{ $m['list'] }}</span>@endforeach
                                 @if(is_numeric($rating) && $rating > 0)<span class="rating sr-stars" title="Rated {{ $rating }} of 5"><i data-star="{{ $rating }}"></i></span>@endif
                                 @if($h['call'] && !$isGrid)<span class="sr-callno">{!! searchHighlight($h['call_hl']) !!}</span>@endif
                             </div>

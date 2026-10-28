@@ -19,12 +19,14 @@ class RouteSecurityTest extends TestCase
     use RefreshDatabase, SeedsReferenceData;
 
     /** Routes anyone may open without signing in (reviewed 2026-10-21; inquiry/general, the chat button, 2026-10-26;
-     *  news/{id}, a featured article for the home page's NEWS section, 2026-10-27). */
+     *  news/{id}, a featured article for the home page's NEWS section, 2026-10-27; auth/google and its callback,
+     *  "Continue with Google", 2026-10-28). */
     private const PUBLIC = [
         '/', 'home', 'news/{id}', 'results', 'full-description', 'full-description/{holdingsid}', 'read/view',
         'search/suggest', 'search/facet', 'search/cite/{catalogId}', 'search/quick/{catalogId}', 'search/ai-answer',
         'inquiry/general',
         'login', 'register', 'forgot-password', 'reset-password', 'reset-password/{token}',
+        'auth/google', 'auth/google/callback',
     ];
 
     /** Admin routes any staff account may use: its own profile and appearance, the OPAC button, MARC lookups for the editor. */

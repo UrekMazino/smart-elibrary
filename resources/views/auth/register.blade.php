@@ -10,6 +10,7 @@
                     <center><h3><img src="{{ asset('opac/img/elibrary-06.png') }}" alt="" width="200"class="img-fluid"></h3></center>
                     <div class="box_form">
                         <x-auth-validation-errors class="mb-4 text-danger" :errors="$errors"/>
+                        @include('auth.partials.google-button', ['hint' => 'No password needed: Google confirms your email address.', 'or' => 'or sign up with your email'])
                         <form method="POST" action="{{ route('register') }}">
                         @csrf
                             <div class="form-group">
@@ -28,6 +29,14 @@
                             <div class="form-group">
                                 <input type="password" class="form-control" placeholder="Confirm password" name="password_confirmation" id="password_confirmation" autocomplete="new-password" required>
                             </div>
+                            {{-- The "I'm human" check (App\Rules\HumanCheck): Cloudflare's widget puts its token in a hidden
+                                 cf-turnstile-response field. Most visitors pass without doing anything; some tick a box. --}}
+                            @if (\App\Rules\HumanCheck::enabled())
+                                <div class="form-group human-check">
+                                    <div class="cf-turnstile" data-sitekey="{{ config('services.turnstile.site_key') }}" data-action="register"
+                                         data-theme="light" data-size="flexible" data-language="en"></div>
+                                </div>
+                            @endif
 
                             <div class="form-group text-center add_top_20">
                                 <input class="btn_1 medium" type="submit" value="Register">
@@ -42,5 +51,7 @@
 @endsection
 
 @section('js')
-
+@if (\App\Rules\HumanCheck::enabled())
+<script src="{{ \App\Rules\HumanCheck::ORIGIN }}/turnstile/v0/api.js" nonce="{{ cspNonce() }}" async defer></script>
+@endif
 @endsection

@@ -219,6 +219,9 @@ class AdminController extends Controller
         if ($request->flag === 'banned' && $user->is_banned) {
             Auth::getProvider()->updateRememberToken($user, Str::random(60));
         }
+        // A banned account's views, downloads and ratings leave the top-10 lists (rankingRows), and come back when
+        // the ban is lifted: now, not when the lists' 10-minute cache runs out.
+        if ($request->flag === 'banned') clearHomeCache();
 
         return response()->json(['ok' => true, 'flag' => $request->flag, 'value' => (bool) $user->$col, 'declined' => $declined]);
     }
