@@ -4,8 +4,9 @@
      (HomeController::news), with its external link opening in a new tab.
 
      Built to stay light: the newsprint texture and every scrap of the collage are CSS (no images);
-     headlines and text use the serif fonts every device has; only the masthead loads a web font, the
-     letters N-E-W-S alone (~5 KB), and only when the section comes near. Photos are the ~800 px WebP
+     headlines and text use the serif fonts every device has; only the masthead loads a web font (Playfair
+     Display Black, a newspaper-title serif that stays easy to read), the letters N-E-W-S alone (a few KB),
+     and only when the section comes near. Photos are the ~800 px WebP
      copies made at upload (makeNewsPrintCopy), in their own colours, loaded lazily; the list uses the
      250 px thumbnails. The lead photo drifts slowly while the section is on screen, and not at all
      for "reduce motion". --}}
@@ -58,7 +59,7 @@
 	.nc i { display: block; height: var(--h, 220px); margin-top: 8px; background: repeating-linear-gradient(#8f8d88 0 2px, transparent 2px 6px); }
 	.nc i.c2 { background: repeating-linear-gradient(#8f8d88 0 2px, transparent 2px 6px) 0 0 / 47% 100% no-repeat,
 		repeating-linear-gradient(#8f8d88 0 2px, transparent 2px 6px) 100% 0 / 47% 100% no-repeat; }
-	.nc .m { font: 400 54px/1 "UnifrakturMaguntia", "Old English Text MT", Georgia, serif; text-transform: none; text-align: center; }
+	.nc .m { font: 900 50px/1 "Playfair Display", Georgia, serif; letter-spacing: .04em; text-transform: none; text-align: center; }
 	.nc .k { display: block; margin-top: 5px; padding: 3px 0; border-block: 1px solid #222; font: 9px/1.2 Georgia, serif; letter-spacing: .2em; text-align: center; }
 	.nc i.pic:first-child { margin-top: 0; }
 	.nc i.pic { height: 118px; background: radial-gradient(circle, rgba(0,0,0,.5) 32%, transparent 36%) 0 0 / 5px 5px, linear-gradient(160deg, #d4d2cc, #77746d 55%, #34322e); }
@@ -84,8 +85,8 @@
 
 	/* Masthead */
 	.np-mast { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 16px; padding-bottom: 4px; border-bottom: 3px double var(--ink); }
-	.np-title { margin: 0; font-family: "UnifrakturMaguntia", "Old English Text MT", Georgia, serif; font-weight: 400;
-		font-size: clamp(58px, 9vw, 108px); line-height: 1; color: var(--ink); text-shadow: 0 1px 0 rgba(255,255,255,.35); }
+	.np-title { margin: 0; font-family: "Playfair Display", Georgia, "Times New Roman", serif; font-weight: 900;
+		font-size: clamp(52px, 8vw, 96px); line-height: 1; letter-spacing: .06em; color: var(--ink); text-shadow: 0 1px 0 rgba(255,255,255,.35); }
 	.np-ear { justify-self: start; max-width: 150px; margin: 0; padding: 6px 10px; border: 1px solid var(--ink);
 		font-size: 10.5px; line-height: 1.4; letter-spacing: .14em; text-transform: uppercase; text-align: center; color: var(--ink-2); }
 	.np-ear-r { justify-self: end; }
@@ -265,11 +266,11 @@
 	if (!desk) return;
 	var top = desk.querySelector('.np-top');
 
-	// The masthead's web font: only the letters N, E, W, S (~5 KB), fetched as the section comes near.
+	// The masthead's web font: only the letters N, E, W, S (a few KB), fetched as the section comes near.
 	function loadFont() {
 		var l = document.createElement('link');
 		l.rel = 'stylesheet';
-		l.href = 'https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&text=NEWS&display=swap';
+		l.href = 'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@900&text=NEWS&display=swap';
 		document.head.appendChild(l);
 	}
 	if ('IntersectionObserver' in window) {
