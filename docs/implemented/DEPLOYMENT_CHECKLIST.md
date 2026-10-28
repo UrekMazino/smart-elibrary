@@ -2,7 +2,7 @@
 
 How to install and update the DOST-FNRI eLibrary on a developer's machine (Part A), on the FNRI MIS
 staging server (Part B) and on the public production server (Part C). Part D holds what all three
-share: settings, web server, PHP, scheduler, backups, upgrades and troubleshooting.
+share: settings, web server, PHP, scheduler, backups, upgrades, Google sign-in and troubleshooting.
 
 > **Checked 27 October 2026** (commit `dbc426d`): installed from a clean clone onto an empty database,
 > then switched to production mode without development packages. Every command in Parts A to C ran, the
@@ -13,7 +13,7 @@ share: settings, web server, PHP, scheduler, backups, upgrades and troubleshooti
 | [A. Local](#part-a--local-development) | a developer's PC: Windows with Laragon, or Linux | the app at `http://localhost:8000` or `http://elibrary.test`, sample accounts, the tests |
 | [B. Staging](#part-b--staging) | the FNRI MIS test server | a private copy on HTTPS for testing, inside the FNRI network |
 | [C. Production](#part-c--production) | the public server | the live OPAC on its own domain |
-| [D. Reference](#part-d--reference) | all of them | settings, web server, PHP, scheduler, backups, upgrades, troubleshooting |
+| [D. Reference](#part-d--reference) | all of them | settings, web server, PHP, scheduler, backups, upgrades, Google sign-in, troubleshooting |
 
 ## What makes up the eLibrary
 
@@ -24,6 +24,7 @@ share: settings, web server, PHP, scheduler, backups, upgrades and troubleshooti
 | Meilisearch **1.12 or newer** | always | the OPAC search; `docs/implemented/MEILISEARCH_SETUP.md` |
 | The scheduler | staging, production | rebuilds the sitemap (03:30) and checks the search index (03:45) every night |
 | The AI half (`hermes-with-rag`) | optional | only for AI mode, which is off until switched on in Admin → Settings ([D9](#d9-the-ai-half-optional)) |
+| A Google Cloud project and Cloudflare Turnstile | for "Continue with Google" and the "I'm human" check on sign-up | each off while its keys are empty ([D10](#d10-google-sign-in-and-the-im-human-check)) |
 
 - **PHP extensions:** ctype, curl, dom, fileinfo, gd, iconv, mbstring, openssl, pdo_mysql, simplexml,
   tokenizer, xml.
@@ -67,8 +68,14 @@ The template works locally as it is, except for these keys (all keys: [D1](#d1-e
 | `SESSION_SECURE_COOKIE` | `false` **only** on Laragon's `http://elibrary.test`, where sign-in fails otherwise; keep `true` on `http://localhost` |
 | `MEILI_MASTER_KEY`, `MEILISEARCH_KEY` | the same random value, 16 characters or more |
 | `PASSWORD_BREACH_CHECK` | `false` if the PC has no internet access |
+| `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | as in the template: Cloudflare's test keys, which pass every "I'm human" check; empty turns the check off |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | the local-and-staging OAuth client ([D10](#d10-google-sign-in-and-the-im-human-check)); empty hides "Continue with Google" |
 
 Mail stays in `storage/logs/laravel.log` (`MAIL_MAILER=log`): password-reset links are read from there.
+
+"Continue with Google" works locally only on `http://localhost:8000` (`php artisan serve`, with `APP_URL` the
+same): Google accepts plain `http://` return addresses for `localhost` alone, so not on Laragon's
+`http://elibrary.test`.
 
 ## A4. Create the database
 
@@ -141,6 +148,11 @@ commit `public/build`.
 A private copy for testing before production: the same software and settings as production, but inside
 the FNRI network, hidden from search engines, with test mail and test data.
 
+**Where its code comes from:** the FNRI GitLab, project `root/digitalfirst`
+(<https://gitlab.fnri.dost.gov.ph/root/digitalfirst.git>), branch **`staging`**. GitHub
+(`UrekMazino/smart-elibrary`) stays the main repository: work is merged into `main` there, and a release to
+staging merges `main` into `staging` and pushes it to GitLab ([B6](#b6-update-staging)).
+
 ## B1. What the server needs
 
 What the MIS Unit provides (the "Programmer Requirements for Staging Environment" form asks for this):
@@ -152,8 +164,13 @@ What the MIS Unit provides (the "Programmer Requirements for Staging Environment
 - **A TLS certificate** for the staging host name: sign-in only works over HTTPS.
 - **Ports:** 443 and 80 (redirects to 443) for users; 22 for the developer only; 3306 (MySQL), 7700
   (Meilisearch) and 8090 (AI gateway, if used) reachable from the server itself only.
-- **Access:** SSH for the developer, cron, and read access (a deploy key) to the GitHub repository
-  `UrekMazino/smart-elibrary`.
+- **Access:** SSH for the developer, cron, and read access to the GitLab project `root/digitalfirst`: a
+  **deploy token** with the `read_repository` scope (GitLab → the project → Settings → Repository → Deploy
+  tokens). The server can then fetch the code but never push.
+- **Outbound HTTPS** from the server to `gitlab.fnri.dost.gov.ph` (the code), `challenges.cloudflare.com`
+  (the "I'm human" check on sign-up), `oauth2.googleapis.com` and `www.googleapis.com` ("Continue with
+  Google") and `api.pwnedpasswords.com` (the breached-password check). Without the Cloudflare and Google
+  ones, sign-up and Google sign-in fail; testers' browsers reach Google and Cloudflare themselves.
 - **A test SMTP account** for password-reset links and check-in notices.
 
 ## B2. First deploy
@@ -165,7 +182,9 @@ running as `www-data`.
 
 ```bash
 cd /var/www
-git clone git@github.com:UrekMazino/smart-elibrary.git elibrary
+git config --global credential.helper store          # keeps the deploy token in ~/.git-credentials (mode 600)
+git clone --branch staging https://gitlab.fnri.dost.gov.ph/root/digitalfirst.git elibrary
+#   Username: the deploy token's username (gitlab+deploy-token-…)   Password: the token
 cd elibrary
 composer install --no-dev --optimize-autoloader
 cp .env.example .env
@@ -243,10 +262,27 @@ Run the smoke test in [D6](#d6-smoke-test).
 
 ## B6. Update staging
 
+**1. Release: on the developer's PC.** The `gitlab` remote is added once:
+`git remote add gitlab https://gitlab.fnri.dost.gov.ph/root/digitalfirst.git`.
+
+```bash
+git fetch origin
+git checkout staging
+git pull gitlab staging                               # anything pushed to staging from elsewhere
+git merge --no-ff origin/main -m "Release to staging"
+git push gitlab staging                               # the pre-push hook runs the checks first
+git checkout -                                        # back to the branch you were on
+```
+
+GitHub's workflows don't run on GitLab: the pre-push hook ([A7](#a7-tests-and-the-security-checks)) is the
+check before a push to staging, so keep the development packages installed on the PC that pushes.
+
+**2. Deploy: on the staging server.**
+
 ```bash
 cd /var/www/elibrary
 sudo -u www-data php artisan down --retry=60          # visitors see "back soon" (503) meanwhile
-git pull
+git pull                                              # the staging branch, from GitLab
 composer install --no-dev --optimize-autoloader
 sudo -u www-data php artisan migrate --force
 sudo -u www-data php artisan optimize
@@ -279,7 +315,9 @@ Production is Part B with the differences below. Deploy every release to staging
 | Search engines | asked to stay away (Settings switch on) | welcome (switch **off**), sitemap, Google Search Console |
 | Mail | test SMTP account | the library's SMTP account and sender address |
 | Accounts | sample and test accounts | named staff accounts only; no sample accounts |
-| `ADMIN_EMAIL` | any | the library's address (the built-in default belongs to another institute) |
+| `ADMIN_EMAIL` | any | the library's address: the OPAC footer, Privacy notice, chat, inquiry and banned popups (no default: they say "the library" until it is set) |
+| "I'm human" check | Cloudflare's test keys | the agency's own Turnstile widget for the domain ([D10](#d10-google-sign-in-and-the-im-human-check)) |
+| "Continue with Google" | the local-and-staging OAuth client; only its test users can sign in | the production OAuth client; the app published, so anyone can |
 | Backups | optional | daily, and a restore tested ([D7](#d7-backups-and-restore)) |
 
 ## C2. Before go-live
@@ -297,6 +335,8 @@ Production is Part B with the differences below. Deploy every release to staging
 - [ ] Backups running and one restore tested ([D7](#d7-backups-and-restore)).
 - [ ] AI mode decided ([D9](#d9-the-ai-half-optional)): off, the local AI only, or a Gemini option
       (approved under the agency's data policy, with a billing-enabled key).
+- [ ] The production Turnstile widget and Google OAuth client, and the Google app published
+      ([D10](#d10-google-sign-in-and-the-im-human-check)); no test keys in `.env`.
 - [ ] The smoke test passes ([D6](#d6-smoke-test)).
 
 ## C3. First deploy and go-live
@@ -364,6 +404,9 @@ sudo -u www-data php artisan up
 | `MEILI_ENV` | `development` | `production` | `production` |
 | `HERMES_GATEWAY_URL`, `_TOKEN` | if AI mode is used | if AI mode is used | if AI mode is used |
 | `PASSWORD_BREACH_CHECK` | `true` (`false` offline) | `true` (`false` without internet) | `true` |
+| `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | Cloudflare's test keys | Cloudflare's test keys | the agency's widget |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | the local-and-staging client | the local-and-staging client | the production client |
+| `GOOGLE_REDIRECT_URI` | empty | empty | empty (the site's address + `/auth/google/callback`) |
 | `HSTS_MAX_AGE` | `31536000` | `31536000` | `31536000` (`0` to back out of HTTPS) |
 | `CSP_ENFORCE` | `true` | `true` | `true` (`false` = emergency switch) |
 | `LOG_LEVEL` | `debug` | `debug` | `warning` |
@@ -481,8 +524,9 @@ Keep **one** PHP installed (8.5.12 or newer). Check:
 
 ## D4. Scheduler
 
-It runs `sitemap:generate` at 03:30 and `search:reconcile` at 03:45 (`app/Console/Kernel.php`).
-Without it the sitemap goes stale and the nightly search check never runs.
+It runs `visitors:forget` at 03:15, `sitemap:generate` at 03:30 and `search:reconcile` at 03:45
+(`app/Console/Kernel.php`). Without it guests' IP addresses are kept past the 90 days the privacy notice
+promises, the sitemap goes stale and the nightly search check never runs.
 
 - **Linux:** in the web server user's crontab (`sudo crontab -u www-data -e`):
   ```
@@ -490,7 +534,7 @@ Without it the sitemap goes stale and the nightly search check never runs.
   ```
 - **Windows:** once, `powershell -ExecutionPolicy Bypass -File scripts\register-scheduler-task.ps1`
   (add `-Php "<path to php.exe>"` if PHP is not on PATH). It registers the `eLibrary-scheduler` task.
-- **Check:** `php artisan schedule:list` shows both jobs.
+- **Check:** `php artisan schedule:list` shows the three jobs.
 
 ## D5. Moving an existing database forward
 
@@ -537,6 +581,10 @@ In the browser:
 - The OPAC search (`/results?q=…`) finds records; a record page opens, with its cover.
 - Upload a cover on staging, and see it in the record and the OPAC.
 - A wrong address shows the eLibrary's own "not found" page, with no code or file paths.
+- `/register` shows the "I'm human" check, which passes (staging: it says "For testing only"; production:
+  it must not).
+- "Continue with Google" on `/login` signs in a test user (staging) or any Google account (production) as a
+  patron.
 
 ## D7. Backups and restore
 
@@ -587,7 +635,58 @@ server, the AI gateway on port 8090 and a sync worker, on a machine with a GPU. 
 
 Without the AI half, leave AI answers off: the rest of the eLibrary works without it.
 
-## D10. Troubleshooting
+## D10. Google sign-in and the "I'm human" check
+
+Patrons may sign up and sign in with "Continue with Google" (no password, no email verification: Google has
+confirmed the address), and the sign-up form has an "I'm human" check (Cloudflare Turnstile) in place of email
+verification. Staff accounts keep their passwords. How it works: `SECURITY_NOTES.md` section 2.
+
+**The Google Cloud project (once).** With the Google account that will own it (preferably an agency account,
+so it outlives any one person's), at <https://console.cloud.google.com>:
+
+1. Create a project, e.g. "DOST-FNRI eLibrary".
+2. **Google Auth Platform → Branding** (the "OAuth consent screen"): app name "DOST-FNRI eLibrary", a support
+   email, the developer's contact email. **Audience:** External.
+3. **Data access:** the scopes `openid`, `…/auth/userinfo.email`, `…/auth/userinfo.profile` and nothing else.
+   These need no review by Google.
+4. **Audience → Test users:** each tester's Google address (up to 100). While the app is in **Testing**, only
+   they can sign in; anyone else sees "access blocked".
+5. **Clients → Create client → Web application**, "eLibrary local and staging", with the authorized
+   redirect URIs `http://localhost:8000/auth/google/callback` and
+   `https://<staging host>/auth/google/callback` (no JavaScript origins needed). Copy the client ID and the
+   secret into `.env` as `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`; the console shows the secret only
+   now, so download the JSON as well and keep it out of git.
+6. **For production:** a second client, "eLibrary production", with `https://<domain>/auth/google/callback`
+   only; its secret goes only on the production server. Before go-live, **Audience → Publish app**, so any
+   Google account can sign in. Adding a logo to the consent screen needs Google's brand check (a few days);
+   without one it is not needed.
+
+**Cloudflare Turnstile.**
+- **Local and staging:** Cloudflare's test keys, no account needed (the `.env.example` values). Site key
+  `1x00000000000000000000AA` with secret `1x0000000000000000000000000000000AA` pass every check; site key
+  `2x00000000000000000000AB` with secret `2x0000000000000000000000000000000AA` fail every check. The widget
+  says "For testing only".
+- **Production:** a free Cloudflare account → **Turnstile → Add widget**: name "eLibrary", the hostname of
+  the domain, widget mode **Managed**. Its site key and secret go in `.env`.
+
+**After changing these keys on a server:** `php artisan optimize`.
+
+**Testing it.**
+- Automated (no Google account or internet; part of the pre-push checks):
+  `php artisan test --filter='GoogleSignInTest|HumanCheckTest'`. Google's and Cloudflare's answers are faked.
+- By hand, as a test user, locally on `http://localhost:8000` or on staging:
+
+| Try | Expect |
+|---|---|
+| Continue with Google, with an address that has no account | signed in as a new patron with a library code; Profile says "Set a Password" |
+| The same, with the address of an existing patron | signed in to that account; its password still works |
+| The same, with a staff account's address | back on the sign-in page: "Staff accounts sign in with their email and password, not with Google." |
+| A banned patron's address | the banned popup, as with a password |
+| Cancel on Google's page | back on the sign-in page: "Google sign-in was cancelled." |
+| Profile → Set a Password, 15 minutes or more after signing in | "Confirm with Google" first, then the password form |
+| Sign up with the test keys that fail (`2x…`) | "The “I’m human” check didn’t pass." and no account |
+
+## D11. Troubleshooting
 
 | What you see | Cause and fix |
 |---|---|
@@ -599,10 +698,17 @@ Without the AI half, leave AI answers off: the rest of the eLibrary works withou
 | 500 error after an update | Read `storage/logs/laravel.log`; usually file permissions or a stale cache: `php artisan optimize:clear`, then `php artisan optimize` |
 | Menus missing for a role after an update | `php artisan permission:cache-reset`; then check the role in Admin → Accounts → Roles (a module's switch must be on for the permissions inside it) |
 | The sitemap lists the wrong address | It was built before `APP_URL` was right: Admin → Settings → Tools → Rebuild sitemap |
+| `git pull` on staging asks for a password, or says "Authentication failed" | The deploy token expired or was revoked: make a new one in GitLab (B1), then update `~/.git-credentials` |
 | No mail arrives | `MAIL_*` in `.env`; with `MAIL_MAILER=log` mail is only written to the log |
 | A `.env` change has no effect | Config is cached: `php artisan optimize` |
+| Google says "Error 400: redirect_uri_mismatch" | The OAuth client doesn't list this exact return address: the site's address (as the browser has it) + `/auth/google/callback`, `http` only for `localhost` ([D10](#d10-google-sign-in-and-the-im-human-check)) |
+| Google says "Access blocked: … has not completed the Google verification process" | The app is in Testing and this Google account isn't a test user: add it, or publish the app (production) |
+| "Google sign-in didn't finish. Please try again." | The session was lost on the way: the site was opened on one host and Google returned to another (`localhost` and `127.0.0.1`), or the server can't reach `oauth2.googleapis.com`; the log has the reason |
+| "The “I’m human” check couldn’t be completed just now" | The server can't reach `challenges.cloudflare.com` (B1); the log says why |
+| The log says the "I'm human" check "is set up wrongly" | `TURNSTILE_SECRET_KEY` is wrong, or isn't the secret of `TURNSTILE_SITE_KEY` |
+| The "I'm human" check says "For testing only" in production | Cloudflare's test keys are still in `.env`: put in the agency's widget keys |
 
-## D11. Known gaps
+## D12. Known gaps
 
 - **Some new records may not be citable in AI mode.** The sync worker stores their passages under
   `catalog-{id}`, while `AiSearchService::resolveSources()` resolves sources by accession number. Found

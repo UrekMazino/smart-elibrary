@@ -15,7 +15,24 @@ class NewsController extends Controller
 
     public function index()
     {
-        return view('admin.news');
+        return view('admin.news', ['headline' => newsHeadline()]);
+    }
+
+    /**
+     * The NEWS section's headline: the one featured article that leads it on the home page (setting
+     * news_headline_id). Picking the current headline again clears it, and the latest featured
+     * article leads again. Only a featured article can be the headline: nothing else is shown there.
+     */
+    public function headline($id)
+    {
+        $article = News::findOrFail($id);
+        if ($article->featured !== 'Yes') {
+            return response()->json(['message' => 'Feature this article first: only featured news is shown on the home page.'], 422);
+        }
+
+        setNewsHeadline((int) setting('news_headline_id') === $article->id ? null : $article->id);
+
+        return response()->json(['headline' => newsHeadline()?->only(['id', 'news_title'])]);
     }
 
     public function create()
@@ -97,6 +114,9 @@ class NewsController extends Controller
 
         $article->save();
 
+        // An article that is no longer featured can't stay the headline of the home page's NEWS.
+        if ($article->featured !== 'Yes' && (int) setting('news_headline_id') === $article->id) setNewsHeadline(null);
+
         // Bust the cached homepage / sidebar news list so edits show immediately.
         cache()->forget('home_latest_news');
 
@@ -111,6 +131,7 @@ class NewsController extends Controller
             ->update([
                     'deleted_at' => now(),
                 ]);
+        if ((int) setting('news_headline_id') === (int) $request->id) setNewsHeadline(null);
 
         // Bust the cached homepage / sidebar news list so the deletion takes effect now.
         cache()->forget('home_latest_news');
@@ -138,6 +159,7 @@ class NewsController extends Controller
             ->get();
 
         $data_arr = array();
+        $headlineId = newsHeadline()?->id;
 
         foreach($records as $record){
             $id = $record->id;
@@ -151,6 +173,7 @@ class NewsController extends Controller
                 "id" => $id,
                 "news_title" => $news_title,
                 "featured" => $featured,
+                "is_headline" => $id === $headlineId,
                 "created_by" => $created_by,
                 "created_at" => $created_at,
             );

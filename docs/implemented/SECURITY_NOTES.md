@@ -2,7 +2,7 @@
 
 The rules the eLibrary enforces, written down as OWASP ASVS 5.0 asks: input rules (2.1.1), sign-in and
 rate limits (6.1.1), who may do what (8.1.1), how fast vulnerable packages are patched (15.1.1), and how
-long a sign-in lasts (7.1.1, 7.5.2). Checked against the code on 2026-10-27 (branch `FNRI-Week-4`). When a rule
+long a sign-in lasts (7.1.1, 7.5.2). Checked against the code on 2026-10-28 (branch `FNRI-Week-4`). When a rule
 in the code changes, change it here in the same commit.
 
 ## 1. Input rules (ASVS 2.1.1)
@@ -31,7 +31,23 @@ Every rule below is checked on the server; a check in the browser only saves peo
 
 - **Sign-in:** 5 failed attempts for one email address from one IP address lock that pair out for 60
   seconds (`LoginRequest`). Banned accounts cannot sign in.
-- **Passwords:** see section 1. Changing a password needs the current one.
+- **Passwords:** see section 1. Changing a password needs the current one. An account made with "Continue
+  with Google" has none until its owner sets one, which needs a Google sign-in in the last 15 minutes or
+  "Confirm with Google" instead (`App\Services\GoogleSignIn`); signing in with a password fails for it.
+- **Sign-up: an "I'm human" check** (Cloudflare Turnstile, `App\Rules\HumanCheck`), in place of email
+  verification. Cloudflare confirms the form's token on the server (siteverify) before the account is made;
+  a token works once, within 5 minutes, for the form it was made for. If Cloudflare can't be reached the
+  sign-up is refused, not let through. Off while `TURNSTILE_SITE_KEY` or `TURNSTILE_SECRET_KEY` is unset.
+- **"Continue with Google"** (patrons; `GoogleSignInController`, Laravel Socialite; ASVS V10, the eLibrary
+  as OAuth client): the code flow with `state` and PKCE (S256), scopes `openid email profile`; Google's
+  tokens are not kept, only the account's Google id (`users.google_id`). A new Google account becomes a
+  patron; an existing account with the same address is linked, if Google says the address is confirmed
+  (`email_verified`), and keeps its password. Refused: staff accounts (they keep their password and its
+  limits), banned accounts (the banned popup, as with a password), removed accounts, an address Google
+  hasn't confirmed, and an address whose account is linked to another Google account. No "Keep me signed
+  in". Off (no button, routes 404) while `GOOGLE_CLIENT_ID` or `GOOGLE_CLIENT_SECRET` is unset.
+  Known limit: an account someone else opened with your address before you first continue with Google
+  keeps the password they chose; a later change could reset it at linking.
 - **Forms people could flood:** the chat button has a hidden field that spam bots fill in; such posts
   are accepted and thrown away.
 
@@ -41,6 +57,7 @@ separately (`app/Http/Middleware/ThrottleRequests.php`):
 | Action | Limit |
 |---|---|
 | Register | 10 |
+| Continue with Google: going to Google; coming back; "Confirm with Google" | 10 each |
 | Request a password reset link; reset a password | 5 each |
 | Resend the verification email; verify an email address | 6 each |
 | Change your password (patron or staff) | 10 |
@@ -57,6 +74,8 @@ separately (`app/Http/Middleware/ThrottleRequests.php`):
 | Staff session warning: time left; "Stay signed in" | 60 each |
 | Sign out one of your sessions, or all the others (takes the password) | 10 |
 | Signed in now: sign one person or everyone out (takes the password) | 10 |
+| Statistics watch: take accounts out of the rankings; put one back | 30 each |
+| Rankings: refresh the home page | 10 |
 
 Not limited by the app: the public search results, search suggestions and record pages. In production
 the web server or a proxy in front of it should cap requests per IP address.
@@ -77,11 +96,11 @@ or Developer, with one or more roles).
   utility's own permission). The Roles page gives each module a switch per role and locks what's inside
   while it's off; Ban / Block Patrons is the exception (Inquiries and Transactions use it, so it needs only itself).
 
-| Role | Permissions (of 38) |
+| Role | Permissions (of 40) |
 |---|---|
 | `developer` | Everything, including permissions added later (`Gate::before`) |
-| `super_admin` | All 38 |
-| `system_admin` | 33: all except AI mode, material types, patron ban/block, editing import batches and Signed in now |
+| `super_admin` | All 40 |
+| `system_admin` | 34: all except AI mode, material types, patron ban/block, editing import batches, Signed in now and Statistics watch |
 | `cataloging_admin` | 10: cataloguing, records, imports, MARC templates |
 | `circulation_admin` | 7: reservations, check-out/in, patron ban/block |
 | `faculty` | 6: create, edit and delete records |
@@ -133,19 +152,17 @@ or Developer, with one or more roles).
 |---|---|---|
 | Staff | 30 minutes | 8 hours |
 | Patron | 2 hours | 12 hours |
-| Patron who ticked "Keep me signed in" | No limit, on that device | 30 days |
+| Anyone who ticked "Keep me signed in" (staff or patron) | No limit, on that device | 30 days |
 
 - **Activity** is any request to the site: opening a page, saving, searching. The staff warning asking
   how much time is left does not count.
 - **Staff warning.** 2 minutes before a limit, a dialog counts down. Before the idle limit, "Stay signed
   in" (or Esc) starts the 30 minutes again. Before the 8-hour limit it can only warn: save your work.
   It checks with the server first, so working in another tab keeps it away. Staff browsing the OPAC get
-  it too.
+  it too; not on a device kept signed in, which has no idle limit.
 - **After a sign-out** the sign-in page says why, and signing in again returns to the page.
-- **"Keep me signed in on this device (30 days)"** on the sign-in page is for patrons. A staff account
-  that ticks it is not remembered, and a remember cookie made while an account was a patron's stops
-  working once it is a staff account. The page says not to use it on a shared computer. The cookie is
-  `__Host-remember_web`: Secure, HttpOnly, 30 days. Signing out on any device ends it on every device
+- **"Keep me signed in"** on the sign-in page, for staff and patrons (staff since 28 October 2026): 30
+  days on that device, with no idle limit. The cookie is `__Host-remember_web`: Secure, HttpOnly, 30 days. Signing out on any device ends it on every device
   (Laravel keeps one remember token per account).
 - **Password change.** Every other session of the account ends at its next request, and "Keep me signed
   in" stops working on every device. This covers a change in the profile, a reset link and a librarian's
@@ -155,15 +172,20 @@ or Developer, with one or more roles).
 - **Compared with NIST SP 800-63B (2017).** Staff limits are within AAL2: sign in again every 12 hours,
   and after 30 minutes without activity. Patron accounts hold only the patron's own loans, inquiries,
   reservations and reviews, so they follow AAL1: sign in again at least every 30 days, the length of
-  "Keep me signed in".
+  "Keep me signed in". A staff member who ticks "Keep me signed in" is at AAL1's length on that device,
+  and whoever uses that device has their staff access for up to 30 days: tick it only on your own
+  computer, locked when you leave it. Signing out there, or "Sign out all other sessions" on the
+  profile, ends it.
 - **Where you're signed in** (the profile page, staff and patrons): every browser signed in to the
   account, with when it was last active and its IP address; "Sign out" for each, and "Sign out all other
   sessions". Both ask for the current password first (ASVS 7.5.2). Signing out one session deletes it. If
   "Keep me signed in" was ticked on that device, the account also gets a new remember token, which ends
   "Keep me signed in" on the other devices too (each stays signed in until its session ends). "Sign out
   all other sessions" is Laravel's `logoutOtherDevices` (a new hash of the same password), and deletes
-  the other sessions. A device kept signed in by its cookie is listed only while it has a session; the
-  patron page says so. The page never shows a session id, only an HMAC of it.
+  the other sessions. An account made with Google has no password: instead of typing one it needs a Google
+  sign-in in the last 15 minutes, or "Confirm with Google" (Google again, for the same Google account);
+  "Sign out all other sessions" then deletes the other sessions and gives the account a new remember token. A device kept signed in by its cookie is listed only while it has a session; the
+  profile page says so, and always offers "Sign out all other sessions". The page never shows a session id, only an HMAC of it.
 - **Kept in the database** (`SESSION_DRIVER=database`, table `sessions`): for every visitor, signed in or
   not, the IP address, the browser (user agent), the last activity and the session's data. A row goes
   when its session ends (sign-out, a limit) or `SESSION_LIFETIME` after its last request. Switching from
@@ -189,3 +211,37 @@ or Developer, with one or more roles).
   180 minutes) must stay above the longest idle limit, or the sign-in page cannot say why a patron was
   signed out. Tests: `SessionLimitsTest`, `BrowserSessionsTest`, `BanEndsSessionsTest`, `SignedInNowTest`
   (`tests/Feature`).
+
+## 6. Visitor addresses (Data Privacy Act, RA 10173)
+
+Changed 2026-10-28. Until then the rule (R15, 2026-10-16) was: no visitor IP addresses at all, because
+nothing used them and the Act's proportionality principle (s. 11) says not to keep what is not needed.
+Now the library's statistics need to tell a reader apart from a reload or a script, so addresses may be
+used, and stored, where a feature needs them, on these terms:
+
+- **A purpose first.** Each use is written down in the table below before it ships: what is used, why and
+  for how long. Only that purpose: never to profile readers, never shared outside the agency.
+- **Lawful basis:** the agency's functions and its legitimate interest in protecting its systems and the
+  honesty of its statistics (s. 12 (e), (f)).
+- **As little as works.** A keyed hash (HMAC with the app key) instead of the address wherever comparing
+  is enough; the address itself only where a person has to read it (an abuse investigation).
+- **Retention.** The shortest that serves the purpose; anything kept in the database at most 90 days,
+  then deleted.
+- **Notice.** The OPAC's Privacy notice (footer link) says what is used and why; update it with this table.
+- **Access.** Only the staff who need that report; never on public pages or in exports.
+- Questions, or a use beyond these terms: the agency's Data Protection Officer.
+
+| Where | What | Kept |
+|---|---|---|
+| Counting views (`saveView()`) | the account, or for a guest a keyed hash of IP address + browser (`visitorHash()`): a reload or a script counts once per material a day, and at most 120 views an hour count | in the cache until the day ends; on the guest's `views` rows (`visitor_hash`, from 28 October 2026) for 90 days, then removed (`visitors:forget`, nightly) |
+| Statistics watch: guests (Administration → Accounts → Statistics watch) | the IP address behind each guest's hash (`visitor_addresses`), written once a day per guest: to see that unusual views came from one address (a script, a bot) | 90 days from when the guest was first seen, then deleted (`visitors:forget`); shown only to developer and super admin accounts, whoever else has the watch; never in exports |
+| Rate limits (`throttle`) | the account, or a guest's IP address | the cache, for the limit's window |
+| Sessions (`sessions` table) | IP address and browser of each session (Laravel's database sessions) | until the session ends; staff pages never show the address |
+| "I'm human" check on sign-up (Cloudflare Turnstile) | the visitor's browser talks to Cloudflare directly; the server sends Cloudflare only the token, not the address | nothing kept by the eLibrary |
+| "Continue with Google" | from Google: name, email address, whether Google confirmed it, the Google account's id | the id and the account's name and address, as long as the account |
+
+The `views` table holds no address or browser string, only a guest's keyed hash (`PrivacyTest`, `RankingIntegrityTest`).
+
+What the statistics count and how: `RANKING_INTEGRITY.md`. The statistics watch shows accounts (name, email
+address, when made, the day's activity) and guests (a code: the hash's first 8 characters) to the staff who have
+its permission, and guests' IP addresses to developer and super admin only (decided 28 October 2026).

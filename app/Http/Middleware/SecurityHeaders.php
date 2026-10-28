@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Rules\HumanCheck;
 use Closure;
 use Illuminate\Http\Request;
 
@@ -21,7 +22,8 @@ use Illuminate\Http\Request;
  *   forms post only to this site, and only this site may frame our pages. CSP_ENFORCE=false sends the
  *   full policy Report-Only instead, keeping the last four enforced (docs/implemented/CSP_ROLLOUT.md).
  *   Laravel's debug error page (APP_DEBUG, a 5xx) runs inline scripts of its own, so it gets only those
- *   four.
+ *   four. A page with the "I'm human" check (sign-up) also lets in Cloudflare's script and frame: its
+ *   controller sets the request attribute csp.turnstile.
  * Static files under public/ get the same from public/.htaccess.
  */
 class SecurityHeaders
@@ -29,12 +31,12 @@ class SecurityHeaders
     /** Always enforced: none of these can break a page of ours. */
     private const CSP_BASE = "frame-ancestors 'self'; object-src 'none'; base-uri 'none'; form-action 'self'";
 
-    /** The full policy; {nonce} is this request's cspNonce(). */
+    /** The full policy; {nonce} is this request's cspNonce(), {more} the origins a page adds (csp.turnstile). */
     private const CSP_FULL = "default-src 'self'; "
-        . "script-src 'self' 'nonce-{nonce}' 'report-sample' https://cdn.jsdelivr.net; "
+        . "script-src 'self' 'nonce-{nonce}' 'report-sample' https://cdn.jsdelivr.net{more}; "
         . "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
         . "font-src 'self' data: https://fonts.gstatic.com; "
-        . "img-src 'self' data: blob:; connect-src 'self'; frame-src 'self'; media-src 'self'; "
+        . "img-src 'self' data: blob:; connect-src 'self'; frame-src 'self'{more}; media-src 'self'; "
         . "object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'";
 
     public function handle(Request $request, Closure $next)
@@ -48,7 +50,8 @@ class SecurityHeaders
             'Referrer-Policy'        => 'strict-origin-when-cross-origin',
         ];
         if (str_starts_with((string) $response->headers->get('Content-Type'), 'text/html')) {
-            $full = str_replace('{nonce}', cspNonce(), self::CSP_FULL);
+            $more = $request->attributes->get('csp.turnstile') ? ' ' . HumanCheck::ORIGIN : '';
+            $full = strtr(self::CSP_FULL, ['{nonce}' => cspNonce(), '{more}' => $more]);
             if (config('app.debug') && $response->getStatusCode() >= 500) {
                 $headers['Content-Security-Policy'] = self::CSP_BASE;   // the debug error page's own scripts
             } elseif (config('app.csp_enforce')) {

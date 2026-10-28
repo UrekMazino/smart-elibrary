@@ -147,11 +147,13 @@ class BrowserSessions
     }
 
     /** Signs out all the user's other sessions, and "Keep me signed in" on every other device. */
-    public static function endOthers(Request $request, string $password): void
+    public static function endOthers(Request $request, ?string $password): void
     {
         // Laravel's own: a new hash of the same password, so AuthenticateSession ends the other sessions and the
-        // other devices' remember cookies stop working. Deleting their records ends them at once.
-        Auth::logoutOtherDevices($password);
+        // other devices' remember cookies stop working. Deleting their records ends them at once. An account without
+        // a password (made with Google) has no hash to change: a new remember token stops the cookies instead.
+        if ($password !== null) Auth::logoutOtherDevices($password);
+        else Auth::getProvider()->updateRememberToken($request->user(), Str::random(60));
         if (config('session.driver') === 'database') {
             self::table()
                 ->where('user_id', $request->user()->getAuthIdentifier())

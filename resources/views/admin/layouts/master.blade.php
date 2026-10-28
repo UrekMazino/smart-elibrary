@@ -21,7 +21,7 @@ License: For each use you must have a valid license purchased only from above li
 	<meta name="author" content="NobleUI">
 	<meta name="keywords" content="nobleui, bootstrap, bootstrap 5, bootstrap5, admin, dashboard, template, responsive, css, sass, html, theme, front-end, ui kit, web">
   
-  <title>DOST-PCAARRD eLibrary</title>
+  <title>DOST-FNRI eLibrary</title>
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -98,7 +98,7 @@ License: For each use you must have a valid license purchased only from above li
         <a href="#" class="sidebar-brand">
            <img src="{{ asset('opac/img/elibrary-06.png') }}" width="100" alt="" class="brand-on-dark" />
            {{-- The same logo with dark lettering, for a light sidebar (admin-appearance.css); lazy, so only fetched when shown. --}}
-           <img src="{{ asset('opac/img/pcaarrd-elibrary-04.png') }}" width="100" alt="" class="brand-on-light" loading="lazy" />
+           <img src="{{ asset('opac/img/elibrary-06-navy.png') }}" width="100" alt="" class="brand-on-light" loading="lazy" />
         </a>
         <div class="sidebar-toggler not-active">
           <span></span>
@@ -227,21 +227,21 @@ License: For each use you must have a valid license purchased only from above li
           </li> --}}
 
           {{-- Administration: each link has the same checks as its route, and the heading shows only above a link.
-               Accounts (AdminController::accounts): Administrators, Patrons, Roles, Permissions, Signed in now. Utilities
-               (MaterialTypeController::utilities): Material Types, MARC Templates, AI Sync Monitor, Theme. Each stays
+               Accounts (AdminController::accounts): Administrators, Patrons, Roles, Permissions, Signed in now, Statistics watch. Utilities
+               (MaterialTypeController::utilities): Material Types, MARC Templates, AI Sync Monitor, Theme, Rankings. Each stays
                highlighted on its cards' pages. --}}
           @php
             $me = auth()->user();
-            $navAccounts  = $me->canAny(['access.accounts', 'access.sessions']) || $me->hasAnyRole(['super_admin', 'developer']);
+            $navAccounts  = $me->canAny(['access.accounts', 'access.sessions', 'access.statistics.watch']) || $me->hasAnyRole(['super_admin', 'developer']);
             $navSettings  = $me->can('access.configuration') && $me->can('access.settings');
-            $navUtilities = $me->can('access.utilities') && $me->canAny(['manage.material.types', 'view.config.template', 'access.ai.sync.monitor', 'manage.theme']);
+            $navUtilities = $me->can('access.utilities') && $me->canAny(['manage.material.types', 'view.config.template', 'access.ai.sync.monitor', 'manage.theme', 'access.rankings']);
           @endphp
           @if($navAccounts || $navSettings || $navUtilities)
             <li class="nav-item nav-category">Administration</li>
           @endif
 
           @if($navAccounts)
-            <li class="nav-item {{ request()->is('admin/accounts', 'admin/patron*', 'admin/register*', 'superadmin/*', 'admin/roles*', 'admin/permissions*', 'admin/sessions') ? 'active' : '' }}">
+            <li class="nav-item {{ request()->is('admin/accounts', 'admin/patron*', 'admin/register*', 'superadmin/*', 'admin/roles*', 'admin/permissions*', 'admin/sessions', 'admin/statistics-watch') ? 'active' : '' }}">
               <a href="{{ route('accounts') }}" class="nav-link">
                 <i class="link-icon" data-feather="users"></i>
                 <span class="link-title">Accounts</span>
@@ -369,7 +369,7 @@ License: For each use you must have a valid license purchased only from above li
 
 			<!-- partial:partials/_footer.html -->
 			<footer class="footer d-flex flex-column flex-md-row align-items-center justify-content-between px-4 py-3 border-top small">
-				<p class="text-muted mb-1 mb-md-0">Copyright © 2022 <a href="#" target="_blank">DOSt-PCAARRD eLibrary</a>.</p>
+				<p class="text-muted mb-1 mb-md-0">Copyright © {{ date('Y') }} <a href="{{ url('/') }}" target="_blank">DOST-FNRI eLibrary</a>.</p>
 				{{-- <p class="text-muted">Handcrafted With <i class="mb-1 text-primary ms-1 icon-sm" data-feather="heart"></i></p> --}}
 			</footer>
 			<!-- partial -->

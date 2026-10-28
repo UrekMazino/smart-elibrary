@@ -111,6 +111,7 @@ class SecurityFixesTest extends TestCase
         $this->actingAs($this->patron)->post('/review/submit', ['catalog_id' => $public, 'rating_input' => 1000])
             ->assertSessionHasErrors('rating_input');
         $this->actingAs($this->patron)->post('/review/submit', ['catalog_id' => $held, 'rating_input' => 4])->assertNotFound();
+        DB::table('downloads')->insert(['catalog_id' => $public, 'user_id' => $this->patron->id, 'created_at' => now()]);   // only readers rate
         $this->actingAs($this->patron)->post('/review/submit', ['catalog_id' => $public, 'rating_input' => 4, 'remarks' => 'Useful.'])
             ->assertRedirect();
 

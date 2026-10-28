@@ -75,8 +75,14 @@ class AuthenticationTest extends TestCase
         $response->assertRedirect(route('login'));
         $response->assertSessionHas('account_banned', true);
 
+        config(['app.admin_email' => 'library@fnri.example']);
         $this->get('/login')
             ->assertSee('Account banned')
-            ->assertSee(config('app.admin_email'));
+            ->assertSee('library@fnri.example');
+
+        // ADMIN_EMAIL not set: no address to show, so the popup says to contact the library.
+        config(['app.admin_email' => null]);
+        $this->post('/login', ['email' => $user->email, 'password' => 'password']);
+        $this->get('/login')->assertSee('Account banned')->assertSee('please contact the library');
     }
 }

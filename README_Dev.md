@@ -3,7 +3,7 @@
 
 # smart-eLibrary
 
-FPRDI/DOST agri-forestry catalog / OPAC (Laravel), built RAG-ready for the **Project Y** local AI stack.
+DOST-FNRI eLibrary: food and nutrition catalog / OPAC (Laravel), built RAG-ready for the **Project Y** local AI stack.
 
 **Requires PHP 8.5.12 or newer** (the PHP2Shell security fix of 21 Oct 2026; `composer.json` refuses an older PHP).
 

@@ -59,6 +59,86 @@ class NewsSectionTest extends TestCase
             ->assertDontSee('Related News');
     }
 
+    public function test_the_latest_story_leads_and_the_others_are_listed_with_their_thumbnails()
+    {
+        // Each cover with its thumbnail and newspaper copy, as an upload leaves them.
+        foreach (['lead', 'older'] as $name) {
+            foreach (["news_cover/$name.jpg", "thumb/$name.jpg"] as $file) File::put("{$this->public}/$file", 'x');
+            File::ensureDirectoryExists("{$this->public}/news_print");
+            File::put("{$this->public}/news_print/$name.webp", 'x');
+        }
+        $this->news('Older story', ['news_cover' => 'news_cover/older.jpg', 'created_at' => now()->subDay()]);
+        $this->news('Lead story', ['news_cover' => 'news_cover/lead.jpg']);
+
+        $page = $this->get('/home')->assertOk()
+            ->assertSeeInOrder(['class="np-top"', 'Lead story', 'More stories', 'Older story'], false)
+            ->getContent();
+        $this->assertStringContainsString('news_print/lead.webp', $page);    // the lead: the newspaper copy
+        $this->assertStringContainsString('thumb/older.jpg', $page);         // the list: the small thumbnail
+        $this->assertStringNotContainsString('news_print/older.webp', $page);
+
+        // With one story there is no list.
+        DB::table('news')->where('news_title', 'Older story')->update(['featured' => 'No']);
+        cache()->forget('home_latest_news');   // as saving a post in the admin does
+        $this->get('/home')->assertSee('Lead story')->assertDontSee('id="np-more-h"', false);
+    }
+
+    private function staff(): User
+    {
+        $staff = User::factory()->create(['usertype' => 'Developer']);
+        $staff->assignRole(Role::findOrCreate('developer'));
+        return $staff;
+    }
+
+    public function test_staff_pick_one_headline_and_it_leads_the_news_section()
+    {
+        $staff = $this->staff();
+        $a = $this->news('Story A', ['created_at' => now()->subDays(2)]);
+        $b = $this->news('Story B', ['created_at' => now()->subDay()]);
+        $this->news('Story C');
+
+        // Without a headline the latest leads.
+        $this->get('/home')->assertSeeInOrder(['class="np-top"', 'Latest', 'Story C', 'More stories'], false);
+
+        $this->actingAs($staff)->postJson("/admin/news/headline/$a")->assertOk()->assertJsonPath('headline.id', $a);
+        $this->get('/home')->assertSeeInOrder(['class="np-top"', 'Headline', 'Story A', 'More stories', 'Story C', 'Story B'], false);
+
+        // Picking another moves it: still only one.
+        $this->actingAs($staff)->postJson("/admin/news/headline/$b")->assertOk()->assertJsonPath('headline.id', $b);
+        $rows = collect($this->actingAs($staff)->getJson('/admin/news/json')->json('aaData'));
+        $this->assertSame([$b], $rows->where('is_headline', true)->pluck('id')->all());
+
+        // Picking the headline again clears it: the latest leads again.
+        $this->actingAs($staff)->postJson("/admin/news/headline/$b")->assertOk()->assertJsonPath('headline', null);
+        $this->get('/home')->assertSeeInOrder(['class="np-top"', 'Latest', 'Story C'], false);
+    }
+
+    public function test_only_a_featured_article_can_be_the_headline()
+    {
+        $hidden = $this->news('Not featured', ['featured' => 'No']);
+
+        $this->actingAs($this->staff())->postJson("/admin/news/headline/$hidden")->assertStatus(422);
+        $this->assertSame('', (string) setting('news_headline_id', ''));
+    }
+
+    public function test_unfeaturing_or_deleting_the_headline_clears_it()
+    {
+        $staff = $this->staff();
+        $a = $this->news('Story A');
+        $b = $this->news('Story B');
+
+        $this->actingAs($staff)->postJson("/admin/news/headline/$a");
+        $this->actingAs($staff)->put("/admin/news/update/$a", ['news_title' => 'Story A', 'news_body' => '<p>Body</p>']);   // featured box left unticked
+        settingsFlush();
+        $this->assertNull(newsHeadline());
+        $this->assertSame('', (string) setting('news_headline_id'));
+
+        $this->actingAs($staff)->postJson("/admin/news/headline/$b");
+        $this->actingAs($staff)->delete("/admin/news/delete/$b");
+        settingsFlush();
+        $this->assertSame('', (string) setting('news_headline_id'));
+    }
+
     public function test_without_featured_news_the_section_and_its_menu_dot_are_left_out()
     {
         $this->news('Not featured story', ['featured' => 'No']);

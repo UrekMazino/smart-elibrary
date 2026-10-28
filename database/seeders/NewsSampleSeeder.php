@@ -27,7 +27,7 @@ class NewsSampleSeeder extends Seeder
             'Every answer cites its sources. Each number in the text links to the record it came from, so you can open the full report and check the passage yourself. When the collection has nothing on a question, AI mode says so instead of guessing.',
             'Questions in Filipino are answered in Filipino. AI mode is meant as a starting point: the records it cites are where the research is.',
         ]],
-        [2, 'Browse the shelves from anywhere', 'hero_home_bg_fprdi.jpg', null, [
+        [2, 'Browse the shelves from anywhere', 'library-shelves.jpg', null, [
             'The shelf browser on the home page shows the collection the way it stands in the reading room: book spines on wooden shelves, grouped by subject. Slide along a shelf to see what sits next to a title you know.',
             'Hover over a spine to see its title and author, and open it for the full record. Browsing by shelf often turns up reports that a keyword search would miss, because they are filed beside the ones you already use.',
         ]],
@@ -39,7 +39,7 @@ class NewsSampleSeeder extends Seeder
             'The collection holds technical reports, theses and journal articles on food composition, labelling and nutrition. Start with a subject search, then narrow the results with the filters for material type and year.',
             'Advanced search lets you combine fields, for example a subject with words in the title, and exclude what you do not need. Records with full text can be read online after signing in.',
         ]],
-        [21, 'Annual reports, searchable page by page', 'hero_home_bg_fprdi2.jpg', null, [
+        [21, 'Annual reports, searchable page by page', 'library-shelves-2.jpg', null, [
             'Decades of annual reports have been scanned and read into the library\'s search index. A search now finds words inside the reports, not only in their titles, and AI mode can quote the page an answer comes from.',
             'Older reports are a record of which studies were funded, who led them and what they found. They are often the only place where results of smaller projects were published.',
         ]],

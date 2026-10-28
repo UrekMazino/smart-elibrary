@@ -1,6 +1,6 @@
 @extends('opac.layout.master')
 
-@section('meta_title', 'AI search — DOST-PCAARRD eLibrary')
+@section('meta_title', 'AI search — DOST-FNRI eLibrary')
 @section('robots', 'noindex, follow')
 
 

@@ -67,6 +67,11 @@
 		<style>
 			.fd-cover { margin: 0; }
 			.fd-cover img { box-shadow: 0 2px 10px rgba(0,0,0,.25); border-radius: 3px; max-width: 320px; width: 100%; }
+			/* The record's ranks in the home page's top-10 lists: medals on the cover, and in words under it. */
+			.fd-cover-art { position: relative; display: inline-block; max-width: 100%; }
+			.fd-ranks { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+			.fd-ranks li { font-size: 12.5px; font-weight: 600; border-radius: 999px; padding: 2px 10px; background: #fff4d1; color: #7a5600; }
+			.fd-ranks li.fd-ranks-when { font-weight: 400; background: none; padding-left: 2px; color: #6b5a33; }
 			/* General info reorganized layout */
 			#section_1 .box_general_3 { padding-top: 22px; }
             #section_1 { padding-bottom: 0px; }
@@ -116,9 +121,9 @@
 			.fd-actions a.fd-btn { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; text-decoration: none;
 				font-size: 12px; font-weight: 600; line-height: 1.1; }
 			.fd-save-ico { width: 22px; height: 22px; fill: none; stroke: #029978; stroke-width: 1.25; stroke-linejoin: round; }
-			.fd-btn.is-saved { background: #fff8e6 !important; border-color: #e0a100 !important; color: #8a6200 !important; }
-			.fd-btn.is-saved .fd-save-ico { fill: #f5b301; stroke: #e0a100; }
-			.fd-btn.is-saved:hover { background: #fff2cc !important; }
+			.fd-btn.is-saved { background: #e6f5f2 !important; border-color: #029978 !important; color: #00695f !important; }
+			.fd-btn.is-saved .fd-save-ico { fill: #029978; stroke: #029978; }
+			.fd-btn.is-saved:hover { background: #d3eee9 !important; }
 			.fd-btn.fd-save[aria-busy="true"] { opacity: .6; pointer-events: none; }
 			/* Read overlay (PDF.js) */
 			.ol-reader { position: fixed; inset: 0; z-index: 20000; background: rgba(18,20,24,.94); display: none; flex-direction: column; }
@@ -168,6 +173,7 @@
 				.fd-details .fd-section:first-child { margin-top: 0; }
 				#sidebar .fd-cover { text-align: center !important; margin: 0 0 12px !important; }
 				#sidebar .fd-cover img { max-width: 210px; }
+				.fd-ranks { justify-content: center; }
 				#sidebar .booking .title { margin: -18px -16px 14px -16px; }
 				#sidebar .booking .title h3 { font-size: 15px; }
 				.fd-review-box #review_summary { margin: -18px -16px 14px -16px; }
@@ -190,6 +196,12 @@
 			@if(session('success'))
 				<div class="alert alert-success alert-dismissible fade show" role="alert">
 					{{ session('success') }}
+					<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+				</div>
+			@endif
+			@if(session('error'))
+				<div class="alert alert-warning alert-dismissible fade show" role="alert">
+					{{ session('error') }}
 					<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 				</div>
 			@endif
@@ -242,12 +254,12 @@
 									@php $fdSaved = isSavedRecord($result->catalog_id); @endphp
 									<button type="button" class="btn_1 fd-btn fd-save{{ $fdSaved ? ' is-saved' : '' }}" data-fd-save="{{ $result->catalog_id }}"
 										aria-pressed="{{ $fdSaved ? 'true' : 'false' }}" title="{{ $fdSaved ? 'Saved — click to remove from your list' : 'Save to your list' }}" data-fd="save">
-										<svg class="fd-save-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z"/></svg>
+										<svg class="fd-save-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 1.75h7a.75.75 0 0 1 .75.75v11.75L8 11.3l-4.25 2.95V2.5a.75.75 0 0 1 .75-.75z"/></svg>
 										<span class="fd-save-label">{{ $fdSaved ? 'Saved' : 'Save' }}</span>
 									</button>
 								@else
 									<a class="btn_1 fd-btn fd-save" href="{{ route('login') }}" title="Log in to save records" data-fd="guest-save">
-										<svg class="fd-save-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z"/></svg>
+										<svg class="fd-save-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 1.75h7a.75.75 0 0 1 .75.75v11.75L8 11.3l-4.25 2.95V2.5a.75.75 0 0 1 .75-.75z"/></svg>
 										<span class="fd-save-label">Save</span>
 									</a>
 								@endauth
@@ -340,9 +352,16 @@
 				<!-- /col -->
 				<aside class="col-xl-3 col-lg-4 order-1" id="sidebar">
 					<div class="fd-side-top">
+					@php $fdMedals = recordMedals($result->catalog_id); @endphp
 					<figure class="fd-cover" style="margin-bottom: 10px; text-align: left;">
-						{!! getFrontpageResult($result->catalog_id) !!}
+						<span class="fd-cover-art">{!! getFrontpageResult($result->catalog_id) !!}@include('opac.partials.rank-medals', ['medals' => $fdMedals, 'size' => 'large', 'decorative' => true])</span>
 					</figure>
+					@if($fdMedals)
+						<ul class="fd-ranks" aria-label="Ranked in the library's top 10 of the {{ rankingWindowLabel() }}">
+							@foreach($fdMedals as $m)<li>#{{ $m['rank'] }} in {{ $m['list'] }}</li>@endforeach
+							<li class="fd-ranks-when" aria-hidden="true">{{ ucfirst(rankingWindowLabel()) }}</li>
+						</ul>
+					@endif
 					@if(checkStocks($result->catalog_id))
 					<div class="box_general_3 booking">
 							<div class="title text-center" style="background-color: #00857a;">
@@ -388,7 +407,7 @@
                                                     <br>
                                                     <select class="form-control" name="visit_location" required>
                                                         <option value="0" disabled selected>---Select Location---</option>
-                                                        <option value="PCAARRD - Los Banos">PCAARRD - Los Banos</option>
+                                                        <option value="FNRI - Bicutan">FNRI - Bicutan</option>
                                                         <option value="STII - Bicutan">STII - Bicutan</option>
                                                     </select>
                                                 </div>
@@ -452,6 +471,10 @@
 						@if(Auth::check() && Auth::user()->isStaff())
 						{{-- Staff browsing the OPAC: reviews come from patrons. --}}
 						<button type="button" class="btn_1 full-width text-center fd-staff-off" disabled title="Reviews are written by patrons. You are signed in as staff.">Submit review</button>
+						@elseif(Auth::check() && ! hasReadOrDownloaded(Auth::id(), $result->catalog_id))
+						{{-- Only its readers rate a material (ReviewController). --}}
+						<button type="button" class="btn_1 full-width text-center fd-staff-off" disabled title="Read or download this material first, then you can rate it.">Submit review</button>
+						<p class="text-muted text-center mt-2 mb-0" style="font-size: 12.5px;">Read or download it first, then you can rate it.</p>
 						@else
 						<a href="#" class="btn_1 full-width text-center" data-fd="submit-review">Submit review</a>
 						@endif
@@ -529,7 +552,12 @@
 <script nonce="{{ cspNonce() }}" type="text/javascript">
 var inquiryIsGuest = {{ Auth::check() ? 'false' : 'true' }};
 var inquiryIsBlocked = {{ Auth::check() && Auth::user()->is_blocked ? 'true' : 'false' }};
-var libraryEmail = 'info@fprdi.dost.gov.ph';
+var libraryEmail = @json(config('app.admin_email'));   // null until ADMIN_EMAIL is set
+// "the library at <its address>", or just "the library" while there is none.
+function libraryAt(html) {
+	if (!libraryEmail) return 'the library';
+	return 'the library at ' + (html ? '<a href="mailto:' + libraryEmail + '"><strong>' + libraryEmail + '</strong></a>' : libraryEmail);
+}
 
 // The page's buttons (data-fd), wired here rather than with onclick= (Content Security Policy).
 document.addEventListener('click', function (e) {
@@ -558,11 +586,11 @@ function inquire(holdingsid)
 			Swal.fire({
 				icon: 'warning',
 				title: 'Account blocked',
-				html: 'Your account is <strong>blocked</strong> from sending inquiries.<br>Please contact the library at <a href="mailto:' + libraryEmail + '"><strong>' + libraryEmail + '</strong></a>.',
+				html: 'Your account is <strong>blocked</strong> from sending inquiries.<br>Please contact ' + libraryAt(true) + '.',
 				confirmButtonColor: '#00857a'
 			});
 		} else {
-			alert('Your account is blocked from sending inquiries. Please contact the library at ' + libraryEmail + '.');
+			alert('Your account is blocked from sending inquiries. Please contact ' + libraryAt(false) + '.');
 		}
 		return;
 	}
@@ -573,18 +601,19 @@ function inquire(holdingsid)
 			Swal.fire({
 				icon: 'info',
 				title: '<a href="{{ url('login') }}"><strong>Login</strong></a> required',
-				html: 'Submitting an inquiry here is available to <strong>registered users</strong> only.<br><br>' +
-				      'Please <a href="{{ url('register') }}"><strong>register</strong></a> or send your inquiry to the library\'s official email:<br>' +
-				      '<a href="mailto:' + libraryEmail + '"><strong>' + libraryEmail + '</strong></a>',
-				showCancelButton: true,
-				confirmButtonText: 'Email the library',
+				html: 'Submitting an inquiry here is available to <strong>registered users</strong> only.<br><br>' + (libraryEmail
+				      ? 'Please <a href="{{ url('register') }}"><strong>register</strong></a> or send your inquiry to the library\'s official email:<br>' +
+				        '<a href="mailto:' + libraryEmail + '"><strong>' + libraryEmail + '</strong></a>'
+				      : 'Please <a href="{{ url('register') }}"><strong>register</strong></a> or <a href="{{ url('login') }}"><strong>log in</strong></a> to send one.'),
+				showCancelButton: !!libraryEmail,
+				confirmButtonText: libraryEmail ? 'Email the library' : 'Close',
 				cancelButtonText: 'Close',
 				confirmButtonColor: '#00857a'
 			}).then(function (res) {
-				if (res.isConfirmed) { window.location.href = 'mailto:' + libraryEmail + '?subject=' + encodeURIComponent('Library Inquiry'); }
+				if (res.isConfirmed && libraryEmail) { window.location.href = 'mailto:' + libraryEmail + '?subject=' + encodeURIComponent('Library Inquiry'); }
 			});
 		} else {
-			alert('Inquiries here are for registered users. Please send your inquiry to the library at ' + libraryEmail + '.');
+			alert('Inquiries here are for registered users. ' + (libraryEmail ? 'Please send your inquiry to the library at ' + libraryEmail + '.' : 'Please register or log in to send one.'));
 		}
 		return;
 	}

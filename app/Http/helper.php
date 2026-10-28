@@ -209,9 +209,12 @@ function isCrawler($agent = null): bool
 }
 
 /**
- * Record a view of a material. Crawler hits are deliberately NOT recorded — see isCrawler().
- * The visitor's IP address and browser string are not stored: nothing used them, and the Data
- * Privacy Act's proportionality principle (RA 10173, s. 11) says not to keep what is not needed.
+ * Record a view of a material: once per viewer per material a day, so reloading the page (or a script
+ * doing it) adds nothing, and at most viewCapPerHour() counted views an hour from one viewer (a bot walking
+ * the catalogue). Crawlers and staff are not counted — see isCrawler().
+ * A viewer is the signed-in account, else visitorHash(): the guest's IP address and browser, hashed. A guest's
+ * row keeps the hash, and visitor_addresses the address behind it, for the statistics watch; both are deleted
+ * 90 days on (visitors:forget). `views` never holds the address or the browser (SECURITY_NOTES.md §6).
  */
 function saveView($id)
 {
@@ -219,6 +222,16 @@ function saveView($id)
 	if (isCrawler() || (Auth::check() && Auth::user()->isStaff())) {
 		return;
 	}
+
+	$guest = Auth::check() ? null : visitorHash();
+	$viewer = $guest === null ? 'u' . Auth::id() : 'g' . $guest;
+	if (Illuminate\Support\Facades\RateLimiter::tooManyAttempts('views:' . $viewer, viewCapPerHour())) {
+		return;
+	}
+	if (! cache()->add('viewed:' . (int) $id . ':' . $viewer, 1, now()->endOfDay())) {
+		return;   // already counted today
+	}
+	Illuminate\Support\Facades\RateLimiter::hit('views:' . $viewer, 3600);
 
 	$view = new App\Models\View;
 
@@ -232,24 +245,61 @@ function saveView($id)
     {
 	    $view->catalog_id = $id;
 	    $view->is_guest = 'YES';
+	    $view->visitor_hash = $guest;
+	    // The address behind the hash, for developer and super admin on the statistics watch: once a day per guest.
+	    if (cache()->add('visitor_seen:' . $guest, 1, now()->endOfDay())) {
+	    	DB::table('visitor_addresses')->upsert(
+	    		[['visitor_hash' => $guest, 'ip_address' => (string) request()->ip(), 'first_seen_at' => now(), 'last_seen_at' => now()]],
+	    		['visitor_hash'], ['last_seen_at']
+	    	);
+	    }
 	}
 
 	$view->save();
 }
 
+/** Counted views an hour from one viewer, account or guest (saveView()); the statistics watch marks guests who reach it. */
+function viewCapPerHour(): int
+{
+	return 120;
+}
 
+
+/** A guest visitor, pseudonymised: their IP address and browser, hashed with the app key (SECURITY_NOTES.md §6). */
+function visitorHash(): string
+{
+	return substr(hash_hmac('sha256', request()->ip() . '|' . request()->userAgent(), (string) config('app.key')), 0, 32);
+}
+
+/**
+ * SQL counting views as viewer-days: a signed-in reader once a day per material, even in rows saved
+ * before saveView() counted that way (they held every reload); a guest's rows as they are.
+ */
+function viewerDaysSql(string $table = 'views'): string
+{
+	return "COUNT(DISTINCT CASE WHEN $table.user_id IS NULL THEN CONCAT('g', $table.id) ELSE CONCAT($table.user_id, '@', DATE($table.created_at)) END)";
+}
+
+/** Whether this account has read or downloaded the material: only its readers may rate it. */
+function hasReadOrDownloaded($userId, $catalogId): bool
+{
+	return App\Models\Download::where('user_id', $userId)->where('catalog_id', $catalogId)->exists()
+		|| DB::table('reads')->where('user_id', $userId)->where('catalog_id', $catalogId)->exists();
+}
+
+// The record page's counts: views as viewer-days, downloads as the readers who downloaded it.
 function countNum($type,$id)
 {
 	switch($type)
 	{
 		case "view":
-			return App\Models\View::where('catalog_id',$id)->count();
+			return (int) App\Models\View::where('catalog_id',$id)->selectRaw(viewerDaysSql() . ' as n')->value('n');
 		break;
 		case "review":
 			return App\Models\Rating::where('catalog_id',$id)->count();
 		break;
 		case "download":
-			return App\Models\Download::where('catalog_id',$id)->count();
+			return App\Models\Download::where('catalog_id',$id)->distinct()->count('user_id');
 		break;
 	}
 }
@@ -1140,16 +1190,6 @@ function getUser($id,$col)
 	return $user->$col;
 }
 
-function getConsortia($nopcaarrd = null)
-{
-	if($nopcaarrd == 'all')
-		$list = App\Models\Consortia::orderBy('id','DESC')->get();
-	else
-		$list = App\Models\Consortia::where('id','!=',16)->get();
-
-	return $list;
-}
-
 function getImprint()
 {
 	$list = App\Models\Imprint::get();
@@ -1172,8 +1212,26 @@ function getSeries()
 function getLatestNews()
 {
 	return cache()->remember('home_latest_news', 600, function () {
-		return App\Models\News::where('featured', 'Yes')->orderBy('created_at','DESC')->limit(12)->get();
+		// The chosen headline (Admin > News Articles) first, then the latest.
+		return App\Models\News::where('featured', 'Yes')
+			->orderByRaw('id = ? DESC', [(int) setting('news_headline_id')])
+			->orderBy('created_at','DESC')->limit(12)->get();
 	});
+}
+
+/** The NEWS section's chosen headline (setting news_headline_id), while it is still a featured article. */
+function newsHeadline(): ?App\Models\News
+{
+	$id = (int) setting('news_headline_id');
+	return $id ? App\Models\News::where('id', $id)->where('featured', 'Yes')->first() : null;
+}
+
+/** Choose the NEWS section's headline (null: none, so the latest featured article leads) and refresh the home page's news. */
+function setNewsHeadline(?int $id): void
+{
+	App\Models\Setting::updateOrCreate(['key' => 'news_headline_id'], ['value' => $id ? (string) $id : '']);
+	settingsFlush();
+	cache()->forget('home_latest_news');
 }
 
 /** A news cover for the NEWS section: the newspaper-size copy, else the original upload, else null. */
@@ -1182,6 +1240,14 @@ function newsPrintCoverUrl($news): ?string
 	if (!$news->news_cover) return null;
 	$print = 'news_print/'.pathinfo($news->news_cover, PATHINFO_FILENAME).'.webp';
 	return url('/'.(file_exists(public_path($print)) ? $print : $news->news_cover));
+}
+
+/** A small news photo for the NEWS section's story list: the 250 px thumbnail, else the newspaper copy or the original, else null. */
+function newsThumbUrl($news): ?string
+{
+	if (!$news->news_cover) return null;
+	$thumb = 'thumb/'.basename($news->news_cover);
+	return file_exists(public_path($thumb)) ? url('/'.$thumb) : newsPrintCoverUrl($news);
 }
 
 /** The opening of a news article as plain text (a NEWS section page), cut at a word. */
@@ -1210,11 +1276,11 @@ function homeCacheKeys()
 {
 	return [
 		'home_latest_news',
-		'home_latest_material',
+		'home_recent_uploads',
 		'home_shelves_45',      // keyed by limit; the homepage uses getShelves(45)
-		'home_top_downloaded',
-		'home_top_viewed',
-		'home_top_rated',
+		'home_top_downloaded_recent', 'home_top_downloaded_all',   // keyed by window (rankingRows)
+		'home_top_viewed_recent',     'home_top_viewed_all',
+		'home_top_rated_recent',      'home_top_rated_all',
 	];
 }
 
@@ -1239,15 +1305,17 @@ function getLatestNewsList()
 	return $news;
 }
 
-function getLatestMaterial()
+// The newest published materials, as shelf items (cover, link, title; "Added <date>" on hover).
+function getLatestMaterial($limit = 20)
 {
-	return cache()->remember('home_latest_material', 600, function () {
-		return App\Models\ViewCatalog::whereNotNull('created_at')
+	return withSiteUrls(cache()->remember('home_recent_uploads', 600, function () use ($limit) {
+		$rows = App\Models\ViewCatalog::whereNotNull('created_at')
 			->where('view_catalogs.deleted_at', null)
 			->where('is_published', 1)
 			->orderBy('created_at','DESC')
-			->limit(20)->get();
-	});
+			->limit($limit)->get(['catalog_id', 'title_statement', 'created_at']);
+		return rankItemsMap($rows, function ($r) { return 'Added ' . $r->created_at->format('j M Y'); });
+	}));
 }
 
 /**
@@ -1279,46 +1347,108 @@ function withSiteUrls(array $items): array
 	return array_map(fn ($item) => ['thumb' => url('/') . '/' . $item['thumb'], 'url' => url('/') . '/' . $item['url']] + $item, $items);
 }
 
-// Top-N most downloaded published materials (with total download count).
-function getMostDownloaded($limit = 10)
+/**
+ * The top-10 lists rank the last rankingDays() days by default, so old activity (or old gaming) drops out by itself;
+ * the home page can switch them to all time. The medals on covers follow the default window.
+ */
+function rankingDays(): int
 {
-	return withSiteUrls(cache()->remember('home_top_downloaded', 600, function () use ($limit) {
-		$rows = DB::table('downloads as d')
-			->join('view_catalogs as v', 'v.catalog_id', '=', 'd.catalog_id')
-			->where('v.is_published', 1)->whereNull('v.deleted_at')
-			->select('d.catalog_id', DB::raw('COUNT(*) as total'), 'v.title_statement')
-			->groupBy('d.catalog_id', 'v.title_statement')
-			->orderByDesc('total')->limit($limit)->get();
-		return rankItemsMap($rows, function ($r) { return number_format($r->total) . ' download' . ($r->total == 1 ? '' : 's'); });
+	return 90;
+}
+
+/** How a ranking window reads: 'recent' is "last 90 days", 'all' is "all time". */
+function rankingWindowLabel(string $window = 'recent'): string
+{
+	return $window === 'all' ? 'all time' : 'last ' . rankingDays() . ' days';
+}
+
+/**
+ * The rows that count in a ranking: those of the window ('recent': the last rankingDays() days; 'all') whose
+ * account isn't banned or taken out of the rankings (Statistics watch, ranking_exclusions). A guest's view (no
+ * account) counts; lifting the ban, or putting the account back, brings its rows back.
+ */
+function rankingRows($query, string $table, string $window)
+{
+	return $query
+		->when($window !== 'all', fn ($q) => $q->where("$table.created_at", '>=', now()->subDays(rankingDays())))
+		->whereNotExists(fn ($q) => $q->from('users as banned')->whereColumn('banned.id', "$table.user_id")->where('banned.is_banned', 1))
+		->whereNotExists(fn ($q) => $q->from('ranking_exclusions as rx')->whereColumn('rx.user_id', "$table.user_id")->whereNull('rx.lifted_at'));
+}
+
+// The home page's top-N lists, as shelf items, cached 10 minutes per window: the queries are App\Services\Rankings
+// (also behind Utilities → Rankings). $window: 'recent' (rankingDays) or 'all' (rankingRows).
+
+// Most downloaded published materials, by the readers who downloaded them (downloading again doesn't count again).
+function getMostDownloaded($limit = 10, string $window = 'recent')
+{
+	return withSiteUrls(cache()->remember('home_top_downloaded_' . $window, 600, function () use ($limit, $window) {
+		return rankItemsMap(App\Services\Rankings::downloaded($window, $limit),
+			fn ($r) => number_format($r->total) . ' reader' . ($r->total == 1 ? '' : 's') . ' downloaded');
 	}));
 }
 
-// Top-N most viewed published materials (with total view count).
-function getMostViewed($limit = 10)
+// Most viewed published materials, in viewer-days (viewerDaysSql: a reload doesn't count again).
+function getMostViewed($limit = 10, string $window = 'recent')
 {
-	return withSiteUrls(cache()->remember('home_top_viewed', 600, function () use ($limit) {
-		$rows = DB::table('views as vw')
-			->join('view_catalogs as v', 'v.catalog_id', '=', 'vw.catalog_id')
-			->where('v.is_published', 1)->whereNull('v.deleted_at')
-			->select('vw.catalog_id', DB::raw('COUNT(*) as total'), 'v.title_statement')
-			->groupBy('vw.catalog_id', 'v.title_statement')
-			->orderByDesc('total')->limit($limit)->get();
-		return rankItemsMap($rows, function ($r) { return number_format($r->total) . ' view' . ($r->total == 1 ? '' : 's'); });
+	return withSiteUrls(cache()->remember('home_top_viewed_' . $window, 600, function () use ($limit, $window) {
+		return rankItemsMap(App\Services\Rankings::viewed($window, $limit),
+			fn ($r) => number_format($r->total) . ' view' . ($r->total == 1 ? '' : 's'));
 	}));
 }
 
-// Top-N highest average rating (published), tie-broken by number of votes.
-function getHighestRated($limit = 10)
+// Highest rated published materials, by a weighted average so a single 5-star vote can't top the list
+// (Rankings::rated). The shelf still shows the plain average.
+function getHighestRated($limit = 10, string $window = 'recent')
 {
-	return withSiteUrls(cache()->remember('home_top_rated', 600, function () use ($limit) {
-		$rows = DB::table('ratings as r')
-			->join('view_catalogs as v', 'v.catalog_id', '=', 'r.catalog_id')
-			->where('v.is_published', 1)->whereNull('v.deleted_at')
-			->select('r.catalog_id', DB::raw('ROUND(AVG(r.rating),1) as rating'), DB::raw('COUNT(*) as votes'), 'v.title_statement')
-			->groupBy('r.catalog_id', 'v.title_statement')
-			->orderByDesc('rating')->orderByDesc('votes')->limit($limit)->get();
-		return rankItemsMap($rows, function ($r) { return '★ ' . number_format($r->rating, 1) . ' · ' . $r->votes . ' rating' . ($r->votes == 1 ? '' : 's'); });
+	return withSiteUrls(cache()->remember('home_top_rated_' . $window, 600, function () use ($limit, $window) {
+		return rankItemsMap(App\Services\Rankings::rated($window, $limit),
+			fn ($r) => '★ ' . number_format($r->rating, 1) . ' · ' . $r->votes . ' rating' . ($r->votes == 1 ? '' : 's'));
 	}));
+}
+
+/**
+ * The highlight shelves at the front of the home page's shelf browser, in this order: the top 10
+ * downloaded, viewed and rated records, then the newest uploads. A top-10 shelf holds two lists, each
+ * item with its 'rank': 'items' for the last rankingDays() days and 'allTime'; 'none' says why the
+ * first is empty. A shelf with nothing in it is left out. Same shape as getShelves(), plus 'ranked'.
+ */
+function getHighlightShelves(): array
+{
+	$ranked = fn (array $items) => array_map(fn ($item, $k) => $item + ['rank' => $k + 1], $items, array_keys(array_values($items)));
+	$top = fn (string $key, string $label, callable $list, string $none) => ['key' => $key, 'label' => $label, 'ranked' => true,
+		'items' => $ranked($list(10)), 'allTime' => $ranked($list(10, 'all')), 'none' => $none];
+	$recent = rankingWindowLabel();
+	$shelves = [
+		$top('top-downloaded', 'Most Downloaded', 'getMostDownloaded', "No downloads in the $recent."),
+		$top('top-viewed',     'Most Viewed',     'getMostViewed',     "No views in the $recent."),
+		$top('top-rated',      'Highest Rating',  'getHighestRated',   "No ratings in the $recent."),
+		['key' => 'recent', 'label' => 'Recent Uploads', 'ranked' => false, 'items' => getLatestMaterial(20)],
+	];
+	return array_values(array_filter($shelves, fn ($shelf) => count($shelf['items']) || count($shelf['allTime'] ?? [])));
+}
+
+/**
+ * The medals records have earned in the home page's top-10 lists, shown on their covers (material-type
+ * shelves, search results, Quick view, the record page): catalog_id => [ ['rank' => 1, 'list' => 'Most
+ * Downloaded', 'when' => 'last 90 days'], ... ], at most one per list. They follow the lists' default window
+ * (rankingDays), not all time. Built once a request from the lists' own caches.
+ */
+function topRankMedals(): array
+{
+	return once(function () {
+		$medals = [];
+		$when = rankingWindowLabel();
+		foreach (['Most Downloaded' => getMostDownloaded(10), 'Most Viewed' => getMostViewed(10), 'Highest Rating' => getHighestRated(10)] as $list => $items) {
+			foreach (array_values($items) as $k => $item) $medals[(int) $item['catalog_id']][] = ['rank' => $k + 1, 'list' => $list, 'when' => $when];
+		}
+		return $medals;
+	});
+}
+
+/** One record's medals (topRankMedals), [] when it ranks in none of the lists. */
+function recordMedals($catalogId): array
+{
+	return topRankMedals()[(int) $catalogId] ?? [];
 }
 
 /**
@@ -1356,10 +1486,13 @@ function getShelves($limit = 45)
     foreach ($populated as $p) {
         if (!$p->material_type_id) continue;
 
+        // The newest $limit of the type, shelved by title A-Z the way a reader finds them (numbers in
+        // numeric order, leading quotes and brackets ignored). Few records have a call number yet.
         $rows = App\Models\ViewCatalog::where('material_type_id', $p->material_type_id)
             ->where('is_published', 1)->whereNull('deleted_at')
             ->orderByDesc('created_at')->limit($limit)
-            ->get(['catalog_id', 'title_statement']);
+            ->get(['catalog_id', 'title_statement'])
+            ->sortBy(fn ($r) => ltrim(mb_strtolower((string) $r->title_statement), " \"'“”‘’[(.-"), SORT_NATURAL)->values();
         if ($rows->isEmpty()) continue;
 
         $items = $rows->map(function ($r) {
@@ -1596,7 +1729,7 @@ function seoTrimIsbd($text): string
  * A clean page title from a MARC 245 title statement.
  *
  * Casing is deliberately NOT changed: titles in this catalogue are often ALL CAPS, but title-casing
- * would mangle acronyms (DOST, PCAARRD) and botanical authorities ("Jatropha curcas L.") — wrong
+ * would mangle acronyms (DOST, FNRI) and botanical authorities ("Jatropha curcas L.") — wrong
  * data is worse than shouty data.
  */
 function seoTitle($title, int $max = 65): string
@@ -1610,7 +1743,7 @@ function seoTitle($title, int $max = 65): string
  * Record title for <title>. The site name is appended only when there is room for it: Google shows
  * roughly 60 characters, and for a long MARC title the words matter more than the branding.
  */
-function seoPageTitle($title, string $site = 'DOST-PCAARRD eLibrary'): string
+function seoPageTitle($title, string $site = 'DOST-FNRI eLibrary'): string
 {
     $t = seoTitle($title, 65);
     if ($t === '') {
@@ -1767,7 +1900,7 @@ function seoSiteJsonLd(): string
         [
             '@context'        => 'https://schema.org',
             '@type'           => 'WebSite',
-            'name'            => 'DOST-PCAARRD eLibrary',
+            'name'            => 'DOST-FNRI eLibrary',
             'url'             => $home,
             'potentialAction' => [
                 '@type'       => 'SearchAction',
@@ -1778,7 +1911,7 @@ function seoSiteJsonLd(): string
         [
             '@context' => 'https://schema.org',
             '@type'    => 'Organization',
-            'name'     => 'DOST-PCAARRD eLibrary',
+            'name'     => 'DOST-FNRI eLibrary',
             'url'      => $home,
             'logo'     => asset('assets/images/elibrary-02.png'),
         ],

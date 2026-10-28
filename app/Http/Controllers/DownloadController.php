@@ -39,7 +39,7 @@ class DownloadController extends Controller
         try
         {
             $headers = ['Content-Type' => 'application/pdf'];
-            $newName = 'dost-pcaarrd-elibrary-'.time().'.pdf';
+            $newName = 'dost-fnri-elibrary-'.time().'.pdf';
 
             //COUNT DOWNLOAD (patrons only: staff checking a record don't add to the statistics)
             if (! $user->isStaff()) {

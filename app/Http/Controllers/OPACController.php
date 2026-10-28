@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Services\BrowserSessions;
+use App\Services\GoogleSignIn;
 use App;
 use Auth;
 use App\Models\User;
@@ -69,22 +70,28 @@ class OPACController extends Controller
      * Patrons had no password endpoint of their own: the Change Password modal on this page
      * posted to /admin/profile/update/password, which sits behind the `admin` middleware, so
      * a patron was silently redirected to the homepage and their password was never changed.
-     * Mirrors AdminController@updatePassword.
+     * Mirrors AdminController@updatePassword. An account made with Google has no password: it sets
+     * one after a recent Google sign-in or "Confirm with Google" (App\Services\GoogleSignIn).
      */
     public function updatePassword(Request $request)
     {
+        $user = Auth::user();
+        $withPassword = $user->hasPassword();
+
         // Named bag so the page can tell a failed password change apart from a failed
         // profile save and re-open the modal with the right messages.
         $request->validateWithBag('updatePassword', [
-            'current_password' => ['required', 'current_password'],
+            'current_password' => $withPassword ? ['required', 'current_password'] : [],
             'password'         => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
+        if (! $withPassword && ! GoogleSignIn::recentlyConfirmed($request->session())) {
+            return back()->withErrors(['current_password' => 'Confirm with Google first.'], 'updatePassword');
+        }
 
-        $user = Auth::user();
         $user->password = Hash::make($request->password);
         $user->save();
 
-        return redirect('/patron/profile')->with('success', 'Password changed.');
+        return redirect('/patron/profile')->with('success', $withPassword ? 'Password changed.' : 'Password set. You can now also sign in with your email and password.');
     }
 
     public function transactions()

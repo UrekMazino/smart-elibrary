@@ -7,6 +7,7 @@ use App\Listeners\FailedSendingListener;
 use App\Models\User;
 use App\Mail\RegistrationMail;
 use App\Providers\RouteServiceProvider;
+use App\Rules\HumanCheck;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
@@ -17,12 +18,15 @@ use Illuminate\Validation\Rules;
 class RegisteredUserController extends Controller
 {
     /**
-     * Display the registration view.
+     * Display the registration view. Its "I'm human" check comes from Cloudflare, so this page's Content Security
+     * Policy lets Cloudflare in (SecurityHeaders); the rest of the site's doesn't.
      *
      * @return \Illuminate\View\View
      */
-    public function create()
+    public function create(Request $request)
     {
+        if (HumanCheck::enabled()) $request->attributes->set('csp.turnstile', true);
+
         return view('auth.register');
     }
 
@@ -41,6 +45,8 @@ class RegisteredUserController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'contactnum' => ['required', 'string', 'max:255'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            // The "I'm human" check: a token works once, so the page that shows any mistake comes with a new check.
+            'cf-turnstile-response' => HumanCheck::enabled() ? [new HumanCheck('register')] : [],
         ], [
             // Generic message so we don't explicitly confirm that an email is already
             // registered (avoids account enumeration via the registration form).

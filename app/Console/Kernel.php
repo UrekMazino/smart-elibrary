@@ -22,6 +22,9 @@ class Kernel extends ConsoleKernel
         // Safety net for the OPAC search index: adds what an outage missed, removes deleted
         // records, and refreshes the view counts behind the "Most viewed" sort.
         $schedule->command('search:reconcile')->dailyAt('03:45')->withoutOverlapping();
+
+        // Guests' IP addresses and hashes go after 90 days (SECURITY_NOTES.md section 6; the statistics watch).
+        $schedule->command('visitors:forget')->dailyAt('03:15')->withoutOverlapping();
     }
 
     /**

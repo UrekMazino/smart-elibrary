@@ -67,6 +67,16 @@ class MaterialTypeController extends Controller
             ];
         }
 
+        if ($user->can('access.rankings')) {
+            $cards[] = [
+                'title' => 'Rankings',
+                'icon'  => 'award',
+                'url'   => route('utilities.rankings'),
+                'text'  => 'The home page’s top-10 lists with the numbers behind them: readers, viewers, votes and scores, and who is left out.',
+                'meta'  => 'Last ' . rankingDays() . ' days, or all time',
+            ];
+        }
+
         if ($user->can('manage.theme')) {
             $cards[] = [
                 'title' => 'Theme',
@@ -79,7 +89,7 @@ class MaterialTypeController extends Controller
 
         return view('admin.hub', [
             'title' => 'Utilities',
-            'intro' => "Tools for the library's reference data, the cataloguing templates, the AI search and the admin's appearance. You see the ones your role may use.",
+            'intro' => "Tools for the library's reference data, the cataloguing templates, the AI search, the rankings and the admin's appearance. You see the ones your role may use.",
             'cards' => $cards,
         ]);
     }

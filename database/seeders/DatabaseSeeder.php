@@ -36,7 +36,6 @@ class DatabaseSeeder extends Seeder
         // Library reference data
         'circulation_fines',
         'circulation_status',
-        'consortias',
         'copies_status',
         'imprints',
         'type_of_imprints',

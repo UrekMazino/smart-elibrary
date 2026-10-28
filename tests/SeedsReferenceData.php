@@ -44,7 +44,7 @@ trait SeedsReferenceData
     /** The reference data a fresh install seeds (DatabaseSeeder), enough for every admin page to open. */
     protected function seedInstallData(): void
     {
-        $this->seedReferenceDataOver('circulation_fines', 'circulation_status', 'consortias', 'copies_status', 'imprints',
+        $this->seedReferenceDataOver('circulation_fines', 'circulation_status', 'copies_status', 'imprints',
             'type_of_imprints', 'marc_class_sys', 'materials', 'patrontypes', 'regions', 'settings', 'marctags_loc',
             'marctag_indicators_loc', 'marctag_subfields_loc', 'marc_templates');
     }

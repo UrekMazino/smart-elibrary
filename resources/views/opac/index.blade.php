@@ -4,8 +4,8 @@
 <script nonce="{{ cspNonce() }}" type="application/ld+json">{!! seoSiteJsonLd() !!}</script>
 @endpush
 
-@section('meta_title', 'DOST-PCAARRD eLibrary — AANR research collection')
-@section('meta_description', 'Search the DOST-PCAARRD eLibrary: books, theses, technical reports and other agriculture, aquatic and natural resources (AANR) research materials.')
+@section('meta_title', 'DOST-FNRI eLibrary — food and nutrition research collection')
+@section('meta_description', 'Search the DOST-FNRI eLibrary: books, theses, technical reports and other food and nutrition research materials.')
 @section('canonical', url('/home'))
 
 
@@ -72,7 +72,7 @@
 .instant-seeall:hover { background: #eef4ff; color: #1d4ed8; }
 
 /* ---- Minimalist section nav: fixed dots on the right, smooth-scroll to each section ---- */
-#sec-search, #sec-shelves, #sec-misc, #sec-news { scroll-margin-top: 110px; }
+#sec-search, #sec-shelves, #sec-news { scroll-margin-top: 110px; }
 .section-nav { position: fixed; top: 50%; right: 20px; transform: translateY(-50%); z-index: 900; display: flex; flex-direction: column; gap: 16px; }
 .section-nav a { position: relative; display: block; width: 13px; height: 13px; }
 .section-nav a i { position: absolute; inset: 0; border-radius: 50%; border: 2px solid #c32148; background: transparent; transition: background .2s ease, transform .2s ease; }
@@ -133,7 +133,6 @@
 	<nav class="section-nav" aria-label="Page sections">
 		<a href="#sec-search"  data-label="Search"  class="active"><i></i></a>
 		<a href="#sec-shelves" data-label="Shelves"><i></i></a>
-		<a href="#sec-misc"    data-label="Highlights"><i></i></a>
 		@if(getLatestNews()->isNotEmpty())<a href="#sec-news" data-label="News"><i></i></a>@endif
 	</nav>
 {{-- @if(Auth::user() && !checkCSF()) {{ session(['message' => 'Hello! Can we have a minute of your time to answer our CSF form. Thank you!']); }} @endif --}}
@@ -193,7 +192,7 @@
 							</button>
 							@auth
 								<a class="home-tool" href="{{ url('/results') }}?saved=1">
-									<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z"/></svg>
+									<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" d="M4.5 1.75h7a.75.75 0 0 1 .75.75v11.75L8 11.3l-4.25 2.95V2.5a.75.75 0 0 1 .75-.75z"/></svg>
 									Saved <span class="n" id="home-saved-n">{{ \App\Models\SavedRecord::where('user_id', auth()->id())->count() }}</span>
 								</a>
 							@endauth
@@ -244,7 +243,7 @@
 						{{-- Guests: what a free account adds, with the way in. Signed-in patrons see their Saved pill instead. --}}
 						@guest
 						<p class="home-join">
-							<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z"/></svg>
+							<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" d="M4.5 1.75h7a.75.75 0 0 1 .75.75v11.75L8 11.3l-4.25 2.95V2.5a.75.75 0 0 1 .75-.75z"/></svg>
 							{{ settingEnabled('ai_mode_enabled', false) ? 'Save materials, reserve copies and ask the AI librarian' : 'Save materials and reserve copies' }} with a free account.
 							<span class="home-join-cta"><a href="{{ route('register') }}">Register</a> or <a href="{{ route('login') }}">log in</a></span>
 						</p>
@@ -276,110 +275,23 @@
 
 		<div id="sec-shelves">@include('opac.partials.shelf-browser')</div>
 		<style>
-			/* Highlights section — compact, minimalist carousels (Recent Uploads / Top lists) */
-			#sec-misc { padding:20px 0 36px; }
-			.cover-carousel { max-width:1680px; margin:0 auto; padding:4px 24px 2px; }
-			.cover-carousel .main_title { text-align:center; margin-bottom:6px; }
-			.cover-carousel .main_title h2 { font-family:Georgia,"Palatino Linotype",serif; font-size:21px; letter-spacing:1.5px; text-transform:uppercase; color:#0a5f56; font-weight:700; margin:0; }
-			.cc-strip { position:relative; }
-			/* safe center: centers items when they fit, else flex-start (scrollable) so the arrows take over. */
-			.cc-track { display:flex; gap:20px; overflow-x:auto; scroll-behavior:smooth; padding:4px 6px 8px; justify-content:safe center; scrollbar-width:none; -ms-overflow-style:none; }
-			.cc-track::-webkit-scrollbar { display:none; }   /* no scrollbar — prev/next arrows only */
-			.cc-item { flex:0 0 auto; width:132px; text-align:center; }
-			.cc-cover { position:relative; display:flex; align-items:flex-end; justify-content:center; height:178px; }
-			.cc-cover img { max-height:178px; max-width:100%; width:auto; border-radius:3px; box-shadow:0 2px 6px rgba(0,0,0,.22); transition:transform .14s ease, box-shadow .14s ease; }
-			.cc-cover:hover img { transform:translateY(-5px); box-shadow:0 10px 18px rgba(0,0,0,.28); }
-			/* Record covers: the figure hugs the image so the save star sits on its corner, and the
-			   whole figure (image + star) lifts on hover. */
-			.cv-fig { position:relative; display:block; line-height:0; transition:transform .14s ease; }
-			.cv-link { display:block; }
-			.cv-fig img { max-width:132px; }
-			.cc-cover:hover .cv-fig { transform:translateY(-5px); }
-			.cc-cover:hover .cv-fig img { transform:none; }
-
-			/* Save star (opac.partials.save-star): upper-right corner of a record cover. An unsaved one
-			   shows on hover or keyboard focus (always on touch screens); a saved one (yellow) stays shown. */
-			.save-star { position:absolute; top:6px; right:6px; z-index:4; width:28px; height:28px; padding:0; border:0; border-radius:50%;
-				display:flex; align-items:center; justify-content:center; line-height:0; cursor:pointer;
-				background:rgba(255,255,255,.94); box-shadow:0 1px 4px rgba(0,0,0,.35);
-				opacity:0; transform:scale(.85); transition:opacity .16s ease, transform .16s ease; }
-			.save-star svg { width:16px; height:16px; fill:none; stroke:#4b5563; stroke-width:1.4; stroke-linejoin:round; transition:fill .16s ease, stroke .16s ease; }
-			.save-star:hover svg { stroke:#111827; }
-			.save-star.is-saved svg { fill:#ffc107; stroke:#d69e00; }
-			.cc-item:hover .save-star, .col-book:hover .save-star, .save-star:focus-visible, .save-star.is-saved { opacity:1; transform:none; }
-			.save-star:focus-visible { outline:2px solid #0a5f56; outline-offset:2px; }
-			.save-star.pop svg { animation:save-pop .32s ease; }
-			@keyframes save-pop { 50% { transform:scale(1.35); } }
+			/* Save bookmark (opac.partials.save-star): a ribbon hanging from the top edge of a book on the shelves,
+			   edged in white (sides and notch; the top goes into the book) so it shows on any cover. An unsaved one
+			   drops in on hover or keyboard focus (always shown on touch screens); a saved one (filled teal) stays. */
+			.save-star { position:absolute; top:-3px; right:12px; z-index:4; width:24px; height:36px; padding:0; border:0; background:none;
+				line-height:0; cursor:pointer; opacity:0; transform:translateY(-6px); transition:opacity .16s ease, transform .16s ease; }
+			.save-star svg { width:100%; height:100%; overflow:visible; filter:drop-shadow(0 2px 2px rgba(0,0,0,.45)); }
+			.save-star .bm-fill { fill:rgba(17,24,39,.55); transition:fill .16s ease; }
+			.save-star .bm-edge { fill:none; stroke:#fff; stroke-width:2; stroke-linejoin:round; stroke-linecap:round; }
+			.save-star:hover .bm-fill { fill:rgba(0,133,122,.8); }
+			.save-star.is-saved .bm-fill { fill:#00857a; }
+			.col-book:hover .save-star, .save-star:focus-visible, .save-star.is-saved { opacity:1; transform:none; }
+			.save-star:focus-visible { outline:2px solid #fff; outline-offset:2px; }
+			.save-star.pop svg { animation:save-tug .38s ease; }   /* saved / removed: a little tug on the ribbon */
+			@keyframes save-tug { 40% { transform:translateY(5px); } 70% { transform:translateY(-2px); } }
 			@media (hover:none) { .save-star { opacity:1; transform:none; } }
-			@media (prefers-reduced-motion:reduce) { .save-star, .save-star svg { transition:none; } .save-star.pop svg { animation:none; } }
-			.cc-cap { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; margin-top:7px; font-size:12.5px; line-height:1.3; color:#0176d3; text-decoration:none; font-weight:600; }
-			.cc-cap:hover { text-decoration:underline; }
-			.cc-arrow { position:absolute; top:44%; transform:translateY(-50%); width:42px; height:42px; border-radius:50%; border:1px solid #d0d7de; background:#fff; color:#3f4079; font-size:22px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,.16); z-index:3; }
-			.cc-arrow:hover { background:#00a496; border-color:#00a496; color:#fff; }
-			.cc-arrow.prev { left:-4px; } .cc-arrow.next { right:-4px; }
-			.cc-arrow:disabled { opacity:.3; cursor:default; background:#fff; border-color:#d0d7de; color:#3f4079; }
-
-			/* Ranked "Top 10": rank-number overlay + detail badge revealed on hover. */
-			.cover-carousel.ranked .cc-track { padding-top:24px; }
-			.rk-item .cc-cover { overflow:visible; }
-			.rk-num { position:absolute; top:-16px; left:-8px; z-index:3; font-family:Georgia,"Palatino Linotype",serif; font-weight:800; font-size:44px; line-height:1;
-				color:#fff; -webkit-text-stroke:2px #0a5f56; text-shadow:0 2px 5px rgba(0,0,0,.4); pointer-events:none; }
-			.rk-badge { position:absolute; left:0; right:0; bottom:0; z-index:2; background:linear-gradient(transparent, rgba(4,46,42,.92)); color:#fff;
-				font-size:11.5px; font-weight:700; letter-spacing:.2px; text-align:center; padding:20px 6px 7px; border-radius:0 0 3px 3px; opacity:0; transition:opacity .2s ease; pointer-events:none; }
-			.rk-cover:hover .rk-badge { opacity:1; }
+			@media (prefers-reduced-motion:reduce) { .save-star, .save-star .bm-fill { transition:none; } .save-star.pop svg { animation:none; } }
 		</style>
-		<div id="sec-misc">
-		@include('opac.partials.ranked-carousel', ['title' => 'Most Downloaded', 'items' => getMostDownloaded(10)])
-		@include('opac.partials.ranked-carousel', ['title' => 'Most Viewed', 'items' => getMostViewed(10)])
-		@include('opac.partials.ranked-carousel', ['title' => 'Highest Rating', 'items' => getHighestRated(10)])
-		<div class="cover-carousel">
-			<div class="main_title"><h2>Recent Uploads</h2></div>
-			<div class="cc-strip">
-				<button type="button" class="cc-arrow prev" aria-label="Previous">&#8249;</button>
-				<div class="cc-track">
-					@foreach(getLatestMaterial() as $results)
-						<div class="cc-item">
-							<div class="cc-cover">
-								<span class="cv-fig">
-									<a class="cv-link" href="{{ recordUrl($results) }}">
-										<img loading="lazy" src="{{ getThumbnailLink($results->catalog_id) }}" alt="{{ $results->title_statement }}">
-									</a>
-									@include('opac.partials.save-star', ['id' => $results->catalog_id, 'title' => $results->title_statement])
-								</span>
-							</div>
-							<a class="cc-cap" href="{{ recordUrl($results) }}" title="{{ $results->title_statement }}">{{ $results->title_statement }}</a>
-						</div>
-					@endforeach
-				</div>
-				<button type="button" class="cc-arrow next" aria-label="Next">&#8250;</button>
-			</div>
-		</div>
-		<script nonce="{{ cspNonce() }}" type="text/javascript">
-		(function(){
-			function wire(strip){
-				var track = strip.querySelector('.cc-track');
-				var prev = strip.querySelector('.cc-arrow.prev');
-				var next = strip.querySelector('.cc-arrow.next');
-				if(!track) return;
-				function upd(){
-					var max = track.scrollWidth - track.clientWidth - 2;
-					if(prev) prev.disabled = track.scrollLeft <= 2;
-					if(next) next.disabled = track.scrollLeft >= max;
-					var overflow = track.scrollWidth > track.clientWidth + 4;
-					if(prev) prev.style.display = overflow ? '' : 'none';
-					if(next) next.style.display = overflow ? '' : 'none';
-				}
-				function step(dir){ track.scrollBy({ left: dir * track.clientWidth * 0.85, behavior:'smooth' }); }
-				if(prev) prev.addEventListener('click', function(){ step(-1); });
-				if(next) next.addEventListener('click', function(){ step(1); });
-				track.addEventListener('scroll', upd);
-				window.addEventListener('resize', upd);
-				upd();
-			}
-			document.querySelectorAll('.cc-strip').forEach(wire);
-		})();
-		</script>
-		</div>{{-- /#sec-misc --}}
 		@include('opac.partials.news-paper', ['items' => getLatestNews()])
 			<!-- /app_section -->
 		<!-- /Hero -->

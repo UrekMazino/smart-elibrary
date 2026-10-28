@@ -27,12 +27,6 @@ class EnforceSessionLimits
             SessionLimits::start($session, false);   // signed in before the limits existed
         }
 
-        // Staff keep their limits: a "Keep me signed in" cookie made while the account was a patron's no longer
-        // works (logout() replaces the account's remember token).
-        if ($user->isStaff() && SessionLimits::remembered($session)) {
-            return $this->signOut($request, 'Staff accounts cannot stay signed in on a device. Sign in again to continue.', forgetDevices: true);
-        }
-
         $minutes = SessionLimits::minutes($user, $session);
         $left = SessionLimits::secondsLeft($user, $session);
         if ($left['idle'] !== null && $left['idle'] <= 0) {
@@ -49,14 +43,14 @@ class EnforceSessionLimits
         return $next($request);
     }
 
-    private function signOut(Request $request, string $message, bool $forgetDevices = false): Response
+    private function signOut(Request $request, string $message): Response
     {
         $session = $request->session();
         // Where to return after signing in again: this page, or for a form or a background request, the page it was sent from.
         $back = $request->isMethod('GET') && ! $request->expectsJson() ? $request->fullUrl() : $session->previousUrl();
 
-        // logoutCurrentDevice() leaves "Keep me signed in" on the patron's other devices alone.
-        $forgetDevices ? Auth::guard('web')->logout() : Auth::guard('web')->logoutCurrentDevice();
+        // logoutCurrentDevice() leaves "Keep me signed in" on the user's other devices alone.
+        Auth::guard('web')->logoutCurrentDevice();
         $session->invalidate();
         $session->regenerateToken();
         $session->flash('signed_out', $message);

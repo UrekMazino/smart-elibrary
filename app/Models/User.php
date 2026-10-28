@@ -76,6 +76,12 @@ class User extends Authenticatable
         return in_array($this->usertype, ['Administrator', 'Developer'], true);
     }
 
+    /** False for an account made with "Continue with Google" until its owner sets a password (App\Services\GoogleSignIn). */
+    public function hasPassword(): bool
+    {
+        return filled($this->getAuthPassword());
+    }
+
     // public function patrontypes()
     // {
     //     return $this->hasMany(Patrontype::class);

@@ -9,15 +9,15 @@ use Illuminate\Support\Str;
 /**
  * How long a sign-in lasts (OWASP ASVS 7.3.1, 7.3.2; config/session.php "limits"): a user is signed out after
  * a while without activity (idle limit) and a while after signing in, however active (absolute limit). Staff
- * 30 minutes and 8 hours; patrons 2 hours and 12 hours, or 30 days with no idle limit on a device where they
- * ticked "Keep me signed in". The clocks are kept in the session. EnforceSessionLimits signs users out; the
+ * 30 minutes and 8 hours; patrons 2 hours and 12 hours; anyone who ticked "Keep me signed in", 30 days on that
+ * device with no idle limit. The clocks are kept in the session. EnforceSessionLimits signs users out; the
  * staff warning (partials/session-timeout) asks for the time left. docs/implemented/SECURITY_NOTES.md section 5.
  */
 class SessionLimits
 {
     private const KEY = 'sign_in';
 
-    /** A sign-in (the Login event, also when the "Keep me signed in" cookie signs a patron back in): the clocks start. */
+    /** A sign-in (the Login event, also when the "Keep me signed in" cookie signs someone back in): the clocks start. */
     public static function start(Session $session, bool $remember): void
     {
         $now = now()->getTimestamp();
@@ -78,7 +78,7 @@ class SessionLimits
 
     private static function minutesFor(User $user, bool $remembered): array
     {
-        if (! $user->isStaff() && $remembered) {
+        if ($remembered) {
             return ['idle' => null, 'absolute' => (int) config('auth.guards.web.remember')];
         }
 

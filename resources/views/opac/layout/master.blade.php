@@ -4,13 +4,13 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<meta name="author" content="FPRDI">
+	<meta name="author" content="DOST-FNRI">
 	<meta name="csrf_token" content="{{ csrf_token() }}">
 
 	{{-- Per-page SEO (OPAC_SEO_PLAN.md workstream A). Pages override these via @section;
 	     the defaults below are what every page used to emit unconditionally. --}}
-	<title>@yield('meta_title', 'DOST-PCAARRD eLibrary')</title>
-	<meta name="description" content="@yield('meta_description', 'Search the DOST-PCAARRD eLibrary for agriculture, aquatic and natural resources (AANR) research materials.')">
+	<title>@yield('meta_title', 'DOST-FNRI eLibrary')</title>
+	<meta name="description" content="@yield('meta_description', 'Search the DOST-FNRI eLibrary for food and nutrition research materials.')">
 	{{-- The admin "discourage search engines" switch OVERRIDES the page's own value: while it is on,
 	     nothing is indexable, whatever an individual page asks for. --}}
 	@if(settingEnabled('seo_discourage_indexing', false))
@@ -26,10 +26,10 @@
 	@endif
 
 	{{-- Link previews (social/chat). og:image only when the page supplies one. --}}
-	<meta property="og:site_name" content="DOST-PCAARRD eLibrary">
+	<meta property="og:site_name" content="DOST-FNRI eLibrary">
 	<meta property="og:type" content="@yield('og_type', 'website')">
-	<meta property="og:title" content="@yield('meta_title', 'DOST-PCAARRD eLibrary')">
-	<meta property="og:description" content="@yield('meta_description', 'Search the DOST-PCAARRD eLibrary for agriculture, aquatic and natural resources (AANR) research materials.')">
+	<meta property="og:title" content="@yield('meta_title', 'DOST-FNRI eLibrary')">
+	<meta property="og:description" content="@yield('meta_description', 'Search the DOST-FNRI eLibrary for food and nutrition research materials.')">
 	<meta property="og:url" content="@yield('canonical', url()->current())">
 	@hasSection('og_image')
 		<meta property="og:image" content="@yield('og_image')">
@@ -205,43 +205,43 @@
 		<div class="container py-5">
 			<div class="row gy-4 text-center text-md-start">
 				<!-- Local Resources -->
-				<div class="col-lg-3 col-md-6">
+				<div class="col-lg-4 col-md-6">
 					<h5>Local Resources</h5>
 					<ul class="links list-unstyled">
-						<li><a href="https://www.da.gov.ph/" target="_blank">Department of Agriculture</a></li>
-						<li><a href="http://www.bsu.edu.ph/shamag#:~:text=Shamag%2C%20an%20Ibaloi%20term%20that,communication%20tool%20among%20BSU%20constituents." target="_blank">Benguet State University</a></li>
-						<li><a href="https://www.pids.gov.ph/publications" target="_blank">Philippine Institute for Development Studies</a></li>
-						<li><a href="https://fprdi.dost.gov.ph/22-publications" target="_blank">DOST-FPRDI</a></li>
+						<li><a href="https://www.fnri.dost.gov.ph/" target="_blank" rel="noopener">DOST-FNRI</a></li>
+						<li><a href="https://nutrinet.fnri.dost.gov.ph/" target="_blank" rel="noopener">Nutrition Research Information Network (NUTRINET)</a></li>
+						<li><a href="https://www.pchrd.dost.gov.ph/" target="_blank" rel="noopener">DOST-PCHRD</a></li>
+						<li><a href="https://www.nnc.gov.ph/" target="_blank" rel="noopener">National Nutrition Council</a></li>
+						<li><a href="https://doh.gov.ph/" target="_blank" rel="noopener">Department of Health</a></li>
+						<li><a href="https://www.pids.gov.ph/publications" target="_blank" rel="noopener">Philippine Institute for Development Studies</a></li>
+						<li><a href="https://plai.org.ph/" target="_blank" rel="noopener">Philippine Librarians Association, Inc. (PLAI)</a></li>
 					</ul>
 				</div>
 
 				<!-- International Resources -->
-				<div class="col-lg-5 col-md-6">
+				<div class="col-lg-4 col-md-6">
 					<h5>International Resources</h5>
 					<ul class="links list-unstyled">
-						<li><a href="https://www.tappi.org/" target="_blank">Technical Association of the Pulp and Paper Industry (TAPPI)</a></li>
-						<li><a href="https://www.workinagriculture.com/" target="_blank">International Association on Agricultural Work (IAWA)</a></li>
-						<li><a href="https://forestprod.org/" target="_blank">Forest Products Society (FPS)</a></li>
-						<li><a href="https://www.iufro.org/" target="_blank">International Union of Forest Research Organizations (IUFRO)</a></li>
-						<li><a href="https://www.apafri.org/" target="_blank">Asia Pacific Association of Forestry Research Institutions (APAFRI)</a></li>
-						<li><a href="https://www.pcaarrd.dost.gov.ph/index.php/staarrdec/" target="_blank">STAARRDEC</a></li>
+						<li><a href="https://www.fao.org/nutrition/en/" target="_blank" rel="noopener">FAO: Food and Nutrition</a></li>
+						<li><a href="https://www.who.int/health-topics/nutrition" target="_blank" rel="noopener">World Health Organization: Nutrition</a></li>
+						<li><a href="https://www.unicef.org/nutrition" target="_blank" rel="noopener">UNICEF: Nutrition</a></li>
+						<li><a href="https://www.fao.org/infoods/infoods/en/" target="_blank" rel="noopener">International Network of Food Data Systems (INFOODS)</a></li>
 					</ul>
 				</div>
 
-				<!-- Contact Us -->
+				<!-- Contact Us. The email is ADMIN_EMAIL (config/app.php), shown once it is set. -->
 				<div class="col-lg-4 col-md-12">
 					<h5>Contact with Us</h5>
 					<ul class="contacts list-unstyled">
-						<li><a href="tel://495362377"><i class="icon_mobile"></i> Telephone Number: (49) 536 2377</a></li>
-						<li><a href="mailto:info@fprdi.dost.gov.ph"><i class="icon_mail_alt"></i> Email: info@fprdi.dost.gov.ph</a></li>
-						<li><a href="https://maps.app.goo.gl/HvsNhRhJ3UYLXZV4A"><i class="icon-address"></i> Location: Domingo Lantican Ave, UPCFNR Campus, UPLB, College, Laguna 4031</a></li>
+						@if (config('app.admin_email'))
+							<li><a href="mailto:{{ config('app.admin_email') }}"><i class="icon_mail_alt"></i> Email: {{ config('app.admin_email') }}</a></li>
+						@endif
+						<li><a href="https://www.google.com/maps/search/?api=1&amp;query=DOST-FNRI%2C+General+Santos+Avenue%2C+Bicutan%2C+Taguig+City" target="_blank" rel="noopener"><i class="icon-address"></i> Location: DOST-FNRI, DOST Compound, General Santos Avenue, Bicutan, Taguig City 1631</a></li>
 					</ul>
 					<div class="follow_us mt-3">
 						<h5>Follow us</h5>
 						<ul class="list-inline">
-							<li class="list-inline-item"><a href="https://www.facebook.com/dostfprdi" target="_blank"><i class="social_facebook"></i></a></li>
-							<li class="list-inline-item"><a href="https://www.youtube.com/channel/UCaNndZCAc6qej8OVYSCnz1w" target="_blank"><i class="social_youtube"></i></a></li>
-							<li class="list-inline-item"><a href="https://www.instagram.com/dostfprdi" target="_blank"><i class="social_instagram"></i></a></li>
+							<li class="list-inline-item"><a href="https://www.facebook.com/DOST.FNRI" target="_blank" rel="noopener" aria-label="DOST-FNRI on Facebook"><i class="social_facebook"></i></a></li>
 						</ul>
 					</div>
 				</div>
@@ -252,7 +252,7 @@
 			<!-- Footer bottom -->
 			<div class="row">
 				<div class="col-12 text-center">
-					<div id="copy">© 2023 DOST-PCAARRD eLibrary</div>
+					<div id="copy">© {{ date('Y') }} DOST-FNRI eLibrary · <a href="#" data-bs-toggle="modal" data-bs-target="#modalPrivacy">Privacy</a></div>
 				</div>
 			</div>
 		</div>
@@ -287,9 +287,31 @@
 	        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 	      </div>
 	      <div class="modal-body">
-	        <p>
-				{{-- Content Here --}}
-			</p>
+			{{-- Keep in step with docs/implemented/SECURITY_NOTES.md §6. The agency's full notice (what accounts hold,
+			     retention, the Data Protection Officer's contact, data subject rights) is still to be written with its DPO. --}}
+			<h6>Your visit and the library's statistics</h6>
+			<p>When you open a material, the eLibrary uses your network (IP) address and browser to recognise a repeat
+				visit, so a reader is counted once a day in the list of most viewed materials and automated traffic is
+				slowed down. If you are not signed in, your views are kept with a code made from them (not the address
+				or the browser themselves), and your address is kept separately so the library's system administrators
+				can look into misuse of the statistics. Both are deleted after 90 days. They are not added to any account
+				or shared outside the agency.</p>
+			<p>Downloads and ratings are counted once per account.</p>
+			@if (\App\Rules\HumanCheck::enabled() || \App\Services\GoogleSignIn::enabled())
+				<h6>Signing up and signing in</h6>
+				@if (\App\Rules\HumanCheck::enabled())
+					<p>The sign-up form checks that a person, not a program, is signing up, with Cloudflare Turnstile: your
+						browser connects to Cloudflare for the check, under Cloudflare's privacy policy. The eLibrary keeps
+						nothing from it.</p>
+				@endif
+				@if (\App\Services\GoogleSignIn::enabled())
+					<p>If you choose “Continue with Google”, Google tells the eLibrary your name and email address, and that
+						Google has confirmed the address. The eLibrary keeps your Google account's ID to recognise you next
+						time. It gets no access to your Google account, contacts or files.</p>
+				@endif
+			@endif
+			<p class="mb-0">Questions about your personal data:
+				@if (config('app.admin_email'))<a href="mailto:{{ config('app.admin_email') }}">{{ config('app.admin_email') }}</a>.@else ask the library.@endif</p>
 	      </div>
 	    </div>
 	  </div>
