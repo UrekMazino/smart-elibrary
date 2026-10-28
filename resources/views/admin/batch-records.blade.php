@@ -30,14 +30,7 @@
 
 @section('content')
 <div class="page-content">
-    <nav class="page-breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ url('/admin/batch-list') }}">Batch list</a></li>
-            {{-- View Batch Details is a POST page: the link submits #viewBatchFrm. --}}
-            <li class="breadcrumb-item"><a href="#" data-call="submitFormById" data-args='["viewBatchFrm"]'>Batch #{{ $batch->id }} details</a></li>
-            <li class="breadcrumb-item active" aria-current="page">Records</li>
-        </ol>
-    </nav>
+    @include('admin.partials.breadcrumb', ['page' => 'batch-import', 'below' => [['Batch #' . $batch->id, 'submit' => 'viewBatchFrm'], 'Records']])
     <div class="row">
         <div class="col-md-12">
             <div class="card">

@@ -42,12 +42,7 @@
 
 @section('content')
 <div class="page-content">
-	<nav class="page-breadcrumb">
-		<ol class="breadcrumb">
-			<li class="breadcrumb-item"><a href="{{ url('/admin/dashboard') }}">Home</a></li>
-			<li class="breadcrumb-item active" aria-current="page">Inquiries</li>
-		</ol>
-	</nav>
+	@include('admin.partials.breadcrumb', ['page' => 'inquiries'])
 
 	<div class="row">
 		<div class="col-12">

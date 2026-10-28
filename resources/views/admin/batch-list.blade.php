@@ -41,11 +41,7 @@
 @section('content')
 <div class="page-content">
 
-    <nav class="page-breadcrumb">
-        <ol class="breadcrumb">
-          Admin / Batch List
-        </ol>
-    </nav>
+    @include('admin.partials.breadcrumb', ['page' => 'batch-import'])
 
     <div class="row">
         <div class="col-md-12">

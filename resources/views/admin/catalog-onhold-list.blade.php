@@ -48,10 +48,7 @@
             @php } @endphp
         </div>
     </div>
-    <nav class="page-breadcrumb">
-        <ol class="breadcrumb">
-        </ol>
-    </nav>
+    @include('admin.partials.breadcrumb', ['page' => 'on-hold'])
 
     <div class="row">
         <div class="col-md-12">

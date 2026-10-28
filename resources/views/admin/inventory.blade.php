@@ -14,10 +14,7 @@
 @section('content')
 <div class="page-content">
 
-    <nav class="page-breadcrumb">
-        <ol class="breadcrumb">
-        </ol>
-    </nav>
+    @include('admin.partials.breadcrumb', ['page' => 'physical-count'])
 
     <div class="row">
       <div class="col-12 col-xl-12 stretch-card">

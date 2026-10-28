@@ -48,12 +48,12 @@ class RolePermissionController extends Controller
         'Cataloging'         => ['book', 'Create New Record, Batch Import, Record List, On-Hold'],
         'Circulation'        => ['repeat', 'Transactions, Check-Out/Check-In, History'],
         'Accounts & Patrons' => ['users', 'Accounts → Patrons'],
-        'Security'           => ['shield', 'Accounts → Signed in now'],
+        'Security'           => ['shield', 'Accounts → Signed In Now'],
         'Configuration'      => ['settings', 'Administration → Settings'],
-        'Utilities'          => ['tool', 'Administration → Utilities: Material Types, MARC Templates, AI Sync Monitor, Theme'],
+        'Utilities'          => ['tool', 'Administration → Utilities: Material Types, MARC Templates, AI Sync Monitor, Rankings, Theme'],
         'Inquiry'            => ['message-square', 'Inquiries'],
         'Inventory'          => ['package', 'Physical Count'],
-        'News'               => ['rss', 'News Article'],
+        'News'               => ['rss', 'News Articles'],
         'Reports'            => ['bar-chart-2', 'Reports'],
     ];
 

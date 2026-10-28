@@ -115,13 +115,11 @@
 
 @section('content')
 <div class="page-content">
-    <nav class="page-breadcrumb">
-        <ol class="breadcrumb">
-            {{-- Cataloging leads to the Record List (it led to MARC Templates, a Utilities page most cataloguers may not open). --}}
-            <li class="breadcrumb-item">@can('view.catalog.list')<a href="{{ url('/admin/record-list') }}">Cataloging</a>@else Cataloging @endcan</li>
-            <li class="breadcrumb-item active" aria-current="page">Edit</li>
-        </ol>
-    </nav>
+    {{-- Under the list the record is in (as on its page), then the record itself. --}}
+    @include('admin.partials.breadcrumb', ['page' => $record->is_published ? 'record-list' : 'on-hold', 'below' => [
+        [Str::limit(marcTitle($record->field_data) ?? 'Record #' . $record->id, 80), route('show-record', $record->id)],
+        'Edit Record',
+    ]])
     <div class="row">
 		<div class="col-lg-12 grid-margin stretch-card">
 			<div class="card">

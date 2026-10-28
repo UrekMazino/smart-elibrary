@@ -32,11 +32,11 @@ class SignedInNowTest extends TestCase
     public function test_super_admins_and_developers_have_it_other_staff_do_not()
     {
         $this->actingAs($this->staff('super_admin'))->get('/admin/sessions')->assertOk()->assertSee('SIGNED IN NOW');
-        $this->get('/admin/accounts')->assertSee('Signed in now');
+        $this->get('/admin/accounts')->assertSee('Signed In Now');
         $this->actingAs($this->staff('developer'))->get('/admin/sessions')->assertOk();
 
         $this->actingAs($this->staff('system_admin'))->get('/admin/sessions')->assertForbidden();
-        $this->get('/admin/accounts')->assertOk()->assertDontSee('Signed in now');
+        $this->get('/admin/accounts')->assertOk()->assertDontSee('Signed In Now');
     }
 
     public function test_it_lists_who_is_signed_in_and_on_which_browsers_but_not_where()

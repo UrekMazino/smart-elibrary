@@ -7,6 +7,7 @@ use App\Models\User;
 use DOMDocument;
 use DOMXPath;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
@@ -16,6 +17,7 @@ use Tests\TestCase;
 /**
  * The admin sidebar and the Accounts / Utilities cards against the routes behind them: for every
  * seeded role, each link it is shown opens, and what it can use under Administration is shown.
+ * And the breadcrumbs (admin.partials.breadcrumb): the same trail on every page, linking only what opens.
  */
 class AdminNavigationTest extends TestCase
 {
@@ -60,6 +62,23 @@ class AdminNavigationTest extends TestCase
         return $this->links($html, '//a[contains(@class,"util-card")]');
     }
 
+    /** A page's breadcrumbs: [label, link path or null] each, or null when it has none or more than one. */
+    private function crumbs(string $html): ?array
+    {
+        $doc = new DOMDocument();
+        @$doc->loadHTML('<?xml encoding="UTF-8">' . $html);
+        $xp = new DOMXPath($doc);
+        $navs = $xp->query('//nav[contains(@class,"page-breadcrumb")]');
+        if ($navs->length !== 1) return null;
+        $crumbs = [];
+        foreach ($xp->query('.//li', $navs->item(0)) as $li) {
+            $a = $xp->query('.//a', $li)->item(0);
+            $crumbs[] = [trim(preg_replace('/\s+/', ' ', $li->textContent)), $a ? parse_url($a->getAttribute('href'), PHP_URL_PATH) : null,
+                $li->getAttribute('aria-current') === 'page'];
+        }
+        return $crumbs;
+    }
+
     public function test_every_link_and_card_a_role_is_shown_opens()
     {
         $broken = [];
@@ -96,6 +115,55 @@ class AdminNavigationTest extends TestCase
             if ($heading !== (bool) array_intersect(self::ADMINISTRATION, $sidebar)) $wrong[] = "$role: Administration heading " . ($heading ? 'without a link' : 'missing');
         }
         $this->assertSame([], $wrong);
+    }
+
+    public function test_every_page_has_one_trail_from_its_menu_heading_and_each_crumb_link_opens()
+    {
+        $headings = ['Overview', 'Cataloging', 'Circulation', 'Inventory', 'Administration', 'Your Account'];
+        $wrong = [];
+        foreach (Role::pluck('name') as $role) {
+            $user = $this->staff($role);
+            $pages = ['/admin/profile', '/admin/appearance'];
+            foreach ($this->sidebar($user) as $path) {
+                $pages[] = $path;
+                array_push($pages, ...$this->cards($this->actingAs($user)->get($path)->getContent()));
+            }
+            foreach (array_unique($pages) as $page) {
+                $crumbs = $this->crumbs($this->actingAs($user)->get($page)->assertOk()->getContent());
+                if ($crumbs === null || count($crumbs) < 2) { $wrong[] = "$role: $page has no breadcrumbs"; continue; }
+                [$first, $last] = [$crumbs[0], end($crumbs)];
+                if (! in_array($first[0], $headings, true) || $first[1] !== null) $wrong[] = "$role: $page starts at " . json_encode($first);
+                if (! $last[2] || $last[1] !== null) $wrong[] = "$role: $page doesn't end at itself";
+                foreach ($crumbs as [$label, $link]) {
+                    if ($link !== null && $this->actingAs($user)->get($link)->getStatusCode() !== 200) $wrong[] = "$role: $page crumb $label -> $link doesn't open";
+                }
+            }
+        }
+        $this->assertSame([], $wrong);
+    }
+
+    public function test_crumbs_name_pages_as_the_menu_does_and_link_only_what_opens()
+    {
+        $admin = $this->staff('super_admin');
+        $this->assertSame([['Administration', null, false], ['Accounts', '/admin/accounts', false], ['Signed In Now', null, true]],
+            $this->crumbs($this->actingAs($admin)->get('/admin/sessions')->getContent()));
+        $this->assertSame([['Overview', null, false], ['News Articles', '/admin/news', false], ['New Article', null, true]],
+            $this->crumbs($this->get('/admin/news/add')->getContent()));
+
+        // Signed In Now alone: the Accounts hub opens (its one card), so it links; with no hub card it couldn't.
+        Role::create(['name' => 'sessions_only', 'guard_name' => 'web'])->givePermissionTo('access.sessions');
+        $this->assertSame('/admin/accounts', $this->crumbs($this->actingAs($this->staff('sessions_only'))->get('/admin/sessions')->getContent())[1][1]);
+
+        // Editing a record without the lists: the list crumb is plain text, the record links to its page.
+        Role::create(['name' => 'editor_only', 'guard_name' => 'web'])->givePermissionTo(['access.cataloging', 'edit.catalog']);
+        $type = DB::table('materials')->value('id');
+        $id = DB::table('catalogs')->insertGetId(['material_type_id' => $type, 'is_published' => 0,
+            'field_data' => json_encode([['tag' => '245', 'ind1' => '1', 'ind2' => '0', 'subfields' => [['code' => 'a', 'value' => 'Rice and health']]]])]);
+        $crumbs = $this->crumbs($this->actingAs($this->staff('editor_only'))->get("/admin/edit-record/$id")->assertOk()->getContent());
+        $this->assertSame(['Cataloging', null, false], $crumbs[0]);
+        $this->assertSame(['On-Hold', null, false], $crumbs[1]);
+        $this->assertSame("/admin/view-record/$id", $crumbs[2][1]);
+        $this->assertSame(['Edit Record', null, true], $crumbs[3]);
     }
 
     public function test_super_admins_reach_roles_even_without_the_accounts_permission()

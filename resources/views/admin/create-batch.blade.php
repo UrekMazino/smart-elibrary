@@ -146,12 +146,7 @@
             <div class="progress-bar" role="progressbar" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">Importing please wait...</div>
         </div>
     </div> -->
-    <nav class="page-breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ url('/admin/batch-list') }}">Batch Import</a></li>
-            <li class="breadcrumb-item active" aria-current="page">Create</li>
-        </ol>
-    </nav>
+    @include('admin.partials.breadcrumb', ['page' => 'batch-import', 'below' => ['New Batch']])
     <div class="row">
 		<div class="col-lg-12 grid-margin stretch-card">
 			<div class="card">

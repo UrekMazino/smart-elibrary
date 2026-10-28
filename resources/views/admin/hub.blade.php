@@ -25,6 +25,7 @@
 
 @section('content')
 <div class="page-content">
+    @include('admin.partials.breadcrumb', ['page' => strtolower($title)])
     <div class="ac-head">
         <h4>{{ $title }}</h4>
         <p>{{ $intro }}</p>

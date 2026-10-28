@@ -14,6 +14,7 @@
   $categories = $barList($byCategory);
 @endphp
 <div class="page-content dsh">
+  @include('admin.partials.breadcrumb', ['page' => 'dashboard'])
 
   {{-- ============ Header: greeting + live clock + quick actions ============
        Server time (app timezone) is only the no-JS fallback: dashboard.js swaps in the

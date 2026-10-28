@@ -16,12 +16,7 @@
 
 @section('content')
 <div class="page-content">
-	<nav class="page-breadcrumb">
-		<ol class="breadcrumb">
-			<li class="breadcrumb-item"><a href="{{ url('/admin/dashboard') }}">Home</a></li>
-			<li class="breadcrumb-item active" aria-current="page">News Articles</li>
-		</ol>
-	</nav>
+	@include('admin.partials.breadcrumb', ['page' => 'news'])
 
 	<div class="row">
 		<div class="col-12">

@@ -33,9 +33,7 @@
 	$dateLabels = [2=>'Date Registered',3=>'Date Borrowed',4=>'Date of Inquiry',5=>'Date of CSF',6=>'Date Downloaded',7=>'Date Uploaded'];
 @endphp
 <div class="page-content">
-	<nav class="page-breadcrumb">
-		<ol class="breadcrumb"><li class="breadcrumb-item active" aria-current="page">Reports</li></ol>
-	</nav>
+	@include('admin.partials.breadcrumb', ['page' => 'reports'])
 
 	<form method="POST" id="frm" target="_blank" action="{{ url('/admin/print-report') }}">
 		@csrf

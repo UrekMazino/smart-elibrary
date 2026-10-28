@@ -15,12 +15,7 @@
 
 @section('content')
 <div class="page-content">
-    <nav class="page-breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ route('utilities') }}">Utilities</a></li>
-            <li class="breadcrumb-item active" aria-current="page">Theme</li>
-        </ol>
-    </nav>
+    @include('admin.partials.breadcrumb', ['page' => 'theme'])
 
     <div class="ac-head">
         <h4>Theme</h4>

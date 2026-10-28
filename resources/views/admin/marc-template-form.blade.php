@@ -50,13 +50,7 @@
 
 @section('content')
 <div class="page-content">
-    <nav class="page-breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ route('utilities') }}">Utilities</a></li>
-            <li class="breadcrumb-item"><a href="{{ route('marc-templates-index') }}">MARC Templates</a></li>
-            <li class="breadcrumb-item active" aria-current="page">{{ $template ? 'Edit' : 'Create' }}</li>
-        </ol>
-    </nav>
+    @include('admin.partials.breadcrumb', ['page' => 'marc-templates', 'below' => [$template ? 'Edit Template' : 'Create Template']])
     <div class="row">
 		<div class="col-lg-12 grid-margin stretch-card">
 			<div class="card">

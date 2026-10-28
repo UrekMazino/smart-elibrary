@@ -14,13 +14,7 @@
 
 @section('content')
 <div class="page-content">
-    <nav class="page-breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ url('/admin/batch-list') }}">Batch list</a></li>
-            <li class="breadcrumb-item active" aria-current="page">View Batch Details</li>
-			<li class="breadcrumb-item active" aria-current="page">Batch ID: {{ $batch->batch_id }}</li>
-        </ol>
-    </nav>
+    @include('admin.partials.breadcrumb', ['page' => 'batch-import', 'below' => ['Batch #' . $batch->batch_id]])
     <div class="row">
 		<div class="col-lg-12 grid-margin stretch-card">
 			<div class="card">

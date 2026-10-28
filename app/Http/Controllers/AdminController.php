@@ -275,7 +275,7 @@ class AdminController extends Controller
         if (auth()->user()->can('access.sessions')) {
             $signedIn = BrowserSessions::everyone(request());
             $cards[] = [
-                'title' => 'Signed in now',
+                'title' => 'Signed In Now',
                 'icon'  => 'activity',
                 'url'   => route('admin.sessions'),
                 'text'  => 'Who is signed in right now, and on which browsers. Sign one person out everywhere, or everyone.',
@@ -286,7 +286,7 @@ class AdminController extends Controller
         if (auth()->user()->can('access.statistics.watch')) {
             $toCheck = StatisticsWatch::toCheck(today());
             $cards[] = [
-                'title' => 'Statistics watch',
+                'title' => 'Statistics Watch',
                 'icon'  => 'eye',
                 'url'   => route('admin.statistics-watch'),
                 'text'  => 'Unusual views, downloads, ratings and sign-ups. Take an account out of the top-10 lists, or put it back.',

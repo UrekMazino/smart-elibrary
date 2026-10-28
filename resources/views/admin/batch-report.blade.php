@@ -40,13 +40,7 @@
     $hasMarc    = $skipped->contains(fn ($i) => $i->has_marc);
 @endphp
 <div class="page-content">
-    <nav class="page-breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ url('/admin/batch-list') }}">Batch list</a></li>
-            <li class="breadcrumb-item"><a href="{{ url('/admin/batch-records/' . $batch->id) }}">Batch #{{ $batch->id }}</a></li>
-            <li class="breadcrumb-item active" aria-current="page">Import report</li>
-        </ol>
-    </nav>
+    @include('admin.partials.breadcrumb', ['page' => 'batch-import', 'below' => [['Batch #' . $batch->id, 'submit' => 'viewBatchFrm'], 'Import Report']])
 
     <div class="card">
         <div class="card-body">
@@ -169,12 +163,17 @@
         </div>
     </div>
 </div>
+<form method="post" action="{{ url('/admin/view-batch') }}" id="viewBatchFrm">
+    @csrf
+    <input type="hidden" name="batch_id" value="{{ $batch->id }}">
+</form>
 @endsection
 
 @section('js')
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/DataTables/DataTables-1.12.1/js/jquery.dataTables.min.js') }}"></script>
 <script src="{{ asset('admintemplate/nobleui/template/assets/vendors/DataTables/DataTables-1.12.1/js/dataTables.bootstrap5.min.js') }}"></script>
 <script nonce="{{ cspNonce() }}">
+AdminActions.allow(['submitFormById']);
 $(function () {
     // Search and paging only when a list is long enough to need them.
     function opts(table) {

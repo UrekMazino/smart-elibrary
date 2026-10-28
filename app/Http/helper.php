@@ -2012,3 +2012,89 @@ function cspNonce(): string
 	}
 	return app('csp.nonce');
 }
+
+/**
+ * Which Administration links the admin sidebar shows this account, each with the checks of its page's route
+ * (a hub link only when at least one of its cards is open to the account). The breadcrumbs link the same way.
+ */
+function adminNav(): array
+{
+	$me = auth()->user();
+	return [
+		'accounts'  => $me->canAny(['access.accounts', 'access.sessions', 'access.statistics.watch']) || $me->hasAnyRole(['super_admin', 'developer']),
+		'settings'  => $me->can('access.configuration') && $me->can('access.settings'),
+		'utilities' => $me->can('access.utilities') && $me->canAny(['manage.material.types', 'view.config.template', 'access.ai.sync.monitor', 'manage.theme', 'access.rankings']),
+	];
+}
+
+/**
+ * The admin pages the breadcrumbs know. Each sits under a sidebar heading (`section`) or under the hub page its card
+ * is on (`parent`), is labelled as in the sidebar or on its card, and opens for the permissions in `can` (all of them,
+ * as its route checks), or for a check of its own.
+ */
+function adminPages(): array
+{
+	$nav   = fn (string $link) => fn () => adminNav()[$link];
+	$staff = fn () => auth()->user()->hasAnyRole(['super_admin', 'developer']);
+	return [
+		'dashboard'        => ['section' => 'Overview', 'label' => 'Dashboard', 'url' => url('/admin/dashboard'), 'can' => ['access.dashboard']],
+		'inquiries'        => ['section' => 'Overview', 'label' => 'Inquiries', 'url' => url('/admin/inquiry'), 'can' => ['access.inquiry']],
+		'news'             => ['section' => 'Overview', 'label' => 'News Articles', 'url' => url('/admin/news'), 'can' => ['access.news']],
+		'reports'          => ['section' => 'Overview', 'label' => 'Reports', 'url' => url('/admin/report'), 'can' => ['access.reports']],
+		'visits'           => ['parent' => 'reports', 'label' => 'Visits', 'url' => url('/admin/visits'), 'can' => ['access.reports']],
+
+		'create-record'    => ['section' => 'Cataloging', 'label' => 'Create New Record', 'url' => url('/admin/create-record'), 'can' => ['access.cataloging', 'create.catalog']],
+		'batch-import'     => ['section' => 'Cataloging', 'label' => 'Batch Import', 'url' => url('/admin/batch-list'), 'can' => ['access.cataloging', 'view.catalog.importlist']],
+		'record-list'      => ['section' => 'Cataloging', 'label' => 'Record List', 'url' => url('/admin/record-list'), 'can' => ['access.cataloging', 'view.catalog.list']],
+		'on-hold'          => ['section' => 'Cataloging', 'label' => 'On-Hold', 'url' => url('/admin/on-hold-list'), 'can' => ['access.cataloging', 'view.catalog.list']],
+
+		'transactions'     => ['section' => 'Circulation', 'label' => 'Transactions', 'url' => route('reservations'), 'can' => ['access.circulation', 'circulation.reservation.view']],
+		'check-out-in'     => ['section' => 'Circulation', 'label' => 'Check-Out/Check-In', 'url' => route('checkoutin'), 'can' => ['access.circulation', 'manage.circulation.checkouts']],
+		'history'          => ['section' => 'Circulation', 'label' => 'History', 'url' => url('/admin/borrowed'), 'can' => ['access.circulation', 'access.circulation.transaction']],
+
+		'physical-count'   => ['section' => 'Inventory', 'label' => 'Physical Count', 'url' => url('/admin/inventory'), 'can' => ['access.inventory']],
+
+		'accounts'         => ['section' => 'Administration', 'label' => 'Accounts', 'url' => route('accounts'), 'can' => $nav('accounts')],
+		'administrators'   => ['parent' => 'accounts', 'label' => 'Administrators', 'url' => route('administrators'), 'can' => $staff],
+		'patrons'          => ['parent' => 'accounts', 'label' => 'Patrons', 'url' => route('patrons'), 'can' => ['access.accounts']],
+		'roles'            => ['parent' => 'accounts', 'label' => 'Roles', 'url' => route('admin.list_roles'), 'can' => $staff],
+		'permissions'      => ['parent' => 'accounts', 'label' => 'Permissions', 'url' => route('admin.list_permissions'), 'can' => $staff],
+		'sessions'         => ['parent' => 'accounts', 'label' => 'Signed In Now', 'url' => route('admin.sessions'), 'can' => ['access.sessions']],
+		'statistics-watch' => ['parent' => 'accounts', 'label' => 'Statistics Watch', 'url' => route('admin.statistics-watch'), 'can' => ['access.statistics.watch']],
+		'settings'         => ['section' => 'Administration', 'label' => 'Settings', 'url' => url('/admin/settings'), 'can' => $nav('settings')],
+		'utilities'        => ['section' => 'Administration', 'label' => 'Utilities', 'url' => route('utilities'), 'can' => $nav('utilities')],
+		'material-types'   => ['parent' => 'utilities', 'label' => 'Material Types', 'url' => route('utilities.material-types'), 'can' => ['access.utilities', 'manage.material.types']],
+		'marc-templates'   => ['parent' => 'utilities', 'label' => 'MARC Templates', 'url' => route('marc-templates-index'), 'can' => ['access.utilities', 'view.config.template']],
+		'ai-sync-monitor'  => ['parent' => 'utilities', 'label' => 'AI Sync Monitor', 'url' => route('ai-sync-monitor'), 'can' => ['access.utilities', 'access.ai.sync.monitor']],
+		'rankings'         => ['parent' => 'utilities', 'label' => 'Rankings', 'url' => route('utilities.rankings'), 'can' => ['access.utilities', 'access.rankings']],
+		'theme'            => ['parent' => 'utilities', 'label' => 'Theme', 'url' => route('utilities.theme'), 'can' => ['access.utilities', 'manage.theme']],
+
+		'profile'          => ['section' => 'Your Account', 'label' => 'Profile', 'url' => url('/admin/profile'), 'can' => []],
+		'appearance'       => ['section' => 'Your Account', 'label' => 'Appearance', 'url' => route('appearance'), 'can' => []],
+	];
+}
+
+/**
+ * An admin page's breadcrumbs (admin.partials.breadcrumb): its sidebar heading, then each page from the menu down to
+ * $page (a link when this account may open it), then $below for pages under it: a label, [label, address], or
+ * [label, 'submit' => form id] for a page that opens by POST. The last crumb is the page being shown.
+ */
+function adminTrail(string $page, array $below = []): array
+{
+	$pages = adminPages();
+	$chain = [];
+	for ($key = $page; $key !== null; $key = $pages[$key]['parent'] ?? null) {
+		array_unshift($chain, $pages[$key]);
+	}
+
+	$crumbs = [['label' => $chain[0]['section'], 'url' => null, 'submit' => null]];
+	foreach ($chain as $p) {
+		$open = $p['can'] instanceof Closure ? ($p['can'])() : auth()->user()->can($p['can']);
+		$crumbs[] = ['label' => $p['label'], 'url' => $open ? $p['url'] : null, 'submit' => null];
+	}
+	foreach ($below as $b) {
+		$b = (array) $b;
+		$crumbs[] = ['label' => $b[0], 'url' => $b[1] ?? null, 'submit' => $b['submit'] ?? null];
+	}
+	return $crumbs;
+}

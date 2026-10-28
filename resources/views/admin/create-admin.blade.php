@@ -46,13 +46,7 @@
 
 @section('content')
 <div class="page-content">
-    <nav class="page-breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ route('accounts') }}">Accounts</a></li>
-            <li class="breadcrumb-item"><a href="{{ route('administrators') }}">Administrators</a></li>
-            <li class="breadcrumb-item active" aria-current="page">Add administrator</li>
-        </ol>
-    </nav>
+    @include('admin.partials.breadcrumb', ['page' => 'administrators', 'below' => ['Add Administrator']])
     <div class="row">
         <div class="col-md-7 col-lg-6 offset-md-2 offset-lg-3 grid-margin stretch-card">
             <div class="card">

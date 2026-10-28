@@ -37,10 +37,7 @@
 
 @section('content')
 <div class="page-content">
-    <nav class="page-breadcrumb">
-        <ol class="breadcrumb">
-        </ol>
-    </nav>
+    @include('admin.partials.breadcrumb', ['page' => 'check-out-in'])
     <div id="overlay"></div>
     <div class="row">
         <div class="col-md-12">
