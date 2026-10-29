@@ -25,6 +25,9 @@ class Kernel extends ConsoleKernel
 
         // Guests' IP addresses and hashes go after 90 days (SECURITY_NOTES.md section 6; the statistics watch).
         $schedule->command('visitors:forget')->dailyAt('03:15')->withoutOverlapping();
+
+        // The security log keeps a year: older entries leave the top of its one file (SECURITY_NOTES.md section 2).
+        $schedule->command('security-log:prune')->dailyAt('03:05')->withoutOverlapping();
     }
 
     /**

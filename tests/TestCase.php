@@ -33,6 +33,12 @@ abstract class TestCase extends BaseTestCase
             );
         }
 
+        // Tests sign in, fail and get refused all the time: their security events go to a file of their own, emptied
+        // for each test, never to the real storage/logs/security.log.
+        $securityLog = sys_get_temp_dir() . '/elibrary-test-security-' . getmypid() . '.log';
+        @unlink($securityLog);
+        $app['config']->set('logging.channels.security.path', $securityLog);
+
         return $app;
     }
 }

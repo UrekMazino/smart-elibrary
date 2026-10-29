@@ -71,7 +71,7 @@ The template works locally as it is, except for these keys (all keys: [D1](#d1-e
 | `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | as in the template: Cloudflare's test keys, which pass every "I'm human" check; empty turns the check off |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | the local-and-staging OAuth client ([D10](#d10-google-sign-in-and-the-im-human-check)); empty hides "Continue with Google" |
 
-Mail stays in `storage/logs/laravel.log` (`MAIL_MAILER=log`): password-reset links are read from there.
+Mail stays in `storage/logs/laravel-YYYY-MM-DD.log` (`MAIL_MAILER=log`): password-reset links are read from there.
 
 "Continue with Google" works locally only on `http://localhost:8000` (`php artisan serve`, with `APP_URL` the
 same): Google accepts plain `http://` return addresses for `localhost` alone, so not on Laragon's
@@ -524,9 +524,10 @@ Keep **one** PHP installed (8.5.12 or newer). Check:
 
 ## D4. Scheduler
 
-It runs `visitors:forget` at 03:15, `sitemap:generate` at 03:30 and `search:reconcile` at 03:45
-(`app/Console/Kernel.php`). Without it guests' IP addresses are kept past the 90 days the privacy notice
-promises, the sitemap goes stale and the nightly search check never runs.
+It runs `security-log:prune` at 03:05, `visitors:forget` at 03:15, `sitemap:generate` at 03:30 and
+`search:reconcile` at 03:45 (`app/Console/Kernel.php`). Without it the security log keeps growing past its
+year, guests' IP addresses are kept past the 90 days the privacy notice promises, the sitemap goes stale and
+the nightly search check never runs.
 
 - **Linux:** in the web server user's crontab (`sudo crontab -u www-data -e`):
   ```
@@ -534,7 +535,7 @@ promises, the sitemap goes stale and the nightly search check never runs.
   ```
 - **Windows:** once, `powershell -ExecutionPolicy Bypass -File scripts\register-scheduler-task.ps1`
   (add `-Php "<path to php.exe>"` if PHP is not on PATH). It registers the `eLibrary-scheduler` task.
-- **Check:** `php artisan schedule:list` shows the three jobs.
+- **Check:** `php artisan schedule:list` shows the four jobs.
 
 ## D5. Moving an existing database forward
 
@@ -695,7 +696,8 @@ so it outlives any one person's), at <https://console.cloud.google.com>:
 | Search says "temporarily unavailable", or 0 results | Meilisearch is down (`curl http://127.0.0.1:7700/health`), the key is wrong, or its settings were never synced: `php artisan scout:sync-index-settings`, then `scout:import`. Admin → Settings → Tools → Check search compares the index with the database |
 | Covers or thumbnails missing | `php artisan storage:link` not run, or the web server can't write `public/frontpages` and `storage` (B2 step 4) |
 | Uploads of large PDFs fail | `upload_max_filesize`, `post_max_size` ([D3](#d3-php-settings)) or the web server's body limit ([D2](#d2-web-server)) too low |
-| 500 error after an update | Read `storage/logs/laravel.log`; usually file permissions or a stale cache: `php artisan optimize:clear`, then `php artisan optimize` |
+| 500 error after an update | Read today's `storage/logs/laravel-YYYY-MM-DD.log`; usually file permissions or a stale cache: `php artisan optimize:clear`, then `php artisan optimize` |
+| Who signed in, failed, was locked out or refused a page | Administration → Accounts → Security Log, or `storage/logs/security.log` (UTC); every log: `LOG_INVENTORY.md` |
 | Menus missing for a role after an update | `php artisan permission:cache-reset`; then check the role in Admin → Accounts → Roles (a module's switch must be on for the permissions inside it) |
 | The sitemap lists the wrong address | It was built before `APP_URL` was right: Admin → Settings → Tools → Rebuild sitemap |
 | `git pull` on staging asks for a password, or says "Authentication failed" | The deploy token expired or was revoked: make a new one in GitLab (B1), then update `~/.git-credentials` |

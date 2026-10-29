@@ -227,7 +227,7 @@ License: For each use you must have a valid license purchased only from above li
           </li> --}}
 
           {{-- Administration: each link has the same checks as its route, and the heading shows only above a link.
-               Accounts (AdminController::accounts): Administrators, Patrons, Roles, Permissions, Signed In Now, Statistics Watch. Utilities
+               Accounts (AdminController::accounts): Administrators, Patrons, Roles, Permissions, Security Log, Signed In Now, Statistics Watch. Utilities
                (MaterialTypeController::utilities): Material Types, MARC Templates, AI Sync Monitor, Theme, Rankings. Each stays
                highlighted on its cards' pages. --}}
           @php ['accounts' => $navAccounts, 'settings' => $navSettings, 'utilities' => $navUtilities] = adminNav(); @endphp
@@ -236,7 +236,7 @@ License: For each use you must have a valid license purchased only from above li
           @endif
 
           @if($navAccounts)
-            <li class="nav-item {{ request()->is('admin/accounts', 'admin/patron*', 'admin/register*', 'superadmin/*', 'admin/roles*', 'admin/permissions*', 'admin/sessions', 'admin/statistics-watch') ? 'active' : '' }}">
+            <li class="nav-item {{ request()->is('admin/accounts', 'admin/patron*', 'admin/register*', 'superadmin/*', 'admin/roles*', 'admin/permissions*', 'admin/sessions', 'admin/statistics-watch', 'admin/security-log') ? 'active' : '' }}">
               <a href="{{ route('accounts') }}" class="nav-link">
                 <i class="link-icon" data-feather="users"></i>
                 <span class="link-title">Accounts</span>

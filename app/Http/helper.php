@@ -2059,6 +2059,7 @@ function adminPages(): array
 		'patrons'          => ['parent' => 'accounts', 'label' => 'Patrons', 'url' => route('patrons'), 'can' => ['access.accounts']],
 		'roles'            => ['parent' => 'accounts', 'label' => 'Roles', 'url' => route('admin.list_roles'), 'can' => $staff],
 		'permissions'      => ['parent' => 'accounts', 'label' => 'Permissions', 'url' => route('admin.list_permissions'), 'can' => $staff],
+		'security-log'     => ['parent' => 'accounts', 'label' => 'Security Log', 'url' => route('admin.security-log'), 'can' => $staff],
 		'sessions'         => ['parent' => 'accounts', 'label' => 'Signed In Now', 'url' => route('admin.sessions'), 'can' => ['access.sessions']],
 		'statistics-watch' => ['parent' => 'accounts', 'label' => 'Statistics Watch', 'url' => route('admin.statistics-watch'), 'can' => ['access.statistics.watch']],
 		'settings'         => ['section' => 'Administration', 'label' => 'Settings', 'url' => url('/admin/settings'), 'can' => $nav('settings')],

@@ -26,6 +26,7 @@ use App\Http\Controllers\SettingController;
 use App\Http\Controllers\SignedInNowController;
 use App\Http\Controllers\StatisticsWatchController;
 use App\Http\Controllers\RankingsController;
+use App\Http\Controllers\SecurityLogController;
 
 
 /*
@@ -433,6 +434,10 @@ Route::controller(SignedInNowController::class)->middleware(['auth', 'admin', 'c
     Route::get('/admin/sessions', 'index')->name('admin.sessions');
     Route::delete('/admin/sessions', 'signOut')->middleware('throttle:10,1')->name('admin.sessions.sign-out');
 });
+
+// Administration → Accounts → Security Log: read-only, for developer and super admin whatever their permissions say.
+Route::get('/admin/security-log', [SecurityLogController::class, 'index'])
+    ->middleware(['auth', 'admin', 'role:super_admin|developer'])->name('admin.security-log');
 
 // Administration → Accounts → Statistics watch: a day's unusual activity; take patrons out of the top-10 lists, or put one back.
 Route::controller(StatisticsWatchController::class)->middleware(['auth', 'admin', 'can:access.statistics.watch'])->group(function () {

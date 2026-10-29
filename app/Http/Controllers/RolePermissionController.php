@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use App\Services\SecurityLog;
 
 class RolePermissionController extends Controller
 {
@@ -163,6 +164,9 @@ class RolePermissionController extends Controller
         $granted = array_key_exists('granted', $data) ? (bool) $data['granted'] : ! $had;
         if ($granted && ! $had) $role->givePermissionTo($permission);
         if (! $granted && $had) $role->revokePermissionTo($permission);
+        if ($granted !== $had) {
+            SecurityLog::record('role.permission', null, ['role' => $role->name, 'permission' => $permission->name, 'granted' => $granted]);
+        }
 
         return response()->json([
             'granted'   => $granted,
@@ -188,6 +192,7 @@ class RolePermissionController extends Controller
             'display_name' => $data['display_name'],
             'description'  => $data['description'] ?? null,
         ]);
+        SecurityLog::record('role.created', null, ['role' => $data['role_name']]);
 
         return redirect()->route('admin.list_roles')->with('success', 'Role created. Tick its permissions in the Access Matrix.');
     }
@@ -226,6 +231,7 @@ class RolePermissionController extends Controller
 
         $role->permissions()->detach();
         $role->delete();
+        SecurityLog::record('role.deleted', null, ['role' => $role->name]);
 
         return redirect()->route('admin.list_roles')->with('success', 'Role deleted.');
     }
@@ -271,6 +277,7 @@ class RolePermissionController extends Controller
             'display_name' => $data['display_name'],
             'description'  => $data['description'] ?? null,
         ]);
+        SecurityLog::record('permission.created', null, ['permission' => $data['permission_name']]);
 
         return redirect()->route('admin.list_permissions')->with('success', 'Permission created.');
     }
@@ -304,6 +311,7 @@ class RolePermissionController extends Controller
         $permission->roles()->detach();
         $permission->users()->detach();
         $permission->delete();
+        SecurityLog::record('permission.deleted', null, ['permission' => $permission->name]);
 
         return redirect()->route('admin.list_permissions')->with('success', 'Permission deleted.');
     }

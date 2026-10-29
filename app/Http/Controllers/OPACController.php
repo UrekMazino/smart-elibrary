@@ -13,6 +13,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules;
 
 use MeiliSearch\Client;
+use App\Services\SecurityLog;
 
 
 class OPACController extends Controller
@@ -90,6 +91,7 @@ class OPACController extends Controller
 
         $user->password = Hash::make($request->password);
         $user->save();
+        SecurityLog::record('password.changed', $user, ['how' => $withPassword ? 'on their profile' : 'set after a Google confirmation']);
 
         return redirect('/patron/profile')->with('success', $withPassword ? 'Password changed.' : 'Password set. You can now also sign in with your email and password.');
     }

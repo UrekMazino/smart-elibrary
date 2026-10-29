@@ -29,6 +29,7 @@ use App\Models\User;
 use App\Models\ViewCatalog;
 use App\Services\BrowserSessions;
 use App\Services\DashboardService;
+use App\Services\SecurityLog;
 use App\Services\StatisticsWatch;
 
 class AdminController extends Controller
@@ -120,6 +121,7 @@ class AdminController extends Controller
         $user = Auth::user();
         $user->password = Hash::make($request->password);
         $user->save();
+        SecurityLog::record('password.changed', $user, ['how' => 'on their profile']);
 
         return redirect('/admin/profile')->with('success', 'Password changed.');
     }
@@ -214,6 +216,8 @@ class AdminController extends Controller
             ]);
         });
 
+        SecurityLog::record('account.' . ($request->flag === 'banned' ? ($user->is_banned ? 'banned' : 'unbanned') : ($user->is_blocked ? 'blocked' : 'unblocked')), $user);
+
         // A ban signs the account out everywhere (ASVS 7.4.2): EndBannedSessions refuses its next request from any
         // device and shows the sign-in page's banned popup, so its sessions are left for that rather than deleted.
         // A new remember token ends "Keep me signed in" for good, also after the ban is lifted.
@@ -270,6 +274,17 @@ class AdminController extends Controller
                 'url'   => route('admin.list_permissions'),
                 'text'  => 'The permissions roles are built from, grouped by module, with their display names.',
                 'meta'  => Permission::count() . ' permissions',
+            ];
+        }
+        if ($staffAdmin) {
+            $today = SecurityLog::between(today()->startOfDay(), now());
+            $cards[] = [
+                'title' => 'Security Log',
+                'icon'  => 'shield',
+                'url'   => route('admin.security-log'),
+                'text'  => 'Sign-ins, wrong passwords, lockouts, refused pages, and changes to roles, permissions, bans and passwords. A year, read-only.',
+                'meta'  => $today->count() . ' ' . Str::plural('entry', $today->count()) . ' today · '
+                         . $today->whereIn('event', ['sign-in.failed', 'sign-in.locked', 'sign-in.refused', 'access.denied'])->count() . ' refused or failed',
             ];
         }
         if (auth()->user()->can('access.sessions')) {
@@ -689,6 +704,7 @@ class AdminController extends Controller
     {
         $patron = $this->patronOrFail($id);
         $patron->delete();   // soft delete (User uses SoftDeletes) — recoverable
+        SecurityLog::record('account.deleted', $patron);
 
         return response()->json(['message' => $patron->name . "'s account was deleted."]);
     }
@@ -697,6 +713,7 @@ class AdminController extends Controller
     {
         $password = generateRandomPassword();
         $user->forceFill(['password' => Hash::make($password)])->save();
+        SecurityLog::record('password.changed', $user, ['how' => 'reset by staff']);
 
         return [
             'message'  => 'Password reset for ' . $user->name . '.',
@@ -803,7 +820,9 @@ class AdminController extends Controller
             return back()->with('error', $user->name . ' is the only Super Administrator. Make someone else a Super Administrator first.');
         }
 
+        $from = $user->getRoleNames()->first();
         $user->syncRoles([$role->name]);   // one role per administrator
+        SecurityLog::record('role.changed', $user, ['from' => $from, 'to' => $role->name]);
 
         return redirect()->route('administrators')
             ->with('success', $user->name . ' is now ' . ($role->display_name ?: $role->name) . '.');
@@ -828,6 +847,7 @@ class AdminController extends Controller
         }
 
         $user->delete();   // soft delete
+        SecurityLog::record('account.deleted', $user);
 
         return response()->json(['message' => $user->name . "'s administrator account was deleted."]);
     }

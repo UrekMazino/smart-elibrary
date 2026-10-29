@@ -1,9 +1,10 @@
 # Security notes
 
 The rules the eLibrary enforces, written down as OWASP ASVS 5.0 asks: input rules (2.1.1), sign-in and
-rate limits (6.1.1), who may do what (8.1.1), how fast vulnerable packages are patched (15.1.1), and how
-long a sign-in lasts (7.1.1, 7.5.2). Checked against the code on 2026-10-28 (branch `FNRI-Week-4`). When a rule
-in the code changes, change it here in the same commit.
+rate limits (6.1.1), who may do what (8.1.1), how fast vulnerable packages are patched (15.1.1), how
+long a sign-in lasts (7.1.1, 7.5.2), and what is logged (16.1.1: section 2 and
+[`LOG_INVENTORY.md`](LOG_INVENTORY.md)). Checked against the code on 2026-10-29 (branch `FNRI-Week-4`). When a
+rule in the code changes, change it here in the same commit.
 
 ## 1. Input rules (ASVS 2.1.1)
 
@@ -50,6 +51,26 @@ Every rule below is checked on the server; a check in the browser only saves peo
   keeps the password they chose; a later change could reset it at linking.
 - **Forms people could flood:** the chat button has a hidden field that spam bots fill in; such posts
   are accepted and thrown away.
+- **Security event log** (ASVS V16; since 29 October 2026; `App\Services\SecurityLog`): one file,
+  `storage/logs/security.log`, one event a line, times in **UTC**:
+  - signing in (with the password, with Google, or kept signed in), a wrong email or password, a lockout
+    (once per lockout, however many tries), a refused sign-in (banned; Google's refusals with the reason),
+    signing out;
+  - accounts made (sign-up, Google, by staff with the role), passwords changed (own, reset link, reset by
+    staff), ban/unban, block/unblock, accounts deleted, sessions ended (own, one person's, everyone's);
+  - a role changed for an account, a permission given to or taken from a role, roles and permissions made
+    or deleted;
+  - every refused page or action (403), with the address asked for and the reason shown.
+
+  Each line has the account, the staff member who did it, the IP address, the browser and the page, and
+  never a password, token or session id. Typed values are JSON-encoded, so they can't start a line of
+  their own. The file is readable by the web server's group only (0640), and every write locks it.
+- **Keeps a year.** Nightly at 03:05, `security-log:prune` removes the entries older than a year from the
+  top of the same file and keeps the rest; the file is never deleted or replaced.
+- **Read on** Administration → Accounts → **Security Log** (developer and super admin, by role, whatever
+  else a role has): a date range of up to 31 days, newest first, filtered by kind and searched by email, IP
+  address or page. Nothing in the app edits or deletes an entry. What else the system logs:
+  [`LOG_INVENTORY.md`](LOG_INVENTORY.md).
 
 Limits per visitor (signed in: per account; otherwise per IP address), per minute, each action counted
 separately (`app/Http/Middleware/ThrottleRequests.php`):
@@ -201,8 +222,8 @@ or Developer, with one or more roles).
   person's sessions and their "Keep me signed in"; "Sign out everyone" does that for everyone but your
   own session. Both ask for your password first (ASVS 7.4.5). Not your own account (use Log Out, or your
   profile), and only a developer can sign out a developer. The page doesn't refresh by itself, which
-  would keep the viewer's own session active. Who signed whom out is not recorded yet: that is the
-  security event log (assessment gap 10).
+  would keep the viewer's own session active. Who signed whom out is in the security event log
+  (section 2).
 - **Where.** `config/session.php` ("limits"), `config/auth.php` (`remember`),
   `App\Services\SessionLimits`, `App\Http\Middleware\EnforceSessionLimits`, `EndBannedSessions`,
   `resources/views/partials/session-timeout.blade.php`, `App\Services\BrowserSessions`,
@@ -239,6 +260,7 @@ used, and stored, where a feature needs them, on these terms:
 | Sessions (`sessions` table) | IP address and browser of each session (Laravel's database sessions) | until the session ends; staff pages never show the address |
 | "I'm human" check on sign-up (Cloudflare Turnstile) | the visitor's browser talks to Cloudflare directly; the server sends Cloudflare only the token, not the address | nothing kept by the eLibrary |
 | "Continue with Google" | from Google: name, email address, whether Google confirmed it, the Google account's id | the id and the account's name and address, as long as the account |
+| Security event log (`storage/logs/security.log`; section 2) | the IP address and browser of each sign-in, failure, lockout, refused page and account change, with the account and the email address typed: to investigate break-ins and misuse, which often come to light months later | **1 year**, then removed from the file nightly (`security-log:prune`); read by developer and super admin only. Longer than the 90 days above, for that purpose (decided 28 October 2026; to be confirmed with the Data Protection Officer) |
 
 The `views` table holds no address or browser string, only a guest's keyed hash (`PrivacyTest`, `RankingIntegrityTest`).
 
