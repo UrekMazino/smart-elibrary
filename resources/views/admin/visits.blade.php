@@ -14,10 +14,7 @@
 @section('content')
 <div class="page-content">
 
-    <nav class="page-breadcrumb">
-        <ol class="breadcrumb">
-        </ol>
-    </nav>
+    @include('admin.partials.breadcrumb', ['page' => 'visits'])
 
     <div class="row">
         <div class="col-md-12">

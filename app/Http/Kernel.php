@@ -45,6 +45,8 @@ class Kernel extends HttpKernel
             \App\Http\Middleware\EncryptCookies::class,
             \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
             \Illuminate\Session\Middleware\StartSession::class,
+            // A 403 goes into the security log, with who asked (App\Services\SecurityLog).
+            \App\Http\Middleware\LogRefusedPages::class,
             // A password change (own, reset link or admin reset) ends every other session of the account (ASVS 7.4.3).
             \Illuminate\Session\Middleware\AuthenticateSession::class,
             // A banned account is signed out everywhere, "Keep me signed in" included (ASVS 7.4.2).

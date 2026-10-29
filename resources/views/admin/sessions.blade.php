@@ -33,12 +33,7 @@
 @section('content')
 <div class="page-content">
 
-    <nav class="page-breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ route('accounts') }}">Accounts</a></li>
-            <li class="breadcrumb-item active" aria-current="page">Signed in now</li>
-        </ol>
-    </nav>
+    @include('admin.partials.breadcrumb', ['page' => 'sessions'])
 
     @if (session('success'))
         <div class="alert alert-success py-2" style="font-size: 0.8125rem;" role="status">{{ session('success') }}</div>

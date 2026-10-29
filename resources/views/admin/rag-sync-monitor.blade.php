@@ -45,12 +45,7 @@
 
 @section('content')
 <div class="page-content">
-    <nav class="page-breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ route('utilities') }}">Utilities</a></li>
-            <li class="breadcrumb-item active" aria-current="page">AI Sync Monitor</li>
-        </ol>
-    </nav>
+    @include('admin.partials.breadcrumb', ['page' => 'ai-sync-monitor'])
 
     <div class="row">
         <div class="col-12 grid-margin stretch-card">

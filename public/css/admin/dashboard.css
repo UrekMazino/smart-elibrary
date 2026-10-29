@@ -97,6 +97,25 @@ a.dsh-attn-tile:hover { color: inherit; border-color: var(--ui-border, #dfe3eb);
 
 /* ---------- KPI tiles (they are the tabs for the trend chart) ---------- */
 .dsh-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 16px; }
+/* "About" buttons over the cards' corners: the same grid as the cards, laid on top; clicks fall through to the cards
+   except on the buttons and their notes. */
+.dsh-kpis-wrap { position: relative; margin-bottom: 16px; }
+.dsh-kpis-wrap .dsh-kpis { margin-bottom: 0; }
+.dsh-kpi-infos { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: 1fr; gap: 14px; pointer-events: none; }
+.dsh-kpi-info { position: relative; display: flex; justify-content: flex-end; align-items: flex-start; padding: 10px 10px 0 0; }
+.dsh-info-btn { pointer-events: auto; width: 28px; height: 28px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%;
+  background: transparent; color: var(--dsh-muted); cursor: pointer; }
+.dsh-info-btn svg { width: 16px; height: 16px; }
+.dsh-info-btn:hover, .dsh-info-btn[aria-expanded="true"] { background: var(--dsh-accent-soft); color: var(--dsh-accent-ink); }
+.dsh-info-btn:focus-visible { outline: 2px solid var(--dsh-accent); outline-offset: 2px; }
+.dsh-info-pop { pointer-events: auto; position: absolute; top: 42px; right: 8px; z-index: 30; width: min(320px, calc(100vw - 48px)); padding: 12px 14px;
+  border: 1px solid var(--dsh-line); border-radius: 10px; background: var(--dsh-surface); box-shadow: 0 12px 32px rgba(20, 30, 60, .18);
+  font-size: 0.78125rem; line-height: 1.45; color: var(--dsh-ink-2); text-align: left; }
+.dsh-info-pop[hidden] { display: none; }
+.dsh-info-pop.is-start { right: auto; left: 8px; }   /* opens rightward when leftward would leave the Activity area */
+.dsh-info-pop strong { display: block; margin-bottom: 4px; font-size: 0.8125rem; color: var(--dsh-ink); }
+.dsh-info-pop p { margin: 0 0 6px; }
+.dsh-info-pop .dsh-info-common { margin: 8px 0 0; padding-top: 8px; border-top: 1px solid var(--dsh-line); color: var(--dsh-muted); }
 .dsh-kpi { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 16px 18px 14px; text-align: left; color: inherit; cursor: pointer;
   transition: border-color .15s, box-shadow .15s; overflow: hidden; }
 .dsh-kpi:hover { border-color: color-mix(in srgb, var(--t-primary, var(--t-primary, #6571ff)) 25%, var(--ui-surface, #fff)); }
@@ -204,10 +223,10 @@ a.dsh-feed-title:hover { color: var(--dsh-accent-ink); text-decoration: underlin
 
 /* ---------- Responsive ---------- */
 @media (max-width: 1199.98px) {
-  .dsh-attn, .dsh-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dsh-attn, .dsh-kpis, .dsh-kpi-infos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 575.98px) {
-  .dsh-attn, .dsh-kpis { grid-template-columns: minmax(0, 1fr); }
+  .dsh-attn, .dsh-kpis, .dsh-kpi-infos { grid-template-columns: minmax(0, 1fr); }
   .dsh-title { font-size: 1.375rem; }
   .dsh-kpi-value { font-size: 1.625rem; }
   .dsh-panel { padding: 16px; }

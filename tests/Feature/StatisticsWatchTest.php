@@ -62,12 +62,12 @@ class StatisticsWatchTest extends TestCase
     {
         $this->actingAs($this->staff('super_admin'))->get('/admin/statistics-watch')->assertOk()
             ->assertSee('STATISTICS WATCH')->assertSee('No material had an unusual day.')->assertSee('No account is out of the rankings.');
-        $this->get('/admin/accounts')->assertSee('Statistics watch')->assertSee('Nothing unusual today');
+        $this->get('/admin/accounts')->assertSee('Statistics Watch')->assertSee('Nothing unusual today');
         $this->actingAs($this->staff('developer'))->get('/admin/statistics-watch')->assertOk();
 
         $this->actingAs($this->staff('system_admin'))->get('/admin/statistics-watch')->assertForbidden();
         $this->post('/admin/statistics-watch/exclusions', ['users' => [$this->patron()->id]])->assertForbidden();
-        $this->get('/admin/accounts')->assertOk()->assertDontSee('Statistics watch');
+        $this->get('/admin/accounts')->assertOk()->assertDontSee('Statistics Watch');
         $this->assertSame(0, DB::table('ranking_exclusions')->count());
     }
 

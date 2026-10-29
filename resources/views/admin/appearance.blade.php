@@ -13,6 +13,7 @@
 
 @section('content')
 <div class="page-content">
+    @include('admin.partials.breadcrumb', ['page' => 'appearance'])
     <div class="ac-head">
         <h4>Appearance</h4>
         <p>How the admin looks for you: colours, background, contrast, status colours, text size, motion and font. Only you see your choice, and it follows

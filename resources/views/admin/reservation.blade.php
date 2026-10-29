@@ -19,10 +19,7 @@
 @section('content')
 <div class="page-content">
 
-    <nav class="page-breadcrumb">
-        <ol class="breadcrumb">
-        </ol>
-    </nav>
+    @include('admin.partials.breadcrumb', ['page' => 'transactions'])
     <div class="row">
         <div class="col-md-12">
             <div class="card">

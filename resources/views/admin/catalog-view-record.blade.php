@@ -56,22 +56,8 @@
 <div class="page-content">
 
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
-        @php
-            // Point the first crumb at the list this record actually lives in: published
-            // records show in Record list, held ones (incl. freshly created records, which
-            // default to is_published = 0) in On-hold list. Keeps the trail correct whether
-            // you arrived from a list, or via the redirect after create / edit.
-            $fromPublished = (int) optional($record)->is_published === 1;
-            $fromUrl   = $fromPublished ? '/admin/record-list' : '/admin/on-hold-list';
-            $fromLabel = $fromPublished ? 'Record list' : 'On-hold list';
-        @endphp
-        <nav class="page-breadcrumb mb-0">
-            <ol class="breadcrumb mb-0">
-                <li class="breadcrumb-item"><a href="{{ url($fromUrl) }}">{{ $fromLabel }}</a></li>
-                <li class="breadcrumb-item">View details</li>
-                <li class="breadcrumb-item active" aria-current="page">{{ $title }}</li>
-            </ol>
-        </nav>
+        {{-- Under the list the record is in: Record List when published, On-Hold otherwise (new records included). --}}
+        @include('admin.partials.breadcrumb', ['page' => optional($record)->is_published ? 'record-list' : 'on-hold', 'below' => [Str::limit($title, 80)], 'class' => 'mb-0'])
         <div class="d-flex gap-2">
             {{-- One Action menu, like each row of the Record List and On-Hold List. --}}
             <div class="btn-group btn-group-sm" role="group">
@@ -506,6 +492,7 @@
 
                     <!-- Reviews Tab -->
                     <div class="tab-pane fade" id="reviews" role="tabpanel" aria-labelledby="reviews-tab">
+                        @include('admin.partials.record-rankings', ['rankings' => $rankings, 'published' => $published])
                         @include('admin.partials.record-reviews', ['reviews' => $reviews])
                     </div>
 

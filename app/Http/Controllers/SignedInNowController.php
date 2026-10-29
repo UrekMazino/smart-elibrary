@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Services\BrowserSessions;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use App\Services\SecurityLog;
 
 /**
  * Administration → Accounts → Signed in now (access.sessions; OWASP ASVS 7.4.5): who is signed in and on which
@@ -49,6 +50,7 @@ class SignedInNowController extends Controller
 
         if ($request->target === 'everyone') {
             $people = BrowserSessions::endEveryone($request);
+            SecurityLog::record('sessions.ended', null, ['scope' => 'everyone signed in', 'count' => $people]);
             return back()->with('success', "Signed out $people " . Str::plural('person', $people) . '. “Keep me signed in” no longer works on their devices.');
         }
 
@@ -56,6 +58,7 @@ class SignedInNowController extends Controller
         abort_if($user->is($request->user()), 403, 'You can’t sign yourself out here. Use Log Out, or your Profile for your other sessions.');
         abort_if($user->hasRole('developer') && ! $request->user()->hasRole('developer'), 403, 'Only a developer can sign out a developer account.');
         BrowserSessions::endAllOf($user);
+        SecurityLog::record('sessions.ended', $user, ['scope' => 'everywhere, by staff']);
 
         return back()->with('success', "$user->name is signed out everywhere.");
     }

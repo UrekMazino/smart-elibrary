@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\HomeController;
 use App\Models\User;
 use App\Services\GoogleSignIn;
+use App\Services\SecurityLog;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -57,7 +58,12 @@ class GoogleSignInController extends Controller
         if (Auth::check() && ! $confirming) {
             return redirect(HomeController::landingUrl(Auth::user()));   // already signed in (another tab)
         }
-        $refuse = fn (string $message) => redirect()->to($confirming ?: route('login'))->withErrors(['google' => $message]);
+        // Each refusal goes into the security log with a short reason, the account (if known) and the address.
+        $refuse = function (string $message, string $reason, ?User $user = null, ?string $email = null) use ($confirming) {
+            SecurityLog::record('sign-in.refused', $user ?? ($confirming ? Auth::user() : null), ['reason' => 'Google: ' . $reason], $email);
+
+            return redirect()->to($confirming ?: route('login'))->withErrors(['google' => $message]);
+        };
 
         if ($request->filled('error')) {   // "Cancel" on Google's page
             return $confirming ? redirect()->to($confirming) : redirect()->route('login')->with('notice', 'Google sign-in was cancelled.');
@@ -66,12 +72,12 @@ class GoogleSignInController extends Controller
             $google = Socialite::driver('google')->enablePKCE()->user();
         } catch (Throwable $e) {   // an old or repeated return from Google (its state), or Google couldn't be reached
             Log::info('Google sign-in did not finish: ' . $e->getMessage());
-            return $refuse('Google sign-in didn’t finish. Please try again.');
+            return $refuse('Google sign-in didn’t finish. Please try again.', 'did not finish');
         }
 
         if ($confirming && Auth::check()) {
             if ((string) $google->getId() !== (string) Auth::user()->google_id) {
-                return $refuse('That isn’t the Google account linked to your eLibrary account. Choose ' . Auth::user()->email . '.');
+                return $refuse('That isn’t the Google account linked to your eLibrary account. Choose ' . Auth::user()->email . '.', 'confirming with another Google account');
             }
             GoogleSignIn::markConfirmed($request->session());
             return redirect()->to($confirming)->with('success', 'Confirmed. You can go ahead.');
@@ -79,23 +85,24 @@ class GoogleSignInController extends Controller
 
         $email = Str::lower(trim((string) $google->getEmail()));
         if ($email === '' || ! Arr::get($google->getRaw(), 'email_verified')) {
-            return $refuse('Google hasn’t confirmed this Google account’s email address, so it can’t be used here.');
+            return $refuse('Google hasn’t confirmed this Google account’s email address, so it can’t be used here.', 'address not confirmed by Google', null, $email);
         }
 
         $user = User::withTrashed()->where('google_id', $google->getId())->first();
         if (! $user) {
             $user = User::withTrashed()->where('email', $email)->first();
             if ($user?->google_id) {
-                return $refuse('The eLibrary account for this address is linked to another Google account. Continue with that one, or sign in with your password.');
+                return $refuse('The eLibrary account for this address is linked to another Google account. Continue with that one, or sign in with your password.', 'address linked to another Google account', $user);
             }
         }
         if ($user?->trashed()) {
-            return $refuse('This account can’t be used. Please contact the library.');
+            return $refuse('This account can’t be used. Please contact the library.', 'removed account', $user);
         }
         if ($user?->isStaff()) {
-            return $refuse('Staff accounts sign in with their email and password, not with Google.');
+            return $refuse('Staff accounts sign in with their email and password, not with Google.', 'staff account', $user);
         }
         if ($user?->is_banned) {   // as a password sign-in: the sign-in page's banned popup
+            SecurityLog::record('sign-in.refused', $user, ['reason' => 'Google: banned account']);
             return redirect()->route('login')->with('account_banned', true)->withInput(['email' => $user->email])->withErrors([
                 'email' => 'This account has been banned. Please email the system administrator to have the ban lifted.',
             ]);

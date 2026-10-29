@@ -73,7 +73,7 @@
   var nf = new Intl.NumberFormat('en-US');
   var compact = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 });
 
-  var state = { range: '30d', from: null, to: null, metric: 'views', top: 'views', table: false };
+  var state = { range: '30d', from: null, to: null, metric: 'views', top: 'viewed', table: false };
   var data = null, chart = null, request = 0;
 
   function $(id) { return document.getElementById(id); }
@@ -257,13 +257,24 @@
     $('dsh-trend-table').innerHTML = t;
   }
 
+  // Top materials: Utilities → Rankings' lists for its window (all time, or the home page's last 90 days).
+  var TOP = {
+    viewed:     { noun: 'views', empty: 'No views' },
+    downloaded: { noun: 'readers', empty: 'No downloads' },
+    rated:      { noun: 'score', empty: 'No ratings' }
+  };
+  var nf2 = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   function renderTop() {
-    var list = data.top[state.top] || [], ol = $('dsh-top'), noun = METRICS[state.top].noun;
+    var win = data.top.window || { key: 'recent', label: 'last 90 days' };
+    var list = data.top[state.top] || [], ol = $('dsh-top'), noun = TOP[state.top].noun;
+    $('dsh-top-sub').textContent = 'As ranked on the home page, ' + win.label;
+    var link = $('dsh-top-link');
+    if (link) link.href = link.dataset.base + (win.key === 'all' ? '?window=all' : '');
     ol.textContent = '';
     if (!list.length) {
       var empty = document.createElement('li');
       empty.className = 'dsh-empty';
-      empty.textContent = 'No ' + noun + ' in this period.';
+      empty.textContent = TOP[state.top].empty + ' in the ' + win.label + '.';
       ol.appendChild(empty);
       return;
     }
@@ -278,7 +289,7 @@
 
       var n = document.createElement('span');
       n.className = 'dsh-top-n';
-      n.textContent = fmt(it.count);
+      n.textContent = state.top === 'rated' ? nf2.format(it.count) : fmt(it.count);
       var sr = document.createElement('span');
       sr.className = 'visually-hidden';
       sr.textContent = ' ' + noun;
@@ -286,10 +297,11 @@
 
       li.appendChild(title);
       li.appendChild(n);
-      if (it.by) {
+      var sub = [it.by, it.detail].filter(Boolean).join(' · ');
+      if (sub) {
         var by = document.createElement('span');
         by.className = 'dsh-top-by';
-        by.textContent = it.by;
+        by.textContent = sub;
         li.appendChild(by);
       }
       var track = document.createElement('span');
@@ -322,6 +334,37 @@
       e.preventDefault();
       selectMetric(tabs[(i + step + tabs.length) % tabs.length].dataset.metric, true);
     });
+  });
+
+  // ---------- "About" notes on the cards: one open at a time; Esc or a click elsewhere closes it ----------
+  var infoBtns = Array.prototype.slice.call(root.querySelectorAll('.dsh-info-btn'));
+  function closeInfo(except) {
+    infoBtns.forEach(function (b) {
+      if (b === except || b.getAttribute('aria-expanded') !== 'true') return;
+      b.setAttribute('aria-expanded', 'false');
+      document.getElementById(b.getAttribute('aria-controls')).hidden = true;
+    });
+  }
+  infoBtns.forEach(function (b) {
+    b.addEventListener('click', function () {
+      var open = b.getAttribute('aria-expanded') !== 'true';
+      closeInfo(b);
+      b.setAttribute('aria-expanded', open ? 'true' : 'false');
+      var pop = document.getElementById(b.getAttribute('aria-controls'));
+      pop.hidden = !open;
+      if (!open) return;
+      // Opens leftward from the card's right edge; on a card at the left (under the sidebar's edge), rightward instead.
+      pop.classList.remove('is-start');
+      if (pop.getBoundingClientRect().left < root.getBoundingClientRect().left) pop.classList.add('is-start');
+    });
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    var open = infoBtns.filter(function (b) { return b.getAttribute('aria-expanded') === 'true'; })[0];
+    if (open) { closeInfo(); open.focus(); }
+  });
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('.dsh-kpi-info')) closeInfo();
   });
 
   root.querySelectorAll('[data-top]').forEach(function (b) {

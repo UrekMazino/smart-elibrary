@@ -11,13 +11,7 @@
 
 @section('content')
 <div class="page-content">
-	<nav class="page-breadcrumb">
-		<ol class="breadcrumb">
-			<li class="breadcrumb-item"><a href="{{ url('/admin/dashboard') }}">Home</a></li>
-			<li class="breadcrumb-item"><a href="{{ url('/admin/news') }}">News Articles</a></li>
-			<li class="breadcrumb-item active" aria-current="page">Edit Article</li>
-		</ol>
-	</nav>
+	@include('admin.partials.breadcrumb', ['page' => 'news', 'below' => ['Edit Article']])
 
 	<div class="admin-page-head">
 		<div>

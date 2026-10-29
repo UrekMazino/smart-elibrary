@@ -164,7 +164,7 @@ No automated tests exist, so manually exercise each area:
 - [ ] **PDF generation** (`dompdf` — reports/receipts).
 - [ ] **File download** flow (the patron download path).
 - [ ] **Acquisition** create/edit (uses Meilisearch client directly).
-- [ ] No new entries in `storage/logs/laravel.log`.
+- [ ] No new entries in today's `storage/logs/laravel-YYYY-MM-DD.log`.
 
 ---
 

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Services\BrowserSessions;
 use App\Services\GoogleSignIn;
 use Illuminate\Http\Request;
+use App\Services\SecurityLog;
 
 /**
  * "Where you're signed in" on the profile pages: sign out one of your other sessions ("end" = its ref) or all of
@@ -28,11 +29,15 @@ class BrowserSessionController extends Controller
 
         if ($request->end === 'others') {
             BrowserSessions::endOthers($request, $withPassword ? $request->password : null);
+            SecurityLog::record('sessions.ended', $request->user(), ['scope' => 'their other sessions']);
             return back()->with('success', 'Your other sessions are signed out.');
         }
 
-        return back()->with('success', BrowserSessions::end($request, $request->end)
-            ? 'That session is signed out.'
-            : 'That session had already ended.');
+        $ended = BrowserSessions::end($request, $request->end);
+        if ($ended) {
+            SecurityLog::record('sessions.ended', $request->user(), ['scope' => 'one of their sessions']);
+        }
+
+        return back()->with('success', $ended ? 'That session is signed out.' : 'That session had already ended.');
     }
 }

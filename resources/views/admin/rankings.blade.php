@@ -4,6 +4,7 @@
 @use('App\Services\Rankings')
 @php
     $recent = $window === 'recent';
+    $records = auth()->user()->can('access.cataloging');   // "View in Records" needs the Cataloging module
     $windowLabel = rankingWindowLabel($window);
     $leftOut = $totals->banned + $totals->out;
     $foot = [
@@ -49,6 +50,10 @@
       .rk-title { font-size: 0.8125rem; font-weight: 600; color: var(--ui-text, #22283b); line-height: 1.3;
                   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
       .rk-title:hover { text-decoration: underline; color: var(--ui-text, #22283b); }
+      /* A title opens a choice: the record in Cataloging, or its page in the OPAC. */
+      button.rk-title { padding: 0; border: 0; background: none; text-align: left; font-family: inherit; cursor: pointer; }
+      .rk-pick .dropdown-menu { font-size: 0.8125rem; min-width: 12rem; }
+      .rk-pick .dropdown-item svg { width: 14px; height: 14px; margin-right: 8px; vertical-align: -2px; }
       .rk-sub { font-size: 0.71875rem; color: var(--ui-muted, #7987a1); }
       .rk-num { flex: 0 0 auto; text-align: right; display: flex; flex-direction: column; line-height: 1.15; }
       .rk-num strong { font-size: 1rem; font-weight: 700; color: var(--ui-text, #22283b); font-variant-numeric: tabular-nums; }
@@ -67,12 +72,7 @@
 @section('content')
 <div class="page-content">
 
-    <nav class="page-breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ route('utilities') }}">Utilities</a></li>
-            <li class="breadcrumb-item active" aria-current="page">Rankings</li>
-        </ol>
-    </nav>
+    @include('admin.partials.breadcrumb', ['page' => 'rankings'])
 
     @if (session('success'))
         <div class="alert alert-success py-2" style="font-size: 0.8125rem;" role="status">{{ session('success') }}</div>
@@ -136,7 +136,18 @@
                                         <span @class(['rk-rank', 'is-' . ($i + 1) => $i < 3]) aria-hidden="true">{{ $i + 1 }}</span>
                                         <img class="rk-cover" src="{{ $r->thumb }}" alt="" width="30" height="42" loading="lazy">
                                         <span class="rk-what">
-                                            <a class="rk-title" href="{{ $r->link }}" target="_blank" rel="noopener">{{ $r->title }}</a>
+                                            @if ($records)
+                                                <span class="dropdown rk-pick">
+                                                    <button type="button" class="rk-title" data-bs-toggle="dropdown" aria-expanded="false"
+                                                            aria-haspopup="menu" title="View it in Records or in the OPAC">{{ $r->title }}</button>
+                                                    <ul class="dropdown-menu">
+                                                        <li><a class="dropdown-item" href="{{ route('show-record', $r->catalog_id) }}"><i data-feather="book-open"></i>View in Records</a></li>
+                                                        <li><a class="dropdown-item" href="{{ $r->link }}" target="_blank" rel="noopener"><i data-feather="external-link"></i>View in OPAC</a></li>
+                                                    </ul>
+                                                </span>
+                                            @else
+                                                <a class="rk-title" href="{{ $r->link }}" target="_blank" rel="noopener" title="View in OPAC">{{ $r->title }}</a>
+                                            @endif
                                             <span class="rk-sub">
                                                 @switch ($list['key'])
                                                     @case('downloaded')

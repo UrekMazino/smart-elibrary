@@ -186,6 +186,7 @@
 @endphp
 <div class="page-content">
 <div class="st-wrap">
+    @include('admin.partials.breadcrumb', ['page' => 'settings'])
 
     <div class="ac-head">
         <h4>Settings</h4>

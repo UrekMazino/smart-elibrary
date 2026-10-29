@@ -81,7 +81,18 @@ Every download still saves a row (statistics, the To Review list). `getMostDownl
   system admin, developer; `RankingsController`): for the last 90 days or all time, the three lists' ranks 1–10
   and the next five, each with the numbers behind it (readers and files, views signed in and by guests, the
   score with its average and votes, and C), totals for the window, how many accounts are left out, and
-  "Refresh the home page" (`clearHomeCache()`, 10 a minute). Worked out on every visit.
+  "Refresh the home page" (`clearHomeCache()`, 10 a minute). Worked out on every visit. A title opens a choice:
+  *View in Records* (`/admin/view-record/{id}`, for staff with the Cataloging module) or *View in OPAC* (a new tab);
+  without Cataloging it goes straight to the OPAC.
+- **The dashboard's Top materials** (`DashboardService::rankingsTop()`): the first five of Most Viewed, Most
+  Downloaded and Highest Rating from the same `Rankings` queries, worked out on each load (not from the
+  dashboard's 2-minute copy), so they match Utilities → Rankings. Rankings has two windows, so the panel shows all
+  time when the dashboard is on *All time* and the last 90 days otherwise, and says which; *All rankings* links to
+  Utilities → Rankings with that window (for staff who can open it).
+- **The record's Reviews tab** in Cataloging (`admin.partials.record-rankings`, `Rankings::standings()`): its rank
+  and numbers in each list for the last 90 days and all time, "Top 10 · medal" when it earns one. A rank comes from
+  `Rankings::standing()`, the list's own query ranked over every material (`ROW_NUMBER()`), so it is the rank
+  Utilities → Rankings shows. Unpublished materials: "not ranked".
 - The three top-10 shelves on the home page, and the medals they award (shelves, search results, Quick view,
   record page): `getMostDownloaded()`, `getMostViewed()`, `getHighestRated()`, each taking a window
   (`'recent'`, the default, or `'all'`) and each cached 10 minutes per window (`home_top_downloaded_recent`,
@@ -91,7 +102,8 @@ Every download still saves a row (statistics, the To Review list). `getMostDownl
 - The record page's "Views" and "Downloads": `countNum()`.
 - **Not changed:** the search page's "Most viewed" sort reads the view count stored in the search index
   (`ViewCatalog::toSearchableArray()`, plain row count). New rows are already one a day, so only old
-  duplicates differ. The admin dashboard's activity figures count every row, as activity.
+  duplicates differ. The dashboard's activity figures (the counts and charts above Top materials) count every
+  row, as activity.
 
 ## 3. Privacy (Data Privacy Act, RA 10173)
 

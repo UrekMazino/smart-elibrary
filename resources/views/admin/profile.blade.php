@@ -35,10 +35,7 @@
 @section('content')
 <div class="page-content">
 
-    <nav class="page-breadcrumb">
-        <ol class="breadcrumb">
-        </ol>
-    </nav>
+    @include('admin.partials.breadcrumb', ['page' => 'profile'])
 
     @if(session('success'))
         <div class="row"><div class="col-12">

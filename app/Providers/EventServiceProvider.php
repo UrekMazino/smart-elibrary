@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Listeners\SecurityEventSubscriber;
 use App\Services\SessionLimits;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Registered;
@@ -20,6 +21,11 @@ class EventServiceProvider extends ServiceProvider
         Registered::class => [
             SendEmailVerificationNotification::class,
         ],
+    ];
+
+    /** Sign-ins, failures, lockouts, sign-outs, sign-ups and reset links into the security log. */
+    protected $subscribe = [
+        SecurityEventSubscriber::class,
     ];
 
     /**

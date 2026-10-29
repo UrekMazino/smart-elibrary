@@ -14,6 +14,7 @@
   $categories = $barList($byCategory);
 @endphp
 <div class="page-content dsh">
+  @include('admin.partials.breadcrumb', ['page' => 'dashboard'])
 
   {{-- ============ Header: greeting + live clock + quick actions ============
        Server time (app timezone) is only the no-JS fallback: dashboard.js swaps in the
@@ -93,6 +94,29 @@
       Couldn't load activity for this range. <button type="button" class="dsh-link" id="dsh-retry">Try again</button>
     </div>
 
+    @php
+      // What each card shows and how it is counted (DashboardService::series(): rows of the table dated in the range).
+      $kpiInfo = [
+        'views' => ['Record views', [
+          'How often materials were looked at: a record page opened in the OPAC, or a full text read online.',
+          'One view per viewer per material a day: a signed-in reader is told apart by account, a guest by a coded IP address and browser. Reloading the page doesn’t add more, and at most 120 views an hour count from one viewer. Staff and search engines aren’t counted. Views saved before 28 October 2026 include every reload.',
+          '“% by guests”: the share of the views by visitors who weren’t signed in.',
+        ]],
+        'downloads' => ['Downloads', [
+          'PDFs downloaded by signed-in patrons.',
+          'Every download counts here, a patron downloading the same file again included (Most Downloaded under Top materials counts each reader once). Staff downloads aren’t counted; banned accounts can’t download; at most 30 a minute per account.',
+        ]],
+        'reads' => ['Online reads', [
+          'Materials patrons started reading in the online reader.',
+          'Counted once per patron per material: the first time they open its full text in the reader, dated that day. Opening it again doesn’t add more. Staff reads aren’t recorded.',
+        ]],
+        'patrons' => ['New patrons', [
+          'Patron accounts created in the range, however they signed up (the registration form, Google, or staff registering them). Deleted accounts aren’t counted; staff accounts aren’t patrons.',
+          '“Patrons in all”: every patron account now.',
+        ]],
+      ];
+    @endphp
+    <div class="dsh-kpis-wrap">
     <div class="dsh-kpis" role="tablist" aria-label="Activity metric — choose one to chart it">
       @foreach([
         'views'     => ['eye', 'Record views'],
@@ -109,6 +133,23 @@
           <svg class="dsh-spark" data-kpi-spark viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden="true"></svg>
         </button>
       @endforeach
+    </div>
+    {{-- An "about" button over each card's top-right corner. Outside the cards: a card is a tab (a button), which can't
+         hold another button, and a tablist holds only tabs. Same grid as the cards, so each lands on its own card. --}}
+    <div class="dsh-kpi-infos">
+      @foreach($kpiInfo as $metric => [$title, $paras])
+        <div class="dsh-kpi-info">
+          <button type="button" class="dsh-info-btn" aria-expanded="false" aria-controls="dsh-info-{{ $metric }}" aria-label="About {{ $title }}" title="About {{ $title }}">
+            <i data-feather="info"></i>
+          </button>
+          <div class="dsh-info-pop" id="dsh-info-{{ $metric }}" hidden>
+            <strong>{{ $title }}</strong>
+            @foreach($paras as $p)<p>{{ $p }}</p>@endforeach
+            <p class="dsh-info-common">Compared with the same length of time just before the range (not for All time). The line shows it day by day (month by month for long ranges).</p>
+          </div>
+        </div>
+      @endforeach
+    </div>
     </div>
 
     <div class="row g-3">
@@ -134,15 +175,22 @@
 
       <div class="col-xl-4">
         <div class="dsh-card dsh-panel">
+          {{-- Utilities → Rankings' lists (DashboardService::rankingsTop, App\Services\Rankings): the same numbers. --}}
           <div class="dsh-panel-head">
-            <h3 class="dsh-h3">Top materials</h3>
+            <div>
+              <h3 class="dsh-h3">Top materials</h3>
+              <p class="dsh-sub" id="dsh-top-sub">&nbsp;</p>
+            </div>
             <div class="dsh-seg" role="group" aria-label="Rank by">
-              <button type="button" data-top="views" aria-pressed="true">Views</button>
-              <button type="button" data-top="downloads" aria-pressed="false">Downloads</button>
-              <button type="button" data-top="reads" aria-pressed="false">Reads</button>
+              <button type="button" data-top="viewed" aria-pressed="true">Views</button>
+              <button type="button" data-top="downloaded" aria-pressed="false">Downloads</button>
+              <button type="button" data-top="rated" aria-pressed="false">Rating</button>
             </div>
           </div>
           <ol class="dsh-top" id="dsh-top"></ol>
+          @if($links['rankings'])
+            <p class="dsh-foot"><a class="dsh-link" id="dsh-top-link" href="{{ $links['rankings'] }}" data-base="{{ $links['rankings'] }}">All rankings</a></p>
+          @endif
         </div>
       </div>
     </div>

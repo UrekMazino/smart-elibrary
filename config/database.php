@@ -63,26 +63,6 @@ return [
             ]) : [],
         ],
 
-        'old_slim' => [
-            'driver' => 'mysql',
-            'url' => env('DATABASE_URL'),
-            'host' => env('DB_HOST_OLDSLIM', '127.0.0.1'),
-            'port' => env('DB_PORT_OLDSLIM', '3306'),
-            'database' => env('DB_DATABASE_OLDSLIM', 'forge'),
-            'username' => env('DB_USERNAME_OLDSLIM', 'forge'),
-            'password' => env('DB_PASSWORD_OLDSLIM', ''),
-            'unix_socket' => env('DB_SOCKET_OLDSLIM', ''),
-            'charset' => 'utf8mb4',
-            'collation' => 'utf8mb4_unicode_ci',
-            'prefix' => '',
-            'prefix_indexes' => true,
-            'strict' => false,
-            'engine' => null,
-            'options' => extension_loaded('pdo_mysql') ? array_filter([
-                \Pdo\Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
-            ]) : [],
-        ],
-
         'pgsql' => [
             'driver' => 'pgsql',
             'url' => env('DATABASE_URL'),
